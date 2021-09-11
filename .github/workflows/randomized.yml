@@ -6,6 +6,8 @@ jobs:
   test:
     name: proptest
     runs-on: ubuntu-latest
+    defaults:
+      working-directory: smart_str
     env:
       PROPTEST_CASES: 50000
     steps:
@@ -16,6 +18,5 @@ jobs:
           toolchain: stable
           override: true
       - uses: actions-rs/cargo@v1
-        working-directory: ./smart_str
         with:
           command: test proptests

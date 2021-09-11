@@ -1,0 +1,21 @@
+on: [push, pull_request]
+
+name: Randomized Testing
+
+jobs:
+  test:
+    name: proptest
+    runs-on: ubuntu-latest
+    env:
+      PROPTEST_CASES: 50000
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - uses: actions-rs/cargo@v1
+        working-directory: ./smart_str
+        with:
+          command: test proptests

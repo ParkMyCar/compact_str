@@ -47,7 +47,6 @@ mod randomized {
     #[cfg(target_pointer_width = "32")]
     const INLINED_SIZE: usize = 11;
 
-
     proptest! {
         #[test]
         fn test_form_strings_correctly(word in "[.*]{0,1000}") {

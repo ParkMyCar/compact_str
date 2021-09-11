@@ -1,8 +1,5 @@
 use static_assertions::*;
-use std::{
-    mem::ManuallyDrop,
-    sync::Arc,
-};
+use std::{mem::ManuallyDrop, sync::Arc};
 
 use crate::metadata::{Discriminant, Metadata};
 

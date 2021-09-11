@@ -60,7 +60,7 @@ mod tests {
         let discriminants = [Discriminant::HEAP, Discriminant::INLINE];
 
         for d in discriminants {
-            for i in (0..=127) {
+            for i in 0..=127 {
                 let m = Metadata::new(d, i);
                 assert_eq!(m.discriminant(), d);
                 assert_eq!(m.data(), i);
@@ -73,7 +73,7 @@ mod tests {
         let discriminants = [Discriminant::HEAP, Discriminant::INLINE];
 
         for d in discriminants {
-            for i in (128..=u8::MAX) {
+            for i in 128..=u8::MAX {
                 let res = std::panic::catch_unwind(|| {
                     Metadata::new(d, i);
                 });

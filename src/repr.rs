@@ -60,6 +60,27 @@ impl Repr {
     }
 }
 
+impl Drop for Repr {
+    fn drop(&mut self) {
+        let metadata = unsafe { self.inline.metadata };
+        let discriminant = metadata.discriminant();
+
+        debug_assert_eq!(discriminant, unsafe { self.heap.metadata.discriminant() });
+
+        match discriminant {
+            Discriminant::HEAP => {
+                // SAFETY: We checked the discriminant to make sure the union is `heap`
+                unsafe { ManuallyDrop::drop(&mut self.heap) };
+            },
+            Discriminant::INLINE => {
+                // SAFETY: We checked the discriminant to make sure the union is `inline`
+                drop(unsafe { self.inline })
+            },
+            _ => unreachable!("was another value added to discriminant?"),
+        }
+    }
+}
+
 enum StrongRepr<'a> {
     Inline(&'a str),
     Heap(&'a Arc<str>),

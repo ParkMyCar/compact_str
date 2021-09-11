@@ -1,7 +1,4 @@
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
+mod repr;
+mod smart;
+
+pub use smart::SmartStr;

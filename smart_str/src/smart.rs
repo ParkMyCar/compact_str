@@ -16,6 +16,11 @@ impl SmartStr {
     pub fn as_str(&self) -> &str {
         self.repr.as_str()
     }
+
+    #[inline]
+    pub fn is_heap_allocated(&self) -> bool {
+        self.repr.is_heap_allocated()
+    }
 }
 
 #[cfg(test)]
@@ -36,7 +41,15 @@ mod tests {
         #[test]
         fn test_form_strings_correctly(word in "[.*]{0,1000}") {
             let smartstr = SmartStr::new(&word);
-            prop_assert_eq!(word, smartstr.as_str());
+
+            // strings should be equal
+            prop_assert_eq!(&word, smartstr.as_str());
+
+            // strings 23 bytes or less should not be heap allocatated
+            match word.len() {
+                0..=23 => prop_assert!(!smartstr.is_heap_allocated()),
+                _ => prop_assert!(smartstr.is_heap_allocated()),
+            }
         }
     }
 }

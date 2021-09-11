@@ -32,6 +32,12 @@ impl Repr {
         self.cast().as_str()
     }
 
+    #[inline]
+    pub fn is_heap_allocated(&self) -> bool {
+        matches!(self.cast(), StrongRepr::Heap(..))
+    }
+
+    #[inline(always)]
     fn cast(&self) -> StrongRepr<'_> {
         let metadata = unsafe { self.inline.metadata };
         let discriminant = metadata.discriminant();

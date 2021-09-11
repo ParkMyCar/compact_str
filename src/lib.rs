@@ -1,3 +1,4 @@
+mod metadata;
 mod repr;
 mod smart;
 

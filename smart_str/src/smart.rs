@@ -38,7 +38,7 @@ mod tests {
 }
 
 #[cfg(test)]
-mod proptests {
+mod randomized {
     use super::SmartStr;
     use proptest::prelude::*;
 

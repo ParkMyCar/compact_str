@@ -6,13 +6,13 @@ use tracing::TracingAllocator;
 pub static ALLOCATOR: TracingAllocator = TracingAllocator::new();
 
 #[test]
-fn test_allocations() {
+fn test_randomized_allocations() {
     // create an rng
     let seed: u64 = rand::thread_rng().gen();
     eprintln!("using seed: {}_u64", seed);
     let mut rng = StdRng::seed_from_u64(seed);
 
-    // generate a list of up to 1,000 words, with each word being up to 200 characters long
+    // generate a list of up to 10,000 words, with each word being up to 500 characters long
     let num_words = rng.gen_range(0..10_000);
     let words: Vec<String> = (0..num_words)
         .map(|_| {

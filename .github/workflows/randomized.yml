@@ -4,7 +4,7 @@ name: Randomized Testing
 
 jobs:
   test:
-    name: proptest
+    name: randomized
     runs-on: ubuntu-latest
     env:
       PROPTEST_CASES: 50000
@@ -18,4 +18,4 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: test
-          args: proptest
+          args: randomized

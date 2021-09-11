@@ -12,7 +12,7 @@ impl Event {
     pub fn delta(&self) -> isize {
         match self {
             Self::Alloc { size, .. } => *size as isize,
-            Self::Freed { size, .. } => (*size as isize) * -1,
+            Self::Freed { size, .. } => -(*size as isize),
         }
     }
 }

@@ -33,11 +33,11 @@ impl TracingAllocator {
         }
     }
 
-    pub fn enable(&self) {
+    pub fn enable_tracing(&self) {
         self.enabled.store(true, Ordering::SeqCst);
     }
 
-    pub fn disable(&self) {
+    pub fn disable_tracing(&self) {
         self.enabled.store(false, Ordering::SeqCst);
     }
 
@@ -47,16 +47,21 @@ impl TracingAllocator {
 
     pub fn log_event(&self, event: Event) {
         if self.is_enabled() {
-            self.disable();
+            self.disable_tracing();
             let mut log = self.log.lock();
             log.push(event);
-            self.enable();
+            self.enable_tracing();
         }
     }
 
     pub fn events(&self) -> Vec<Event> {
         let log = self.log.lock();
         log.clone()
+    }
+
+    pub fn drain(&self) -> Vec<Event> {
+        let mut log = self.log.lock();
+        std::mem::take(&mut log)
     }
 }
 

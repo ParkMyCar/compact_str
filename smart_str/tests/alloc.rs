@@ -1,3 +1,4 @@
+use rand::{distributions::Alphanumeric, rngs::StdRng, Rng, SeedableRng};
 use smart_str::SmartStr;
 use tracing::TracingAllocator;
 
@@ -6,21 +7,49 @@ pub static ALLOCATOR: TracingAllocator = TracingAllocator::new();
 
 #[test]
 fn test_allocations() {
-    ALLOCATOR.enable();
-    {
-        let small_str = SmartStr::new("hello world");
-        assert_eq!(small_str.as_str(), "hello world");
+    // create an rng
+    let seed: u64 = rand::thread_rng().gen();
+    eprintln!("using seed: {}_u64", seed);
+    let mut rng = StdRng::seed_from_u64(seed);
 
-        let large_str = SmartStr::new("Lorem ipsum dolor sit amet");
-        assert_eq!(large_str.as_str(), "Lorem ipsum dolor sit amet");
+    // generate a list of up to 1,000 words, with each word being up to 200 characters long
+    let num_words = rng.gen_range(0..10_000);
+    let words: Vec<String> = (0..num_words)
+        .map(|_| {
+            let len = rng.gen_range(0..500);
+            rng.clone()
+                .sample_iter(&Alphanumeric)
+                .take(len)
+                .map(char::from)
+                .collect()
+        })
+        .collect();
+
+    // count the number of allocations there should be
+    let mut long_strs = 0;
+
+    for w in words {
+        if w.len() > 23 {
+            long_strs += 1;
+        }
+
+        ALLOCATOR.enable_tracing();
+        {
+            SmartStr::new(&w);
+        }
+        ALLOCATOR.disable_tracing();
     }
-    ALLOCATOR.disable();
 
-    // there should be two allocations events, one allocation to create the `large_str` and another
-    // to free it once it goes out of scope. We shouldn't need to alloc any mem for `small_str`
     let events = ALLOCATOR.events();
-    assert_eq!(events.len(), 2);
+    let actual_allocs = events
+        .iter()
+        .filter(|event| matches!(event, tracing::Event::Alloc { .. }))
+        .count();
+    // the number of alloc events should equal the number of strings > 23 characters long
+    assert_eq!(long_strs, actual_allocs);
 
-    let total_mem = events.iter().fold(0, |mem, event| mem +  event.delta());
+    // adding all of the Alloc and Freed events should result in 0, meaning we freed all the memory
+    // we allocated
+    let total_mem = events.iter().fold(0, |mem, event| mem + event.delta());
     assert_eq!(total_mem, 0);
 }

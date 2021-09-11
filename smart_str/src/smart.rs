@@ -21,6 +21,7 @@ impl SmartStr {
 #[cfg(test)]
 mod tests {
     use super::SmartStr;
+    use proptest::prelude::*;
 
     #[test]
     fn sanity_test() {
@@ -29,5 +30,13 @@ mod tests {
 
         let large_str = SmartStr::new("Lorem ipsum dolor sit amet");
         assert_eq!(large_str.as_str(), "Lorem ipsum dolor sit amet");
+    }
+
+    proptest! {
+        #[test]
+        fn test_form_strings_correctly(word in "[.*]{0,1000}") {
+            let smartstr = SmartStr::new(&word);
+            prop_assert_eq!(word, smartstr.as_str());
+        }
     }
 }

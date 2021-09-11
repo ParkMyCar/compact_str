@@ -10,4 +10,6 @@ bitflags = "1"
 static_assertions = "1"
 
 [dev-dependencies]
+proptest = "1"
+rand = "0.8"
 tracing = { path = "../tracing" }

@@ -16,7 +16,10 @@ impl Metadata {
     }
 
     pub fn new_inline(text: &str) -> Self {
-        debug_assert!(text.len() <= !Discriminant::all().bits() as usize);
+        debug_assert!(
+            text.len() <= !Discriminant::all().bits() as usize,
+            "inline string length longer than what we support"
+        );
 
         Metadata::new(Discriminant::INLINE, text.len() as u8)
     }

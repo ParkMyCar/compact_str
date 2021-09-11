@@ -50,10 +50,7 @@ impl Metadata {
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        Discriminant,
-        Metadata,
-    };
+    use super::{Discriminant, Metadata};
 
     #[test]
     fn test_all_valid_values() {

@@ -7,7 +7,9 @@ pub struct SmartStr {
 impl SmartStr {
     #[inline]
     pub fn new<T: AsRef<str>>(text: T) -> Self {
-        SmartStr { repr: Repr::new(text) }
+        SmartStr {
+            repr: Repr::new(text),
+        }
     }
 
     #[inline(always)]

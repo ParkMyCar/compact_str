@@ -1,10 +1,2 @@
-[package]
-name = "smart_str"
-version = "0.1.0"
-edition = "2018"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-bitflags = "1"
-static_assertions = "1"
+[workspace]
+members = ["smart_str", "tracing"]

@@ -4,10 +4,7 @@ use std::{
     sync::Arc,
 };
 
-use crate::metadata::{
-    Discriminant,
-    Metadata
-};
+use crate::metadata::{Discriminant, Metadata};
 
 const MAX_SIZE: usize = mem::size_of::<String>();
 const MAX_INLINE_SIZE: usize = MAX_SIZE - 1;
@@ -47,14 +44,14 @@ impl Repr {
             Discriminant::HEAP => {
                 // SAFETY: We checked the discriminant to make sure the union is `heap`
                 StrongRepr::Heap(unsafe { &self.heap.string })
-            },
+            }
             Discriminant::INLINE => {
                 let len = metadata.data() as usize;
 
                 // SAFETY: We checked the discriminant to make sure the union is `inline`
                 let slice = unsafe { &self.inline.string[..len] };
                 StrongRepr::Inline(unsafe { ::std::str::from_utf8_unchecked(slice) })
-            },
+            }
             _ => unreachable!("was another value added to discriminant?"),
         }
     }
@@ -71,11 +68,11 @@ impl Drop for Repr {
             Discriminant::HEAP => {
                 // SAFETY: We checked the discriminant to make sure the union is `heap`
                 unsafe { ManuallyDrop::drop(&mut self.heap) };
-            },
+            }
             Discriminant::INLINE => {
                 // SAFETY: We checked the discriminant to make sure the union is `inline`
                 drop(unsafe { self.inline })
-            },
+            }
             _ => unreachable!("was another value added to discriminant?"),
         }
     }
@@ -132,7 +129,11 @@ impl HeapString {
         let padding = [0; 7];
         let string = text.into();
 
-        HeapString { metadata, padding, string }
+        HeapString {
+            metadata,
+            padding,
+            string,
+        }
     }
 }
 

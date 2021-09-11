@@ -29,7 +29,7 @@ impl Repr {
 
     #[inline(always)]
     pub fn as_str(&self) -> &str {
-        self.cast().as_str()
+        self.cast().into_str()
     }
 
     #[inline]
@@ -75,10 +75,8 @@ impl Drop for Repr {
                 // SAFETY: We checked the discriminant to make sure the union is `heap`
                 unsafe { ManuallyDrop::drop(&mut self.heap) };
             }
-            Discriminant::INLINE => {
-                // SAFETY: We checked the discriminant to make sure the union is `inline`
-                drop(unsafe { self.inline })
-            }
+            // No-op, the value is on the stack and doesn't need to be explicitly dropped
+            Discriminant::INLINE => {}
             _ => unreachable!("was another value added to discriminant?"),
         }
     }
@@ -91,7 +89,7 @@ enum StrongRepr<'a> {
 
 impl<'a> StrongRepr<'a> {
     #[inline(always)]
-    pub fn as_str(self) -> &'a str {
+    pub fn into_str(self) -> &'a str {
         use StrongRepr::*;
 
         match self {

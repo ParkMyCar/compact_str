@@ -1,7 +1,4 @@
-use parking_lot::{
-    FairMutex,
-    const_fair_mutex,
-};
+use parking_lot::{const_fair_mutex, FairMutex};
 use std::alloc::{GlobalAlloc, System};
 use std::sync::atomic::{AtomicBool, Ordering};
 
@@ -70,7 +67,7 @@ unsafe impl GlobalAlloc for TracingAllocator {
         let res = System.alloc(layout);
         self.log_event(Event::Alloc {
             addr: res as _,
-            size: layout.size()
+            size: layout.size(),
         });
         res
     }
@@ -78,7 +75,7 @@ unsafe impl GlobalAlloc for TracingAllocator {
     unsafe fn dealloc(&self, ptr: *mut u8, layout: std::alloc::Layout) {
         self.log_event(Event::Freed {
             addr: ptr as _,
-            size: layout.size()
+            size: layout.size(),
         });
         System.dealloc(ptr, layout)
     }

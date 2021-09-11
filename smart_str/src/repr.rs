@@ -1,13 +1,15 @@
 use static_assertions::*;
 use std::{
-    mem::{self, ManuallyDrop},
+    mem::ManuallyDrop,
     sync::Arc,
 };
 
 use crate::metadata::{Discriminant, Metadata};
 
-const MAX_SIZE: usize = mem::size_of::<String>();
+const MAX_SIZE: usize = std::mem::size_of::<String>();
+
 const MAX_INLINE_SIZE: usize = MAX_SIZE - 1;
+const HEAP_PADDING: usize = MAX_SIZE - std::mem::size_of::<Arc<str>>() - 1;
 
 pub union Repr {
     heap: ManuallyDrop<HeapString>,
@@ -123,14 +125,14 @@ impl InlineString {
 #[derive(Debug, Clone)]
 struct HeapString {
     metadata: Metadata,
-    padding: [u8; 7],
+    padding: [u8; HEAP_PADDING],
     string: Arc<str>,
 }
 
 impl HeapString {
     pub fn new(text: &str) -> Self {
         let metadata = Metadata::new_heap();
-        let padding = [0; 7];
+        let padding = [0; HEAP_PADDING];
         let string = text.into();
 
         HeapString {
@@ -141,10 +143,12 @@ impl HeapString {
     }
 }
 
-assert_eq_size!(InlineString, HeapString);
+assert_eq_size!(HeapString, String);
+assert_eq_size!(InlineString, String);
+assert_eq_size!(Repr, String);
 
 #[cfg(target_pointer_width = "64")]
-const_assert_eq!(mem::size_of::<Repr>(), 24);
+const_assert_eq!(std::mem::size_of::<Repr>(), 24);
 
 #[cfg(target_pointer_width = "32")]
-const_assert_eq!(mem::size_of::<Repr>(), 16);
+const_assert_eq!(std::mem::size_of::<Repr>(), 12);

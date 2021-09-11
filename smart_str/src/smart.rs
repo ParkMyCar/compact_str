@@ -42,6 +42,12 @@ mod randomized {
     use super::SmartStr;
     use proptest::prelude::*;
 
+    #[cfg(target_pointer_width = "64")]
+    const INLINED_SIZE: usize = 23;
+    #[cfg(target_pointer_width = "32")]
+    const INLINED_SIZE: usize = 11;
+
+
     proptest! {
         #[test]
         fn test_form_strings_correctly(word in "[.*]{0,1000}") {
@@ -50,9 +56,9 @@ mod randomized {
             // strings should be equal
             prop_assert_eq!(&word, smartstr.as_str());
 
-            // strings 23 bytes or less should not be heap allocatated
+            // strings with length INLINED_SIZE bytes or less should not be heap allocatated
             match word.len() {
-                0..=23 => prop_assert!(!smartstr.is_heap_allocated()),
+                0..=INLINED_SIZE => prop_assert!(!smartstr.is_heap_allocated()),
                 _ => prop_assert!(smartstr.is_heap_allocated()),
             }
         }

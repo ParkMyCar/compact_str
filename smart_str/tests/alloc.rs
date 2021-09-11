@@ -5,6 +5,11 @@ use tracing::TracingAllocator;
 #[global_allocator]
 pub static ALLOCATOR: TracingAllocator = TracingAllocator::new();
 
+#[cfg(target_pointer_width = "64")]
+const INLINED_SIZE: usize = 23;
+#[cfg(target_pointer_width = "32")]
+const INLINED_SIZE: usize = 11;
+
 #[test]
 fn test_randomized_allocations() {
     // create an rng
@@ -29,7 +34,7 @@ fn test_randomized_allocations() {
     let mut long_strs = 0;
 
     for w in words {
-        if w.len() > 23 {
+        if w.len() > INLINED_SIZE {
             long_strs += 1;
         }
 
@@ -45,7 +50,7 @@ fn test_randomized_allocations() {
         .iter()
         .filter(|event| matches!(event, tracing::Event::Alloc { .. }))
         .count();
-    // the number of alloc events should equal the number of strings > 23 characters long
+    // the number of alloc events should equal the number of strings > INLINED_SIZE characters long
     assert_eq!(long_strs, actual_allocs);
 
     // adding all of the Alloc and Freed events should result in 0, meaning we freed all the memory

@@ -62,3 +62,35 @@ jobs:
           use-cross: true
           command: test
           args: --target i686-unknown-linux-gnu
+
+  linux_mips_le_32bit:
+    name: Linux MIPS Little Endian 32-bit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: mipsel-unknown-linux-gnu
+          override: true
+      - uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: test
+          args: --target mipsel-unknown-linux-gnu
+
+  linux_powerpc_le_64bit:
+    name: Linux PowerPC Little Endian 64-bit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: powerpc64le-unknown-linux-gnu
+          override: true
+      - uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: test
+          args: --target powerpc64le-unknown-linux-gnu

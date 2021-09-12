@@ -23,6 +23,9 @@ mod metadata;
 mod repr;
 use repr::Repr;
 
+#[cfg(feature = "default")]
+mod serde;
+
 #[cfg(test)]
 mod tests;
 

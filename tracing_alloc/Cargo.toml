@@ -1,5 +1,5 @@
 [package]
-name = "tracing"
+name = "tracing_alloc"
 version = "0.1.0"
 edition = "2018"
 

@@ -1,6 +1,6 @@
 use rand::{distributions::Alphanumeric, rngs::StdRng, Rng, SeedableRng};
 use smart_str::SmartStr;
-use tracing::TracingAllocator;
+use tracing_alloc::TracingAllocator;
 
 #[global_allocator]
 pub static ALLOCATOR: TracingAllocator = TracingAllocator::new();
@@ -48,7 +48,7 @@ fn test_randomized_allocations() {
     let events = ALLOCATOR.events();
     let actual_allocs = events
         .iter()
-        .filter(|event| matches!(event, tracing::Event::Alloc { .. }))
+        .filter(|event| matches!(event, tracing_alloc::Event::Alloc { .. }))
         .count();
     // the number of alloc events should equal the number of strings > INLINED_SIZE characters long
     assert_eq!(long_strs, actual_allocs);

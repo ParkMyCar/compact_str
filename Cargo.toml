@@ -1,2 +1,2 @@
 [workspace]
-members = ["smart_str", "tracing"]
+members = ["smart_str", "tracing_alloc"]

@@ -1,8 +1,6 @@
 on:
-  push:
-  pull_request:
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '0 01,13 * * *'
 
 name: Randomized
 
@@ -11,7 +9,7 @@ jobs:
     name: Linux 64-bit
     runs-on: ubuntu-latest
     env:
-      PROPTEST_CASES: 50000
+      PROPTEST_CASES: 200000
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
@@ -28,7 +26,7 @@ jobs:
     name: Linux 32-bit
     runs-on: ubuntu-latest
     env:
-      PROPTEST_CASES: 50000
+      PROPTEST_CASES: 200000
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1

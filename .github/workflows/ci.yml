@@ -20,6 +20,8 @@ jobs:
   test:
     name: cargo test
     runs-on: ubuntu-latest
+    env:
+      PROPTEST_CASES: 500
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
@@ -34,6 +36,8 @@ jobs:
   test-nightly:
     name: cargo test nightly
     runs-on: ubuntu-latest
+    env:
+      PROPTEST_CASES: 500
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1

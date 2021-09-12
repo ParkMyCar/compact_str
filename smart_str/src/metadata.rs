@@ -16,20 +16,12 @@ impl Metadata {
     }
 
     pub fn new_inline(text: &str) -> Self {
-        debug_assert!(
-            text.len() <= !Discriminant::all().bits() as usize,
-            "inline string length longer than what we support"
-        );
-
+        debug_assert!(text.len() <= !Discriminant::all().bits() as usize);
         Metadata::new(Discriminant::INLINE, text.len() as u8)
     }
 
     pub fn new(discriminant: Discriminant, data: u8) -> Self {
-        debug_assert_eq!(
-            data & Discriminant::all().bits(),
-            0,
-            "data has the leading bit set, which will be clobbered by the discriminant"
-        );
+        debug_assert_eq!(data & Discriminant::all().bits(), 0);
 
         let mut metadata = data;
 

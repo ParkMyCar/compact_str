@@ -27,21 +27,24 @@ fn smart_str<'de: 'a, 'a, D: Deserializer<'de>>(deserializer: D) -> Result<Smart
         fn visit_bytes<E: Error>(self, v: &[u8]) -> Result<Self::Value, E> {
             match std::str::from_utf8(v) {
                 Ok(s) => Ok(SmartStr::from(s)),
-                Err(_) => Err(Error::invalid_value(Unexpected::Bytes(v), &self))
+                Err(_) => Err(Error::invalid_value(Unexpected::Bytes(v), &self)),
             }
         }
 
         fn visit_borrowed_bytes<E: Error>(self, v: &'a [u8]) -> Result<Self::Value, E> {
             match std::str::from_utf8(v) {
                 Ok(s) => Ok(SmartStr::from(s)),
-                Err(_) => Err(Error::invalid_value(Unexpected::Bytes(v), &self))
+                Err(_) => Err(Error::invalid_value(Unexpected::Bytes(v), &self)),
             }
         }
 
-        fn visit_byte_buf<E:  Error>(self, v: Vec<u8>) -> Result<Self::Value, E> {
+        fn visit_byte_buf<E: Error>(self, v: Vec<u8>) -> Result<Self::Value, E> {
             match String::from_utf8(v) {
                 Ok(s) => Ok(SmartStr::from(s)),
-                Err(e) => Err(Error::invalid_value(Unexpected::Bytes(&e.into_bytes()), &self))
+                Err(e) => Err(Error::invalid_value(
+                    Unexpected::Bytes(&e.into_bytes()),
+                    &self,
+                )),
             }
         }
     }

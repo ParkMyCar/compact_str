@@ -7,8 +7,8 @@ on:
 name: Randomized Testing
 
 jobs:
-  test:
-    name: randomized
+  linux_64bit:
+    name: Linux 64-bit
     runs-on: ubuntu-latest
     env:
       PROPTEST_CASES: 50000
@@ -23,3 +23,21 @@ jobs:
         with:
           command: test
           args: randomized
+
+  linux_32bit:
+    name: Linux 32-bit
+    runs-on: ubuntu-latest
+    env:
+      PROPTEST_CASES: 50000
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: i686-unknown-linux-gnu
+          override: true
+      - uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: test
+          args: randomized --target i686-unknown-linux-gnu

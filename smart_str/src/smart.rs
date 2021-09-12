@@ -1,5 +1,6 @@
 use crate::repr::Repr;
 
+#[derive(Clone)]
 pub struct SmartStr {
     repr: Repr,
 }

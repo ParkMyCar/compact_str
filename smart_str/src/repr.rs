@@ -43,7 +43,9 @@ impl Repr {
     fn discriminant(&self) -> Discriminant {
         // both `heap` and `inline` store the discriminant as their first field, so we should be able
         // to access it via either entry of the union
-        debug_assert_eq!(unsafe { self.inline.metadata.discriminant() }, unsafe { self.heap.metadata.discriminant() });
+        debug_assert_eq!(unsafe { self.inline.metadata.discriminant() }, unsafe {
+            self.heap.metadata.discriminant()
+        });
 
         unsafe { self.inline.metadata.discriminant() }
     }
@@ -72,11 +74,15 @@ impl Clone for Repr {
         match self.discriminant() {
             Discriminant::HEAP => {
                 // SAFETY: We checked the discriminant to make sure the union is `heap`
-                Repr { heap: unsafe { self.heap.clone() } }
+                Repr {
+                    heap: unsafe { self.heap.clone() },
+                }
             }
             Discriminant::INLINE => {
                 // SAFETY: We checked the discriminant to make sure the union is `heap`
-                Repr { inline: unsafe { self.inline.clone() } }
+                Repr {
+                    inline: unsafe { self.inline },
+                }
             }
             _ => unreachable!("was another value added to discriminant?"),
         }

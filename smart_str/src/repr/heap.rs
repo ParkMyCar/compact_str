@@ -1,8 +1,5 @@
 use static_assertions::assert_eq_size;
-use std::{
-    mem,
-    sync::Arc,
-};
+use std::{mem, sync::Arc};
 
 use super::MAX_SIZE;
 use crate::metadata::Metadata;

@@ -23,7 +23,6 @@ mod metadata;
 mod repr;
 use repr::Repr;
 
-
 #[cfg(test)]
 mod tests;
 
@@ -79,11 +78,6 @@ impl SmartStr {
     #[inline(always)]
     pub fn as_str(&self) -> &str {
         self.repr.as_str()
-    }
-
-    #[inline(always)]
-    pub fn to_string(&self) -> String {
-        self.as_str().to_string()
     }
 
     #[inline(always)]

@@ -69,7 +69,9 @@ impl Repr {
 impl Clone for Repr {
     fn clone(&self) -> Self {
         match self.cast() {
-            StrongRepr::Heap(heap) => Repr { heap: ManuallyDrop::new(heap.clone()) },
+            StrongRepr::Heap(heap) => Repr {
+                heap: ManuallyDrop::new(heap.clone()),
+            },
             StrongRepr::Inline(inline) => Repr { inline: *inline },
         }
     }
@@ -104,7 +106,7 @@ impl<'a> StrongRepr<'a> {
 
                 // SAFETY: You can only construct an InlineString via a &str
                 unsafe { ::std::str::from_utf8_unchecked(slice) }
-            },
+            }
             Self::Heap(heap) => &*heap.string,
         }
     }

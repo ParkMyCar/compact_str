@@ -16,6 +16,7 @@ pub union Repr {
 }
 
 impl Repr {
+    #[inline(always)]
     pub fn new<T: AsRef<str>>(text: T) -> Self {
         let text = text.as_ref();
 
@@ -39,24 +40,26 @@ impl Repr {
     }
 
     #[inline(always)]
-    fn cast(&self) -> StrongRepr<'_> {
-        let metadata = unsafe { self.inline.metadata };
-        let discriminant = metadata.discriminant();
-
+    fn discriminant(&self) -> Discriminant {
         // both `heap` and `inline` store the discriminant as their first field, so we should be able
         // to access it via either entry of the union
-        debug_assert_eq!(discriminant, unsafe { self.heap.metadata.discriminant() });
+        debug_assert_eq!(unsafe { self.inline.metadata.discriminant() }, unsafe { self.heap.metadata.discriminant() });
 
-        match discriminant {
+        unsafe { self.inline.metadata.discriminant() }
+    }
+
+    #[inline(always)]
+    fn cast(&self) -> StrongRepr<'_> {
+        match self.discriminant() {
             Discriminant::HEAP => {
                 // SAFETY: We checked the discriminant to make sure the union is `heap`
                 StrongRepr::Heap(unsafe { &self.heap.string })
             }
             Discriminant::INLINE => {
-                let len = metadata.data() as usize;
-
                 // SAFETY: We checked the discriminant to make sure the union is `inline`
+                let len = unsafe { self.inline.metadata.data() as usize };
                 let slice = unsafe { &self.inline.string[..len] };
+
                 StrongRepr::Inline(unsafe { ::std::str::from_utf8_unchecked(slice) })
             }
             _ => unreachable!("was another value added to discriminant?"),
@@ -66,10 +69,7 @@ impl Repr {
 
 impl Clone for Repr {
     fn clone(&self) -> Self {
-        let discriminant = unsafe { self.inline.metadata.discriminant() };
-        debug_assert_eq!(discriminant, unsafe { self.heap.metadata.discriminant() });
-
-        match discriminant {
+        match self.discriminant() {
             Discriminant::HEAP => {
                 // SAFETY: We checked the discriminant to make sure the union is `heap`
                 Repr { heap: unsafe { self.heap.clone() } }
@@ -85,12 +85,7 @@ impl Clone for Repr {
 
 impl Drop for Repr {
     fn drop(&mut self) {
-        let metadata = unsafe { self.inline.metadata };
-        let discriminant = metadata.discriminant();
-
-        debug_assert_eq!(discriminant, unsafe { self.heap.metadata.discriminant() });
-
-        match discriminant {
+        match self.discriminant() {
             Discriminant::HEAP => {
                 // SAFETY: We checked the discriminant to make sure the union is `heap`
                 unsafe { ManuallyDrop::drop(&mut self.heap) };

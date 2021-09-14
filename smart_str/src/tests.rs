@@ -45,6 +45,12 @@ mod randomized {
         let smartstr = SmartStr::new(&word);
 
         assert_eq!(word, smartstr.as_str());
+
+        #[cfg(target_pointer_width = "64")]
         assert!(!smartstr.is_heap_allocated());
+
+        // on 32-bit archs we can only inline up to 24 bytes
+        #[cfg(target_pointer_width = "32")]
+        assert!(smartstr.is_heap_allocated());
     }
 }

@@ -18,10 +18,7 @@ impl HeapString {
         let padding = PADDING;
         let string = text.into();
 
-        HeapString {
-            padding,
-            string,
-        }
+        HeapString { padding, string }
     }
 }
 

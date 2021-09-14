@@ -3,13 +3,10 @@ use std::mem::ManuallyDrop;
 
 mod discriminant;
 mod heap;
-mod packed;
 mod inline;
+mod packed;
 
-use discriminant::{
-    Discriminant,
-    DiscriminantMask,
-};
+use discriminant::{Discriminant, DiscriminantMask};
 use heap::HeapString;
 use inline::InlineString;
 use packed::PackedString;
@@ -163,4 +160,3 @@ mod tests {
         assert_eq!(repr.as_str(), long);
     }
 }
-

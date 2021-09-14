@@ -22,12 +22,10 @@ impl DiscriminantMask {
     pub fn disciminant(&self) -> Discriminant {
         if self.val == HEAP_MASK {
             Discriminant::Heap
+        } else if self.val & LEADING_BIT_MASK == LEADING_BIT_MASK {
+            Discriminant::Inline
         } else {
-            if self.val & LEADING_BIT_MASK == LEADING_BIT_MASK {
-                Discriminant::Inline
-            } else {
-                Discriminant::Packed
-            }
+            Discriminant::Packed
         }
     }
 }

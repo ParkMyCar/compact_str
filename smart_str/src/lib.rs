@@ -19,7 +19,6 @@ use core::{
     ops::Deref,
 };
 
-mod metadata;
 mod repr;
 use repr::Repr;
 

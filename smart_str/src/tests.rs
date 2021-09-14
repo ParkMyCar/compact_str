@@ -19,9 +19,9 @@ mod randomized {
     use proptest::prelude::*;
 
     #[cfg(target_pointer_width = "64")]
-    const INLINED_SIZE: usize = 23;
+    const INLINED_SIZE: usize = 24;
     #[cfg(target_pointer_width = "32")]
-    const INLINED_SIZE: usize = 11;
+    const INLINED_SIZE: usize = 12;
 
     proptest! {
         #[test]
@@ -37,5 +37,14 @@ mod randomized {
                 _ => prop_assert!(smartstr.is_heap_allocated()),
             }
         }
+    }
+
+    #[test]
+    fn test_23char_regression() {
+        let word = "*...*.**..*..***.***...";
+        let smartstr = SmartStr::new(&word);
+
+        assert_eq!(word, smartstr.as_str());
+        assert!(!smartstr.is_heap_allocated());
     }
 }

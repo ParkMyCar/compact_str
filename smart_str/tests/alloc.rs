@@ -5,10 +5,11 @@ use tracing_alloc::TracingAllocator;
 #[global_allocator]
 pub static ALLOCATOR: TracingAllocator = TracingAllocator::new();
 
+// Since here we only Alphanumeric strings, our max inline size will awlays be size_of::<String>
 #[cfg(target_pointer_width = "64")]
-const INLINED_SIZE: usize = 23;
+const INLINED_SIZE: usize = 24;
 #[cfg(target_pointer_width = "32")]
-const INLINED_SIZE: usize = 11;
+const INLINED_SIZE: usize = 12;
 
 #[test]
 fn test_randomized_allocations() {

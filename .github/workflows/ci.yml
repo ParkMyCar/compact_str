@@ -16,6 +16,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: check
+          args: --all-features
 
   test:
     name: cargo test
@@ -32,6 +33,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: test
+          args: --all-features
 
   test-nightly:
     name: cargo test nightly
@@ -48,6 +50,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: test
+          args: --all-features
 
   fmt:
     name: cargo fmt

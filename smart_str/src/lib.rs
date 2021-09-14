@@ -23,7 +23,7 @@ mod metadata;
 mod repr;
 use repr::Repr;
 
-#[cfg(feature = "default")]
+#[cfg(feature = "serde")]
 mod serde;
 
 #[cfg(test)]
@@ -78,19 +78,9 @@ impl SmartStr {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn as_str(&self) -> &str {
         self.repr.as_str()
-    }
-
-    #[inline(always)]
-    pub fn len(&self) -> usize {
-        self.as_str().len()
-    }
-
-    #[inline(always)]
-    pub fn is_empty(&self) -> bool {
-        self.as_str().is_empty()
     }
 
     #[inline]
@@ -177,11 +167,7 @@ impl<'a> From<&'a String> for SmartStr {
 
 impl fmt::Debug for SmartStr {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let location = match self.is_heap_allocated() {
-            true => "H",
-            false => "I",
-        };
-        write!(f, "{}{:?}", location, self.as_str())
+        fmt::Debug::fmt(self.as_str(), f)
     }
 }
 

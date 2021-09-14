@@ -33,12 +33,12 @@ impl Metadata {
         Metadata(metadata)
     }
 
-    #[inline(always)]
+    #[inline]
     pub const fn discriminant(&self) -> Discriminant {
         Discriminant::from_bits_truncate(self.0)
     }
 
-    #[inline(always)]
+    #[inline]
     pub const fn data(&self) -> u8 {
         // return the underlying u8, sans any bits from the discriminant
         self.0 & !Discriminant::all().bits()

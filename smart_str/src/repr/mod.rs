@@ -17,7 +17,7 @@ pub union Repr {
 }
 
 impl Repr {
-    #[inline(always)]
+    #[inline]
     pub fn new<T: AsRef<str>>(text: T) -> Self {
         let text = text.as_ref();
 
@@ -30,7 +30,7 @@ impl Repr {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn as_str(&self) -> &str {
         self.cast().into_str()
     }
@@ -40,7 +40,7 @@ impl Repr {
         matches!(self.cast(), StrongRepr::Heap(..))
     }
 
-    #[inline(always)]
+    #[inline]
     fn discriminant(&self) -> Discriminant {
         debug_assert_eq!(unsafe { self.inline.metadata.discriminant() }, unsafe {
             self.heap.metadata.discriminant()
@@ -50,7 +50,7 @@ impl Repr {
         unsafe { self.inline.metadata.discriminant() }
     }
 
-    #[inline(always)]
+    #[inline]
     fn cast(&self) -> StrongRepr<'_> {
         match self.discriminant() {
             Discriminant::HEAP => {
@@ -97,7 +97,7 @@ enum StrongRepr<'a> {
 }
 
 impl<'a> StrongRepr<'a> {
-    #[inline(always)]
+    #[inline]
     pub fn into_str(self) -> &'a str {
         match self {
             Self::Inline(inline) => {

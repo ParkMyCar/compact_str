@@ -15,7 +15,7 @@ pub enum Discriminant {
 #[derive(Debug, Copy, Clone)]
 pub struct DiscriminantMask {
     val: u8,
-    padding: [u8; PADDING_SIZE],
+    _padding: [u8; PADDING_SIZE],
 }
 
 impl DiscriminantMask {

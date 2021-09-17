@@ -1,3 +1,5 @@
+#![deny(warnings)]
+
 //! `SmartStr` is a smart immutable string type that stores itself on the stack, if possible, and seamlessly
 //! interacts with `String`s and `&str`s.
 //!
@@ -175,3 +177,5 @@ impl fmt::Display for SmartStr {
         fmt::Display::fmt(self.as_str(), f)
     }
 }
+
+static_assertions::assert_eq_size!(SmartStr, String);

@@ -93,7 +93,7 @@ fn test_medium_unicode() {
         ("🦀😀😃😄😁🦀", true),
     ];
 
-    #[cfg(target_pointer_width = "32", allow(unused_variables))]
+    #[allow(unused_variables)]
     for (s, is_heap) in strs {
         let smart = SmartStr::new(s);
         assert_eq!(smart, s);

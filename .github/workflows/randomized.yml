@@ -9,7 +9,7 @@ jobs:
     name: Linux 64-bit
     runs-on: ubuntu-latest
     env:
-      PROPTEST_CASES: 200000
+      RANDOMIZED_RUNS: 1000000000
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
@@ -20,13 +20,13 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: test
-          args: randomized
+          args: --release randomized
 
   linux_32bit:
     name: Linux 32-bit
     runs-on: ubuntu-latest
     env:
-      PROPTEST_CASES: 200000
+      RANDOMIZED_RUNS: 1000000000
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
@@ -38,4 +38,4 @@ jobs:
         with:
           use-cross: true
           command: test
-          args: randomized --target i686-unknown-linux-gnu
+          args: --release randomized --target i686-unknown-linux-gnu

@@ -1,56 +1,107 @@
 use crate::SmartStr;
+use proptest::{prelude::*, strategy::Strategy};
 
-#[test]
-fn sanity_test() {
-    let small_str = SmartStr::new("hello world");
-    assert_eq!(small_str, "hello world");
-    // small_str is 11 characters, which should always be allocated on the stack
-    assert!(!small_str.is_heap_allocated());
+#[cfg(target_pointer_width = "64")]
+const MAX_INLINED_SIZE: usize = 24;
+#[cfg(target_pointer_width = "32")]
+const MAX_INLINED_SIZE: usize = 12;
 
-    let large_str = SmartStr::new("I am a cool str that is 42 characters long");
-    assert_eq!(large_str, "I am a cool str that is 42 characters long");
-    // large_str is 42 characters, which should always be allocated on the heap
-    assert!(large_str.is_heap_allocated());
+// generates random unicode strings, upto 80 chars long
+fn rand_unicode() -> impl Strategy<Value = String> {
+    proptest::collection::vec(proptest::char::any(), 0..80).prop_map(|v| v.into_iter().collect())
 }
 
-#[cfg(test)]
-mod randomized {
-    use crate::SmartStr;
-    use proptest::prelude::*;
-
-    #[cfg(target_pointer_width = "64")]
-    const INLINED_SIZE: usize = 24;
-    #[cfg(target_pointer_width = "32")]
-    const INLINED_SIZE: usize = 12;
-
-    proptest! {
-        #[test]
-        fn test_form_strings_correctly(word in "[.*]{0,1000}") {
-            let smartstr = SmartStr::new(&word);
-
-            // strings should be equal
-            prop_assert_eq!(&word, &smartstr);
-
-            // strings with length INLINED_SIZE bytes or less should not be heap allocatated
-            match word.len() {
-                0..=INLINED_SIZE => prop_assert!(!smartstr.is_heap_allocated()),
-                _ => prop_assert!(smartstr.is_heap_allocated()),
-            }
-        }
+proptest! {
+    #[test]
+    fn test_strings_roundtrip(word in rand_unicode()) {
+        let smartstr = SmartStr::new(&word);
+        prop_assert_eq!(&word, &smartstr);
     }
 
+
     #[test]
-    fn test_23char_regression() {
-        let word = "*...*.**..*..***.***...";
+    fn test_strings_allocated_properly(word in rand_unicode()) {
         let smartstr = SmartStr::new(&word);
 
-        assert_eq!(word, smartstr.as_str());
+        if smartstr.len() < MAX_INLINED_SIZE {
+            prop_assert!(!smartstr.is_heap_allocated())
+        } else if smartstr.len() == MAX_INLINED_SIZE && smartstr.as_bytes()[0] <= 127 {
+            prop_assert!(!smartstr.is_heap_allocated())
+        } else {
+            prop_assert!(smartstr.is_heap_allocated())
+        }
+    }
+}
+
+#[test]
+fn test_short_ascii() {
+    // always inlined on all archs
+    let strs = ["nyc", "statue", "liberty", "img_1234.png"];
+
+    for s in strs {
+        let smart = SmartStr::new(s);
+        assert_eq!(smart, s);
+        assert_eq!(smart.is_heap_allocated(), false);
+    }
+}
+
+#[test]
+fn test_short_unicode() {
+    let strs = [
+        ("🦀", false),
+        ("🌧☀️🌈", false),
+        #[cfg(target_pointer_width = "64")]
+        ("咬𓅈ꁈ:_", false),
+        // str is 12 bytes long, and leading character is non-ASCII, so it gets heap allocated
+        #[cfg(target_pointer_width = "32")]
+        ("咬𓅈ꁈ:_", true),
+    ];
+
+    for (s, is_heap) in strs {
+        let smart = SmartStr::new(s);
+        assert_eq!(smart, s);
+        assert_eq!(smart.is_heap_allocated(), is_heap);
+    }
+}
+
+#[test]
+fn test_medium_ascii() {
+    let strs = [
+        "rustconf 2021",
+        "new york city",
+        "nyc pizza is good",
+        "test the 24 char limit!!",
+    ];
+
+    for s in strs {
+        let smart = SmartStr::new(s);
+        assert_eq!(smart, s);
 
         #[cfg(target_pointer_width = "64")]
-        assert!(!smartstr.is_heap_allocated());
-
-        // on 32-bit archs we can only inline up to 24 bytes
+        let is_heap = false;
         #[cfg(target_pointer_width = "32")]
-        assert!(smartstr.is_heap_allocated());
+        let is_heap = true;
+        assert_eq!(smart.is_heap_allocated(), is_heap);
+    }
+}
+
+#[test]
+fn test_medium_unicode() {
+    let strs = [
+        ("☕️👀😁🎉", false),
+        // str is 24 bytes long, and leading character is non-ASCII, so it gets heap allocated
+        ("🦀😀😃😄😁🦀", true),
+    ];
+
+    for (s, is_heap) in strs {
+        let smart = SmartStr::new(s);
+        assert_eq!(smart, s);
+
+        #[cfg(target_pointer_width = "64")]
+        let is_heap = is_heap;
+        #[cfg(target_pointer_width = "32")]
+        let is_heap = true;
+
+        assert_eq!(smart.is_heap_allocated(), is_heap);
     }
 }

@@ -21,7 +21,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --release randomized
+          args: --release randomized -- --nocapture
 
   linux_32bit:
     name: Linux 32-bit
@@ -39,4 +39,4 @@ jobs:
         with:
           use-cross: true
           command: test
-          args: --release randomized --target i686-unknown-linux-gnu
+          args: --release randomized --target i686-unknown-linux-gnu -- --nocapture

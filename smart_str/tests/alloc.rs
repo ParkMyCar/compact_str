@@ -1,15 +1,14 @@
-use rand::{distributions::Alphanumeric, rngs::StdRng, Rng, SeedableRng};
+use rand::{distributions, rngs::StdRng, Rng, SeedableRng};
 use smart_str::SmartStr;
 use tracing_alloc::TracingAllocator;
 
 #[global_allocator]
 pub static ALLOCATOR: TracingAllocator = TracingAllocator::new();
 
-// Since here we only Alphanumeric strings, our max inline size will awlays be size_of::<String>
 #[cfg(target_pointer_width = "64")]
-const INLINED_SIZE: usize = 24;
+const MAX_INLINED_SIZE: usize = 24;
 #[cfg(target_pointer_width = "32")]
-const INLINED_SIZE: usize = 12;
+const MAX_INLINED_SIZE: usize = 12;
 
 #[test]
 fn test_randomized_allocations() {
@@ -18,13 +17,13 @@ fn test_randomized_allocations() {
     eprintln!("using seed: {}_u64", seed);
     let mut rng = StdRng::seed_from_u64(seed);
 
-    // generate a list of up to 10,000 words, with each word being up to 500 characters long
+    // generate a list of up to 10,000 words, with each word being up to 100 characters long
     let num_words = rng.gen_range(0..10_000);
     let words: Vec<String> = (0..num_words)
         .map(|_| {
-            let len = rng.gen_range(0..500);
+            let len = rng.gen_range(0..100);
             rng.clone()
-                .sample_iter(&Alphanumeric)
+                .sample_iter::<char, _>(&distributions::Standard)
                 .take(len)
                 .map(char::from)
                 .collect()
@@ -35,8 +34,10 @@ fn test_randomized_allocations() {
     let mut long_strs = 0;
 
     for w in words {
-        if w.len() > INLINED_SIZE {
-            long_strs += 1;
+        if w.len() > MAX_INLINED_SIZE {
+            long_strs += 1
+        } else if w.len() == MAX_INLINED_SIZE && !w.chars().next().unwrap().is_ascii() {
+            long_strs += 1
         }
 
         ALLOCATOR.enable_tracing();

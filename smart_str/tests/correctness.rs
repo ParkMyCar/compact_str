@@ -15,22 +15,19 @@ fn test_randomized_roundtrip() {
 
     let runs = option_env!("RANDOMIZED_RUNS")
         .map(|v| v.parse().expect("provided non-integer value?"))
-        .unwrap_or(20_000);
+        .unwrap_or(50_000);
     println!("Running with RANDOMIZED_RUNS: {}", runs);
 
-    // generate a list of word with each word being up to 60 characters long
-    let words: Vec<String> = (0..runs)
-        .map(|_| {
-            let len = rng.gen_range(0..60);
-            rng.clone()
-                .sample_iter::<char, _>(&distributions::Standard)
-                .take(len)
-                .map(char::from)
-                .collect()
-        })
-        .collect();
+    // generate random words up to 60 characters long
+    for _ in 0..runs {
+        let len = rng.gen_range(0..60);
+        let word: String = rng
+            .clone()
+            .sample_iter::<char, _>(&distributions::Standard)
+            .take(len)
+            .map(char::from)
+            .collect();
 
-    for word in words {
         let smart = SmartStr::new(&word);
 
         // assert the word roundtrips

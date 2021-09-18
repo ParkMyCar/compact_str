@@ -1,10 +1,13 @@
 use static_assertions::assert_eq_size;
 use std::{mem, sync::Arc};
 
-use super::MAX_SIZE;
+use super::{
+    HEAP_MASK,
+    MAX_SIZE,
+};
 
 const PADDING_SIZE: usize = MAX_SIZE - mem::size_of::<Arc<str>>();
-const PADDING: [u8; PADDING_SIZE] = [0b11111111; PADDING_SIZE];
+const PADDING: [u8; PADDING_SIZE] = [HEAP_MASK; PADDING_SIZE];
 
 #[repr(C)]
 #[derive(Debug, Clone)]

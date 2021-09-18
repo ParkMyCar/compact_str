@@ -13,9 +13,11 @@ fn bench_string_creation(c: &mut Criterion) {
         .collect();
 
     for word in words {
-        group.bench_with_input(BenchmarkId::new("SmartStr", word.len()), &word, |b, word| {
-            b.iter(|| SmartStr::new(word))
-        });
+        group.bench_with_input(
+            BenchmarkId::new("SmartStr", word.len()),
+            &word,
+            |b, word| b.iter(|| SmartStr::new(word)),
+        );
         group.bench_with_input(BenchmarkId::new("SmolStr", word.len()), &word, |b, word| {
             b.iter(|| SmolStr::new(word))
         });

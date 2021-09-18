@@ -1,8 +1,4 @@
-use super::{
-    HEAP_MASK,
-    LEADING_BIT_MASK,
-    MAX_SIZE,
-};
+use super::{HEAP_MASK, LEADING_BIT_MASK, MAX_SIZE};
 
 const PADDING_SIZE: usize = MAX_SIZE - std::mem::size_of::<Discriminant>();
 

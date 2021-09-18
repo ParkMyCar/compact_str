@@ -1,7 +1,4 @@
-use super::{
-    LEADING_BIT_MASK,
-    MAX_SIZE,
-};
+use super::{LEADING_BIT_MASK, MAX_SIZE};
 
 pub const MAX_INLINE_SIZE: usize = MAX_SIZE - core::mem::size_of::<Metadata>();
 

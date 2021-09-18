@@ -13,6 +13,10 @@ use packed::PackedString;
 
 const MAX_SIZE: usize = std::mem::size_of::<String>();
 
+// Used as a discriminant to identify different variants
+pub const HEAP_MASK: u8 = 0b11111111;
+pub const LEADING_BIT_MASK: u8 = 0b10000000;
+
 pub union Repr {
     mask: DiscriminantMask,
     heap: ManuallyDrop<HeapString>,
@@ -107,17 +111,8 @@ impl<'a> StrongRepr<'a> {
     #[inline]
     pub fn into_str(self) -> &'a str {
         match self {
-            Self::Inline(inline) => {
-                let len = inline.metadata.data() as usize;
-                let slice = &inline.buffer[..len];
-
-                // SAFETY: You can only construct an InlineString via a &str
-                unsafe { ::std::str::from_utf8_unchecked(slice) }
-            }
-            Self::Packed(packed) => {
-                // SAFETY: You can only construct a PackedString via a &str
-                unsafe { ::std::str::from_utf8_unchecked(&packed.buffer) }
-            }
+            Self::Inline(inline) => inline.as_str(),
+            Self::Packed(packed) => packed.as_str(),
             Self::Heap(heap) => &*heap.string,
         }
     }
@@ -127,7 +122,6 @@ assert_eq_size!(Repr, String);
 
 #[cfg(target_pointer_width = "64")]
 const_assert_eq!(std::mem::size_of::<Repr>(), 24);
-
 #[cfg(target_pointer_width = "32")]
 const_assert_eq!(std::mem::size_of::<Repr>(), 12);
 

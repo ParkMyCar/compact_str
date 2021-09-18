@@ -1,32 +1,11 @@
-use super::discriminant::LEADING_BIT_MASK;
-use super::MAX_SIZE;
+use super::{
+    LEADING_BIT_MASK,
+    MAX_SIZE,
+};
 
 pub const MAX_INLINE_SIZE: usize = MAX_SIZE - core::mem::size_of::<Metadata>();
 
-#[derive(Debug, Copy, Clone)]
-pub struct Metadata(u8);
-
-impl Metadata {
-    pub fn new(data: u8) -> Self {
-        // assert no bits from `data` will overlap with the Discriminant
-        debug_assert_eq!(data & LEADING_BIT_MASK, 0);
-
-        let mut metadata = data;
-
-        // clear all the bits used by the Discriminant
-        metadata &= !LEADING_BIT_MASK;
-        // set the disciminant
-        metadata |= LEADING_BIT_MASK;
-
-        Metadata(metadata)
-    }
-
-    #[inline]
-    pub const fn data(&self) -> u8 {
-        // return the underlying u8, sans any bits from the discriminant
-        self.0 & !LEADING_BIT_MASK
-    }
-}
+type Metadata = u8;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -36,15 +15,31 @@ pub struct InlineString {
 }
 
 impl InlineString {
+    #[inline]
     pub fn new(text: &str) -> Self {
         debug_assert!(text.len() <= MAX_INLINE_SIZE);
 
-        let metadata = Metadata::new(text.len() as u8);
+        let len = text.len();
+        let metadata = (len as u8) | LEADING_BIT_MASK;
         let mut buffer = [0u8; MAX_INLINE_SIZE];
 
-        buffer[..text.len()].copy_from_slice(text.as_bytes());
+        buffer[..len].copy_from_slice(text.as_bytes());
 
         InlineString { metadata, buffer }
+    }
+
+    #[inline]
+    pub const fn len(&self) -> usize {
+        (self.metadata & !LEADING_BIT_MASK) as usize
+    }
+
+    #[inline]
+    pub fn as_str(&self) -> &str {
+        let len = self.len();
+        let slice = &self.buffer[..len];
+
+        // SAFETY: You can only construct an InlineString via a &str
+        unsafe { ::std::str::from_utf8_unchecked(slice) }
     }
 }
 

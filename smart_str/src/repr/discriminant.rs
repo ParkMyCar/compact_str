@@ -1,9 +1,10 @@
-use super::MAX_SIZE;
+use super::{
+    HEAP_MASK,
+    LEADING_BIT_MASK,
+    MAX_SIZE,
+};
 
 const PADDING_SIZE: usize = MAX_SIZE - std::mem::size_of::<Discriminant>();
-
-const HEAP_MASK: u8 = 0b11111111;
-pub const LEADING_BIT_MASK: u8 = 0b10000000;
 
 #[derive(Debug, Copy, Clone)]
 pub enum Discriminant {

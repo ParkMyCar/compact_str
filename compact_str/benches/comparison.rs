@@ -1,0 +1,77 @@
+use compact_str::CompactStr;
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
+use smartstring::alias::String as SmartString;
+use smol_str::SmolStr;
+
+fn creation(c: &mut Criterion) {
+    let mut group = c.benchmark_group("String Creation");
+
+    // generate a list of 30 strings, with each string being length i and composed of all 'a's
+    let words: Vec<String> = (0..30)
+        .into_iter()
+        .map(|len| (0..len).into_iter().map(|_| 'a').collect())
+        .collect();
+
+    for word in words {
+        group.bench_with_input(
+            BenchmarkId::new("CompactStr", word.len()),
+            &word,
+            |b, word| b.iter(|| CompactStr::new(word)),
+        );
+        group.bench_with_input(BenchmarkId::new("SmolStr", word.len()), &word, |b, word| {
+            b.iter(|| SmolStr::new(word))
+        });
+        group.bench_with_input(
+            BenchmarkId::new("SmartString", word.len()),
+            &word,
+            |b, word| b.iter(|| SmartString::from(word)),
+        );
+        group.bench_with_input(
+            BenchmarkId::new("std::String", word.len()),
+            &word,
+            |b, word| b.iter(|| String::from(word)),
+        );
+    }
+}
+criterion_group!(string_creation, creation);
+
+fn cloning(c: &mut Criterion) {
+    let mut group = c.benchmark_group("String Cloning");
+
+    // generate a list of 30 strings, with each string being length i and composed of all 'a's
+    let words: Vec<String> = (0..30)
+        .into_iter()
+        .map(|len| (0..len).into_iter().map(|_| 'a').collect())
+        .collect();
+
+    for word in words {
+        let compact = CompactStr::new(&word);
+        group.bench_with_input(
+            BenchmarkId::new("CompactStr", compact.len()),
+            &compact,
+            |b, compact| b.iter(|| compact.clone()),
+        );
+
+        let smol = SmolStr::new(&word);
+        group.bench_with_input(BenchmarkId::new("SmolStr", smol.len()), &smol, |b, smol| {
+            b.iter(|| smol.clone())
+        });
+
+        let smart = SmartString::from(&word);
+        group.bench_with_input(
+            BenchmarkId::new("SmartString", smart.len()),
+            &smart,
+            |b, smart| b.iter(|| smart.clone()),
+        );
+
+        let string = String::from(&word);
+        group.bench_with_input(
+            BenchmarkId::new("std::String", string.len()),
+            &string,
+            |b, string| b.iter(|| String::from(string)),
+        );
+    }
+}
+criterion_group!(string_cloning, cloning);
+
+criterion_main!(string_creation, string_cloning);

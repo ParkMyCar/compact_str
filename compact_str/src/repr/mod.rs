@@ -12,6 +12,9 @@ use inline::InlineString;
 use packed::PackedString;
 
 const MAX_SIZE: usize = std::mem::size_of::<String>();
+const EMPTY: Repr = Repr {
+    inline: InlineString::new_const(""),
+};
 
 // Used as a discriminant to identify different variants
 pub const HEAP_MASK: u8 = 0b11111111;
@@ -30,7 +33,9 @@ impl Repr {
         let text = text.as_ref();
         let len = text.len();
 
-        if len <= inline::MAX_INLINE_SIZE {
+        if len == 0 {
+            EMPTY
+        } else if len <= inline::MAX_INLINE_SIZE {
             let inline = InlineString::new(text);
             Repr { inline }
         } else if len == MAX_SIZE && text.as_bytes()[0] <= 127 {
@@ -39,6 +44,24 @@ impl Repr {
         } else {
             let heap = ManuallyDrop::new(HeapString::new(text));
             Repr { heap }
+        }
+    }
+
+    pub const fn new_const(text: &str) -> Self {
+        let len = text.len();
+
+        if len <= inline::MAX_INLINE_SIZE {
+            let inline = InlineString::new_const(text);
+            Repr { inline }
+        } else if len == MAX_SIZE && text.as_bytes()[0] <= 127 {
+            let packed = PackedString::new_const(text);
+            Repr { packed }
+        } else {
+            // HACK: This allows us to make assertions within a `const fn` without requiring nightly,
+            // see unstable `const_panic` feature. This results in a build failure, not a runtime panic
+            #[allow(unconditional_panic)]
+            ["Trying to create a non-inline-able string at compile time!"][42];
+            EMPTY
         }
     }
 

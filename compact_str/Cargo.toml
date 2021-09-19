@@ -20,5 +20,9 @@ smol_str = "0.1"
 tracing_alloc = { path = "../tracing_alloc" }
 
 [[bench]]
-name = "perf"
+name = "compact_str"
+harness = false
+
+[[bench]]
+name = "comparison"
 harness = false

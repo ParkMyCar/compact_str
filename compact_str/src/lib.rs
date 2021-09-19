@@ -80,6 +80,13 @@ impl CompactStr {
     }
 
     #[inline]
+    pub const fn new_inline(text: &str) -> Self {
+        CompactStr {
+            repr: Repr::new_const(text),
+        }
+    }
+
+    #[inline]
     pub fn as_str(&self) -> &str {
         self.repr.as_str()
     }

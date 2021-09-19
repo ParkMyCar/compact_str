@@ -34,6 +34,25 @@ proptest! {
 }
 
 #[test]
+fn test_const_creation() {
+    const EMPTY: CompactStr = CompactStr::new_inline("");
+    const SHORT: CompactStr = CompactStr::new_inline("rust");
+
+    #[cfg(target_pointer_width = "64")]
+    const PACKED: CompactStr = CompactStr::new_inline("i am 24 characters long!");
+    #[cfg(target_pointer_width = "32")]
+    const PACKED: CompactStr = CompactStr::new_inline("i am 12 char");
+
+    assert_eq!(EMPTY, CompactStr::new(""));
+    assert_eq!(SHORT, CompactStr::new("rust"));
+
+    #[cfg(target_pointer_width = "64")]
+    assert_eq!(PACKED, CompactStr::new("i am 24 characters long!"));
+    #[cfg(target_pointer_width = "32")]
+    assert_eq!(PACKED, CompactStr::new("i am 12 char"));
+}
+
+#[test]
 fn test_short_ascii() {
     // always inlined on all archs
     let strs = ["nyc", "statue", "liberty", "img_1234.png"];

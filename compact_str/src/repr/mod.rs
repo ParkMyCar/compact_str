@@ -1,4 +1,7 @@
-use static_assertions::*;
+use static_assertions::{
+    assert_eq_size,
+    const_assert_eq,
+};
 use std::mem::ManuallyDrop;
 
 mod discriminant;
@@ -47,6 +50,7 @@ impl Repr {
         }
     }
 
+    #[inline]
     pub const fn new_const(text: &str) -> Self {
         let len = text.len();
 

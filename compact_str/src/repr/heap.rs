@@ -1,4 +1,3 @@
-use static_assertions::assert_eq_size;
 use std::{mem, sync::Arc};
 
 use super::{HEAP_MASK, MAX_SIZE};
@@ -22,4 +21,4 @@ impl HeapString {
     }
 }
 
-assert_eq_size!(HeapString, String);
+static_assertions::assert_eq_size!(HeapString, String);

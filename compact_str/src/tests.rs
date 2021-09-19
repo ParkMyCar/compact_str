@@ -1,4 +1,4 @@
-use crate::SmartStr;
+use crate::CompactStr;
 use proptest::{prelude::*, strategy::Strategy};
 
 #[cfg(target_pointer_width = "64")]
@@ -14,21 +14,21 @@ fn rand_unicode() -> impl Strategy<Value = String> {
 proptest! {
     #[test]
     fn test_strings_roundtrip(word in rand_unicode()) {
-        let smartstr = SmartStr::new(&word);
-        prop_assert_eq!(&word, &smartstr);
+        let compact = CompactStr::new(&word);
+        prop_assert_eq!(&word, &compact);
     }
 
 
     #[test]
     fn test_strings_allocated_properly(word in rand_unicode()) {
-        let smartstr = SmartStr::new(&word);
+        let compact = CompactStr::new(&word);
 
-        if smartstr.len() < MAX_INLINED_SIZE {
-            prop_assert!(!smartstr.is_heap_allocated())
-        } else if smartstr.len() == MAX_INLINED_SIZE && smartstr.as_bytes()[0] <= 127 {
-            prop_assert!(!smartstr.is_heap_allocated())
+        if compact.len() < MAX_INLINED_SIZE {
+            prop_assert!(!compact.is_heap_allocated())
+        } else if compact.len() == MAX_INLINED_SIZE && compact.as_bytes()[0] <= 127 {
+            prop_assert!(!compact.is_heap_allocated())
         } else {
-            prop_assert!(smartstr.is_heap_allocated())
+            prop_assert!(compact.is_heap_allocated())
         }
     }
 }
@@ -39,9 +39,9 @@ fn test_short_ascii() {
     let strs = ["nyc", "statue", "liberty", "img_1234.png"];
 
     for s in strs {
-        let smart = SmartStr::new(s);
-        assert_eq!(smart, s);
-        assert_eq!(smart.is_heap_allocated(), false);
+        let compact = CompactStr::new(s);
+        assert_eq!(compact, s);
+        assert_eq!(compact.is_heap_allocated(), false);
     }
 }
 
@@ -58,9 +58,9 @@ fn test_short_unicode() {
     ];
 
     for (s, is_heap) in strs {
-        let smart = SmartStr::new(s);
-        assert_eq!(smart, s);
-        assert_eq!(smart.is_heap_allocated(), is_heap);
+        let compact = CompactStr::new(s);
+        assert_eq!(compact, s);
+        assert_eq!(compact.is_heap_allocated(), is_heap);
     }
 }
 
@@ -74,14 +74,14 @@ fn test_medium_ascii() {
     ];
 
     for s in strs {
-        let smart = SmartStr::new(s);
-        assert_eq!(smart, s);
+        let compact = CompactStr::new(s);
+        assert_eq!(compact, s);
 
         #[cfg(target_pointer_width = "64")]
         let is_heap = false;
         #[cfg(target_pointer_width = "32")]
         let is_heap = true;
-        assert_eq!(smart.is_heap_allocated(), is_heap);
+        assert_eq!(compact.is_heap_allocated(), is_heap);
     }
 }
 
@@ -95,14 +95,14 @@ fn test_medium_unicode() {
 
     #[allow(unused_variables)]
     for (s, is_heap) in strs {
-        let smart = SmartStr::new(s);
-        assert_eq!(smart, s);
+        let compact = CompactStr::new(s);
+        assert_eq!(compact, s);
 
         #[cfg(target_pointer_width = "64")]
         let is_heap = is_heap;
         #[cfg(target_pointer_width = "32")]
         let is_heap = true;
 
-        assert_eq!(smart.is_heap_allocated(), is_heap);
+        assert_eq!(compact.is_heap_allocated(), is_heap);
     }
 }

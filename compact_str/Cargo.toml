@@ -1,5 +1,5 @@
 [package]
-name = "smart_str"
+name = "compact_str"
 version = "0.1.0"
 edition = "2018"
 

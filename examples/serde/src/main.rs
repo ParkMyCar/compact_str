@@ -1,18 +1,18 @@
 use serde::Deserialize;
-use smart_str::SmartStr;
+use compact_str::CompactStr;
 
 #[derive(Debug, Deserialize)]
 struct Person {
-    name: SmartStr,
+    name: CompactStr,
     age: u8,
     address: Address,
-    phones: Vec<SmartStr>,
+    phones: Vec<CompactStr>,
 }
 
 #[derive(Debug, Deserialize)]
 struct Address {
-    street: SmartStr,
-    city: SmartStr,
+    street: CompactStr,
+    city: CompactStr,
 }
 
 fn main() {

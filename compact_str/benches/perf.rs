@@ -1,5 +1,5 @@
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
-use smart_str::SmartStr;
+use compact_str::CompactStr;
 use smartstring::alias::String as SmartString;
 use smol_str::SmolStr;
 
@@ -14,9 +14,9 @@ fn bench_string_creation(c: &mut Criterion) {
 
     for word in words {
         group.bench_with_input(
-            BenchmarkId::new("SmartStr", word.len()),
+            BenchmarkId::new("CompactStr", word.len()),
             &word,
-            |b, word| b.iter(|| SmartStr::new(word)),
+            |b, word| b.iter(|| CompactStr::new(word)),
         );
         group.bench_with_input(BenchmarkId::new("SmolStr", word.len()), &word, |b, word| {
             b.iter(|| SmolStr::new(word))
@@ -37,11 +37,11 @@ criterion_group!(creation, bench_string_creation);
 
 fn smart_str_inline(c: &mut Criterion) {
     let word = "im sixteen chars";
-    c.bench_function("SmartStr_bench inline", |b| b.iter(|| SmartStr::new(word)));
+    c.bench_function("CompactStr_bench inline", |b| b.iter(|| CompactStr::new(word)));
 }
 fn smart_str_packed(c: &mut Criterion) {
     let word = "i am twenty four chars!!";
-    c.bench_function("SmartStr_bench packed", |b| b.iter(|| SmartStr::new(word)));
+    c.bench_function("CompactStr_bench packed", |b| b.iter(|| CompactStr::new(word)));
 }
 criterion_group!(smart_str, smart_str_inline, smart_str_packed);
 

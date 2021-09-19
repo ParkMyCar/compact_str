@@ -1,5 +1,5 @@
 use rand::{distributions, rngs::StdRng, Rng, SeedableRng};
-use smart_str::SmartStr;
+use compact_str::CompactStr;
 use tracing_alloc::TracingAllocator;
 
 #[global_allocator]
@@ -42,7 +42,7 @@ fn test_randomized_allocations() {
 
         ALLOCATOR.enable_tracing();
         {
-            SmartStr::new(&w);
+            CompactStr::new(&w);
         }
         ALLOCATOR.disable_tracing();
     }

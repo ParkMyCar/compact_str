@@ -1,5 +1,5 @@
 use rand::{distributions, rngs::StdRng, Rng, SeedableRng};
-use smart_str::SmartStr;
+use compact_str::CompactStr;
 
 #[cfg(target_pointer_width = "64")]
 const MAX_INLINED_SIZE: usize = 24;
@@ -28,18 +28,18 @@ fn test_randomized_roundtrip() {
             .map(char::from)
             .collect();
 
-        let smart = SmartStr::new(&word);
+        let compact = CompactStr::new(&word);
 
         // assert the word roundtrips
-        assert_eq!(smart, word);
+        assert_eq!(compact, word);
 
         // assert it's properly allocated
-        if smart.len() < MAX_INLINED_SIZE {
-            assert!(!smart.is_heap_allocated())
-        } else if smart.len() == MAX_INLINED_SIZE && smart.as_bytes()[0] <= 127 {
-            assert!(!smart.is_heap_allocated())
+        if compact.len() < MAX_INLINED_SIZE {
+            assert!(!compact.is_heap_allocated())
+        } else if compact.len() == MAX_INLINED_SIZE && compact.as_bytes()[0] <= 127 {
+            assert!(!compact.is_heap_allocated())
         } else {
-            assert!(smart.is_heap_allocated())
+            assert!(compact.is_heap_allocated())
         }
     }
 }

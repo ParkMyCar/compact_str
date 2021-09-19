@@ -23,12 +23,14 @@ impl PackedString {
         if text.len() != MAX_SIZE {
             // HACK: This allows us to make assertions within a `const fn` without requiring nightly,
             // see unstable `const_panic` feature. This results in a build failure, not a runtime panic
+            #[allow(clippy::no_effect)]
             #[allow(unconditional_panic)]
             ["Provided string has a length greater than MAX_SIZE!"][42];
         }
         if text.as_bytes()[0] > 127 {
             // HACK: This allows us to make assertions within a `const fn` without requiring nightly,
             // see unstable `const_panic` feature. This results in a build failure, not a runtime panic
+            #[allow(clippy::no_effect)]
             #[allow(unconditional_panic)]
             ["leading character of packed string isn't ASCII!"][42];
         }

@@ -39,6 +39,7 @@ impl InlineString {
         if text.len() > MAX_INLINE_SIZE {
             // HACK: This allows us to make assertions within a `const fn` without requiring nightly,
             // see unstable `const_panic` feature. This results in a build failure, not a runtime panic
+            #[allow(clippy::no_effect)]
             #[allow(unconditional_panic)]
             ["Provided string has a length greater than MAX_INLINE_SIZE!"][42];
         }

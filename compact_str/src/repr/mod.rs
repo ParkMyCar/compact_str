@@ -60,6 +60,7 @@ impl Repr {
         } else {
             // HACK: This allows us to make assertions within a `const fn` without requiring nightly,
             // see unstable `const_panic` feature. This results in a build failure, not a runtime panic
+            #[allow(clippy::no_effect)]
             #[allow(unconditional_panic)]
             ["Trying to create a non-inline-able string at compile time!"][42];
             EMPTY

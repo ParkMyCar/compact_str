@@ -1,5 +1,5 @@
-use rand::{distributions, rngs::StdRng, Rng, SeedableRng};
 use compact_str::CompactStr;
+use rand::{distributions, rngs::StdRng, Rng, SeedableRng};
 use tracing_alloc::TracingAllocator;
 
 #[global_allocator]

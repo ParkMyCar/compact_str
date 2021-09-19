@@ -1,5 +1,5 @@
-use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use compact_str::CompactStr;
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use smartstring::alias::String as SmartString;
 use smol_str::SmolStr;
 
@@ -37,11 +37,15 @@ criterion_group!(creation, bench_string_creation);
 
 fn smart_str_inline(c: &mut Criterion) {
     let word = "im sixteen chars";
-    c.bench_function("CompactStr_bench inline", |b| b.iter(|| CompactStr::new(word)));
+    c.bench_function("CompactStr_bench inline", |b| {
+        b.iter(|| CompactStr::new(word))
+    });
 }
 fn smart_str_packed(c: &mut Criterion) {
     let word = "i am twenty four chars!!";
-    c.bench_function("CompactStr_bench packed", |b| b.iter(|| CompactStr::new(word)));
+    c.bench_function("CompactStr_bench packed", |b| {
+        b.iter(|| CompactStr::new(word))
+    });
 }
 criterion_group!(smart_str, smart_str_inline, smart_str_packed);
 

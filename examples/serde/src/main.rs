@@ -1,5 +1,5 @@
-use serde::Deserialize;
 use compact_str::CompactStr;
+use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 struct Person {

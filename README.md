@@ -25,10 +25,8 @@ A `CompactStr` specifically has the following properties:
   * `Clone` is `O(1)`
 
 ### Features
-Currently `compact_str` only has one feature you can enable, `serde`, which implements [`Deserialize`](https://docs.rs/serde/latest/serde/trait.Deserialize.html) and [`Serialize`](https://docs.rs/serde/latest/serde/trait.Serialize.html) from the popular [`serde`](https://docs.rs/serde/latest/serde/) crate.
-
-
-
+`compact_str` has the following features:
+1. `serde`, which implements [`Deserialize`](https://docs.rs/serde/latest/serde/trait.Deserialize.html) and [`Serialize`](https://docs.rs/serde/latest/serde/trait.Serialize.html) from the popular [`serde`](https://docs.rs/serde/latest/serde/) crate, for `CompactStr`.
 
 ### How it works
 Note: this explanation assumes a 64-bit architecture, for 32-bit architectures generally divide any number by 2.
@@ -90,3 +88,11 @@ Strings and unicode can be quite messy, even further, we're working with things 
 for sanity checks and randomized testing for correctness; then automatically runs these tests on 64-bit, 32-bit, big endian, and little endian architectures. 
 Further, every 12 hours 1 billion unicode strings are generated and ensured to roundtrip through `CompactStr`, and we assert their location on either the stack or
 the heap.
+
+### Similar Crates
+Storing strings on the stack is not a new idea, in fact there are a few other crates in the Rust ecosystem that do similar things, an incomplete list:
+1. [`smol_str`](https://crates.io/crates/smol_str)
+2. [`smartstring`](https://crates.io/crates/smartstring)
+
+<br />
+Thanks for readingme!

@@ -101,8 +101,8 @@ the heap.
 
 ### Similar Crates
 Storing strings on the stack is not a new idea, in fact there are a few other crates in the Rust ecosystem that do similar things, an incomplete list:
-1. [`smol_str`](https://crates.io/crates/smol_str)
-2. [`smartstring`](https://crates.io/crates/smartstring)
+1. [`smol_str`](https://crates.io/crates/smol_str) - Can inline 22 bytes, `Clone` is `O(1)`, doesn't adjust for 32-bit archs
+2. [`smartstring`](https://crates.io/crates/smartstring) - Can inline 23 bytes, `Clone` is `O(n)`, is mutable, relies on the memory layout of `String`
 
 <br />
 Thanks for readingme!

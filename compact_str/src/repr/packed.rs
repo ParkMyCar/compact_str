@@ -3,7 +3,7 @@ use super::MAX_SIZE;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct PackedString {
-    pub buffer: [u8; MAX_SIZE],
+    buffer: [u8; MAX_SIZE],
 }
 
 impl PackedString {

@@ -7,8 +7,8 @@ type Metadata = u8;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct InlineString {
-    pub metadata: Metadata,
-    pub buffer: [u8; MAX_INLINE_SIZE],
+    metadata: Metadata,
+    buffer: [u8; MAX_INLINE_SIZE],
 }
 
 impl InlineString {

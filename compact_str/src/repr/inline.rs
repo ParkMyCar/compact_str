@@ -7,8 +7,8 @@ type Metadata = u8;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct InlineString {
-    pub metadata: Metadata,
-    pub buffer: [u8; MAX_INLINE_SIZE],
+    metadata: Metadata,
+    buffer: [u8; MAX_INLINE_SIZE],
 }
 
 impl InlineString {
@@ -66,10 +66,13 @@ impl InlineString {
     #[inline]
     pub fn as_str(&self) -> &str {
         let len = self.len();
-        let slice = &self.buffer[..len];
 
-        // SAFETY: You can only construct an InlineString via a &str
-        unsafe { ::std::str::from_utf8_unchecked(slice) }
+        // SAFETY: Constructors guarantee that `buffer[..len]` is a `str`,
+        // and we don't mutate the data afterwards.
+        unsafe {
+            let slice = self.buffer.get_unchecked(..len);
+            ::std::str::from_utf8_unchecked(slice)
+        }
     }
 }
 

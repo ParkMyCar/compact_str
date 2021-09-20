@@ -7,7 +7,7 @@ edition = "2018"
 license = "MIT"
 homepage = "https://github.com/ParkMyCar/compact_str"
 repository = "https://github.com/ParkMyCar/compact_str"
-readme = "README.md"
+readme = "../README.md"
 keywords = ["string", "compact", "memory", "efficient", "immutable"]
 categories = ["encoding", "parsing", "memory-management", "text-processing"]
 

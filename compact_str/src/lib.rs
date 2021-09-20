@@ -1,5 +1,3 @@
-#![deny(warnings)]
-
 //! `CompactStr` is a compact immutable string type that stores itself on the stack, if possible, and seamlessly
 //! interacts with `String`s and `&str`s.
 //!

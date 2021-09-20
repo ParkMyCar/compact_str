@@ -1,3 +1,6 @@
+// the fields in `Person` and `Address` are unread, hence the dead code warnings
+#![allow(dead_code)]
+
 use compact_str::CompactStr;
 use serde::Deserialize;
 

@@ -2,8 +2,18 @@
   <h1><code>compact_str</code></h1>
   <p><strong>A memory efficient immutable string type that can store up to 24* bytes on the stack.</strong></p>
   
-  <img alt="Continuous Integration Status" src="https://github.com/ParkMyCar/compact_str/actions/workflows/ci.yml/badge.svg?event=push"/>
-  <img alt="Cross Platform Status" src="https://github.com/ParkMyCar/compact_str/actions/workflows/cross_platform.yml/badge.svg?event=push"/>
+  <a href="https://github.com/ParkMyCar/compact_str/actions/workflows/ci.yml">
+    <img alt="Continuous Integration Status" src="https://github.com/ParkMyCar/compact_str/actions/workflows/ci.yml/badge.svg?event=push"/>
+  </a>
+  <a href="https://github.com/ParkMyCar/compact_str/actions/workflows/cross_platform.yml">
+    <img alt="Cross Platform Status" src="https://github.com/ParkMyCar/compact_str/actions/workflows/cross_platform.yml/badge.svg?event=push"/>
+  </a>
+  <a href="https://crates.io/crates/compact_str">
+    <img alt="version on crates.io" src="https://img.shields.io/crates/v/compact_str"/>
+  </a>
+  <a href="LICENSE">
+    <img alt="mit license" src="https://img.shields.io/crates/l/compact_str"/>
+  </a>
   
   <p  align=right><sub>* 12 bytes for 32-bit architectures</sub></p>
 </div>

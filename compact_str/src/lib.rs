@@ -98,6 +98,7 @@ impl CompactStr {
 }
 
 impl Default for CompactStr {
+    #[inline]
     fn default() -> Self {
         CompactStr::new("")
     }
@@ -106,18 +107,21 @@ impl Default for CompactStr {
 impl Deref for CompactStr {
     type Target = str;
 
+    #[inline]
     fn deref(&self) -> &str {
         self.as_str()
     }
 }
 
 impl AsRef<str> for CompactStr {
+    #[inline]
     fn as_ref(&self) -> &str {
         self.as_str()
     }
 }
 
 impl Borrow<str> for CompactStr {
+    #[inline]
     fn borrow(&self) -> &str {
         self.as_str()
     }

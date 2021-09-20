@@ -2,7 +2,7 @@ use super::CompactStr;
 use serde::de::{Deserializer, Error, Unexpected, Visitor};
 use std::fmt;
 
-fn smart_str<'de: 'a, 'a, D: Deserializer<'de>>(deserializer: D) -> Result<CompactStr, D::Error> {
+fn compact_str<'de: 'a, 'a, D: Deserializer<'de>>(deserializer: D) -> Result<CompactStr, D::Error> {
     struct CompactStrVisitor;
 
     impl<'a> Visitor<'a> for CompactStrVisitor {
@@ -60,6 +60,6 @@ impl serde::Serialize for CompactStr {
 
 impl<'de> serde::Deserialize<'de> for CompactStr {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        smart_str(deserializer)
+        compact_str(deserializer)
     }
 }

@@ -9,6 +9,7 @@ pub enum Discriminant {
     Packed,
 }
 
+#[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct DiscriminantMask {
     val: u8,

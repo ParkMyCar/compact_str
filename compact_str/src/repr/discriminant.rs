@@ -17,7 +17,7 @@ pub struct DiscriminantMask {
 
 impl DiscriminantMask {
     #[inline]
-    pub const fn disciminant(&self) -> Discriminant {
+    pub const fn discriminant(&self) -> Discriminant {
         if self.val == HEAP_MASK {
             Discriminant::Heap
         } else if self.val & LEADING_BIT_MASK == LEADING_BIT_MASK {

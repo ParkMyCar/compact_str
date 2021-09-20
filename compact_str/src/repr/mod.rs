@@ -80,7 +80,7 @@ impl Repr {
     #[inline]
     fn discriminant(&self) -> Discriminant {
         // SAFETY: `heap`, `inline`, and `packed` all store a discriminant in their first byte
-        unsafe { self.mask.disciminant() }
+        unsafe { self.mask.discriminant() }
     }
 
     #[inline]

@@ -68,10 +68,49 @@ fn cloning(c: &mut Criterion) {
         group.bench_with_input(
             BenchmarkId::new("std::String", string.len()),
             &string,
-            |b, string| b.iter(|| String::from(string)),
+            |b, string| b.iter(|| string.clone()),
         );
     }
 }
 criterion_group!(string_cloning, cloning);
 
-criterion_main!(string_creation, string_cloning);
+fn access(c: &mut Criterion) {
+    let mut group = c.benchmark_group("String Access");
+
+    // generate a list of 30 strings, with each string being length i and composed of all 'a's
+    let words: Vec<String> = (0..30)
+        .into_iter()
+        .map(|len| (0..len).into_iter().map(|_| 'a').collect())
+        .collect();
+
+    for word in words {
+        let compact = CompactStr::new(&word);
+        group.bench_with_input(
+            BenchmarkId::new("CompactStr", compact.len()),
+            &compact,
+            |b, compact| b.iter(|| compact.as_str()),
+        );
+
+        let smol = SmolStr::new(&word);
+        group.bench_with_input(BenchmarkId::new("SmolStr", smol.len()), &smol, |b, smol| {
+            b.iter(|| smol.as_str())
+        });
+
+        let smart = SmartString::from(&word);
+        group.bench_with_input(
+            BenchmarkId::new("SmartString", smart.len()),
+            &smart,
+            |b, smart| b.iter(|| smart.as_str()),
+        );
+
+        let string = String::from(&word);
+        group.bench_with_input(
+            BenchmarkId::new("std::String", string.len()),
+            &string,
+            |b, string| b.iter(|| string.as_str()),
+        );
+    }
+}
+criterion_group!(string_access, access);
+
+criterion_main!(string_creation, string_cloning, string_access);

@@ -60,6 +60,7 @@ fn test_short_ascii() {
     for s in strs {
         let compact = CompactStr::new(s);
         assert_eq!(compact, s);
+        assert_eq!(s, compact);
         assert_eq!(compact.is_heap_allocated(), false);
     }
 }
@@ -79,6 +80,7 @@ fn test_short_unicode() {
     for (s, is_heap) in strs {
         let compact = CompactStr::new(s);
         assert_eq!(compact, s);
+        assert_eq!(s, compact);
         assert_eq!(compact.is_heap_allocated(), is_heap);
     }
 }
@@ -95,6 +97,7 @@ fn test_medium_ascii() {
     for s in strs {
         let compact = CompactStr::new(s);
         assert_eq!(compact, s);
+        assert_eq!(s, compact);
 
         #[cfg(target_pointer_width = "64")]
         let is_heap = false;
@@ -116,6 +119,7 @@ fn test_medium_unicode() {
     for (s, is_heap) in strs {
         let compact = CompactStr::new(s);
         assert_eq!(compact, s);
+        assert_eq!(s, compact);
 
         #[cfg(target_pointer_width = "64")]
         let is_heap = is_heap;

@@ -139,6 +139,12 @@ impl PartialEq<CompactStr> for String {
     }
 }
 
+impl PartialEq<CompactStr> for &str {
+    fn eq(&self, other: &CompactStr) -> bool {
+        *self == other.as_str()
+    }
+}
+
 impl Ord for CompactStr {
     fn cmp(&self, other: &Self) -> Ordering {
         self.as_str().cmp(other.as_str())

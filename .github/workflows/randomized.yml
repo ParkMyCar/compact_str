@@ -5,12 +5,15 @@ on:
 
 name: Randomized
 
+env:
+  # local default is 50,000
+  # we run 2,000,000,000 in CI because this is a scheduled job and doesn't impact time to merge
+  RANDOMIZED_RUNS: 2000000000
+
 jobs:
   linux_64bit:
     name: Linux 64-bit
     runs-on: ubuntu-latest
-    env:
-      RANDOMIZED_RUNS: 1000000000
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
@@ -26,8 +29,6 @@ jobs:
   linux_32bit:
     name: Linux 32-bit
     runs-on: ubuntu-latest
-    env:
-      RANDOMIZED_RUNS: 1000000000
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1

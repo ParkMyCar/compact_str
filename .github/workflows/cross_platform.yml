@@ -2,12 +2,14 @@ on: [push, pull_request, workflow_dispatch]
 
 name: X-Plat
 
+env:
+  # local default for proptest is 100
+  PROPTEST_CASES: 1000
+
 jobs:
   windows:
     name: Windows
     runs-on: windows-latest
-    env:
-      PROPTEST_CASES: 500
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
@@ -23,8 +25,6 @@ jobs:
   macos:
     name: macOS
     runs-on: macos-latest
-    env:
-      PROPTEST_CASES: 500
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
@@ -40,8 +40,6 @@ jobs:
   linux_arm7:
     name: Linux ARMv7
     runs-on: ubuntu-latest
-    env:
-      PROPTEST_CASES: 500
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
@@ -58,8 +56,6 @@ jobs:
   linux_32bit:
     name: Linux 32-bit
     runs-on: ubuntu-latest
-    env:
-      PROPTEST_CASES: 500
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
@@ -76,8 +72,6 @@ jobs:
   linux_mips_le_32bit:
     name: Linux MIPS Little Endian 32-bit
     runs-on: ubuntu-latest
-    env:
-      PROPTEST_CASES: 500
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
@@ -94,8 +88,6 @@ jobs:
   linux_powerpc_le_64bit:
     name: Linux PowerPC Little Endian 64-bit
     runs-on: ubuntu-latest
-    env:
-      PROPTEST_CASES: 500
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1

@@ -1,0 +1,3 @@
+[build.env]
+# env variables to define number of randomized tests
+passthrough = ["PROPTEST_CASES", "RANDOMIZED_RUNS"]

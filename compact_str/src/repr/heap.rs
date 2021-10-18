@@ -1,19 +1,19 @@
-use std::mem;
-use std::sync::Arc;
+use super::arc::ArcStr;
+use std::{mem, sync::Arc};
 
 use super::{
     HEAP_MASK,
     MAX_SIZE,
 };
 
-const PADDING_SIZE: usize = MAX_SIZE - mem::size_of::<Arc<str>>();
+const PADDING_SIZE: usize = MAX_SIZE - mem::size_of::<ArcStr>();
 const PADDING: [u8; PADDING_SIZE] = [HEAP_MASK; PADDING_SIZE];
 
 #[repr(C)]
 #[derive(Debug, Clone)]
 pub struct HeapString {
     padding: [u8; PADDING_SIZE],
-    pub string: Arc<str>,
+    pub string: ArcStr,
 }
 
 impl HeapString {

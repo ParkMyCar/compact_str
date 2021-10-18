@@ -5,11 +5,11 @@ use static_assertions::{
     const_assert_eq,
 };
 
-mod iter;
-
+mod arc;
 mod discriminant;
 mod heap;
 mod inline;
+mod iter;
 mod packed;
 
 use discriminant::{
@@ -148,7 +148,7 @@ impl<'a> StrongRepr<'a> {
         match self {
             Self::Inline(inline) => inline.as_str(),
             Self::Packed(packed) => packed.as_str(),
-            Self::Heap(heap) => &*heap.string,
+            Self::Heap(heap) => heap.string.as_str(),
         }
     }
 }

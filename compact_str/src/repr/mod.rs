@@ -5,7 +5,6 @@ use static_assertions::{
     const_assert_eq,
 };
 
-mod arc;
 mod discriminant;
 mod heap;
 mod inline;

@@ -1,10 +1,12 @@
-use super::arc::ArcStr;
-use std::{mem, sync::Arc};
+use std::mem;
 
 use super::{
     HEAP_MASK,
     MAX_SIZE,
 };
+
+mod arc;
+use arc::ArcStr;
 
 const PADDING_SIZE: usize = MAX_SIZE - mem::size_of::<ArcStr>();
 const PADDING: [u8; PADDING_SIZE] = [HEAP_MASK; PADDING_SIZE];

@@ -1,3 +1,7 @@
+# Upcoming
+* Setting minimum supported Rust version (MSRV) to 1.56
+* Upgrade to Edition 2021
+
 # 0.1.1
 ### September 30, 2021
 * impl `PartialEq` from more types

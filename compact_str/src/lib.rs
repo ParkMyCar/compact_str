@@ -17,6 +17,7 @@ use core::{
     fmt,
     hash::{Hash, Hasher},
     ops::Deref,
+    str::FromStr,
 };
 
 mod repr;
@@ -178,6 +179,13 @@ impl From<String> for CompactStr {
 impl<'a> From<&'a String> for CompactStr {
     fn from(s: &'a String) -> Self {
         CompactStr::new(&s)
+    }
+}
+
+impl FromStr for CompactStr {
+    type Err = core::convert::Infallible;
+    fn from_str(s: &str) -> Result<CompactStr, Self::Err> {
+        Ok(CompactStr::from(s))
     }
 }
 

@@ -1,5 +1,6 @@
 use crate::CompactStr;
 use proptest::{prelude::*, strategy::Strategy};
+use std::str::FromStr;
 
 #[cfg(target_pointer_width = "64")]
 const MAX_INLINED_SIZE: usize = 24;
@@ -128,4 +129,14 @@ fn test_medium_unicode() {
 
         assert_eq!(compact.is_heap_allocated(), is_heap);
     }
+}
+
+#[test]
+fn test_from_str_trait() {
+    let s = "hello_world";
+
+    // Until the never type `!` is stabilized, we have to unwrap here
+    let c = CompactStr::from_str(s).unwrap();
+
+    assert_eq!(s, c);
 }

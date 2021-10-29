@@ -1,6 +1,16 @@
 # Upcoming
+* Everything has been released!
+
+# 0.1.2
+### October 29, 2021
+* impl `FromStr` for `CompactStr`
+    * Fixes [`#18 Consider impl trait FromStr for CompactStr`](https://github.com/ParkMyCar/compact_str/issues/18)
+    * Implemented by [`#20 impl FromStr for CompactStr`](https://github.com/ParkMyCar/compact_str/pull/20)
 * Setting minimum supported Rust version (MSRV) to 1.56
+    * Fixes [`#3 Document minimal supported Rust Version`](https://github.com/ParkMyCar/compact_str/issues/3)
+    * Implemented by [`#17 Upgrade to Edition 2021 and mac MSRV 1.56`](https://github.com/ParkMyCar/compact_str/pull/17)
 * Upgrade to Edition 2021
+    * [`#17 Upgrade to Edition 2021 and mac MSRV 1.56`](https://github.com/ParkMyCar/compact_str/pull/17)
 
 # 0.1.1
 ### September 30, 2021

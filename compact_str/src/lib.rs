@@ -21,7 +21,7 @@ use core::{
 };
 
 mod repr;
-use repr::Repr;
+use repr::ReprWithNiche;
 
 #[cfg(feature = "serde")]
 mod serde;
@@ -67,21 +67,21 @@ mod tests;
 /// ```
 #[derive(Clone)]
 pub struct CompactStr {
-    repr: Repr,
+    repr: ReprWithNiche,
 }
 
 impl CompactStr {
     #[inline]
     pub fn new<T: AsRef<str>>(text: T) -> Self {
         CompactStr {
-            repr: Repr::new(text),
+            repr: ReprWithNiche::new(text),
         }
     }
 
     #[inline]
     pub const fn new_inline(text: &str) -> Self {
         CompactStr {
-            repr: Repr::new_const(text),
+            repr: ReprWithNiche::new_const(text),
         }
     }
 
@@ -202,3 +202,4 @@ impl fmt::Display for CompactStr {
 }
 
 static_assertions::assert_eq_size!(CompactStr, String);
+static_assertions::assert_eq_size!(CompactStr, Option<CompactStr>);

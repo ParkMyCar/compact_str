@@ -14,7 +14,7 @@ use non_max::NonMaxU8;
 use packed::PackedString;
 
 const MAX_SIZE: usize = std::mem::size_of::<String>();
-const EMPTY: Repr = Repr {
+const EMPTY: ReprUnion = ReprUnion {
     inline: InlineString::new_const(""),
 };
 
@@ -22,15 +22,76 @@ const EMPTY: Repr = Repr {
 pub const HEAP_MASK: u8 = 0b11111110;
 pub const LEADING_BIT_MASK: u8 = 0b10000000;
 
-pub union Repr {
+#[repr(C)]
+pub struct ReprWithNiche((NonMaxU8, [u8; MAX_SIZE - 1]));
+
+pub union ReprUnion {
     mask: DiscriminantMask,
     heap: ManuallyDrop<HeapString>,
     inline: InlineString,
     packed: PackedString,
 }
-pub struct ReprWithNiche((NonMaxU8, [u8; MAX_SIZE - 1]));
 
-impl Repr {
+impl ReprWithNiche {
+    #[inline]
+    pub fn new<T: AsRef<str>>(text: T) -> Self {
+        Self::from_union(ReprUnion::new(text))
+    }
+
+    #[inline]
+    pub const fn new_const(text: &str) -> Self {
+        Self::from_union(ReprUnion::new_const(text))
+    }
+
+    #[inline]
+    pub fn as_str(&self) -> &str {
+        self.as_union().as_str()
+    }
+
+    #[inline]
+    pub fn is_heap_allocated(&self) -> bool {
+        self.as_union().is_heap_allocated()
+    }
+
+    #[inline]
+    fn discriminant(&self) -> Discriminant {
+        self.as_union().discriminant()
+    }
+
+    #[inline]
+    pub const fn from_union(union: ReprUnion) -> Self {
+        unsafe { std::mem::transmute::<ReprUnion, ReprWithNiche>(union) }
+    }
+
+    #[inline]
+    pub const fn as_union(&self) -> &ReprUnion {
+        unsafe { std::mem::transmute::<&ReprWithNiche, &ReprUnion>(&self) }
+    }
+}
+
+impl Clone for ReprWithNiche {
+    fn clone(&self) -> Self {
+        Self::from_union(self.as_union().clone())
+    }
+}
+
+impl Drop for ReprWithNiche {
+    fn drop(&mut self){
+        match self.discriminant() {
+            Discriminant::Heap => {
+                // SAFETY: We checked the discriminant to make sure the union is `heap`
+                unsafe {
+                    let union = std::mem::transmute::<&mut ReprWithNiche, &mut ReprUnion>(self);
+                    ManuallyDrop::drop(&mut union.heap)
+                };
+            }
+            // No-op, the value is on the stack and doesn't need to be explicitly dropped
+            Discriminant::Inline | Discriminant::Packed => {}
+        }
+    }
+}
+
+impl ReprUnion {
     #[inline]
     pub fn new<T: AsRef<str>>(text: T) -> Self {
         let text = text.as_ref();
@@ -40,13 +101,13 @@ impl Repr {
             EMPTY
         } else if len <= inline::MAX_INLINE_SIZE {
             let inline = InlineString::new(text);
-            Repr { inline }
+            ReprUnion { inline }
         } else if len == MAX_SIZE && text.as_bytes()[0] <= 127 {
             let packed = PackedString::new(text);
-            Repr { packed }
+            ReprUnion { packed }
         } else {
             let heap = ManuallyDrop::new(HeapString::new(text));
-            Repr { heap }
+            ReprUnion { heap }
         }
     }
 
@@ -56,10 +117,10 @@ impl Repr {
 
         if len <= inline::MAX_INLINE_SIZE {
             let inline = InlineString::new_const(text);
-            Repr { inline }
+            ReprUnion { inline }
         } else if len == MAX_SIZE && text.as_bytes()[0] <= 127 {
             let packed = PackedString::new_const(text);
-            Repr { packed }
+            ReprUnion { packed }
         } else {
             // HACK: This allows us to make assertions within a `const fn` without requiring nightly,
             // see unstable `const_panic` feature. This results in a build failure, not a runtime panic
@@ -105,17 +166,17 @@ impl Repr {
     }
 }
 
-impl Clone for Repr {
+impl Clone for ReprUnion {
     fn clone(&self) -> Self {
         match self.cast() {
-            StrongRepr::Heap(heap) => Repr { heap: heap.clone() },
-            StrongRepr::Inline(inline) => Repr { inline: *inline },
-            StrongRepr::Packed(packed) => Repr { packed: *packed },
+            StrongRepr::Heap(heap) => ReprUnion { heap: heap.clone() },
+            StrongRepr::Inline(inline) => ReprUnion { inline: *inline },
+            StrongRepr::Packed(packed) => ReprUnion { packed: *packed },
         }
     }
 }
 
-impl Drop for Repr {
+impl Drop for ReprUnion {
     fn drop(&mut self) {
         match self.discriminant() {
             Discriminant::Heap => {
@@ -147,23 +208,23 @@ impl<'a> StrongRepr<'a> {
 }
 
 assert_eq_size!(ReprWithNiche, Option<ReprWithNiche>);
-assert_eq_size!(ReprWithNiche, Repr);
-assert_eq_size!(Repr, String);
+assert_eq_size!(ReprWithNiche, ReprUnion);
+assert_eq_size!(ReprUnion, String);
 
 const_assert_eq!(std::mem::size_of::<ReprWithNiche>(), MAX_SIZE);
 #[cfg(target_pointer_width = "64")]
-const_assert_eq!(std::mem::size_of::<Repr>(), 24);
+const_assert_eq!(std::mem::size_of::<ReprUnion>(), 24);
 #[cfg(target_pointer_width = "32")]
-const_assert_eq!(std::mem::size_of::<Repr>(), 12);
+const_assert_eq!(std::mem::size_of::<ReprUnion>(), 12);
 
 #[cfg(test)]
 mod tests {
-    use super::Repr;
+    use super::ReprUnion;
 
     #[test]
     fn test_inline_str() {
         let short = "abc";
-        let repr = Repr::new(&short);
+        let repr = ReprUnion::new(&short);
         assert_eq!(repr.as_str(), short);
     }
 
@@ -174,14 +235,14 @@ mod tests {
         #[cfg(target_pointer_width = "32")]
         let packed = "i am 12 char";
 
-        let repr = Repr::new(&packed);
+        let repr = ReprUnion::new(&packed);
         assert_eq!(repr.as_str(), packed);
     }
 
     #[test]
     fn test_heap_str() {
         let long = "I am a long string that has very many characters";
-        let repr = Repr::new(&long);
+        let repr = ReprUnion::new(&long);
         assert_eq!(repr.as_str(), long);
     }
 }

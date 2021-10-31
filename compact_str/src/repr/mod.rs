@@ -4,11 +4,13 @@ use std::mem::ManuallyDrop;
 mod discriminant;
 mod heap;
 mod inline;
+mod non_max;
 mod packed;
 
 use discriminant::{Discriminant, DiscriminantMask};
 use heap::HeapString;
 use inline::InlineString;
+use non_max::NonMaxU8;
 use packed::PackedString;
 
 const MAX_SIZE: usize = std::mem::size_of::<String>();
@@ -26,6 +28,7 @@ pub union Repr {
     inline: InlineString,
     packed: PackedString,
 }
+pub struct ReprWithNiche((NonMaxU8, [u8; MAX_SIZE - 1]));
 
 impl Repr {
     #[inline]
@@ -143,8 +146,11 @@ impl<'a> StrongRepr<'a> {
     }
 }
 
+assert_eq_size!(ReprWithNiche, Option<ReprWithNiche>);
+assert_eq_size!(ReprWithNiche, Repr);
 assert_eq_size!(Repr, String);
 
+const_assert_eq!(std::mem::size_of::<ReprWithNiche>(), MAX_SIZE);
 #[cfg(target_pointer_width = "64")]
 const_assert_eq!(std::mem::size_of::<Repr>(), 24);
 #[cfg(target_pointer_width = "32")]

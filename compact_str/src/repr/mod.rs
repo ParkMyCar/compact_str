@@ -65,7 +65,7 @@ impl ReprWithNiche {
 
     #[inline]
     pub const fn as_union(&self) -> &ReprUnion {
-        unsafe { std::mem::transmute::<&ReprWithNiche, &ReprUnion>(&self) }
+        unsafe { std::mem::transmute::<&ReprWithNiche, &ReprUnion>(self) }
     }
 }
 

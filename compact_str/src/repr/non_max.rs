@@ -3,6 +3,7 @@
 ///
 /// Specifically the compiler can use `255` to encode the `None` variant of `Option<NonMaxU8>` allowing
 /// `std::mem::size_of::<NonMaxU8> == std::mem::size_of::<Option<NonMaxU8>>()`
+#[allow(clippy::upper_case_acronyms)]
 #[allow(dead_code)]
 #[allow(non_camel_case_types)]
 #[repr(u8)]

@@ -1,4 +1,3 @@
-
 /// `NonMaxU8` is an unsigned 8-bit integer data type that has a valid range of `[0, 254]`. Excluding
 /// `255` allows the Rust compiler to use `255` as a niche.
 ///
@@ -111,12 +110,12 @@ pub enum NonMaxU8 {
     ONE_HUNDRED = 100,
     ONE_HUNDRED_ONE = 101,
     ONE_HUNDRED_TWO = 102,
-    ONE_HUNDRED_THREE =103,
+    ONE_HUNDRED_THREE = 103,
     ONE_HUNDRED_FOUR = 104,
     ONE_HUNDRED_FIVE = 105,
     ONE_HUNDRED_SIX = 106,
-    ONE_HUNDRED_SEVEN =107,
-    ONE_HUNDRED_EIGHT =108,
+    ONE_HUNDRED_SEVEN = 107,
+    ONE_HUNDRED_EIGHT = 108,
     ONE_HUNDRED_NINE = 109,
     ONE_HUNDRED_TEN = 110,
     ONE_HUNDRED_ELEVEN = 111,
@@ -211,12 +210,12 @@ pub enum NonMaxU8 {
     TWO_HUNDRED = 200,
     TWO_HUNDRED_ONE = 201,
     TWO_HUNDRED_TWO = 202,
-    TWO_HUNDRED_THREE =203,
+    TWO_HUNDRED_THREE = 203,
     TWO_HUNDRED_FOUR = 204,
     TWO_HUNDRED_FIVE = 205,
     TWO_HUNDRED_SIX = 206,
-    TWO_HUNDRED_SEVEN =207,
-    TWO_HUNDRED_EIGHT =208,
+    TWO_HUNDRED_SEVEN = 207,
+    TWO_HUNDRED_EIGHT = 208,
     TWO_HUNDRED_NINE = 209,
     TWO_HUNDRED_TEN = 210,
     TWO_HUNDRED_ELEVEN = 211,

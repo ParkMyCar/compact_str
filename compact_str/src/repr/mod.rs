@@ -76,7 +76,7 @@ impl Clone for ReprWithNiche {
 }
 
 impl Drop for ReprWithNiche {
-    fn drop(&mut self){
+    fn drop(&mut self) {
         match self.discriminant() {
             Discriminant::Heap => {
                 // SAFETY: We checked the discriminant to make sure the union is `heap`

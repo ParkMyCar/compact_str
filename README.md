@@ -70,7 +70,7 @@ To maximize memory usage, we use a [`union`](https://doc.rust-lang.org/reference
 for the discriminant (tracking what variant we are), instead we use a `union` which allows us to manually define the discriminant. `CompactStr` defines the
 discriminant *within* the first byte, using any extra bits for metadata. Specifically the discriminant has three variants:
 
-1. `0b11111111` - All 1s, indicates **heap** allocated
+1. `0b11111110` - All 1s with trailing 0, indicates **heap** allocated
 2. `0b1XXXXXXX` - Leading 1, indicates **inline**, with the trailing 7 bits used to store the length
 3. `0b0XXXXXXX` - Leading 0, indicates **packed**, with the trailing 7 bits being the first character of the string
 

@@ -79,6 +79,7 @@ static_assertions::assert_eq_size!(InlineString, String);
 mod tests {
     #[test]
     fn test_sanity_not_valid_utf8() {
-        assert!(std::str::from_utf8(&[0b11111111]).is_err())
+        assert!(std::str::from_utf8(&[0b11111111]).is_err());
+        assert!(std::str::from_utf8(&[0b11111110]).is_err());
     }
 }

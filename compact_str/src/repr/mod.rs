@@ -22,8 +22,14 @@ const EMPTY: ReprUnion = ReprUnion {
 pub const HEAP_MASK: u8 = 0b11111110;
 pub const LEADING_BIT_MASK: u8 = 0b10000000;
 
+#[cfg(target_pointer_width = "64")]
 #[repr(C)]
 #[repr(align(8))]
+pub struct ReprWithNiche((NonMaxU8, [u8; MAX_SIZE - 1]));
+
+#[cfg(target_pointer_width = "32")]
+#[repr(C)]
+#[repr(align(4))]
 pub struct ReprWithNiche((NonMaxU8, [u8; MAX_SIZE - 1]));
 
 #[repr(C)]
@@ -60,14 +66,14 @@ impl ReprWithNiche {
         self.as_union().discriminant()
     }
 
-    #[inline]
-    pub const fn from_union(union: ReprUnion) -> Self {
-        unsafe { std::mem::transmute::<ReprUnion, ReprWithNiche>(union) }
+    #[inline(always)]
+    pub const fn from_union(repr: ReprUnion) -> Self {
+        unsafe { std::mem::transmute::<ReprUnion, ReprWithNiche>(repr) }
     }
 
-    #[inline]
-    pub const fn as_union(&self) -> &ReprUnion {
-        unsafe { std::mem::transmute::<&ReprWithNiche, &ReprUnion>(self) }
+    #[inline(always)]
+    pub fn as_union(&self) -> &ReprUnion {
+        unsafe { &*(self as *const ReprWithNiche as *const ReprUnion) }
     }
 }
 
@@ -213,7 +219,10 @@ assert_eq_size!(Option<ReprWithNiche>, ReprWithNiche);
 assert_eq_size!(ReprWithNiche, ReprUnion);
 assert_eq_size!(ReprUnion, String);
 
+#[cfg(target_pointer_width = "64")]
 const_assert_eq!(std::mem::align_of::<ReprUnion>(), 8);
+#[cfg(target_pointer_width = "32")]
+const_assert_eq!(std::mem::align_of::<ReprUnion>(), 4);
 assert_eq_align!(ReprUnion, ReprWithNiche);
 
 const_assert_eq!(std::mem::size_of::<ReprWithNiche>(), MAX_SIZE);

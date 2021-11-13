@@ -22,14 +22,8 @@ const EMPTY: ReprUnion = ReprUnion {
 pub const HEAP_MASK: u8 = 0b11111110;
 pub const LEADING_BIT_MASK: u8 = 0b10000000;
 
-#[cfg(target_pointer_width = "64")]
-#[repr(C)]
-#[repr(align(8))]
-pub struct ReprWithNiche((NonMaxU8, [u8; MAX_SIZE - 1]));
-
-#[cfg(target_pointer_width = "32")]
-#[repr(C)]
-#[repr(align(4))]
+#[cfg_attr(target_pointer_width = "64", repr(C, align(8)))]
+#[cfg_attr(target_pointer_width = "32", repr(C, align(4)))]
 pub struct ReprWithNiche((NonMaxU8, [u8; MAX_SIZE - 1]));
 
 #[repr(C)]

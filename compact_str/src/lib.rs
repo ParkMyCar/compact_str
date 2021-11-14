@@ -237,5 +237,4 @@ impl FromIterator<String> for CompactStr {
     }
 }
 
-
 static_assertions::assert_eq_size!(CompactStr, String);

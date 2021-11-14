@@ -29,7 +29,8 @@ impl FromIterator<char> for Repr {
 
                 // push existing characters onto the heap
                 // SAFETY: `inline_buf` has been filled with `char`s which are valid UTF-8
-                heap_buf.push_str(unsafe { core::str::from_utf8_unchecked(&inline_buf[..curr_len]) });
+                heap_buf
+                    .push_str(unsafe { core::str::from_utf8_unchecked(&inline_buf[..curr_len]) });
                 // push current char onto the heap
                 heap_buf.push(c);
                 // extend heap with remaining characters

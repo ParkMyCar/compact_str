@@ -55,23 +55,6 @@ jobs:
           command: test
           args: --all-features
 
-  test-msrv:
-    name: cargo test msrv
-    runs-on: ubuntu-latest
-    env:
-      PROPTEST_CASES: 500
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: 1.56
-          override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --all-features
-
   fmt:
     name: cargo fmt
     runs-on: ubuntu-latest

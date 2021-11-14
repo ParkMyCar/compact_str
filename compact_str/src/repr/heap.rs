@@ -21,4 +21,13 @@ impl HeapString {
     }
 }
 
+impl From<String> for HeapString {
+    fn from(s: String) -> Self {
+        let padding = PADDING;
+        let string = s.into();
+
+        HeapString { padding, string }
+    }
+}
+
 static_assertions::assert_eq_size!(HeapString, String);

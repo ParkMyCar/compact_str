@@ -58,6 +58,13 @@ impl InlineString {
         InlineString { metadata, buffer }
     }
 
+    /// Creates an `InlineString` from raw parts without checking that it's valid UTF-8.
+    #[inline]
+    pub const unsafe fn from_parts(len: usize, buffer: [u8; MAX_INLINE_SIZE]) -> Self {
+        let metadata = (len as u8) | LEADING_BIT_MASK;
+        InlineString { metadata, buffer }
+    }
+
     #[inline]
     pub const fn len(&self) -> usize {
         (self.metadata & !LEADING_BIT_MASK) as usize

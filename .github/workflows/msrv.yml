@@ -1,6 +1,6 @@
 on: [push, pull_request, workflow_dispatch]
 
-name: X-Plat
+name: MSRV
 
 env:
   # local default for proptest is 100
@@ -8,96 +8,122 @@ env:
   RUSTFLAGS: "-D warnings"
 
 jobs:
-  windows:
-    name: Windows
-    runs-on: windows-latest
+  test-1_56:
+    name: cargo test 1.56
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: stable
+          toolchain: 1.56
           override: true
       - uses: actions-rs/cargo@v1
         with:
           command: test
           args: --all-features
 
-  macos:
-    name: macOS
-    runs-on: macos-latest
+  test-1_55:
+    name: cargo test 1.55
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: stable
+          toolchain: 1.55
           override: true
       - uses: actions-rs/cargo@v1
         with:
           command: test
           args: --all-features
 
-  linux_arm7:
-    name: Linux ARMv7
+  test-1_54:
+    name: cargo test 1.54
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
-          target: armv7-unknown-linux-gnueabihf
+          profile: minimal
+          toolchain: 1.54
           override: true
       - uses: actions-rs/cargo@v1
         with:
-          use-cross: true
           command: test
-          args: --all-features --target armv7-unknown-linux-gnueabihf
+          args: --all-features
 
-  linux_32bit:
-    name: Linux 32-bit
+  test-1_53:
+    name: cargo test 1.53
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
-          target: i686-unknown-linux-gnu
+          profile: minimal
+          toolchain: 1.53
           override: true
       - uses: actions-rs/cargo@v1
         with:
-          use-cross: true
           command: test
-          args: --all-features --target i686-unknown-linux-gnu
+          args: --all-features
 
-  linux_mips_le_32bit:
-    name: Linux MIPS Little Endian 32-bit
+  test-1_52:
+    name: cargo test 1.52
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
-          target: mipsel-unknown-linux-gnu
+          profile: minimal
+          toolchain: 1.52
           override: true
       - uses: actions-rs/cargo@v1
         with:
-          use-cross: true
           command: test
-          args: --all-features --target mipsel-unknown-linux-gnu
+          args: --all-features
 
-  linux_powerpc_le_64bit:
-    name: Linux PowerPC Little Endian 64-bit
+  test-1_51:
+    name: cargo test 1.51
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
-          target: powerpc64le-unknown-linux-gnu
+          profile: minimal
+          toolchain: 1.51
           override: true
       - uses: actions-rs/cargo@v1
         with:
-          use-cross: true
           command: test
-          args: --all-features --target powerpc64le-unknown-linux-gnu
+          args: --all-features
+
+  test-1_50:
+    name: cargo test 1.50
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: 1.50
+          override: true
+      - uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --all-features
+
+  test-1_49:
+    name: cargo test 1.49
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: 1.49
+          override: true
+      - uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --all-features

@@ -74,7 +74,7 @@ fn test_const_creation() {
 #[test]
 fn test_short_ascii() {
     // always inlined on all archs
-    let strs = ["nyc", "statue", "liberty", "img_1234.png"];
+    let strs = vec!["nyc", "statue", "liberty", "img_1234.png"];
 
     for s in strs {
         let compact = CompactStr::new(s);
@@ -86,7 +86,7 @@ fn test_short_ascii() {
 
 #[test]
 fn test_short_unicode() {
-    let strs = [
+    let strs = vec![
         ("🦀", false),
         ("🌧☀️", false),
         #[cfg(target_pointer_width = "64")]
@@ -106,7 +106,7 @@ fn test_short_unicode() {
 
 #[test]
 fn test_medium_ascii() {
-    let strs = [
+    let strs = vec![
         "rustconf 2021",
         "new york city",
         "nyc pizza is good",
@@ -128,7 +128,7 @@ fn test_medium_ascii() {
 
 #[test]
 fn test_medium_unicode() {
-    let strs = [
+    let strs = vec![
         ("☕️👀😁🎉", false),
         // str is 24 bytes long, and leading character is non-ASCII, so it gets heap allocated
         ("🦀😀😃😄😁🦀", true),

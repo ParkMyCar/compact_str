@@ -140,7 +140,7 @@ mod tests {
     #[test]
     fn short_char_iter() {
         let chars = ['a', 'b', 'c'];
-        let repr: Repr = chars.into_iter().collect();
+        let repr: Repr = chars.iter().collect();
 
         assert_eq!(repr.as_str(), "abc");
         assert!(!repr.is_heap_allocated());
@@ -166,7 +166,7 @@ mod tests {
 
     #[test]
     fn short_string_iter() {
-        let strings = ["hello", "world"];
+        let strings = vec!["hello", "world"];
         let repr: Repr = strings.into_iter().collect();
 
         assert_eq!(repr.as_str(), "helloworld");
@@ -175,7 +175,7 @@ mod tests {
 
     #[test]
     fn long_short_string_iter() {
-        let strings = [
+        let strings = vec![
             "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16",
             "17", "18", "19", "20",
         ];

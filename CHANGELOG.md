@@ -1,5 +1,5 @@
 # Upcoming
-* Everything has been released!
+* Change Minimum Supported Rust Version to 1.49
 
 # 0.1.2
 ### October 29, 2021

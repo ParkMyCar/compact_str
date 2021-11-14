@@ -1,5 +1,11 @@
 # Upcoming
+
+# 0.2.0
+### November 14, 2021
 * Change Minimum Supported Rust Version to 1.49
+    * Implemented in [`#24 Make Minimum Supported Rust Version 1.49`](https://github.com/ParkMyCar/compact_str/pull/24)
+* Implement `FromIterator` for `CompactStr`
+    * Implemented in [`#23 impl FromIterator<...> for CompactStr`](https://github.com/ParkMyCar/compact_str/pull/23)
 
 # 0.1.2
 ### October 29, 2021
@@ -10,7 +16,7 @@
     * Fixes [`#3 Document minimal supported Rust Version`](https://github.com/ParkMyCar/compact_str/issues/3)
     * Implemented by [`#17 Upgrade to Edition 2021 and mac MSRV 1.56`](https://github.com/ParkMyCar/compact_str/pull/17)
 * Upgrade to Edition 2021
-    * [`#17 Upgrade to Edition 2021 and mac MSRV 1.56`](https://github.com/ParkMyCar/compact_str/pull/17)
+    * [`#17 Upgrade to Edition 2021 and make MSRV 1.56`](https://github.com/ParkMyCar/compact_str/pull/17)
 
 # 0.1.1
 ### September 30, 2021

@@ -1,7 +1,7 @@
 [package]
 name = "compact_str"
 description = "A memory efficient immutable string type that transparently stores strings on the stack, when possible"
-version = "0.1.2"
+version = "0.2.0"
 authors = ["Parker Timmerman <parker@parkertimmerman.com>"]
 edition = "2018"
 license = "MIT"

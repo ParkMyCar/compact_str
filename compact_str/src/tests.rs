@@ -12,6 +12,11 @@ fn rand_unicode() -> impl Strategy<Value = String> {
     proptest::collection::vec(proptest::char::any(), 0..80).prop_map(|v| v.into_iter().collect())
 }
 
+// generates groups upto 40 strings long of random unicode strings, upto 80 chars long
+fn rand_unicode_collection() -> impl Strategy<Value = Vec<String>> {
+    proptest::collection::vec(rand_unicode(), 0..40)
+}
+
 proptest! {
     #[test]
     fn test_strings_roundtrip(word in rand_unicode()) {
@@ -31,6 +36,19 @@ proptest! {
         } else {
             prop_assert!(compact.is_heap_allocated())
         }
+    }
+
+    #[test]
+    fn test_char_iterator_roundtrips(word in rand_unicode()) {
+        let compact: CompactStr = word.clone().chars().collect();
+        prop_assert_eq!(&word, &compact)
+    }
+
+    #[test]
+    fn test_string_iterator_roundtrips(collection in rand_unicode_collection()) {
+        let compact: CompactStr = collection.clone().into_iter().collect();
+        let word: String = collection.into_iter().collect();
+        prop_assert_eq!(&word, &compact);
     }
 }
 
@@ -139,4 +157,14 @@ fn test_from_str_trait() {
     let c = CompactStr::from_str(s).unwrap();
 
     assert_eq!(s, c);
+}
+
+#[test]
+fn test_from_char_iter() {
+    let s = "\u{0} 0 \u{0}a𐀀𐀀 𐀀a𐀀";
+    println!("{}", s.len());
+    let compact: CompactStr = s.chars().into_iter().collect();
+
+    assert!(compact.is_heap_allocated());
+    assert_eq!(s, compact);
 }

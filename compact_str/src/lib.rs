@@ -16,6 +16,7 @@ use core::{
     cmp::Ordering,
     fmt,
     hash::{Hash, Hasher},
+    iter::FromIterator,
     ops::Deref,
     str::FromStr,
 };
@@ -198,6 +199,41 @@ impl fmt::Debug for CompactStr {
 impl fmt::Display for CompactStr {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Display::fmt(self.as_str(), f)
+    }
+}
+
+impl FromIterator<char> for CompactStr {
+    fn from_iter<T: IntoIterator<Item = char>>(iter: T) -> Self {
+        let repr = iter.into_iter().collect();
+        CompactStr { repr }
+    }
+}
+
+impl<'a> FromIterator<&'a char> for CompactStr {
+    fn from_iter<T: IntoIterator<Item = &'a char>>(iter: T) -> Self {
+        let repr = iter.into_iter().collect();
+        CompactStr { repr }
+    }
+}
+
+impl<'a> FromIterator<&'a str> for CompactStr {
+    fn from_iter<T: IntoIterator<Item = &'a str>>(iter: T) -> Self {
+        let repr = iter.into_iter().collect();
+        CompactStr { repr }
+    }
+}
+
+impl FromIterator<Box<str>> for CompactStr {
+    fn from_iter<T: IntoIterator<Item = Box<str>>>(iter: T) -> Self {
+        let repr = iter.into_iter().collect();
+        CompactStr { repr }
+    }
+}
+
+impl FromIterator<String> for CompactStr {
+    fn from_iter<T: IntoIterator<Item = String>>(iter: T) -> Self {
+        let repr = iter.into_iter().collect();
+        CompactStr { repr }
     }
 }
 

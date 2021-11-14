@@ -1,6 +1,8 @@
 use static_assertions::{assert_eq_size, const_assert_eq};
 use std::mem::ManuallyDrop;
 
+mod iter;
+
 mod discriminant;
 mod heap;
 mod inline;

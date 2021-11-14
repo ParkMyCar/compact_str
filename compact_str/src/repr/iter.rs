@@ -23,13 +23,13 @@ impl FromIterator<char> for Repr {
             let char_len = c.len_utf8();
 
             // If this new character is too large to fit into the inline buffer, then create a heap string
-            if char_len + curr_len > inline_buf.len() {
+            if char_len + curr_len > MAX_INLINE_SIZE {
                 let (min_remaining, _) = iter.size_hint();
                 let mut heap_buf = String::with_capacity(char_len + curr_len + min_remaining);
 
                 // push existing characters onto the heap
                 // SAFETY: `inline_buf` has been filled with `char`s which are valid UTF-8
-                heap_buf.push_str(unsafe { core::str::from_utf8_unchecked(&inline_buf) });
+                heap_buf.push_str(unsafe { core::str::from_utf8_unchecked(&inline_buf[..curr_len]) });
                 // push current char onto the heap
                 heap_buf.push(c);
                 // extend heap with remaining characters
@@ -45,6 +45,8 @@ impl FromIterator<char> for Repr {
             c.encode_utf8(&mut inline_buf[curr_len..]);
             curr_len += char_len;
         }
+
+        // TODO: Support PackedString here in an efficient way
 
         // SAFETY: We know `inline_buf` is valid UTF-8 because it consists entriely of `char`s
         let inline = unsafe { InlineString::from_parts(curr_len, inline_buf) };
@@ -82,13 +84,13 @@ where
         let bytes_len = str_slice.len();
 
         // this new string is too large to fit into our inline buffer, so heap allocate the rest
-        if bytes_len + curr_len > inline_buf.len() {
+        if bytes_len + curr_len > MAX_INLINE_SIZE {
             let (min_remaining, _) = iter.size_hint();
             let mut heap_buf = String::with_capacity(bytes_len + curr_len + min_remaining);
 
             // push existing strings onto the heap
             // SAFETY: `inline_buf` has been filled with `&str`s which are valid UTF-8
-            heap_buf.push_str(unsafe { core::str::from_utf8_unchecked(&inline_buf) });
+            heap_buf.push_str(unsafe { core::str::from_utf8_unchecked(&inline_buf[..curr_len]) });
             // push current string onto the heap
             heap_buf.push_str(str_slice);
             // extend heap with remaining strings
@@ -104,6 +106,8 @@ where
         (&mut inline_buf[curr_len..][..bytes_len]).copy_from_slice(str_slice.as_bytes());
         curr_len += bytes_len;
     }
+
+    // TODO: Support PackedString here in an efficient way
 
     // SAFETY: We know `inline_buf` is valid UTF-8 because it consists entriely of `&str`s
     let inline = unsafe { InlineString::from_parts(curr_len, inline_buf) };

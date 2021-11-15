@@ -1,5 +1,6 @@
-use std::mem;
-use std::sync::Arc;
+use alloc::string::String;
+use alloc::sync::Arc;
+use core::mem;
 
 use super::{
     HEAP_MASK,

@@ -1,4 +1,5 @@
-use std::mem::ManuallyDrop;
+use alloc::string::String;
+use core::mem::ManuallyDrop;
 
 use static_assertions::{
     assert_eq_size,
@@ -20,7 +21,7 @@ use heap::HeapString;
 use inline::InlineString;
 use packed::PackedString;
 
-const MAX_SIZE: usize = std::mem::size_of::<String>();
+const MAX_SIZE: usize = core::mem::size_of::<String>();
 const EMPTY: Repr = Repr {
     inline: InlineString::new_const(""),
 };
@@ -156,9 +157,9 @@ impl<'a> StrongRepr<'a> {
 assert_eq_size!(Repr, String);
 
 #[cfg(target_pointer_width = "64")]
-const_assert_eq!(std::mem::size_of::<Repr>(), 24);
+const_assert_eq!(core::mem::size_of::<Repr>(), 24);
 #[cfg(target_pointer_width = "32")]
-const_assert_eq!(std::mem::size_of::<Repr>(), 12);
+const_assert_eq!(core::mem::size_of::<Repr>(), 12);
 
 #[cfg(test)]
 mod tests {

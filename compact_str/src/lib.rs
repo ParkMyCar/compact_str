@@ -11,6 +11,12 @@
 //! On 64-bit architectures this results in 24 bytes being stored on the stack, 12 bytes for 32-bit
 //! architectures. For small strings, e.g. < 23 characters
 
+#![no_std]
+
+extern crate alloc;
+
+use alloc::boxed::Box;
+use alloc::string::String;
 use core::borrow::Borrow;
 use core::cmp::Ordering;
 use core::fmt;

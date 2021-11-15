@@ -1,4 +1,10 @@
-use std::str::FromStr;
+use alloc::string::String;
+use alloc::vec::Vec;
+use alloc::{
+    format,
+    vec,
+};
+use core::str::FromStr;
 
 use proptest::prelude::*;
 use proptest::strategy::Strategy;
@@ -165,7 +171,6 @@ fn test_from_str_trait() {
 #[test]
 fn test_from_char_iter() {
     let s = "\u{0} 0 \u{0}a𐀀𐀀 𐀀a𐀀";
-    println!("{}", s.len());
     let compact: CompactStr = s.chars().into_iter().collect();
 
     assert!(compact.is_heap_allocated());

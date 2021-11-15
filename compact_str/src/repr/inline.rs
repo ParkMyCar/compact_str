@@ -1,3 +1,5 @@
+use alloc::string::String;
+
 use super::{
     LEADING_BIT_MASK,
     MAX_SIZE,
@@ -80,7 +82,7 @@ impl InlineString {
         let slice = &self.buffer[..len];
 
         // SAFETY: You can only construct an InlineString via a &str
-        unsafe { ::std::str::from_utf8_unchecked(slice) }
+        unsafe { ::core::str::from_utf8_unchecked(slice) }
     }
 }
 
@@ -90,6 +92,6 @@ static_assertions::assert_eq_size!(InlineString, String);
 mod tests {
     #[test]
     fn test_sanity_not_valid_utf8() {
-        assert!(std::str::from_utf8(&[0b11111111]).is_err())
+        assert!(core::str::from_utf8(&[0b11111111]).is_err())
     }
 }

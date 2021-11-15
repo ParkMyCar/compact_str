@@ -1,5 +1,7 @@
 //! Implementations of the `FromIterator` trait to make building `CompactStr`s more ergonomic
 
+use alloc::boxed::Box;
+use alloc::string::String;
 use core::iter::FromIterator;
 use core::mem::ManuallyDrop;
 
@@ -143,6 +145,8 @@ impl FromIterator<String> for Repr {
 
 #[cfg(test)]
 mod tests {
+    use alloc::vec;
+
     use super::Repr;
 
     #[test]

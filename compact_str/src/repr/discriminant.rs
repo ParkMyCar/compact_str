@@ -1,10 +1,12 @@
+use alloc::string::String;
+
 use super::{
     HEAP_MASK,
     LEADING_BIT_MASK,
     MAX_SIZE,
 };
 
-const PADDING_SIZE: usize = MAX_SIZE - std::mem::size_of::<Discriminant>();
+const PADDING_SIZE: usize = MAX_SIZE - core::mem::size_of::<Discriminant>();
 
 #[derive(Debug, Copy, Clone)]
 pub enum Discriminant {

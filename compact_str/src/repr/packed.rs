@@ -1,3 +1,5 @@
+use alloc::string::String;
+
 use super::MAX_SIZE;
 
 #[repr(C)]
@@ -50,7 +52,7 @@ impl PackedString {
     #[inline]
     pub fn as_str(&self) -> &str {
         // SAFETY: You can only construct a PackedString via a &str
-        unsafe { ::std::str::from_utf8_unchecked(&self.buffer) }
+        unsafe { ::core::str::from_utf8_unchecked(&self.buffer) }
     }
 }
 

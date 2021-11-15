@@ -106,3 +106,20 @@ jobs:
           use-cross: true
           command: test
           args: --all-features --target powerpc64le-unknown-linux-gnu
+
+  no_std:
+    name: no_std Embedded Target
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: thumbv6m-none-eabi
+          override: true
+      - uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: test
+          args: --all-features --target thumbv6m-none-eabi
+

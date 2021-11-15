@@ -1,6 +1,16 @@
-use parking_lot::{const_fair_mutex, FairMutex};
-use std::alloc::{GlobalAlloc, System};
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::alloc::{
+    GlobalAlloc,
+    System,
+};
+use std::sync::atomic::{
+    AtomicBool,
+    Ordering,
+};
+
+use parking_lot::{
+    const_fair_mutex,
+    FairMutex,
+};
 
 #[derive(Debug, Clone)]
 pub enum Event {

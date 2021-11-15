@@ -1,4 +1,7 @@
-use super::{LEADING_BIT_MASK, MAX_SIZE};
+use super::{
+    LEADING_BIT_MASK,
+    MAX_SIZE,
+};
 
 pub const MAX_INLINE_SIZE: usize = MAX_SIZE - core::mem::size_of::<Metadata>();
 
@@ -37,8 +40,9 @@ impl InlineString {
     #[inline]
     pub const fn new_const(text: &str) -> Self {
         if text.len() > MAX_INLINE_SIZE {
-            // HACK: This allows us to make assertions within a `const fn` without requiring nightly,
-            // see unstable `const_panic` feature. This results in a build failure, not a runtime panic
+            // HACK: This allows us to make assertions within a `const fn` without requiring
+            // nightly, see unstable `const_panic` feature. This results in a build
+            // failure, not a runtime panic
             #[allow(clippy::no_effect)]
             #[allow(unconditional_panic)]
             ["Provided string has a length greater than MAX_INLINE_SIZE!"][42];

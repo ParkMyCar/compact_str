@@ -1,7 +1,14 @@
 //! Implementations of the `FromIterator` trait to make building `CompactStr`s more ergonomic
 
-use super::{inline::MAX_INLINE_SIZE, HeapString, InlineString, Repr};
-use core::{iter::FromIterator, mem::ManuallyDrop};
+use core::iter::FromIterator;
+use core::mem::ManuallyDrop;
+
+use super::inline::MAX_INLINE_SIZE;
+use super::{
+    HeapString,
+    InlineString,
+    Repr,
+};
 
 impl FromIterator<char> for Repr {
     fn from_iter<T: IntoIterator<Item = char>>(iter: T) -> Self {
@@ -22,7 +29,8 @@ impl FromIterator<char> for Repr {
         while let Some(c) = iter.next() {
             let char_len = c.len_utf8();
 
-            // If this new character is too large to fit into the inline buffer, then create a heap string
+            // If this new character is too large to fit into the inline buffer, then create a heap
+            // string
             if char_len + curr_len > MAX_INLINE_SIZE {
                 let (min_remaining, _) = iter.size_hint();
                 let mut heap_buf = String::with_capacity(char_len + curr_len + min_remaining);

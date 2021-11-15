@@ -1,5 +1,10 @@
 use compact_str::CompactStr;
-use rand::{distributions, rngs::StdRng, Rng, SeedableRng};
+use rand::rngs::StdRng;
+use rand::{
+    distributions,
+    Rng,
+    SeedableRng,
+};
 
 #[cfg(target_pointer_width = "64")]
 const MAX_INLINED_SIZE: usize = 24;

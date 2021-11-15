@@ -2,18 +2,28 @@
   <h1><code>compact_str</code></h1>
   <p><strong>A memory efficient immutable string type that can store up to 24* bytes on the stack.</strong></p>
 
-  <a href="https://github.com/ParkMyCar/compact_str/actions/workflows/ci.yml">
-    <img alt="Continuous Integration Status" src="https://github.com/ParkMyCar/compact_str/actions/workflows/ci.yml/badge.svg?event=push"/>
-  </a>
-  <a href="https://github.com/ParkMyCar/compact_str/actions/workflows/cross_platform.yml">
-    <img alt="Cross Platform Status" src="https://github.com/ParkMyCar/compact_str/actions/workflows/cross_platform.yml/badge.svg?event=push"/>
-  </a>
   <a href="https://crates.io/crates/compact_str">
     <img alt="version on crates.io" src="https://img.shields.io/crates/v/compact_str"/>
   </a>
   <img alt="Minimum supported Rust Version: 1.49" src="https://img.shields.io/badge/MSRV-1.49-blueviolet">
   <a href="LICENSE">
     <img alt="mit license" src="https://img.shields.io/crates/l/compact_str"/>
+  </a>
+  
+   <br />
+  
+  <a href="https://github.com/ParkMyCar/compact_str/actions/workflows/ci.yml">
+    <img alt="Continuous Integration Status" src="https://github.com/ParkMyCar/compact_str/actions/workflows/ci.yml/badge.svg?event=push"/>
+  </a>
+  <a href="https://github.com/ParkMyCar/compact_str/actions/workflows/cross_platform.yml">
+    <img alt="Cross Platform Status" src="https://github.com/ParkMyCar/compact_str/actions/workflows/cross_platform.yml/badge.svg?event=push"/>
+  </a>
+    <a href="https://github.com/ParkMyCar/compact_str/actions/workflows/msrv.yml">
+    <img alt="Minimum Supported Rust Version Status" src="https://github.com/ParkMyCar/compact_str/actions/workflows/msrv.yml/badge.svg?event=push"/>
+  </a>
+  </a>
+    <a href="https://github.com/ParkMyCar/compact_str/actions/workflows/clippy.yml">
+    <img alt="Clippy Status" src="https://github.com/ParkMyCar/compact_str/actions/workflows/clippy.yml/badge.svg?event=push"/>
   </a>
 
   <p  align=right><sub>* 12 bytes for 32-bit architectures</sub></p>

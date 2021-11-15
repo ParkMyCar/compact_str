@@ -1,6 +1,9 @@
-use crate::CompactStr;
-use proptest::{prelude::*, strategy::Strategy};
 use std::str::FromStr;
+
+use proptest::prelude::*;
+use proptest::strategy::Strategy;
+
+use crate::CompactStr;
 
 #[cfg(target_pointer_width = "64")]
 const MAX_INLINED_SIZE: usize = 24;

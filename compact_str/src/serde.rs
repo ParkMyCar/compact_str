@@ -1,6 +1,13 @@
-use super::CompactStr;
-use serde::de::{Deserializer, Error, Unexpected, Visitor};
 use std::fmt;
+
+use serde::de::{
+    Deserializer,
+    Error,
+    Unexpected,
+    Visitor,
+};
+
+use super::CompactStr;
 
 fn compact_str<'de: 'a, 'a, D: Deserializer<'de>>(deserializer: D) -> Result<CompactStr, D::Error> {
     struct CompactStrVisitor;

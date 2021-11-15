@@ -1,5 +1,9 @@
-use static_assertions::{assert_eq_size, const_assert_eq};
 use std::mem::ManuallyDrop;
+
+use static_assertions::{
+    assert_eq_size,
+    const_assert_eq,
+};
 
 mod iter;
 
@@ -8,7 +12,10 @@ mod heap;
 mod inline;
 mod packed;
 
-use discriminant::{Discriminant, DiscriminantMask};
+use discriminant::{
+    Discriminant,
+    DiscriminantMask,
+};
 use heap::HeapString;
 use inline::InlineString;
 use packed::PackedString;
@@ -60,8 +67,9 @@ impl Repr {
             let packed = PackedString::new_const(text);
             Repr { packed }
         } else {
-            // HACK: This allows us to make assertions within a `const fn` without requiring nightly,
-            // see unstable `const_panic` feature. This results in a build failure, not a runtime panic
+            // HACK: This allows us to make assertions within a `const fn` without requiring
+            // nightly, see unstable `const_panic` feature. This results in a build
+            // failure, not a runtime panic
             #[allow(clippy::no_effect)]
             #[allow(unconditional_panic)]
             ["Trying to create a non-inline-able string at compile time!"][42];

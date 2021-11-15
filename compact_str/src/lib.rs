@@ -1,25 +1,26 @@
-//! `CompactStr` is a compact immutable string type that stores itself on the stack, if possible, and seamlessly
-//! interacts with `String`s and `&str`s.
+//! `CompactStr` is a compact immutable string type that stores itself on the stack, if possible,
+//! and seamlessly interacts with `String`s and `&str`s.
 //!
 //! ### Memory Layout
-//! Normally strings are stored on the heap, since they're dynamically sized. In Rust a `String` consists of
-//! three things:
+//! Normally strings are stored on the heap, since they're dynamically sized. In Rust a `String`
+//! consists of three things:
 //! 1. A `usize` denoting the length of the string
 //! 2. A pointer to a location on the heap where the string is stored
 //! 3. A `usize` denoting the capacity of the string
 //!
-//! On 64-bit architectures this results in 24 bytes being stored on the stack, 12 bytes for 32-bit architectures.
-//! For small strings, e.g. < 23 characters
+//! On 64-bit architectures this results in 24 bytes being stored on the stack, 12 bytes for 32-bit
+//! architectures. For small strings, e.g. < 23 characters
 
-use core::{
-    borrow::Borrow,
-    cmp::Ordering,
-    fmt,
-    hash::{Hash, Hasher},
-    iter::FromIterator,
-    ops::Deref,
-    str::FromStr,
+use core::borrow::Borrow;
+use core::cmp::Ordering;
+use core::fmt;
+use core::hash::{
+    Hash,
+    Hasher,
 };
+use core::iter::FromIterator;
+use core::ops::Deref;
+use core::str::FromStr;
 
 mod repr;
 use repr::Repr;
@@ -30,8 +31,8 @@ mod serde;
 #[cfg(test)]
 mod tests;
 
-/// A `CompactStr` is a memory efficient immuatable string that can be used almost anywhere a `String`
-/// or `&str` can be used.
+/// A `CompactStr` is a memory efficient immuatable string that can be used almost anywhere a
+/// `String` or `&str` can be used.
 ///
 /// ## Using `CompactStr`
 /// ```

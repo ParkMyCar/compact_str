@@ -1,5 +1,9 @@
 use compact_str::CompactStr;
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{
+    criterion_group,
+    criterion_main,
+    Criterion,
+};
 
 fn empty(c: &mut Criterion) {
     let word = "";

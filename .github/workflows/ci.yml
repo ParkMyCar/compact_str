@@ -1,4 +1,9 @@
-on: [push, pull_request, workflow_dispatch]
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
 
 name: CI
 
@@ -55,33 +60,17 @@ jobs:
           command: test
           args: --all-features
 
-  fmt:
-    name: cargo fmt
+  example-serde:
+    name: example - serde
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: stable
+          toolchain: nightly
           override: true
-      - run: rustup component add rustfmt
       - uses: actions-rs/cargo@v1
         with:
-          command: fmt
-          args: --all -- --check
-
-  clippy:
-    name: cargo clippy
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-      - run: rustup component add clippy
-      - uses: actions-rs/cargo@v1
-        with:
-          command: clippy
+          command: run
+          args: --manifest-path examples/serde/Cargo.toml

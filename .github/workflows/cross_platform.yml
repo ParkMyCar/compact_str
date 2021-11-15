@@ -108,6 +108,7 @@ jobs:
           args: --all-features --target powerpc64le-unknown-linux-gnu
 
   no_std:
+    # our dev-dependencies rely on `std` so instead of running a test, we just build compact_str
     name: no_std Embedded Target
     runs-on: ubuntu-latest
     steps:
@@ -120,6 +121,5 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           use-cross: true
-          command: test
-          args: --all-features --target thumbv6m-none-eabi
-
+          command: build
+          args: --manifest-path compact_str/Cargo.toml --target thumbv6m-none-eabi

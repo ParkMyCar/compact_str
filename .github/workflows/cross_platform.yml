@@ -116,10 +116,10 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-          target: thumbv6m-none-eabi
+          target: aarch64-unknown-uefi
           override: true
       - uses: actions-rs/cargo@v1
         with:
           use-cross: true
           command: build
-          args: --manifest-path compact_str/Cargo.toml --target thumbv6m-none-eabi
+          args: --manifest-path compact_str/Cargo.toml --target aarch64-unknown-uefi

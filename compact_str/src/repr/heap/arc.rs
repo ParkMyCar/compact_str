@@ -49,7 +49,11 @@ impl ArcStr {
 impl Clone for ArcStr {
     fn clone(&self) -> Self {
         let old_count = self.inner().ref_count.fetch_add(1, Ordering::Relaxed);
-        assert!(old_count < MAX_REFCOUNT, "Program has gone wild, ref count > {}", MAX_REFCOUNT);
+        assert!(
+            old_count < MAX_REFCOUNT,
+            "Program has gone wild, ref count > {}",
+            MAX_REFCOUNT
+        );
 
         ArcStr {
             len: self.len,

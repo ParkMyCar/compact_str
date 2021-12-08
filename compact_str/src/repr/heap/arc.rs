@@ -2,7 +2,6 @@ use std::sync::atomic::{
     AtomicUsize,
     Ordering,
 };
-
 use std::{
     alloc,
     fmt,

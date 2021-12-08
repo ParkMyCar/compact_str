@@ -39,6 +39,9 @@ impl ArcStr {
     #[inline]
     pub fn as_str(&self) -> &str {
         let buffer = self.inner().as_bytes();
+
+        // SAFETY: The only way you can construct an `ArcStr` is via a `&str` so it must be valid
+        // UTF-8, or the caller has manually made those guarantees
         unsafe { str::from_utf8_unchecked(buffer) }
     }
 
@@ -49,7 +52,7 @@ impl ArcStr {
 
     #[inline(never)]
     unsafe fn drop_inner(&mut self) {
-        ArcStrInner::dealloc(self.ptr.as_ptr())
+        ArcStrInner::dealloc(self.ptr)
     }
 }
 
@@ -90,12 +93,13 @@ impl From<&str> for ArcStr {
         let len = text.len();
         let mut ptr = ArcStrInner::with_capacity(len);
 
-        unsafe {
-            ptr.as_mut()
-                .str_buffer
-                .as_mut_ptr()
-                .copy_from(text.as_ptr(), len);
-        };
+        // SAFETY: We just created the `ArcStrInner` so we know the pointer is properly aligned, it
+        // is non-null, points to an instance of `ArcStrInner`, and the `str_buffer` is valid
+        let buffer_ptr = unsafe { ptr.as_mut().str_buffer.as_mut_ptr() };
+        // SAFETY: We know both `src` and `dest` are valid for respectively reads and writes of length
+        // `len` because `len` comes from `src`, and `dest` was allocated to be that length. We also
+        // know they're non-overlapping because `dest` is newly allocated
+        unsafe { buffer_ptr.copy_from_nonoverlapping(text.as_ptr(), len) };
 
         ArcStr { len, ptr }
     }
@@ -117,16 +121,22 @@ impl ArcStrInner {
     }
 
     pub fn with_capacity(capacity: usize) -> ptr::NonNull<ArcStrInner> {
-        let ptr = unsafe { Self::alloc(capacity) };
+        let mut ptr = Self::alloc(capacity);
 
-        unsafe { (*ptr).ref_count = AtomicUsize::new(1) };
-        unsafe { (*ptr).capacity = capacity };
+        // SAFETY: We just allocated an instance of `ArcStrInner` and checked to make sure it wasn't
+        // null, so we know it's aligned properly, that it points to an instance of `ArcStrInner`
+        // and that the "lifetime" is valid
+        unsafe { ptr.as_mut().ref_count = AtomicUsize::new(1) };
+        // SAFTEY: Same as above
+        unsafe { ptr.as_mut().capacity = capacity };
 
-        unsafe { ptr::NonNull::new_unchecked(ptr) }
+        ptr
     }
 
     #[inline]
     pub fn as_bytes(&self) -> &[u8] {
+        // SAFETY: Since we have an instance of `ArcStrInner` so we know the buffer is still valid,
+        // and we track the capacity with the creation and adjustment of the buffer
         unsafe { slice::from_raw_parts(self.str_buffer.as_ptr(), self.capacity) }
     }
 
@@ -135,7 +145,7 @@ impl ArcStrInner {
         self.capacity
     }
 
-    unsafe fn layout(capacity: usize) -> alloc::Layout {
+    fn layout(capacity: usize) -> alloc::Layout {
         let buffer_layout = alloc::Layout::array::<u8>(capacity).unwrap();
         alloc::Layout::new::<Self>()
             .extend(buffer_layout)
@@ -144,37 +154,85 @@ impl ArcStrInner {
             .pad_to_align()
     }
 
-    pub unsafe fn alloc(capacity: usize) -> *mut ArcStrInner {
+    pub fn alloc(capacity: usize) -> ptr::NonNull<ArcStrInner> {
         let layout = Self::layout(capacity);
-        let ptr = alloc::alloc(layout) as *mut ArcStrInner;
-        if ptr.is_null() {
-            alloc::handle_alloc_error(layout);
-        }
+        debug_assert!(layout.size() > 0);
 
-        ptr
+        // SAFETY: `alloc(...)` has undefined behavior if the layout is zero-sized, but we know the
+        // size of the layout is greater than 0 because we define it (and check for it above)
+        let raw_ptr = unsafe { alloc::alloc(layout) as *mut ArcStrInner };
+
+        // Check to make sure our pointer is non-null, some allocators return null pointers instead
+        // of panicking
+        match ptr::NonNull::new(raw_ptr) {
+            Some(ptr) => ptr,
+            None => alloc::handle_alloc_error(layout),
+        }
     }
 
-    pub unsafe fn dealloc(ptr: *mut ArcStrInner) {
-        let capacity = (*ptr).capacity;
+    pub fn dealloc(ptr: ptr::NonNull<ArcStrInner>) {
+        // SAFETY: We know the pointer is non-null and it is properly aligned
+        let capacity = unsafe { ptr.as_ref().capacity };
         let layout = Self::layout(capacity);
 
-        alloc::dealloc(ptr as *mut u8, layout);
+        // SAFETY: There is only one way to allocate an ArcStrInner, and it uses the same layout
+        // we defined above. Also we know the pointer is non-null and we use the same global
+        // allocator as we did in `Self::alloc(...)`
+        unsafe { alloc::dealloc(ptr.as_ptr() as *mut u8, layout) };
     }
 }
 
 #[cfg(test)]
 mod test {
+    use proptest::prelude::*;
+    use proptest::strategy::Strategy;
+
     use super::ArcStr;
+
+    #[test]
+    fn test_empty() {
+        let empty = "";
+        let arc_str = ArcStr::from(empty);
+
+        assert_eq!(arc_str.as_str(), empty);
+        assert_eq!(arc_str.len(), empty.len());
+    }
+
+    #[test]
+    fn test_long() {
+        let long = "aaabbbcccdddeeefff\n
+                    ggghhhiiijjjkkklll\n
+                    mmmnnnooopppqqqrrr\n
+                    ssstttuuuvvvwwwxxx\n
+                    yyyzzz000111222333\n
+                    444555666777888999000";
+        let arc_str = ArcStr::from(long);
+
+        assert_eq!(arc_str.as_str(), long);
+        assert_eq!(arc_str.len(), long.len());
+    }
 
     #[test]
     fn test_sanity() {
         let example = "hello world!";
         let arc_str = ArcStr::from(example);
 
-        println!("{}", arc_str.len());
-
         assert_eq!(arc_str.as_str(), example);
         assert_eq!(arc_str.len(), example.len());
+    }
+
+    // generates random unicode strings, upto 80 chars long
+    fn rand_unicode() -> impl Strategy<Value = String> {
+        proptest::collection::vec(proptest::char::any(), 0..80)
+            .prop_map(|v| v.into_iter().collect())
+    }
+
+    proptest! {
+        #[test]
+        fn test_strings_roundtrip(word in rand_unicode()) {
+            let arc_str = ArcStr::from(word.as_str());
+            prop_assert_eq!(&word, arc_str.as_str());
+        }
     }
 }
 

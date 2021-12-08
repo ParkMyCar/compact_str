@@ -5,10 +5,11 @@ use static_assertions::{
     const_assert_eq,
 };
 
+mod iter;
+
 mod discriminant;
 mod heap;
 mod inline;
-mod iter;
 mod packed;
 
 use discriminant::{

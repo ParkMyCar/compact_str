@@ -29,10 +29,11 @@ impl HeapString {
 
 impl From<String> for HeapString {
     fn from(s: String) -> Self {
-        let padding = PADDING;
-        let string = s.into();
+        // let padding = PADDING;
+        // let string = s.into();
 
-        HeapString { padding, string }
+        // HeapString { padding, string }
+        todo!()
     }
 }
 

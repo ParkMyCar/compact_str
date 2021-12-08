@@ -13,6 +13,21 @@ env:
   RUSTFLAGS: "-D warnings"
 
 jobs:
+  test-1_57:
+    name: cargo test 1.57
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: 1.57
+          override: true
+      - uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --all-features
+
   test-1_56:
     name: cargo test 1.56
     runs-on: ubuntu-latest

@@ -25,18 +25,6 @@ pub struct ArcStr {
 
 impl ArcStr {
     #[inline]
-    pub fn new() -> Self {
-        let ptr = ArcStrInner::new();
-
-        ArcStr { len: 0, ptr }
-    }
-
-    #[inline]
-    pub const fn len(&self) -> usize {
-        self.len
-    }
-
-    #[inline]
     pub fn as_str(&self) -> &str {
         let buffer = self.inner().as_bytes();
 
@@ -47,6 +35,8 @@ impl ArcStr {
 
     #[inline]
     fn inner(&self) -> &ArcStrInner {
+        // SAFETY: If we still have an instance of `ArcStr` then we know the pointer to
+        // `ArcStrInner` is valid for at least as long as the provided ref to `self`
         unsafe { self.ptr.as_ref() }
     }
 
@@ -59,10 +49,7 @@ impl ArcStr {
 impl Clone for ArcStr {
     fn clone(&self) -> Self {
         let old_count = self.inner().ref_count.fetch_add(1, Ordering::Relaxed);
-
-        if old_count > MAX_REFCOUNT {
-            panic!("Program has gone wild, ref count > {}", MAX_REFCOUNT);
-        }
+        assert!(old_count < MAX_REFCOUNT, "Program has gone wild, ref count > {}", MAX_REFCOUNT);
 
         ArcStr {
             len: self.len,
@@ -73,10 +60,11 @@ impl Clone for ArcStr {
 
 impl Drop for ArcStr {
     fn drop(&mut self) {
+        // This was copied from the implementation of `std::sync::Arc`
+        // TODO: Better document the safety invariants here
         if self.inner().ref_count.fetch_sub(1, Ordering::Release) != 1 {
             return;
         }
-
         std::sync::atomic::fence(Ordering::Acquire);
         unsafe { self.drop_inner() }
     }
@@ -96,9 +84,9 @@ impl From<&str> for ArcStr {
         // SAFETY: We just created the `ArcStrInner` so we know the pointer is properly aligned, it
         // is non-null, points to an instance of `ArcStrInner`, and the `str_buffer` is valid
         let buffer_ptr = unsafe { ptr.as_mut().str_buffer.as_mut_ptr() };
-        // SAFETY: We know both `src` and `dest` are valid for respectively reads and writes of length
-        // `len` because `len` comes from `src`, and `dest` was allocated to be that length. We also
-        // know they're non-overlapping because `dest` is newly allocated
+        // SAFETY: We know both `src` and `dest` are valid for respectively reads and writes of
+        // length `len` because `len` comes from `src`, and `dest` was allocated to be that
+        // length. We also know they're non-overlapping because `dest` is newly allocated
         unsafe { buffer_ptr.copy_from_nonoverlapping(text.as_ptr(), len) };
 
         ArcStr { len, ptr }
@@ -116,10 +104,6 @@ pub struct ArcStrInner {
 }
 
 impl ArcStrInner {
-    pub fn new() -> ptr::NonNull<ArcStrInner> {
-        Self::with_capacity(0)
-    }
-
     pub fn with_capacity(capacity: usize) -> ptr::NonNull<ArcStrInner> {
         let mut ptr = Self::alloc(capacity);
 
@@ -138,11 +122,6 @@ impl ArcStrInner {
         // SAFETY: Since we have an instance of `ArcStrInner` so we know the buffer is still valid,
         // and we track the capacity with the creation and adjustment of the buffer
         unsafe { slice::from_raw_parts(self.str_buffer.as_ptr(), self.capacity) }
-    }
-
-    #[inline]
-    pub fn capacity(&self) -> usize {
-        self.capacity
     }
 
     fn layout(capacity: usize) -> alloc::Layout {
@@ -195,7 +174,7 @@ mod test {
         let arc_str = ArcStr::from(empty);
 
         assert_eq!(arc_str.as_str(), empty);
-        assert_eq!(arc_str.len(), empty.len());
+        assert_eq!(arc_str.len, empty.len());
     }
 
     #[test]
@@ -209,7 +188,19 @@ mod test {
         let arc_str = ArcStr::from(long);
 
         assert_eq!(arc_str.as_str(), long);
-        assert_eq!(arc_str.len(), long.len());
+        assert_eq!(arc_str.len, long.len());
+    }
+
+    #[test]
+    fn test_clone_and_drop() {
+        let example = "hello world!";
+        let arc_str_1 = ArcStr::from(example);
+        let arc_str_2 = arc_str_1.clone();
+
+        drop(arc_str_1);
+
+        assert_eq!(arc_str_2.as_str(), example);
+        assert_eq!(arc_str_2.len, example.len());
     }
 
     #[test]
@@ -218,7 +209,7 @@ mod test {
         let arc_str = ArcStr::from(example);
 
         assert_eq!(arc_str.as_str(), example);
-        assert_eq!(arc_str.len(), example.len());
+        assert_eq!(arc_str.len, example.len());
     }
 
     // generates random unicode strings, upto 80 chars long

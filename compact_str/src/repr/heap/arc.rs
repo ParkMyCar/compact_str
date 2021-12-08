@@ -231,5 +231,8 @@ mod test {
     }
 }
 
-static_assertions::const_assert_eq!(mem::size_of::<ArcStr>(), 16);
-static_assertions::const_assert_eq!(mem::size_of::<ArcStrInner>(), 16);
+static_assertions::const_assert_eq!(mem::size_of::<ArcStr>(), 2 * mem::size_of::<usize>());
+// Note: Although the compiler sees `ArcStrInner` as being 16 bytes, it's technically unsized
+// because it contains a buffer of size `capacity`. We manually track the size of this buffer so
+// `ArcStr` can only be two words long
+static_assertions::const_assert_eq!(mem::size_of::<ArcStrInner>(), 2 * mem::size_of::<usize>());

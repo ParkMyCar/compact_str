@@ -148,7 +148,7 @@ impl<'a> StrongRepr<'a> {
         match self {
             Self::Inline(inline) => inline.as_str(),
             Self::Packed(packed) => packed.as_str(),
-            Self::Heap(heap) => &*heap.string,
+            Self::Heap(heap) => heap.string.as_str(),
         }
     }
 }

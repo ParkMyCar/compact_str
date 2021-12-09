@@ -6,16 +6,16 @@ use super::{
 };
 
 mod arc;
-use arc::ArcStr;
+use arc::ArcString;
 
-const PADDING_SIZE: usize = MAX_SIZE - mem::size_of::<ArcStr>();
+const PADDING_SIZE: usize = MAX_SIZE - mem::size_of::<ArcString>();
 const PADDING: [u8; PADDING_SIZE] = [HEAP_MASK; PADDING_SIZE];
 
 #[repr(C)]
 #[derive(Debug, Clone)]
 pub struct HeapString {
     padding: [u8; PADDING_SIZE],
-    pub string: ArcStr,
+    pub string: ArcString,
 }
 
 impl HeapString {

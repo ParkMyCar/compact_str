@@ -83,6 +83,31 @@ impl Repr {
     }
 
     #[inline]
+    pub fn capacity(&self) -> usize {
+        self.cast().capacity()
+    }
+
+    #[inline]
+    pub fn reserve(&mut self, additional: usize) {
+        // We want at least enough capacity to store length + additional
+        let new_capacity = self.len() + additional;
+
+        // We already have at least `additional` capacity, so we don't need to do anything
+        if self.capacity() > new_capacity {
+            return;
+        }
+
+        // Create a HeapString with `new_capacity`
+        let mut heap = HeapString::with_capacity(new_capacity);
+        // Write the existing string into it
+        heap.string.write_str(self.as_str());
+
+        // Set self to this new String
+        let heap = ManuallyDrop::new(heap);
+        *self = Repr { heap };
+    }
+
+    #[inline]
     pub fn as_str(&self) -> &str {
         self.cast().into_str()
     }
@@ -158,6 +183,15 @@ impl<'a> StrongRepr<'a> {
     }
 
     #[inline]
+    pub fn capacity(self) -> usize {
+        match self {
+            Self::Inline(inline) => inline.capacity(),
+            Self::Packed(packed) => packed.capacity(),
+            Self::Heap(heap) => heap.string.capacity(),
+        }
+    }
+
+    #[inline]
     pub fn into_str(self) -> &'a str {
         match self {
             Self::Inline(inline) => inline.as_str(),
@@ -201,5 +235,33 @@ mod tests {
         let long = "I am a long string that has very many characters";
         let repr = Repr::new(&long);
         assert_eq!(repr.as_str(), long);
+    }
+
+    #[test]
+    fn test_reserve() {
+        let word = std::mem::size_of::<usize>();
+
+        let short = "abc";
+        let mut repr = Repr::new(&short);
+
+        assert_eq!(repr.capacity(), word * 3 - 1);
+        assert_eq!(repr.as_str(), short);
+
+        // Reserve < WORD * 3 - 1
+        repr.reserve(word);
+        // This shouldn't cause a resize
+        assert_eq!(repr.capacity(), word * 3 - 1);
+        // We should not be heap allocated
+        assert!(!repr.is_heap_allocated());
+
+        // Reserve a large amount of bytes
+        repr.reserve(128);
+
+        // We should get resized
+        assert_eq!(repr.capacity(), 128 + short.len());
+        // The string should still be the same
+        assert_eq!(repr.as_str(), short);
+        // We should be heap allocated
+        assert!(repr.is_heap_allocated());
     }
 }

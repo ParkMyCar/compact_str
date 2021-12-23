@@ -25,6 +25,13 @@ impl HeapString {
 
         HeapString { padding, string }
     }
+
+    pub fn with_capacity(capacity: usize) -> Self {
+        let padding = PADDING;
+        let string = ArcString::with_capacity(capacity);
+
+        HeapString { padding, string }
+    }
 }
 
 impl From<String> for HeapString {

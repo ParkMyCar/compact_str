@@ -25,8 +25,36 @@ pub struct ArcString {
 
 impl ArcString {
     #[inline]
+    pub fn with_capacity(capacity: usize) -> Self {
+        let len = 0;
+        let ptr = ArcStringInner::with_capacity(capacity);
+
+        ArcString { len, ptr }
+    }
+
+    // TODO: Get rid of or refactor this method!!!!
+    #[inline]
+    pub fn write_str(&mut self, text: &str) {
+        assert_eq!(self.len(), 0, "Can't write to a string that already has contents!");
+
+        let len = text.len();
+
+        // Write into our buffer
+        let buffer_ptr = unsafe { self.ptr.as_mut().str_buffer.as_mut_ptr() };
+        unsafe { buffer_ptr.copy_from_nonoverlapping(text.as_ptr(), len) };
+
+        // Set our length after writing into the buffer
+        self.len = len;
+    }
+
+    #[inline]
     pub const fn len(&self) -> usize {
         self.len
+    }
+
+    #[inline]
+    pub fn capacity(&self) -> usize {
+        self.inner().capacity
     }
 
     #[inline]
@@ -35,7 +63,7 @@ impl ArcString {
 
         // SAFETY: The only way you can construct an `ArcString` is via a `&str` so it must be valid
         // UTF-8, or the caller has manually made those guarantees
-        unsafe { str::from_utf8_unchecked(buffer) }
+        unsafe { str::from_utf8_unchecked(&buffer[..self.len]) }
     }
 
     #[inline]

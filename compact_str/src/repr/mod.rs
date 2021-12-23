@@ -78,6 +78,11 @@ impl Repr {
     }
 
     #[inline]
+    pub fn len(&self) -> usize {
+        self.cast().len()
+    }
+
+    #[inline]
     pub fn as_str(&self) -> &str {
         self.cast().into_str()
     }
@@ -87,13 +92,13 @@ impl Repr {
         matches!(self.cast(), StrongRepr::Heap(..))
     }
 
-    #[inline]
+    #[inline(always)]
     fn discriminant(&self) -> Discriminant {
         // SAFETY: `heap`, `inline`, and `packed` all store a discriminant in their first byte
         unsafe { self.mask.discriminant() }
     }
 
-    #[inline]
+    #[inline(always)]
     fn cast(&self) -> StrongRepr<'_> {
         match self.discriminant() {
             Discriminant::Heap => {
@@ -143,6 +148,15 @@ enum StrongRepr<'a> {
 }
 
 impl<'a> StrongRepr<'a> {
+    #[inline]
+    pub fn len(self) -> usize {
+        match self {
+            Self::Inline(inline) => inline.len(),
+            Self::Packed(packed) => packed.len(),
+            Self::Heap(heap) => heap.string.len(),
+        }
+    }
+
     #[inline]
     pub fn into_str(self) -> &'a str {
         match self {

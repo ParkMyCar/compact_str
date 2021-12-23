@@ -93,13 +93,13 @@ impl Repr {
     }
 
     #[inline(always)]
-    const fn discriminant(&self) -> Discriminant {
+    fn discriminant(&self) -> Discriminant {
         // SAFETY: `heap`, `inline`, and `packed` all store a discriminant in their first byte
         unsafe { self.mask.discriminant() }
     }
 
     #[inline(always)]
-    const fn cast(&self) -> StrongRepr<'_> {
+    fn cast(&self) -> StrongRepr<'_> {
         match self.discriminant() {
             Discriminant::Heap => {
                 // SAFETY: We checked the discriminant to make sure the union is `heap`

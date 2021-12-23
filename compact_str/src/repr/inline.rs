@@ -75,6 +75,11 @@ impl InlineString {
     }
 
     #[inline]
+    pub const fn capacity(&self) -> usize {
+        MAX_INLINE_SIZE
+    }
+
+    #[inline]
     pub fn as_str(&self) -> &str {
         let len = self.len();
         let slice = &self.buffer[..len];

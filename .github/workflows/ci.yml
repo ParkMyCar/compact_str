@@ -60,21 +60,6 @@ jobs:
           command: test
           args: --all-features
 
-  # TODO: Figure out how to visualize these benchmarks somewhere
-  benchmarks:
-    name: cargo bench
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: bench
-
   example-serde:
     name: example - serde
     runs-on: ubuntu-latest

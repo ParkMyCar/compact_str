@@ -25,6 +25,11 @@ pub struct ArcString {
 
 impl ArcString {
     #[inline]
+    pub const fn len(&self) -> usize {
+        self.len
+    }
+
+    #[inline]
     pub fn as_str(&self) -> &str {
         let buffer = self.inner().as_bytes();
 

@@ -88,6 +88,11 @@ impl CompactStr {
     }
 
     #[inline]
+    pub fn len(&self) -> usize {
+        self.repr.len()
+    }
+
+    #[inline]
     pub fn as_str(&self) -> &str {
         self.repr.as_str()
     }

@@ -28,6 +28,10 @@ smol_str = "0.1"
 tracing_alloc = { path = "../tracing_alloc" }
 
 [[bench]]
+name = "apis"
+harness = false
+
+[[bench]]
 name = "compact_str"
 harness = false
 

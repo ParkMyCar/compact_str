@@ -121,7 +121,6 @@ impl CompactStr {
     ///
     /// # Panics
     /// Panics if the new capacity overflows `usize`
-    ///
     #[inline]
     pub fn reserve(&mut self, additional: usize) {
         self.repr.reserve(additional)

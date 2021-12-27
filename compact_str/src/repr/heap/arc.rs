@@ -35,7 +35,11 @@ impl ArcString {
     // TODO: Get rid of or refactor this method!!!!
     #[inline]
     pub fn write_str(&mut self, text: &str) {
-        assert_eq!(self.len(), 0, "Can't write to a string that already has contents!");
+        assert_eq!(
+            self.len(),
+            0,
+            "Can't write to a string that already has contents!"
+        );
 
         let len = text.len();
 

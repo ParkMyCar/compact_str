@@ -2,6 +2,8 @@ use std::sync::atomic::{
     AtomicUsize,
     Ordering,
 };
+use std::sync::Arc;
+
 use std::{
     alloc,
     fmt,
@@ -40,6 +42,25 @@ impl ArcString {
         unsafe { buffer_ptr.copy_from_nonoverlapping(text.as_ptr(), len) };
 
         ArcString { len, ptr }
+    }
+
+    #[inline]
+    pub unsafe fn make_mut_slice(&mut self) -> &mut [u8] {
+        if self.inner().ref_count.compare_exchange(1, 0, Ordering::Acquire, Ordering::Relaxed).is_err() {
+            // There is more than one reference to this underlying buffer, so we need to make a new
+            // instance and decrement the count of the original by one
+
+            // Make a new instance with the same capacity as self
+            let additional = self.capacity() - self.len();
+            let new = Self::new(self.as_str(), additional);
+
+            // Assign self to our new instsance
+            *self = new;
+
+            // self.inner().
+        } else {
+
+        }
     }
 
     #[inline]
@@ -119,7 +140,7 @@ pub type StrBuffer = [u8; UNKNOWN];
 
 #[repr(C)]
 pub struct ArcStringInner {
-    ref_count: AtomicUsize,
+    pub ref_count: AtomicUsize,
     capacity: usize,
     pub str_buffer: StrBuffer,
 }
@@ -143,6 +164,11 @@ impl ArcStringInner {
         // SAFETY: Since we have an instance of `ArcStringInner` so we know the buffer is still
         // valid, and we track the capacity with the creation and adjustment of the buffer
         unsafe { slice::from_raw_parts(self.str_buffer.as_ptr(), self.capacity) }
+    }
+
+    #[inline]
+    pub unsafe fn as_mut_bytes(&mut self) -> &mut [u8] {
+        slice::from_raw_parts_mut(self.str_buffer.as_mut_ptr(), self.capacity)
     }
 
     fn layout(capacity: usize) -> alloc::Layout {

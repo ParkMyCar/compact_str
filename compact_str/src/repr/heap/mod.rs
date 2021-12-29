@@ -19,6 +19,10 @@ pub struct HeapString {
 }
 
 impl HeapString {
+    /// Creates a `HeapString` from the provided `text`.
+    ///
+    /// If you need to allocate a `HeapString` with additional capacity, see
+    /// `HeapString::with_additional(...)`
     pub fn new(text: &str) -> Self {
         let padding = PADDING;
         let string = text.into();
@@ -26,9 +30,11 @@ impl HeapString {
         HeapString { padding, string }
     }
 
-    pub fn with_capacity(capacity: usize) -> Self {
+    /// Creates a `HeapString` from the provided `text` and allocates the underlying buffer with
+    /// `additional` capacity
+    pub fn with_additional(text: &str, additional: usize) -> Self {
         let padding = PADDING;
-        let string = ArcString::with_capacity(capacity);
+        let string = ArcString::new(text, additional);
 
         HeapString { padding, string }
     }

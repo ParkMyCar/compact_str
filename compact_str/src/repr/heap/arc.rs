@@ -25,31 +25,31 @@ pub struct ArcString {
 
 impl ArcString {
     #[inline]
-    pub fn with_capacity(capacity: usize) -> Self {
-        let len = 0;
-        let ptr = ArcStringInner::with_capacity(capacity);
+    pub fn new(text: &str, additional: usize) -> Self {
+        let len = text.len();
+        let capacity = len + additional;
+        let mut ptr = ArcStringInner::with_capacity(capacity);
+
+        // SAFETY: We just created the `ArcStringInner` so we know the pointer is properly aligned,
+        // it is non-null, points to an instance of `ArcStringInner`, and the `str_buffer`
+        // is valid
+        let buffer_ptr = unsafe { ptr.as_mut().str_buffer.as_mut_ptr() };
+        // SAFETY: We know both `src` and `dest` are valid for respectively reads and writes of
+        // length `len` because `len` comes from `src`, and `dest` was allocated to be at least that
+        // length. We also know they're non-overlapping because `dest` is newly allocated
+        unsafe { buffer_ptr.copy_from_nonoverlapping(text.as_ptr(), len) };
 
         ArcString { len, ptr }
     }
 
-    // TODO: Get rid of or refactor this method!!!!
-    #[inline]
-    pub fn write_str(&mut self, text: &str) {
-        assert_eq!(
-            self.len(),
-            0,
-            "Can't write to a string that already has contents!"
-        );
+    // TODO: I imagine eventually this will be used
+    // #[inline]
+    // pub fn with_capacity(capacity: usize) -> Self {
+    //     let len = 0;
+    //     let ptr = ArcStringInner::with_capacity(capacity);
 
-        let len = text.len();
-
-        // Write into our buffer
-        let buffer_ptr = unsafe { self.ptr.as_mut().str_buffer.as_mut_ptr() };
-        unsafe { buffer_ptr.copy_from_nonoverlapping(text.as_ptr(), len) };
-
-        // Set our length after writing into the buffer
-        self.len = len;
-    }
+    //     ArcString { len, ptr }
+    // }
 
     #[inline]
     pub const fn len(&self) -> usize {
@@ -119,19 +119,7 @@ impl fmt::Debug for ArcString {
 
 impl From<&str> for ArcString {
     fn from(text: &str) -> Self {
-        let len = text.len();
-        let mut ptr = ArcStringInner::with_capacity(len);
-
-        // SAFETY: We just created the `ArcStringInner` so we know the pointer is properly aligned,
-        // it is non-null, points to an instance of `ArcStringInner`, and the `str_buffer`
-        // is valid
-        let buffer_ptr = unsafe { ptr.as_mut().str_buffer.as_mut_ptr() };
-        // SAFETY: We know both `src` and `dest` are valid for respectively reads and writes of
-        // length `len` because `len` comes from `src`, and `dest` was allocated to be that
-        // length. We also know they're non-overlapping because `dest` is newly allocated
-        unsafe { buffer_ptr.copy_from_nonoverlapping(text.as_ptr(), len) };
-
-        ArcString { len, ptr }
+        ArcString::new(text, 0)
     }
 }
 

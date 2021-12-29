@@ -97,10 +97,11 @@ impl Repr {
             return;
         }
 
-        // Create a HeapString with `new_capacity`
-        let mut heap = HeapString::with_capacity(new_capacity);
-        // Write the existing string into it
-        heap.string.write_str(self.as_str());
+        // Note: Inlined strings (i.e. inline and packed) are already their maximum size. So if our
+        // current capacity isn't large enough, then we always need to create a heap variant
+
+        // Create a `HeapString` with `text.len() + additional` capacity
+        let heap = HeapString::with_additional(self.as_str(), additional);
 
         // Set self to this new String
         let heap = ManuallyDrop::new(heap);

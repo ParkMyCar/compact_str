@@ -2,8 +2,6 @@ use std::sync::atomic::{
     AtomicUsize,
     Ordering,
 };
-use std::sync::Arc;
-
 use std::{
     alloc,
     fmt,
@@ -46,7 +44,12 @@ impl ArcString {
 
     #[inline]
     pub unsafe fn make_mut_slice(&mut self) -> &mut [u8] {
-        if self.inner().ref_count.compare_exchange(1, 0, Ordering::Acquire, Ordering::Relaxed).is_err() {
+        if self
+            .inner()
+            .ref_count
+            .compare_exchange(1, 0, Ordering::Acquire, Ordering::Relaxed)
+            .is_err()
+        {
             // There is more than one reference to this underlying buffer, so we need to make a new
             // instance and decrement the count of the original by one
 
@@ -56,11 +59,13 @@ impl ArcString {
 
             // Assign self to our new instsance
             *self = new;
+        };
 
-            // self.inner().
-        } else {
-
-        }
+        // Return a mutable slice to the underlying buffer
+        //
+        // SAFETY: If we still have an instance of `ArcString` then we know the pointer to
+        // `ArcStringInner` is valid for at least as long as the provided ref to `self`
+        self.ptr.as_mut().as_mut_bytes()
     }
 
     #[inline]
@@ -82,6 +87,7 @@ impl ArcString {
         unsafe { str::from_utf8_unchecked(&buffer[..self.len]) }
     }
 
+    /// Returns a shared reference to the heap allocated `ArcStringInner`
     #[inline]
     fn inner(&self) -> &ArcStringInner {
         // SAFETY: If we still have an instance of `ArcString` then we know the pointer to
@@ -166,8 +172,19 @@ impl ArcStringInner {
         unsafe { slice::from_raw_parts(self.str_buffer.as_ptr(), self.capacity) }
     }
 
+    /// Returns a mutable reference to the underlying buffer of bytes
+    ///
+    /// # Invariants
+    /// * The caller must assert that no other references, or instances of `ArcString` exist before
+    /// calling this method. Otherwise multiple threads could race writing to the underlying buffer.
+    /// * The caller must assert that the underlying buffer is still valid UTF-8
     #[inline]
     pub unsafe fn as_mut_bytes(&mut self) -> &mut [u8] {
+        // SAFETY: Since we have an instance of `ArcStringInner` so we know the buffer is still
+        // valid, and we track the capacity with the creation and adjustment of the buffer
+        //
+        // Note: In terms of mutability, it's up to the caller to assert the provided bytes are
+        // value UTF-8
         slice::from_raw_parts_mut(self.str_buffer.as_mut_ptr(), self.capacity)
     }
 

@@ -114,6 +114,11 @@ impl Repr {
     }
 
     #[inline]
+    pub unsafe fn as_mut_slice(&mut self) -> &mut [u8] {
+        self.cast_mut().into_mut_slice()
+    }
+
+    #[inline]
     pub fn is_heap_allocated(&self) -> bool {
         matches!(self.cast(), StrongRepr::Heap(..))
     }
@@ -138,6 +143,24 @@ impl Repr {
             Discriminant::Packed => {
                 // SAFETY: We checked the discriminant to make sure the union is `packed`
                 StrongRepr::Packed(unsafe { &self.packed })
+            }
+        }
+    }
+
+    #[inline(always)]
+    fn cast_mut(&mut self) -> MutStrongRepr<'_> {
+        match self.discriminant() {
+            Discriminant::Heap => {
+                // SAFETY: We checked the discriminant to make sure the union is `heap`
+                MutStrongRepr::Heap(unsafe { &mut self.heap })
+            }
+            Discriminant::Inline => {
+                // SAFETY: We checked the discriminant to make sure the union is `inline`
+                MutStrongRepr::Inline(unsafe { &mut self.inline })
+            }
+            Discriminant::Packed => {
+                // SAFETY: We checked the discriminant to make sure the union is `packed`
+                MutStrongRepr::Packed(unsafe { &mut self.packed })
             }
         }
     }
@@ -198,6 +221,24 @@ impl<'a> StrongRepr<'a> {
             Self::Inline(inline) => inline.as_str(),
             Self::Packed(packed) => packed.as_str(),
             Self::Heap(heap) => heap.string.as_str(),
+        }
+    }
+}
+
+#[derive(Debug)]
+enum MutStrongRepr<'a> {
+    Heap(&'a mut ManuallyDrop<HeapString>),
+    Inline(&'a mut InlineString),
+    Packed(&'a mut PackedString),
+}
+
+impl<'a> MutStrongRepr<'a> {
+    #[inline]
+    pub unsafe fn into_mut_slice(self) -> &'a mut [u8] {
+        match self {
+            Self::Inline(inline) => inline.as_mut_slice(),
+            Self::Packed(packed) => packed.as_mut_slice(),
+            Self::Heap(heap) => heap.make_mut_slice(),
         }
     }
 }

@@ -62,6 +62,15 @@ impl PackedString {
         // SAFETY: You can only construct a PackedString via a &str
         unsafe { ::std::str::from_utf8_unchecked(&self.buffer) }
     }
+
+    /// Provides a mutable reference to the underlying buffer
+    ///
+    /// # Invariants
+    /// * Please see `super::Repr` for all invariants
+    #[inline]
+    pub unsafe fn as_mut_slice(&mut self) -> &mut [u8] {
+        &mut self.buffer[..]
+    }
 }
 
 static_assertions::assert_eq_size!(PackedString, String);

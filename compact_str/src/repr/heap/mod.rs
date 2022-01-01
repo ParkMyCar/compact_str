@@ -38,6 +38,16 @@ impl HeapString {
 
         HeapString { padding, string }
     }
+
+    /// Makes a mutable reference to the underlying buffer, cloning if there is more than one out
+    /// standing reference.
+    ///
+    /// # Invariants
+    /// * Please see `super::Repr` for all invariants
+    #[inline]
+    pub unsafe fn make_mut_slice(&mut self) -> &mut [u8] {
+        self.string.make_mut_slice()
+    }
 }
 
 impl From<String> for HeapString {

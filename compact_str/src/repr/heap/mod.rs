@@ -1,7 +1,5 @@
 use std::mem;
 
-use std::sync::Arc;
-
 use super::{
     HEAP_MASK,
     MAX_SIZE,

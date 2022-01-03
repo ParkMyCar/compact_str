@@ -16,16 +16,19 @@ impl CompactStr {
 
 #[cfg(test)]
 mod test {
-    use crate::CompactStr;
+    use std::io::Cursor;
+
     use proptest::prelude::*;
     use proptest::strategy::Strategy;
-    use std::io::Cursor;
+
+    use crate::CompactStr;
 
     const MAX_INLINED_SIZE: usize = core::mem::size_of::<String>();
 
     // generates random unicode strings, upto 80 chars long
     fn rand_unicode() -> impl Strategy<Value = String> {
-        proptest::collection::vec(proptest::char::any(), 0..80).prop_map(|v| v.into_iter().collect())
+        proptest::collection::vec(proptest::char::any(), 0..80)
+            .prop_map(|v| v.into_iter().collect())
     }
 
     proptest! {

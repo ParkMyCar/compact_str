@@ -12,7 +12,7 @@ fn main() {
         address: Some(Address {
             street: "432 Park Ave".into(),
             city: "New York City".into(),
-        })
+        }),
     };
     let bytes = user.serialize_to_vec();
 

@@ -78,7 +78,10 @@ impl ArcString {
 
             // Assign self to our new instsance
             *self = new;
-        };
+        } else {
+            // We were the sole reference of either kind; bump back up the strong ref count.
+            self.inner().ref_count.store(1, Ordering::Release);
+        }
 
         // Return a mutable slice to the underlying buffer
         //

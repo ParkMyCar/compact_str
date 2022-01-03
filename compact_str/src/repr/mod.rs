@@ -103,7 +103,7 @@ impl Repr {
         // Create a `HeapString` with `text.len() + additional` capacity
         let heap = HeapString::with_additional(self.as_str(), additional);
 
-        // Set self to this new String
+        // Replace `self` with the new Repr
         let heap = ManuallyDrop::new(heap);
         *self = Repr { heap };
     }

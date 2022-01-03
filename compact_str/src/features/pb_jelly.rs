@@ -1,6 +1,11 @@
-use pb_jelly::Message;
+use pb_jelly::{
+    Message,
+    Reflection,
+};
 
 use crate::CompactStr;
+
+impl Reflection for CompactStr {}
 
 impl Message for CompactStr {
     fn compute_size(&self) -> usize {

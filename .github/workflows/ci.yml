@@ -76,7 +76,7 @@ jobs:
           components: miri
       - name: Run Miri
         run: |
-          cargo miri test -- --nocapture
+          cargo miri test
 
   example-serde:
     name: example - serde

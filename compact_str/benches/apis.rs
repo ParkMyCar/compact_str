@@ -42,6 +42,24 @@ fn compact_str_very_big_heap_length(c: &mut Criterion) {
     });
 }
 
+fn compact_str_reserve_small(c: &mut Criterion) {
+    c.bench_function("reserve small", |b| {
+        b.iter(|| {
+            let mut compact_str = CompactStr::default();
+            black_box(compact_str.reserve(10));
+        })
+    });
+}
+
+fn compact_str_reserve_large(c: &mut Criterion) {
+    c.bench_function("reserve large", |b| {
+        b.iter(|| {
+            let mut compact_str = CompactStr::default();
+            black_box(compact_str.reserve(100));
+        })
+    });
+}
+
 fn std_string_short_length(c: &mut Criterion) {
     let word = "i am short";
     let string = String::from(word);
@@ -74,17 +92,39 @@ fn std_string_very_long_length(c: &mut Criterion) {
     });
 }
 
+fn std_str_reserve_small(c: &mut Criterion) {
+    c.bench_function("std str reserve small", |b| {
+        b.iter(|| {
+            let mut std_str = String::default();
+            black_box(std_str.reserve(10));
+        })
+    });
+}
+
+fn std_str_reserve_large(c: &mut Criterion) {
+    c.bench_function("std str reserve large", |b| {
+        b.iter(|| {
+            let mut std_str = String::default();
+            black_box(std_str.reserve(100));
+        })
+    });
+}
+
 criterion_group!(
     compact_str,
     compact_str_inline_length,
     compact_str_heap_length,
-    compact_str_very_big_heap_length
+    compact_str_very_big_heap_length,
+    compact_str_reserve_small,
+    compact_str_reserve_large,
 );
 criterion_group!(
     std_string,
     std_string_short_length,
     std_string_long_length,
-    std_string_very_long_length
+    std_string_very_long_length,
+    std_str_reserve_small,
+    std_str_reserve_large
 );
 
 criterion_main!(compact_str, std_string);

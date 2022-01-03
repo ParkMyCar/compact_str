@@ -25,8 +25,31 @@ pub struct ArcString {
 
 impl ArcString {
     #[inline]
+    pub fn new(text: &str, additional: usize) -> Self {
+        let len = text.len();
+        let capacity = len + additional;
+        let mut ptr = ArcStringInner::with_capacity(capacity);
+
+        // SAFETY: We just created the `ArcStringInner` so we know the pointer is properly aligned,
+        // it is non-null, points to an instance of `ArcStringInner`, and the `str_buffer`
+        // is valid
+        let buffer_ptr = unsafe { ptr.as_mut().str_buffer.as_mut_ptr() };
+        // SAFETY: We know both `src` and `dest` are valid for respectively reads and writes of
+        // length `len` because `len` comes from `src`, and `dest` was allocated to be at least that
+        // length. We also know they're non-overlapping because `dest` is newly allocated
+        unsafe { buffer_ptr.copy_from_nonoverlapping(text.as_ptr(), len) };
+
+        ArcString { len, ptr }
+    }
+
+    #[inline]
     pub const fn len(&self) -> usize {
         self.len
+    }
+
+    #[inline]
+    pub fn capacity(&self) -> usize {
+        self.inner().capacity
     }
 
     #[inline]
@@ -35,7 +58,7 @@ impl ArcString {
 
         // SAFETY: The only way you can construct an `ArcString` is via a `&str` so it must be valid
         // UTF-8, or the caller has manually made those guarantees
-        unsafe { str::from_utf8_unchecked(buffer) }
+        unsafe { str::from_utf8_unchecked(&buffer[..self.len]) }
     }
 
     #[inline]
@@ -87,19 +110,7 @@ impl fmt::Debug for ArcString {
 
 impl From<&str> for ArcString {
     fn from(text: &str) -> Self {
-        let len = text.len();
-        let mut ptr = ArcStringInner::with_capacity(len);
-
-        // SAFETY: We just created the `ArcStringInner` so we know the pointer is properly aligned,
-        // it is non-null, points to an instance of `ArcStringInner`, and the `str_buffer`
-        // is valid
-        let buffer_ptr = unsafe { ptr.as_mut().str_buffer.as_mut_ptr() };
-        // SAFETY: We know both `src` and `dest` are valid for respectively reads and writes of
-        // length `len` because `len` comes from `src`, and `dest` was allocated to be that
-        // length. We also know they're non-overlapping because `dest` is newly allocated
-        unsafe { buffer_ptr.copy_from_nonoverlapping(text.as_ptr(), len) };
-
-        ArcString { len, ptr }
+        ArcString::new(text, 0)
     }
 }
 

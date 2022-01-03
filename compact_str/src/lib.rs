@@ -98,6 +98,35 @@ impl CompactStr {
     }
 
     #[inline]
+    pub fn capacity(&self) -> usize {
+        self.repr.capacity()
+    }
+
+    /// Ensures that this `CompactStr`'s capacity is at least `additional` bytes longer than its
+    /// length. The capacity may be increased by more than `additional` bytes if it chooses, to
+    /// prevent frequent reallocations.
+    ///
+    /// # Note
+    /// * A `CompactStr` will always have at least a capacity of `(WORD * 3) - 1`
+    /// * Reserving additional bytes may cause the `CompactStr` to become heap allocated
+    ///
+    /// ### For example:
+    /// ```
+    /// use compact_str::CompactStr;
+    ///
+    /// const WORD: usize = std::mem::size_of::<usize>();
+    /// let compact = CompactStr::default();
+    /// assert!(compact.capacity() >= (WORD * 3) - 1);
+    /// ```
+    ///
+    /// # Panics
+    /// Panics if the new capacity overflows `usize`
+    #[inline]
+    pub fn reserve(&mut self, additional: usize) {
+        self.repr.reserve(additional)
+    }
+
+    #[inline]
     pub fn as_str(&self) -> &str {
         self.repr.as_str()
     }

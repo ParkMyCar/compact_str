@@ -43,6 +43,25 @@ impl ArcString {
     }
 
     #[inline]
+    pub const fn len(&self) -> usize {
+        self.len
+    }
+
+    #[inline]
+    pub fn capacity(&self) -> usize {
+        self.inner().capacity
+    }
+
+    #[inline]
+    pub fn as_str(&self) -> &str {
+        let buffer = self.inner().as_bytes();
+
+        // SAFETY: The only way you can construct an `ArcString` is via a `&str` so it must be valid
+        // UTF-8, or the caller has manually made those guarantees
+        unsafe { str::from_utf8_unchecked(&buffer[..self.len]) }
+    }
+
+    #[inline]
     pub unsafe fn make_mut_slice(&mut self) -> &mut [u8] {
         if self
             .inner()
@@ -69,22 +88,8 @@ impl ArcString {
     }
 
     #[inline]
-    pub const fn len(&self) -> usize {
-        self.len
-    }
-
-    #[inline]
-    pub fn capacity(&self) -> usize {
-        self.inner().capacity
-    }
-
-    #[inline]
-    pub fn as_str(&self) -> &str {
-        let buffer = self.inner().as_bytes();
-
-        // SAFETY: The only way you can construct an `ArcString` is via a `&str` so it must be valid
-        // UTF-8, or the caller has manually made those guarantees
-        unsafe { str::from_utf8_unchecked(&buffer[..self.len]) }
+    pub unsafe fn set_len(&mut self, length: usize) {
+        self.len = length;
     }
 
     /// Returns a shared reference to the heap allocated `ArcStringInner`

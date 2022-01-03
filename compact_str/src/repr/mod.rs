@@ -119,6 +119,11 @@ impl Repr {
     }
 
     #[inline]
+    pub unsafe fn set_len(&mut self, length: usize) {
+        self.cast_mut().set_len(length)
+    }
+
+    #[inline]
     pub fn is_heap_allocated(&self) -> bool {
         matches!(self.cast(), StrongRepr::Heap(..))
     }
@@ -241,6 +246,15 @@ impl<'a> MutStrongRepr<'a> {
             Self::Heap(heap) => heap.make_mut_slice(),
         }
     }
+
+    #[inline]
+    pub unsafe fn set_len(self, length: usize) {
+        match self {
+            Self::Inline(inline) => inline.set_len(length),
+            Self::Packed(packed) => packed.set_len(length),
+            Self::Heap(heap) => heap.set_len(length),
+        }
+    }
 }
 
 assert_eq_size!(Repr, String);
@@ -305,5 +319,40 @@ mod tests {
         assert_eq!(repr.as_str(), short);
         // We should be heap allocated
         assert!(repr.is_heap_allocated());
+    }
+
+    #[test]
+    fn test_write_to_buffer() {
+        let mut repr = Repr::new("");
+        let slice = unsafe { repr.as_mut_slice() };
+
+        let word = "abc";
+        let new_len = word.len();
+
+        // write bytes into the `CompactStr`
+        slice[..new_len].copy_from_slice(word.as_bytes());
+        // set the length
+        unsafe { repr.set_len(new_len) }
+
+        assert_eq!(repr.as_str(), word);
+    }
+
+    #[test]
+    fn test_write_to_resized_buffer() {
+        let mut repr = Repr::new("");
+
+        // reserve additional bytes
+        repr.reserve(100);
+        assert!(repr.is_heap_allocated());
+
+        let slice = unsafe { repr.as_mut_slice() };
+
+        let long_word = "hello, I am a very long string that should be allocated on the heap";
+        let new_len = long_word.len();
+
+        slice[..new_len].copy_from_slice(long_word.as_bytes());
+        unsafe { repr.set_len(new_len) }
+
+        assert_eq!(repr.as_str(), long_word);
     }
 }

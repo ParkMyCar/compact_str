@@ -157,6 +157,13 @@ impl CompactStr {
         self.repr.as_mut_slice()
     }
 
+    /// # Safety
+    /// * TODO: Document safety here
+    #[inline]
+    pub unsafe fn set_len(&mut self, length: usize) {
+        self.repr.set_len(length)
+    }
+
     #[inline]
     pub fn is_heap_allocated(&self) -> bool {
         self.repr.is_heap_allocated()

@@ -48,6 +48,11 @@ impl HeapString {
     pub unsafe fn make_mut_slice(&mut self) -> &mut [u8] {
         self.string.make_mut_slice()
     }
+
+    #[inline]
+    pub unsafe fn set_len(&mut self, length: usize) {
+        self.string.set_len(length)
+    }
 }
 
 impl From<String> for HeapString {

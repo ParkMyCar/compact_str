@@ -1,2 +1,2 @@
 [workspace]
-members = ["examples/pb-jelly","examples/pb-jelly/gen","examples/pb-jelly/protos/gen/proto_user", "examples/serde", "compact_str", "tracing_alloc"]
+members = ["examples/pb-jelly", "examples/serde", "compact_str", "tracing_alloc"]

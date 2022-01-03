@@ -14,6 +14,7 @@ categories = ["encoding", "parsing", "memory-management", "text-processing"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+bytes = { version = "1" }
 pb-jelly = { version = "0.0.11" }
 serde = { version = "1", optional = true }
 static_assertions = "1"

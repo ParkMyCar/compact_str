@@ -1,5 +1,6 @@
-use crate::CompactStr;
 use pb_jelly::Message;
+
+use crate::CompactStr;
 
 impl Message for CompactStr {
     fn compute_size(&self) -> usize {
@@ -12,7 +13,12 @@ impl Message for CompactStr {
     }
 
     fn deserialize<B: pb_jelly::PbBufferReader>(&mut self, r: &mut B) -> std::io::Result<()> {
-
-        todo!()
+        match CompactStr::from_utf8_buf(r) {
+            Ok(compact) => {
+                *self = compact;
+                Ok(())
+            }
+            Err(_) => Err(std::io::ErrorKind::InvalidData.into()),
+        }
     }
 }

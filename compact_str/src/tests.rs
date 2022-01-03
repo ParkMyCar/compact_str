@@ -22,6 +22,7 @@ fn rand_unicode_collection() -> impl Strategy<Value = Vec<String>> {
 
 proptest! {
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_strings_roundtrip(word in rand_unicode()) {
         let compact = CompactStr::new(&word);
         prop_assert_eq!(&word, &compact);
@@ -29,6 +30,7 @@ proptest! {
 
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_strings_allocated_properly(word in rand_unicode()) {
         let compact = CompactStr::new(&word);
 
@@ -42,12 +44,14 @@ proptest! {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_char_iterator_roundtrips(word in rand_unicode()) {
         let compact: CompactStr = word.clone().chars().collect();
         prop_assert_eq!(&word, &compact)
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_string_iterator_roundtrips(collection in rand_unicode_collection()) {
         let compact: CompactStr = collection.clone().into_iter().collect();
         let word: String = collection.into_iter().collect();

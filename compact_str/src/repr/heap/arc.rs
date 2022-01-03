@@ -22,6 +22,8 @@ pub struct ArcString {
     len: usize,
     ptr: ptr::NonNull<ArcStringInner>,
 }
+unsafe impl Sync for ArcString {}
+unsafe impl Send for ArcString {}
 
 impl ArcString {
     #[inline]

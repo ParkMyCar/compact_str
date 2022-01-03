@@ -1,0 +1,10 @@
+# @generated, do not edit
+[package]
+name = "proto_user"
+version = "0.0.1"
+edition = "2018"
+
+[dependencies]
+compact_str = { path = "../../../../../compact_str", features = ["proto"] }
+lazy_static = { version = "1.4.0" }
+pb-jelly = { version = "0.0.11" }

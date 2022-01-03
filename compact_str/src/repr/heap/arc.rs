@@ -230,6 +230,7 @@ mod test {
 
     proptest! {
         #[test]
+        #[cfg_attr(miri, ignore)]
         fn test_strings_roundtrip(word in rand_unicode()) {
             let arc_str = ArcString::from(word.as_str());
             prop_assert_eq!(&word, arc_str.as_str());

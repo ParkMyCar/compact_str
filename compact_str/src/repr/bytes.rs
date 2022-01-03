@@ -8,7 +8,7 @@ use super::{
 };
 
 #[cfg(target_pointer_width = "32")]
-const DEFAULT_TEXT: str = "000000000000";
+const DEFAULT_TEXT: &str = "000000000000";
 #[cfg(target_pointer_width = "64")]
 const DEFAULT_TEXT: &str = "000000000000000000000000";
 

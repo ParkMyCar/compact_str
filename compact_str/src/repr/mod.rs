@@ -93,7 +93,7 @@ impl Repr {
         let new_capacity = self.len() + additional;
 
         // We already have at least `additional` capacity, so we don't need to do anything
-        if self.capacity() > new_capacity {
+        if self.capacity() >= new_capacity {
             return;
         }
 
@@ -103,7 +103,7 @@ impl Repr {
         // Create a `HeapString` with `text.len() + additional` capacity
         let heap = HeapString::with_additional(self.as_str(), additional);
 
-        // Set self to this new String
+        // Replace `self` with the new Repr
         let heap = ManuallyDrop::new(heap);
         *self = Repr { heap };
     }
@@ -111,6 +111,16 @@ impl Repr {
     #[inline]
     pub fn as_str(&self) -> &str {
         self.cast().into_str()
+    }
+
+    #[inline]
+    pub unsafe fn as_mut_slice(&mut self) -> &mut [u8] {
+        self.cast_mut().into_mut_slice()
+    }
+
+    #[inline]
+    pub unsafe fn set_len(&mut self, length: usize) {
+        self.cast_mut().set_len(length)
     }
 
     #[inline]
@@ -138,6 +148,24 @@ impl Repr {
             Discriminant::Packed => {
                 // SAFETY: We checked the discriminant to make sure the union is `packed`
                 StrongRepr::Packed(unsafe { &self.packed })
+            }
+        }
+    }
+
+    #[inline(always)]
+    fn cast_mut(&mut self) -> MutStrongRepr<'_> {
+        match self.discriminant() {
+            Discriminant::Heap => {
+                // SAFETY: We checked the discriminant to make sure the union is `heap`
+                MutStrongRepr::Heap(unsafe { &mut self.heap })
+            }
+            Discriminant::Inline => {
+                // SAFETY: We checked the discriminant to make sure the union is `inline`
+                MutStrongRepr::Inline(unsafe { &mut self.inline })
+            }
+            Discriminant::Packed => {
+                // SAFETY: We checked the discriminant to make sure the union is `packed`
+                MutStrongRepr::Packed(unsafe { &mut self.packed })
             }
         }
     }
@@ -198,6 +226,33 @@ impl<'a> StrongRepr<'a> {
             Self::Inline(inline) => inline.as_str(),
             Self::Packed(packed) => packed.as_str(),
             Self::Heap(heap) => heap.string.as_str(),
+        }
+    }
+}
+
+#[derive(Debug)]
+enum MutStrongRepr<'a> {
+    Heap(&'a mut ManuallyDrop<HeapString>),
+    Inline(&'a mut InlineString),
+    Packed(&'a mut PackedString),
+}
+
+impl<'a> MutStrongRepr<'a> {
+    #[inline]
+    pub unsafe fn into_mut_slice(self) -> &'a mut [u8] {
+        match self {
+            Self::Inline(inline) => inline.as_mut_slice(),
+            Self::Packed(packed) => packed.as_mut_slice(),
+            Self::Heap(heap) => heap.make_mut_slice(),
+        }
+    }
+
+    #[inline]
+    pub unsafe fn set_len(self, length: usize) {
+        match self {
+            Self::Inline(inline) => inline.set_len(length),
+            Self::Packed(packed) => packed.set_len(length),
+            Self::Heap(heap) => heap.set_len(length),
         }
     }
 }
@@ -264,5 +319,40 @@ mod tests {
         assert_eq!(repr.as_str(), short);
         // We should be heap allocated
         assert!(repr.is_heap_allocated());
+    }
+
+    #[test]
+    fn test_write_to_buffer() {
+        let mut repr = Repr::new("");
+        let slice = unsafe { repr.as_mut_slice() };
+
+        let word = "abc";
+        let new_len = word.len();
+
+        // write bytes into the `CompactStr`
+        slice[..new_len].copy_from_slice(word.as_bytes());
+        // set the length
+        unsafe { repr.set_len(new_len) }
+
+        assert_eq!(repr.as_str(), word);
+    }
+
+    #[test]
+    fn test_write_to_resized_buffer() {
+        let mut repr = Repr::new("");
+
+        // reserve additional bytes
+        repr.reserve(100);
+        assert!(repr.is_heap_allocated());
+
+        let slice = unsafe { repr.as_mut_slice() };
+
+        let long_word = "hello, I am a very long string that should be allocated on the heap";
+        let new_len = long_word.len();
+
+        slice[..new_len].copy_from_slice(long_word.as_bytes());
+        unsafe { repr.set_len(new_len) }
+
+        assert_eq!(repr.as_str(), long_word);
     }
 }

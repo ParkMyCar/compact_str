@@ -115,8 +115,11 @@ impl CompactStr {
     /// use compact_str::CompactStr;
     ///
     /// const WORD: usize = std::mem::size_of::<usize>();
-    /// let compact = CompactStr::default();
+    /// let mut compact = CompactStr::default();
     /// assert!(compact.capacity() >= (WORD * 3) - 1);
+    ///
+    /// compact.reserve(200);
+    /// assert!(compact.is_heap_allocated());
     /// ```
     ///
     /// # Panics
@@ -129,6 +132,36 @@ impl CompactStr {
     #[inline]
     pub fn as_str(&self) -> &str {
         self.repr.as_str()
+    }
+
+    // TODO: Implement a `try_as_mut_slice(...)` that will fail if it results in cloning?
+    //
+    /// Provides a mutable reference to the underlying buffer of bytes.
+    ///
+    /// Note: If the given `CompactStr` is heap allocated, _and_ multiple references exist to the
+    /// underlying buffer (e.g. you previously cloned this `CompactStr`), calling this method will
+    /// clone the entire buffer to prevent silently mutating other owned `CompactStr`s.
+    ///
+    /// ### Futher Explanation
+    /// When a `CompactStr` becomes sufficiently large, the underlying buffer becomes a reference
+    /// counted buffer on the heap. Then, cloning a `CompactStr` increments a reference count
+    /// instead of cloning the entire buffer (very similar to `Arc<str>`). To prevent silently
+    /// mutating the data of other owned `CompactStr`s when taking a mutable slice, we clone the
+    /// underlying buffer and mutate that, if more than one outstanding reference exists.
+    ///
+    /// # Safety
+    /// * All Rust strings, including `CompactStr`, must be valid UTF-8. The caller must guarantee
+    /// that any modifications made to the underlying buffer are valid UTF-8.
+    #[inline]
+    pub unsafe fn as_mut_slice(&mut self) -> &mut [u8] {
+        self.repr.as_mut_slice()
+    }
+
+    /// # Safety
+    /// * TODO: Document safety here
+    #[inline]
+    pub unsafe fn set_len(&mut self, length: usize) {
+        self.repr.set_len(length)
     }
 
     #[inline]

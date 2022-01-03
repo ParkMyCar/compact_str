@@ -87,6 +87,23 @@ impl InlineString {
         // SAFETY: You can only construct an InlineString via a &str
         unsafe { ::std::str::from_utf8_unchecked(slice) }
     }
+
+    /// Provides a mutable reference to the underlying buffer
+    ///
+    /// # Invariants
+    /// * Please see `super::Repr` for all invariants
+    #[inline]
+    pub unsafe fn as_mut_slice(&mut self) -> &mut [u8] {
+        &mut self.buffer[..]
+    }
+
+    #[inline]
+    pub unsafe fn set_len(&mut self, length: usize) {
+        debug_assert!(length <= MAX_INLINE_SIZE);
+
+        // Set the leading bit mask, and then or our length
+        self.metadata = LEADING_BIT_MASK | length as u8;
+    }
 }
 
 static_assertions::assert_eq_size!(InlineString, String);

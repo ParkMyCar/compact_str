@@ -62,6 +62,22 @@ impl PackedString {
         // SAFETY: You can only construct a PackedString via a &str
         unsafe { ::std::str::from_utf8_unchecked(&self.buffer) }
     }
+
+    /// Provides a mutable reference to the underlying buffer
+    ///
+    /// # Invariants
+    /// * Please see `super::Repr` for all invariants
+    #[inline]
+    pub unsafe fn as_mut_slice(&mut self) -> &mut [u8] {
+        &mut self.buffer[..]
+    }
+
+    #[inline]
+    pub unsafe fn set_len(&mut self, length: usize) {
+        // An invariant of the Packed representation is that the size always equals MAX_SIZE, so
+        // theres no work to do here, other than assert the length we're trying to set is MAX_SIZE
+        debug_assert_eq!(length, MAX_SIZE);
+    }
 }
 
 static_assertions::assert_eq_size!(PackedString, String);

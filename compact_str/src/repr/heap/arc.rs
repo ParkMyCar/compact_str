@@ -62,6 +62,41 @@ impl ArcString {
     }
 
     #[inline]
+    pub unsafe fn make_mut_slice(&mut self) -> &mut [u8] {
+        if self
+            .inner()
+            .ref_count
+            .compare_exchange(1, 0, Ordering::Acquire, Ordering::Relaxed)
+            .is_err()
+        {
+            // There is more than one reference to this underlying buffer, so we need to make a new
+            // instance and decrement the count of the original by one
+
+            // Make a new instance with the same capacity as self
+            let additional = self.capacity() - self.len();
+            let new = Self::new(self.as_str(), additional);
+
+            // Assign self to our new instsance
+            *self = new;
+        } else {
+            // We were the sole reference of either kind; bump back up the strong ref count.
+            self.inner().ref_count.store(1, Ordering::Release);
+        }
+
+        // Return a mutable slice to the underlying buffer
+        //
+        // SAFETY: If we still have an instance of `ArcString` then we know the pointer to
+        // `ArcStringInner` is valid for at least as long as the provided ref to `self`
+        self.ptr.as_mut().as_mut_bytes()
+    }
+
+    #[inline]
+    pub unsafe fn set_len(&mut self, length: usize) {
+        self.len = length;
+    }
+
+    /// Returns a shared reference to the heap allocated `ArcStringInner`
+    #[inline]
     fn inner(&self) -> &ArcStringInner {
         // SAFETY: If we still have an instance of `ArcString` then we know the pointer to
         // `ArcStringInner` is valid for at least as long as the provided ref to `self`
@@ -119,7 +154,7 @@ pub type StrBuffer = [u8; UNKNOWN];
 
 #[repr(C)]
 pub struct ArcStringInner {
-    ref_count: AtomicUsize,
+    pub ref_count: AtomicUsize,
     capacity: usize,
     pub str_buffer: StrBuffer,
 }
@@ -143,6 +178,22 @@ impl ArcStringInner {
         // SAFETY: Since we have an instance of `ArcStringInner` so we know the buffer is still
         // valid, and we track the capacity with the creation and adjustment of the buffer
         unsafe { slice::from_raw_parts(self.str_buffer.as_ptr(), self.capacity) }
+    }
+
+    /// Returns a mutable reference to the underlying buffer of bytes
+    ///
+    /// # Invariants
+    /// * The caller must assert that no other references, or instances of `ArcString` exist before
+    /// calling this method. Otherwise multiple threads could race writing to the underlying buffer.
+    /// * The caller must assert that the underlying buffer is still valid UTF-8
+    #[inline]
+    pub unsafe fn as_mut_bytes(&mut self) -> &mut [u8] {
+        // SAFETY: Since we have an instance of `ArcStringInner` so we know the buffer is still
+        // valid, and we track the capacity with the creation and adjustment of the buffer
+        //
+        // Note: In terms of mutability, it's up to the caller to assert the provided bytes are
+        // value UTF-8
+        slice::from_raw_parts_mut(self.str_buffer.as_mut_ptr(), self.capacity)
     }
 
     fn layout(capacity: usize) -> alloc::Layout {

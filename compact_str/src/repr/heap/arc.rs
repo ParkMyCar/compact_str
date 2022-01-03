@@ -42,15 +42,6 @@ impl ArcString {
         ArcString { len, ptr }
     }
 
-    // TODO: I imagine eventually this will be used
-    // #[inline]
-    // pub fn with_capacity(capacity: usize) -> Self {
-    //     let len = 0;
-    //     let ptr = ArcStringInner::with_capacity(capacity);
-
-    //     ArcString { len, ptr }
-    // }
-
     #[inline]
     pub const fn len(&self) -> usize {
         self.len

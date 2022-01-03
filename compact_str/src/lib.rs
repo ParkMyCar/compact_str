@@ -153,7 +153,7 @@ impl CompactStr {
     /// * All Rust strings, including `CompactStr`, must be valid UTF-8. The caller must guarantee
     /// that any modifications made to the underlying buffer are valid UTF-8.
     #[inline]
-    pub unsafe fn as_mut_slice(&mut self) -> &[u8] {
+    pub unsafe fn as_mut_slice(&mut self) -> &mut [u8] {
         self.repr.as_mut_slice()
     }
 

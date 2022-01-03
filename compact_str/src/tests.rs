@@ -57,6 +57,51 @@ proptest! {
         let word: String = collection.into_iter().collect();
         prop_assert_eq!(&word, &compact);
     }
+
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_reserve_and_write_bytes(word in rand_unicode()) {
+        let mut compact = CompactStr::default();
+        prop_assert!(compact.is_empty());
+
+        // reserve enough space to write our bytes
+        compact.reserve(word.len());
+
+        // SAFETY: We're writing a String which we know is UTF-8
+        let slice = unsafe { compact.as_mut_slice() };
+        slice[..word.len()].copy_from_slice(word.as_bytes());
+
+        // SAFTEY: We know this is the length of our string, since `compact` started with 0 bytes
+        // and we just wrote `word.len()` bytes
+        unsafe { compact.set_len(word.len()) }
+
+        prop_assert_eq!(&word, &compact);
+    }
+
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_reserve_and_write_bytes_allocated_properly(word in rand_unicode()) {
+        let mut compact = CompactStr::default();
+        prop_assert!(compact.is_empty());
+
+        // reserve enough space to write our bytes
+        compact.reserve(word.len());
+
+        // SAFETY: We're writing a String which we know is UTF-8
+        let slice = unsafe { compact.as_mut_slice() };
+        slice[..word.len()].copy_from_slice(word.as_bytes());
+
+        // SAFTEY: We know this is the length of our string, since `compact` started with 0 bytes
+        // and we just wrote `word.len()` bytes
+        unsafe { compact.set_len(word.len()) }
+
+        prop_assert_eq!(compact.len(), word.len());
+
+        // The string should be heap allocated if `word` was >= MAX_INLINED_SIZE
+        //
+        // NOTE: The reserve and write API's don't currently support the Packed representation
+        prop_assert_eq!(compact.is_heap_allocated(), word.len() >= MAX_INLINED_SIZE);
+    }
 }
 
 #[test]

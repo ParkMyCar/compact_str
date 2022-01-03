@@ -93,7 +93,7 @@ impl Repr {
         let new_capacity = self.len() + additional;
 
         // We already have at least `additional` capacity, so we don't need to do anything
-        if self.capacity() > new_capacity {
+        if self.capacity() >= new_capacity {
             return;
         }
 

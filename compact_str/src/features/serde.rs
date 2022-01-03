@@ -7,7 +7,7 @@ use serde::de::{
     Visitor,
 };
 
-use super::CompactStr;
+use crate::CompactStr;
 
 fn compact_str<'de: 'a, 'a, D: Deserializer<'de>>(deserializer: D) -> Result<CompactStr, D::Error> {
     struct CompactStrVisitor;

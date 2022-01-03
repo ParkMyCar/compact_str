@@ -22,11 +22,10 @@ use core::iter::FromIterator;
 use core::ops::Deref;
 use core::str::FromStr;
 
+mod features;
+
 mod repr;
 use repr::Repr;
-
-#[cfg(feature = "serde")]
-mod serde;
 
 #[cfg(test)]
 mod tests;

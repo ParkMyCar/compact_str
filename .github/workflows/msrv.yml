@@ -13,137 +13,18 @@ env:
   RUSTFLAGS: "-D warnings"
 
 jobs:
-  test-1_57:
-    name: cargo test 1.57
+  test:
+    name: cargo test msrv..
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: 1.57
-          override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --all-features
-
-  test-1_56:
-    name: cargo test 1.56
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: 1.56
-          override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --all-features
-
-  test-1_55:
-    name: cargo test 1.55
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: 1.55
-          override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --all-features
-
-  test-1_54:
-    name: cargo test 1.54
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: 1.54
-          override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --all-features
-
-  test-1_53:
-    name: cargo test 1.53
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: 1.53
-          override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --all-features
-
-  test-1_52:
-    name: cargo test 1.52
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: 1.52
-          override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --all-features
-
-  test-1_51:
-    name: cargo test 1.51
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: 1.51
-          override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --all-features
-
-  test-1_50:
-    name: cargo test 1.50
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: 1.50.0
-          override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --all-features
-
-  test-1_49:
-    name: cargo test 1.49
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: 1.49
-          override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --all-features
+          toolchain: stable
+      - name: install cargo hack
+        run: cargo install cargo-hack
+      - name: cargo test msrv..
+        run: |
+          cd compact_str
+          cargo hack test --feature-powerset --optional-deps --version-range 1.49..

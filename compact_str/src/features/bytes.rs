@@ -50,12 +50,11 @@ impl CompactStr {
     /// # Examples
     /// ```
     /// # use compact_str::CompactStr;
-    /// use std::io::Cursor;
+    /// # use std::io;
     ///
     /// let word = "hello world";
-    /// // `bytes::Buf` is implemented for `Cursor<&[u8]>`
-    /// let mut buffer = Cursor::new(word.as_bytes());
-    ///
+    /// // `bytes::Buf` is implemented for `std::io::Cursor<&[u8]>`
+    /// let mut buffer = io::Cursor::new(word.as_bytes());
     /// let compact_str = unsafe { CompactStr::from_utf8_buf_unchecked(&mut buffer) };
     ///
     /// assert_eq!(compact_str, word);

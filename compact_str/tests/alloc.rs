@@ -22,8 +22,8 @@ fn test_randomized_allocations() {
     eprintln!("using seed: {}_u64", seed);
     let mut rng = StdRng::seed_from_u64(seed);
 
-    // generate a list of up to 10,000 words, with each word being up to 100 characters long
-    let num_words = rng.gen_range(0..10_000);
+    // generate a list of up to 1,000 words, with each word being up to 100 characters long
+    let num_words = rng.gen_range(0..1_000);
     let words: Vec<String> = (0..num_words)
         .map(|_| {
             let len = rng.gen_range(0..100);

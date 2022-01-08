@@ -133,6 +133,11 @@ impl CompactStr {
         self.repr.as_str()
     }
 
+    #[inline]
+    pub fn as_slice(&self) -> &[u8] {
+        self.repr.as_slice()
+    }
+
     // TODO: Implement a `try_as_mut_slice(...)` that will fail if it results in cloning?
     //
     /// Provides a mutable reference to the underlying buffer of bytes.

@@ -21,15 +21,16 @@ impl Repr {
         let repr = unsafe { Self::from_utf8_buf_unchecked(buf) };
 
         // Check to make sure the provided bytes are valid UTF-8, return the Repr if they are!
-        //
-        // TODO: Add an `as_slice()` method to Repr and refactor this call
-        match core::str::from_utf8(repr.as_str().as_bytes()) {
+        match core::str::from_utf8(repr.as_slice()) {
             Ok(_) => Ok(repr),
             Err(e) => Err(e),
         }
     }
 
     /// Converts a buffer of bytes to a `Repr`, without checking for valid UTF-8
+    ///
+    /// # Safety
+    /// The provided buffer must be valid UTF-8
     pub unsafe fn from_utf8_buf_unchecked<B: Buf>(buf: &mut B) -> Self {
         let size = buf.remaining();
         let chunk = buf.chunk();

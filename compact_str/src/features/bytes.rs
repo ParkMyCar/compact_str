@@ -17,7 +17,7 @@ impl CompactStr {
     /// # use std::collections::VecDeque;
     ///
     /// // `bytes::Buf` is implemented for `VecDeque<u8>`
-    /// let mut sparkle_heart = VecDeque::from([240, 159, 146, 150]);
+    /// let mut sparkle_heart = VecDeque::from(vec![240, 159, 146, 150]);
     /// // We know these bytes are valid, so we can `.unwrap()` or `.expect(...)` here
     /// let compact_str = CompactStr::from_utf8_buf(&mut sparkle_heart).expect("valid utf-8");
     ///

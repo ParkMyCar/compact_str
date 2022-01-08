@@ -42,10 +42,10 @@ impl CompactStr {
     /// Converts a buffer of bytes to a `CompactStr`, without checking that the provided buffer is
     /// valid UTF-8.
     ///
-    /// # Saftey
-    /// This function is unsafe because it does not check that the provided bytes are valid UTF-8. If
-    /// this constraint is violated, it may cause memory unsafety issues with futures uses of the
-    /// `ComapctStr`, as the rest of the library assumes that `CompactStr`s are valid UTF-8
+    /// # Safety
+    /// This function is unsafe because it does not check that the provided bytes are valid UTF-8.
+    /// If this constraint is violated, it may cause memory unsafety issues with futures uses of
+    /// the `ComapctStr`, as the rest of the library assumes that `CompactStr`s are valid UTF-8
     ///
     /// # Examples
     /// ```

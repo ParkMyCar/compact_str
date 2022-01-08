@@ -238,7 +238,7 @@ impl<'a> StrongRepr<'a> {
     }
 
     #[inline]
-    pub fn into_slice(&self) -> &'a [u8] {
+    pub fn into_slice(self) -> &'a [u8] {
         match self {
             Self::Inline(inline) => inline.as_slice(),
             Self::Packed(packed) => packed.as_slice(),

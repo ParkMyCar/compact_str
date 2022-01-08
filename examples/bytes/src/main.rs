@@ -1,5 +1,6 @@
-use compact_str::CompactStr;
 use std::io::Cursor;
+
+use compact_str::CompactStr;
 
 fn main() {
     let word = "hello world!";

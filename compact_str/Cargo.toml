@@ -15,12 +15,8 @@ categories = ["encoding", "parsing", "memory-management", "text-processing"]
 
 [dependencies]
 bytes = { version = "1", optional = true }
-pb-jelly = { version = "0.0.11", optional = true }
 serde = { version = "1", optional = true }
 static_assertions = "1"
-
-[features]
-proto = ["bytes", "pb-jelly"]
 
 [dev-dependencies]
 criterion = { version = "0.3", features = ["html_reports"] }

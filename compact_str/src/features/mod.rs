@@ -2,7 +2,5 @@
 
 #[cfg(feature = "bytes")]
 mod bytes;
-#[cfg(feature = "proto")]
-mod pb_jelly;
 #[cfg(feature = "serde")]
 mod serde;

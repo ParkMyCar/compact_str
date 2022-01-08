@@ -12,6 +12,13 @@ impl CompactStr {
     pub fn from_utf8_buf<B: Buf>(buf: &mut B) -> Result<Self, Utf8Error> {
         Repr::from_utf8_buf(buf).map(|repr| CompactStr { repr })
     }
+
+    /// Converts a buffer of bytes to a `CompactStr`, without checking that the provided buffer is
+    /// valid UTF-8.
+    pub unsafe fn from_utf8_buf_unchecked<B: Buf>(buf: &mut B) -> Self {
+        let repr = Repr::from_utf8_buf_unchecked(buf);
+        CompactStr { repr }
+    }
 }
 
 #[cfg(test)]

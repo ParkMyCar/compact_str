@@ -15,8 +15,22 @@ const DEFAULT_TEXT: &str = "000000000000000000000000";
 const DEFAULT_PACKED: Repr = Repr::new_const(DEFAULT_TEXT);
 
 impl Repr {
-    /// Converts a buffer of bytes to a `Repr`
+    /// Converts a buffer of bytes to a `Repr`,
     pub fn from_utf8_buf<B: Buf>(buf: &mut B) -> Result<Self, Utf8Error> {
+        // SAFETY: We check below to make sure the provided buffer is valid UTF-8
+        let repr = unsafe { Self::from_utf8_buf_unchecked(buf) };
+
+        // Check to make sure the provided bytes are valid UTF-8, return the Repr if they are!
+        //
+        // TODO: Add an `as_slice()` method to Repr and refactor this call
+        match core::str::from_utf8(repr.as_str().as_bytes()) {
+            Ok(_) => Ok(repr),
+            Err(e) => Err(e),
+        }
+    }
+
+    /// Converts a buffer of bytes to a `Repr`, without checking for valid UTF-8
+    pub unsafe fn from_utf8_buf_unchecked<B: Buf>(buf: &mut B) -> Self {
         let size = buf.remaining();
         let chunk = buf.chunk();
 
@@ -24,7 +38,7 @@ impl Repr {
         if chunk.is_empty() {
             // If the chunk is empty, then we should have 0 remaining bytes
             debug_assert_eq!(size, 0);
-            return Ok(super::EMPTY);
+            return super::EMPTY;
         }
         let first_byte = buf.chunk()[0];
 
@@ -46,23 +60,17 @@ impl Repr {
             default
         };
 
-        // SAFETY: Before returning this Repr we check to make sure the provided bytes are valid
-        // UTF-8
-        let slice = unsafe { repr.as_mut_slice() };
+        // SAFETY: The caller is responsible for making sure the provided buffer is UTF-8. This
+        // invariant is documented in the public API
+        let slice = repr.as_mut_slice();
         // Copy the bytes from the buffer into our Repr!
         buf.copy_to_slice(&mut slice[..size]);
 
         // Set the length of the Repr
         // SAFETY: We just wrote `size` bytes into the Repr
-        unsafe { repr.set_len(size) };
+        repr.set_len(size);
 
-        // Check to make sure the provided bytes are valid UTF-8, return the Repr if they are!
-        //
-        // TODO: Add an `as_slice()` method to Repr and refactor this call
-        match core::str::from_utf8(repr.as_str().as_bytes()) {
-            Ok(_) => Ok(repr),
-            Err(e) => Err(e),
-        }
+        repr
     }
 }
 

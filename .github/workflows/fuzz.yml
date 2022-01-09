@@ -1,0 +1,57 @@
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 01,13 * * *'
+
+name: Fuzz
+
+jobs:
+  fuzz_64bit:
+    name: cargo fuzz 64bit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+      - uses: actions-rs/install@v0.1
+        name: Install cargo-fuzz
+        with:
+          crate: cargo-fuzz
+          version: latest
+          use-tool-cache: true
+      - name: cd into compact_str
+        run: cd compact_str
+      - uses: actions-rs/cargo@v1
+        name: Fuzz 64-bit
+        with:
+          command: fuzz
+          args: run creation -- -max_total_time=900
+
+  fuzz_32bit:
+    name: cargo fuzz 32bit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          target: i686-unknown-linux-gnu
+          override: true
+      - uses: actions-rs/install@v0.1
+        name: Install cargo-fuzz
+        with:
+          crate: cargo-fuzz
+          version: latest
+          use-tool-cache: true
+      - name: cd into compact_str
+        run: cd compact_str
+      - uses: actions-rs/cargo@v1
+        name: Fuzz 32-bit
+        with:
+          use-cross: true
+          command: fuzz
+          args: run creation -- -max_total_time=900

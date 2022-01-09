@@ -1,2 +1,7 @@
+# Rust/Cargo files
 **/target
 **/Cargo.lock
+
+# Fuzzer
+**/artifacts
+**/corpus

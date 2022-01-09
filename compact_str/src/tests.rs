@@ -220,3 +220,9 @@ fn test_from_char_iter() {
     assert!(compact.is_heap_allocated());
     assert_eq!(s, compact);
 }
+
+#[test]
+fn test_compact_str_is_send_and_sync() {
+    fn is_send_and_sync<T: Send + Sync>() {}
+    is_send_and_sync::<CompactStr>();
+}

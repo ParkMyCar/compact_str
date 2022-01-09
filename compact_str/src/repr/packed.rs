@@ -60,7 +60,12 @@ impl PackedString {
     #[inline]
     pub fn as_str(&self) -> &str {
         // SAFETY: You can only construct a PackedString via a &str
-        unsafe { ::std::str::from_utf8_unchecked(&self.buffer) }
+        unsafe { ::std::str::from_utf8_unchecked(self.as_slice()) }
+    }
+
+    #[inline(always)]
+    pub fn as_slice(&self) -> &[u8] {
+        &self.buffer[..]
     }
 
     /// Provides a mutable reference to the underlying buffer

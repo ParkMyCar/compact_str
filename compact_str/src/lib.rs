@@ -22,11 +22,10 @@ use core::iter::FromIterator;
 use core::ops::Deref;
 use core::str::FromStr;
 
+mod features;
+
 mod repr;
 use repr::Repr;
-
-#[cfg(feature = "serde")]
-mod serde;
 
 #[cfg(test)]
 mod tests;
@@ -132,6 +131,11 @@ impl CompactStr {
     #[inline]
     pub fn as_str(&self) -> &str {
         self.repr.as_str()
+    }
+
+    #[inline]
+    pub fn as_slice(&self) -> &[u8] {
+        self.repr.as_slice()
     }
 
     // TODO: Implement a `try_as_mut_slice(...)` that will fail if it results in cloning?

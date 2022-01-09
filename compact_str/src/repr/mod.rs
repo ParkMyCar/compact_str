@@ -5,6 +5,9 @@ use static_assertions::{
     const_assert_eq,
 };
 
+#[cfg(feature = "bytes")]
+mod bytes;
+
 mod iter;
 
 mod discriminant;
@@ -111,6 +114,11 @@ impl Repr {
     #[inline]
     pub fn as_str(&self) -> &str {
         self.cast().into_str()
+    }
+
+    #[inline]
+    pub fn as_slice(&self) -> &[u8] {
+        self.cast().into_slice()
     }
 
     #[inline]
@@ -226,6 +234,15 @@ impl<'a> StrongRepr<'a> {
             Self::Inline(inline) => inline.as_str(),
             Self::Packed(packed) => packed.as_str(),
             Self::Heap(heap) => heap.string.as_str(),
+        }
+    }
+
+    #[inline]
+    pub fn into_slice(self) -> &'a [u8] {
+        match self {
+            Self::Inline(inline) => inline.as_slice(),
+            Self::Packed(packed) => packed.as_slice(),
+            Self::Heap(heap) => heap.string.as_slice(),
         }
     }
 }

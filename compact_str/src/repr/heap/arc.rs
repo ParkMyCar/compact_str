@@ -22,6 +22,8 @@ pub struct ArcString {
     len: usize,
     ptr: ptr::NonNull<ArcStringInner>,
 }
+unsafe impl Sync for ArcString {}
+unsafe impl Send for ArcString {}
 
 impl ArcString {
     #[inline]
@@ -54,11 +56,14 @@ impl ArcString {
 
     #[inline]
     pub fn as_str(&self) -> &str {
-        let buffer = self.inner().as_bytes();
-
         // SAFETY: The only way you can construct an `ArcString` is via a `&str` so it must be valid
         // UTF-8, or the caller has manually made those guarantees
-        unsafe { str::from_utf8_unchecked(&buffer[..self.len]) }
+        unsafe { str::from_utf8_unchecked(self.as_slice()) }
+    }
+
+    #[inline(always)]
+    pub fn as_slice(&self) -> &[u8] {
+        &self.inner().as_bytes()[..self.len]
     }
 
     #[inline]

@@ -80,7 +80,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+        name: Checkout repo
       - uses: actions-rs/toolchain@v1
+        name: Install Rust and friends
         with:
           profile: minimal
           toolchain: nightly
@@ -91,8 +93,10 @@ jobs:
           crate: cargo-fuzz
           version: latest
           use-tool-cache: true
-      - name: Fuzz
-        run: cargo fuzz run creation -- -max_total_time=120
+      - name: Fuzz!
+        run: |
+          cd compact_str
+          cargo fuzz run creation -- -max_total_time=120
 
   example-bytes:
     name: example - bytes

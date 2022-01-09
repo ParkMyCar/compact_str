@@ -1,9 +1,11 @@
 #![no_main]
+#![allow(clippy::if_same_then_else)]
+
+use std::io::Cursor;
 
 use arbitrary::Arbitrary;
 use compact_str::CompactStr;
 use libfuzzer_sys::fuzz_target;
-use std::io::Cursor;
 
 const MAX_INLINE_LENGTH: usize = std::mem::size_of::<String>();
 
@@ -32,7 +34,7 @@ fuzz_target!(|method: CreationMethod<'_>| {
             } else {
                 assert!(compact.is_heap_allocated());
             }
-        },
+        }
         // Create a `CompactStr` from an iterator of `char`s
         IterChar(chars) => {
             let compact: CompactStr = chars.iter().collect();
@@ -49,7 +51,7 @@ fuzz_target!(|method: CreationMethod<'_>| {
             } else {
                 assert!(compact.is_heap_allocated());
             }
-        },
+        }
         // Create a `CompactStr` from an iterator of `String`s
         IterString(strings) => {
             let compact: CompactStr = strings.iter().map::<&str, _>(|s| s.as_ref()).collect();
@@ -66,7 +68,7 @@ fuzz_target!(|method: CreationMethod<'_>| {
             } else {
                 assert!(compact.is_heap_allocated());
             }
-        },
+        }
         // Create a `CompactStr` from a buffer of bytes
         Bytes(data) => {
             let mut buffer = Cursor::new(data);
@@ -86,7 +88,7 @@ fuzz_target!(|method: CreationMethod<'_>| {
                     } else {
                         assert!(c.is_heap_allocated());
                     }
-                },
+                }
                 (Err(c_err), Err(s_err)) => assert_eq!(c_err, s_err),
                 _ => panic!("CompactStr and core::str read UTF-8 differently?"),
             }

@@ -9,6 +9,7 @@ edition = "2018"
 cargo-fuzz = true
 
 [dependencies]
+arbitrary = { version = "1", features = ["derive"] }
 libfuzzer-sys = "0.4"
 
 [dependencies.compact_str]
@@ -16,19 +17,7 @@ path = ".."
 features = ["bytes"]
 
 [[bin]]
-name = "bytes"
-path = "fuzz_targets/bytes.rs"
-test = false
-doc = false
-
-[[bin]]
-name = "correctness"
-path = "fuzz_targets/correctness.rs"
-test = false
-doc = false
-
-[[bin]]
-name = "iter_char"
-path = "fuzz_targets/iter_char.rs"
+name = "creation"
+path = "fuzz_targets/creation.rs"
 test = false
 doc = false

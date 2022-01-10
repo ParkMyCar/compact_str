@@ -21,7 +21,6 @@ jobs:
         with:
           crate: cargo-fuzz
           version: latest
-          use-tool-cache: true
       - name: Fuzz 64-bit
         run: |
           cd compact_str
@@ -43,7 +42,6 @@ jobs:
         with:
           crate: cargo-fuzz
           version: latest
-          use-tool-cache: true
       - name: Fuzz 32-bit
         run: |
           cd compact_str

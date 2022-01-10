@@ -47,4 +47,4 @@ jobs:
       - name: Fuzz 32-bit
         run: |
           cd compact_str
-          cargo +nightly-i686-unknown-linux-gnu fuzz run creation -- -max_total_time=900
+          cargo fuzz run creation -- -max_total_time=900

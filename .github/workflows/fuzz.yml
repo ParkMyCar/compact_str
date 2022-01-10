@@ -21,14 +21,10 @@ jobs:
         with:
           crate: cargo-fuzz
           version: latest
-          use-tool-cache: true
-      - name: cd into compact_str
-        run: cd compact_str
-      - uses: actions-rs/cargo@v1
-        name: Fuzz 64-bit
-        with:
-          command: fuzz
-          args: run creation -- -max_total_time=900
+      - name: Fuzz 64-bit
+        run: |
+          cd compact_str
+          cargo fuzz run creation -- -max_total_time=900
 
   fuzz_32bit:
     name: cargo fuzz 32bit
@@ -46,12 +42,7 @@ jobs:
         with:
           crate: cargo-fuzz
           version: latest
-          use-tool-cache: true
-      - name: cd into compact_str
-        run: cd compact_str
-      - uses: actions-rs/cargo@v1
-        name: Fuzz 32-bit
-        with:
-          use-cross: true
-          command: fuzz
-          args: run creation -- -max_total_time=900
+      - name: Fuzz 32-bit
+        run: |
+          cd compact_str
+          cargo fuzz run creation -- -max_total_time=900

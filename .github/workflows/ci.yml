@@ -92,7 +92,6 @@ jobs:
         with:
           crate: cargo-fuzz
           version: latest
-          use-tool-cache: true
       - name: Fuzz!
         run: |
           cd compact_str

@@ -6,12 +6,14 @@ on:
 name: Fuzz
 
 jobs:
-  fuzz_64bit:
-    name: cargo fuzz 64bit
+  creation_x86_64:
+    name: creation [x86_64]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+        name: Checkout compact_str
       - uses: actions-rs/toolchain@v1
+        name: Install Rust
         with:
           profile: minimal
           toolchain: nightly
@@ -21,28 +23,32 @@ jobs:
         with:
           crate: cargo-fuzz
           version: latest
-      - name: Fuzz 64-bit
-        run: |
-          cd compact_str
-          cargo fuzz run creation -- -max_total_time=900
+      - uses: actions-rs/cargo@v1
+        name: Fuzz
+        with:
+          command: fuzz
+          args: run --debug-assertions --fuzz-dir compact_str/fuzz creation -- -max_total_time=900
 
-  fuzz_32bit:
-    name: cargo fuzz 32bit
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: nightly
-          target: i686-unknown-linux-gnu
-          override: true
-      - uses: actions-rs/install@v0.1
-        name: Install cargo-fuzz
-        with:
-          crate: cargo-fuzz
-          version: latest
-      - name: Fuzz 32-bit
-        run: |
-          cd compact_str
-          cargo fuzz run creation -- -max_total_time=900
+  # creation_aarch64:
+  #   name: creation [aarch64]
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #       name: Checkout compact_str
+  #     - uses: actions-rs/toolchain@v1
+  #       name: Install Rust
+  #       with:
+  #         toolchain: nightly
+  #         target: aarch64-unknown-linux-gnu
+  #         override: true
+  #     - uses: actions-rs/install@v0.1
+  #       name: Install cargo-fuzz
+  #       with:
+  #         crate: cargo-fuzz
+  #         version: latest
+  #     - uses: actions-rs/cargo@v1
+  #       name: Fuzz
+  #       with:
+  #         use-cross: true
+  #         command: fuzz
+  #         args: run --debug-assertions --fuzz-dir compact_str/fuzz --target aarch64-unknown-linux-gnu creation -- -max_total_time=900

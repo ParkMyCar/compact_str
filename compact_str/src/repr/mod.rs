@@ -147,7 +147,24 @@ impl Repr {
     #[inline]
     pub fn pop(&mut self) -> Option<char> {
         let ch = self.as_str().chars().rev().next()?;
-        unsafe { self.set_len(self.len() - ch.len_utf8()) };
+
+        match self.cast() {
+            StrongRepr::Packed(packed) => {
+                let mut inline_buffer = [0; inline::MAX_INLINE_SIZE];
+
+                let new_len = packed.len() - ch.len_utf8();
+                let buffer: &mut [u8] = &mut inline_buffer[..new_len];
+
+                buffer.copy_from_slice(&packed.as_slice()[..new_len]);
+
+                let inline = unsafe { InlineString::from_parts(new_len, inline_buffer) };
+                *self = Repr { inline }
+            },
+            StrongRepr::Inline(_) | StrongRepr::Heap(_) => {
+                unsafe { self.set_len(self.len() - ch.len_utf8()) };
+            }
+        }
+
         Some(ch)
     }
 
@@ -505,5 +522,14 @@ mod tests {
 
         assert_eq!(repr.as_str(), "hello world!my name is compact_str");
         assert_eq!(repr.len(), 34);
+    }
+
+    #[test]
+    fn test_pop_packed() {
+        let mut repr = Repr::new("i am 24 characters long!");
+        repr.pop();
+
+        assert_eq!(repr.len(), 23);
+        assert_eq!(repr.as_str(), "i am 24 characters long");
     }
 }

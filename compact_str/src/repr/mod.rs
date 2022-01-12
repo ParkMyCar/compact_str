@@ -1,3 +1,4 @@
+use std::iter::Extend;
 use std::mem::ManuallyDrop;
 
 use static_assertions::{
@@ -127,6 +128,49 @@ impl Repr {
     }
 
     #[inline]
+    pub fn push(&mut self, ch: char) {
+        let len = self.len();
+        let char_len = ch.len_utf8();
+
+        // Reserve at least enough space for our char, possibly causing a heap allocation
+        self.reserve(char_len);
+
+        // Get a mutable reference to the underlying memory buffer
+        let slice = unsafe { self.as_mut_slice() };
+
+        // Write our character into the underlying buffer
+        ch.encode_utf8(&mut slice[len..]);
+        // Incrament our length
+        unsafe { self.set_len(len + char_len) };
+    }
+
+    #[inline]
+    pub fn pop(&mut self) -> Option<char> {
+        let ch = self.as_str().chars().rev().next()?;
+        unsafe { self.set_len(self.len() - ch.len_utf8()) };
+        Some(ch)
+    }
+
+    #[inline]
+    pub fn push_str(&mut self, s: &str) {
+        let len = self.len();
+        let str_len = s.len();
+
+        // Reserve at least enough space for our str, possibly causing a heap allocation
+        self.reserve(str_len);
+
+        let slice = unsafe { self.as_mut_slice() };
+        let buffer = &mut slice[len..len + str_len];
+
+        debug_assert_eq!(buffer.len(), s.as_bytes().len());
+
+        // Copy the string into our buffer
+        buffer.copy_from_slice(s.as_bytes());
+        // Incrament the length of our string
+        unsafe { self.set_len(len + str_len) };
+    }
+
+    #[inline]
     pub unsafe fn set_len(&mut self, length: usize) {
         self.cast_mut().set_len(length)
     }
@@ -199,6 +243,39 @@ impl Drop for Repr {
             // No-op, the value is on the stack and doesn't need to be explicitly dropped
             Discriminant::Inline | Discriminant::Packed => {}
         }
+    }
+}
+
+impl Extend<char> for Repr {
+    fn extend<T: IntoIterator<Item = char>>(&mut self, iter: T) {
+        let iterator = iter.into_iter();
+        let (lower_bound, _) = iterator.size_hint();
+        self.reserve(lower_bound);
+        iterator.for_each(|c| self.push(c));
+    }
+}
+
+impl<'a> Extend<&'a char> for Repr {
+    fn extend<T: IntoIterator<Item = &'a char>>(&mut self, iter: T) {
+        self.extend(iter.into_iter().copied());
+    }
+}
+
+impl<'a> Extend<&'a str> for Repr {
+    fn extend<T: IntoIterator<Item = &'a str>>(&mut self, iter: T) {
+        iter.into_iter().for_each(|s| self.push_str(s));
+    }
+}
+
+impl Extend<Box<str>> for Repr {
+    fn extend<T: IntoIterator<Item = Box<str>>>(&mut self, iter: T) {
+        iter.into_iter().for_each(move |s| self.push_str(&s));
+    }
+}
+
+impl Extend<String> for Repr {
+    fn extend<T: IntoIterator<Item = String>>(&mut self, iter: T) {
+        iter.into_iter().for_each(move |s| self.push_str(&s));
     }
 }
 
@@ -371,5 +448,62 @@ mod tests {
         unsafe { repr.set_len(new_len) }
 
         assert_eq!(repr.as_str(), long_word);
+    }
+
+    #[test]
+    fn test_push() {
+        let example = "hello world";
+        let mut repr = Repr::new(example);
+        repr.push('!');
+
+        assert_eq!(repr.as_str(), "hello world!");
+        assert_eq!(repr.len(), 12);
+    }
+
+    #[test]
+    fn test_pop() {
+        let example = "hello";
+        let mut repr = Repr::new(example);
+
+        assert_eq!(repr.pop(), Some('o'));
+        assert_eq!(repr.pop(), Some('l'));
+        assert_eq!(repr.pop(), Some('l'));
+
+        assert_eq!(repr.as_str(), "he");
+        assert_eq!(repr.len(), 2);
+    }
+
+    #[test]
+    fn test_push_str() {
+        let example = "hello";
+        let mut repr = Repr::new(example);
+
+        repr.push_str(" world!");
+
+        assert_eq!(repr.as_str(), "hello world!");
+        assert_eq!(repr.len(), 12);
+    }
+
+    #[test]
+    fn test_extend_chars() {
+        let example = "hello";
+        let mut repr = Repr::new(example);
+
+        repr.extend(" world!".chars());
+
+        assert_eq!(repr.as_str(), "hello world!");
+        assert_eq!(repr.len(), 12);
+    }
+
+    #[test]
+    fn test_extend_strs() {
+        let example = "hello";
+        let mut repr = Repr::new(example);
+
+        let words = vec![" ", "world!", "my name is", " compact", "_str"];
+        repr.extend(words);
+
+        assert_eq!(repr.as_str(), "hello world!my name is compact_str");
+        assert_eq!(repr.len(), 34);
     }
 }

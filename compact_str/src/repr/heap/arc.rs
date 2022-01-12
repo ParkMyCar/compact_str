@@ -29,8 +29,15 @@ impl ArcString {
     #[inline]
     pub fn new(text: &str, additional: usize) -> Self {
         let len = text.len();
-        let capacity = len + additional;
-        let mut ptr = ArcStringInner::with_capacity(capacity);
+
+        let required = len + additional;
+        let amortized = 3 * len / 2;
+        let new_capacity = core::cmp::max(amortized, required);
+
+        // TODO: Handle overflows in the case of __very__ large Strings
+        debug_assert!(new_capacity >= len);
+
+        let mut ptr = ArcStringInner::with_capacity(new_capacity);
 
         // SAFETY: We just created the `ArcStringInner` so we know the pointer is properly aligned,
         // it is non-null, points to an instance of `ArcStringInner`, and the `str_buffer`

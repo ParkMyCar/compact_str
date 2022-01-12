@@ -1,3 +1,4 @@
+use std::iter::Extend;
 use std::sync::atomic::{
     AtomicUsize,
     Ordering,
@@ -45,6 +46,23 @@ impl ArcString {
     }
 
     #[inline]
+    pub fn reserve(&mut self, additional: usize) {
+        debug_assert!(additional > 0);
+
+        // Only reallocate if we don't have enough space for `additional` bytes
+        if additional > self.capacity() - self.len() {
+            let required = self.capacity() + additional;
+            let amortized = 3 * self.capacity() / 2;
+            let new_capacity = core::cmp::max(amortized, required);
+
+            // TODO: Handle overflows in the case of __very__ large Strings
+            debug_assert!(new_capacity > self.capacity());
+
+            *self = ArcString::new(self.as_str(), new_capacity - self.len());
+        }
+    }
+
+    #[inline]
     pub const fn len(&self) -> usize {
         self.len
     }
@@ -64,6 +82,49 @@ impl ArcString {
     #[inline(always)]
     pub fn as_slice(&self) -> &[u8] {
         &self.inner().as_bytes()[..self.len]
+    }
+
+    #[inline]
+    pub fn push(&mut self, ch: char) {
+        let len = self.len();
+        let char_len = ch.len_utf8();
+
+        // Make sure we have enough space for the char
+        self.reserve(char_len);
+
+        // SAFETY: We're writing valid UTF-8 into the slice
+        let mut_slice = unsafe { self.make_mut_slice() };
+
+        // We know we have enough space in the buffer, because we checked above
+        ch.encode_utf8(&mut mut_slice[len..]);
+        // Incrament the length of our string
+        self.len += char_len;
+    }
+
+    #[inline]
+    pub fn pop(&mut self) -> Option<char> {
+        // Get the last character
+        let c = self.as_str().chars().rev().next()?;
+        // Decrement our length, effectively popping it
+        self.len -= c.len_utf8();
+        // Return the last character
+        Some(c)
+    }
+
+    #[inline]
+    pub fn push_str(&mut self, s: &str) {
+        let len = self.len();
+        let str_len = s.len();
+
+        self.reserve(str_len);
+
+        // SAFETY: We're writing valid UTF-8 into the slice
+        let mut_slice = unsafe { self.make_mut_slice() };
+
+        // We know we have enough space in the buffer, because we checked above
+        mut_slice[len..len + str_len].copy_from_slice(s.as_bytes());
+        // Incrament the length of our string
+        self.len += str_len;
     }
 
     #[inline]
@@ -151,6 +212,39 @@ impl fmt::Debug for ArcString {
 impl From<&str> for ArcString {
     fn from(text: &str) -> Self {
         ArcString::new(text, 0)
+    }
+}
+
+impl Extend<char> for ArcString {
+    fn extend<T: IntoIterator<Item = char>>(&mut self, iter: T) {
+        let iterator = iter.into_iter();
+        let (lower_bound, _) = iterator.size_hint();
+        self.reserve(lower_bound);
+        iterator.for_each(|c| self.push(c));
+    }
+}
+
+impl<'a> Extend<&'a char> for ArcString {
+    fn extend<T: IntoIterator<Item = &'a char>>(&mut self, iter: T) {
+        self.extend(iter.into_iter().copied());
+    }
+}
+
+impl<'a> Extend<&'a str> for ArcString {
+    fn extend<T: IntoIterator<Item = &'a str>>(&mut self, iter: T) {
+        iter.into_iter().for_each(|s| self.push_str(s));
+    }
+}
+
+impl Extend<Box<str>> for ArcString {
+    fn extend<T: IntoIterator<Item = Box<str>>>(&mut self, iter: T) {
+        iter.into_iter().for_each(move |s| self.push_str(&s));
+    }
+}
+
+impl Extend<String> for ArcString {
+    fn extend<T: IntoIterator<Item = String>>(&mut self, iter: T) {
+        iter.into_iter().for_each(move |s| self.push_str(&s));
     }
 }
 
@@ -287,6 +381,63 @@ mod test {
 
         assert_eq!(arc_str.as_str(), example);
         assert_eq!(arc_str.len, example.len());
+    }
+
+    #[test]
+    fn test_push() {
+        let example = "hello world";
+        let mut arc_str = ArcString::from(example);
+        arc_str.push('!');
+
+        assert_eq!(arc_str.as_str(), "hello world!");
+        assert_eq!(arc_str.len(), 12);
+    }
+
+    #[test]
+    fn test_pop() {
+        let example = "hello";
+        let mut arc_str = ArcString::from(example);
+
+        assert_eq!(arc_str.pop(), Some('o'));
+        assert_eq!(arc_str.pop(), Some('l'));
+        assert_eq!(arc_str.pop(), Some('l'));
+
+        assert_eq!(arc_str.as_str(), "he");
+        assert_eq!(arc_str.len(), 2);
+    }
+
+    #[test]
+    fn test_push_str() {
+        let example = "hello";
+        let mut arc_str = ArcString::from(example);
+
+        arc_str.push_str(" world!");
+
+        assert_eq!(arc_str.as_str(), "hello world!");
+        assert_eq!(arc_str.len(), 12);
+    }
+
+    #[test]
+    fn test_extend_chars() {
+        let example = "hello";
+        let mut arc_str = ArcString::from(example);
+
+        arc_str.extend(" world!".chars());
+
+        assert_eq!(arc_str.as_str(), "hello world!");
+        assert_eq!(arc_str.len(), 12);
+    }
+
+    #[test]
+    fn test_extend_strs() {
+        let example = "hello";
+        let mut arc_str = ArcString::from(example);
+
+        let words = vec![" ", "world!", "my name is", " compact", "_str"];
+        arc_str.extend(words);
+
+        assert_eq!(arc_str.as_str(), "hello world!my name is compact_str");
+        assert_eq!(arc_str.len(), 34);
     }
 
     // generates random unicode strings, upto 80 chars long

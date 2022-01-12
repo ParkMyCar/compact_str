@@ -60,6 +60,20 @@ fn compact_str_reserve_large(c: &mut Criterion) {
     });
 }
 
+fn compact_str_clone_small(c: &mut Criterion) {
+    let compact = CompactStr::new("i am short");
+    c.bench_function("clone small", |b| b.iter(|| compact.clone()));
+}
+
+fn compact_str_clone_large(c: &mut Criterion) {
+    let compact = CompactStr::new("I am a very long string that will get allocated on the heap");
+    c.bench_function("clone large", |b| b.iter(|| {
+        let mut clone = compact.clone();
+        clone.push('!');
+        clone.push('!');
+    }));
+}
+
 fn std_string_short_length(c: &mut Criterion) {
     let word = "i am short";
     let string = String::from(word);
@@ -110,6 +124,20 @@ fn std_str_reserve_large(c: &mut Criterion) {
     });
 }
 
+fn std_str_clone_small(c: &mut Criterion) {
+    let std_str = String::from("i am short");
+    c.bench_function("std str clone small", |b| b.iter(|| std_str.clone()));
+}
+
+fn std_str_clone_large(c: &mut Criterion) {
+    let std_str = String::from("I am a very long string that will get allocated on the heap");
+    c.bench_function("std str clone large", |b| b.iter(|| {
+        let mut clone = std_str.clone();
+        clone.push('!');
+        clone.push('!');
+    }));
+}
+
 criterion_group!(
     compact_str,
     compact_str_inline_length,
@@ -117,6 +145,8 @@ criterion_group!(
     compact_str_very_big_heap_length,
     compact_str_reserve_small,
     compact_str_reserve_large,
+    compact_str_clone_small,
+    compact_str_clone_large,
 );
 criterion_group!(
     std_string,
@@ -124,7 +154,9 @@ criterion_group!(
     std_string_long_length,
     std_string_very_long_length,
     std_str_reserve_small,
-    std_str_reserve_large
+    std_str_reserve_large,
+    std_str_clone_small,
+    std_str_clone_large,
 );
 
 criterion_main!(compact_str, std_string);

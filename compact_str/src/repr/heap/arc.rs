@@ -68,24 +68,17 @@ impl ArcString {
 
     #[inline]
     pub unsafe fn make_mut_slice(&mut self) -> &mut [u8] {
-        if self
-            .inner()
-            .ref_count
-            .compare_exchange(1, 0, Ordering::Acquire, Ordering::Relaxed)
-            .is_err()
-        {
-            // There is more than one reference to this underlying buffer, so we need to make a new
-            // instance and decrement the count of the original by one
+        // If we have a ref_count, that means there are multiple references to this underlying buffer
+        if let Some(_) = self.inner().ref_count.as_ref() {
+            // Make a new instance with the same capacity of self
 
             // Make a new instance with the same capacity as self
             let additional = self.capacity() - self.len();
             let new = Self::new(self.as_str(), additional);
 
-            // Assign self to our new instsance
+            // Assign self to our new instsance, this will drop the existing `self` which decrements
+            // the ref_count
             *self = new;
-        } else {
-            // We were the sole reference of either kind; bump back up the strong ref count.
-            self.inner().ref_count.store(1, Ordering::Release);
         }
 
         // Return a mutable slice to the underlying buffer
@@ -116,12 +109,20 @@ impl ArcString {
 
 impl Clone for ArcString {
     fn clone(&self) -> Self {
-        let old_count = self.inner().ref_count.fetch_add(1, Ordering::Relaxed);
-        assert!(
-            old_count < MAX_REFCOUNT,
-            "Program has gone wild, ref count > {}",
-            MAX_REFCOUNT
-        );
+        if let Some(ref_count) = self.inner().ref_count.as_ref() {
+            let old_count = ref_count.fetch_add(1, Ordering::Relaxed);
+            assert!(
+                old_count < MAX_REFCOUNT,
+                "Program has gone wild, ref count > {}",
+                MAX_REFCOUNT
+            );
+        } else {
+            // SAFETY: Since there's no ref count, we know we hold a unique reference to this inner
+            // struct, so it's safe to take a mutable reference
+            let mut_inner = unsafe { self.ptr.as_ptr().as_mut().unwrap() };
+            // Do the lazy initialization of our ref count, setting it to 2
+            mut_inner.ref_count = Some(AtomicUsize::new(2));
+        }
 
         ArcString {
             len: self.len,
@@ -132,13 +133,19 @@ impl Clone for ArcString {
 
 impl Drop for ArcString {
     fn drop(&mut self) {
-        // This was copied from the implementation of `std::sync::Arc`
-        // TODO: Better document the safety invariants here
-        if self.inner().ref_count.fetch_sub(1, Ordering::Release) != 1 {
-            return;
+        match self.inner().ref_count.as_ref() {
+            // We were never cloned
+            None => unsafe { self.drop_inner() },
+            Some(ref_count) => {
+                // This was copied from the implementation of `std::sync::Arc`
+                // TODO: Better document the safety invariants here
+                if ref_count.fetch_sub(1, Ordering::Release) != 1 {
+                    return;
+                }
+                std::sync::atomic::fence(Ordering::Acquire);
+                unsafe { self.drop_inner() }
+            }
         }
-        std::sync::atomic::fence(Ordering::Acquire);
-        unsafe { self.drop_inner() }
     }
 }
 
@@ -157,9 +164,13 @@ impl From<&str> for ArcString {
 const UNKNOWN: usize = 0;
 pub type StrBuffer = [u8; UNKNOWN];
 
+// TODO: Right now this struct is 24 bytes, 16 for `ref_count: Option<AtomicUsize>` and 8 more for
+// `capacity: usize`. The Option needs to represent the `None` variant somehow, which is why it pads
+// the AtomicUsize with an additional 8 bytes. Theoretically we can use capacity == 0 to represent
+// the `None` variant of the Option, since we know the capacity should never be 0, saving us 8 bytes
 #[repr(C)]
 pub struct ArcStringInner {
-    pub ref_count: AtomicUsize,
+    pub ref_count: Option<AtomicUsize>,
     capacity: usize,
     pub str_buffer: StrBuffer,
 }
@@ -171,7 +182,7 @@ impl ArcStringInner {
         // SAFETY: We just allocated an instance of `ArcStringInner` and checked to make sure it
         // wasn't null, so we know it's aligned properly, that it points to an instance of
         // `ArcStringInner` and that the "lifetime" is valid
-        unsafe { ptr.as_mut().ref_count = AtomicUsize::new(1) };
+        unsafe { ptr.as_mut().ref_count = None };
         // SAFTEY: Same as above
         unsafe { ptr.as_mut().capacity = capacity };
 
@@ -311,5 +322,5 @@ static_assertions::const_assert_eq!(mem::size_of::<ArcString>(), 2 * mem::size_o
 // `ArcString` can only be two words long
 static_assertions::const_assert_eq!(
     mem::size_of::<ArcStringInner>(),
-    2 * mem::size_of::<usize>()
+    3 * mem::size_of::<usize>()
 );

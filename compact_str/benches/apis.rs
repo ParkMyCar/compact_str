@@ -65,13 +65,16 @@ fn compact_str_clone_small(c: &mut Criterion) {
     c.bench_function("clone small", |b| b.iter(|| compact.clone()));
 }
 
-fn compact_str_clone_large(c: &mut Criterion) {
+fn compact_str_clone_large_and_modify(c: &mut Criterion) {
     let compact = CompactStr::new("I am a very long string that will get allocated on the heap");
-    c.bench_function("clone large", |b| b.iter(|| {
-        let mut clone = compact.clone();
-        clone.push('!');
-        clone.push('!');
-    }));
+    c.bench_function("clone large", |b| {
+        b.iter(|| {
+            let mut clone = compact.clone();
+            clone.push('!');
+            clone.push(' ');
+            clone.push_str("And that is quite cool~");
+        })
+    });
 }
 
 fn std_string_short_length(c: &mut Criterion) {
@@ -129,13 +132,16 @@ fn std_str_clone_small(c: &mut Criterion) {
     c.bench_function("std str clone small", |b| b.iter(|| std_str.clone()));
 }
 
-fn std_str_clone_large(c: &mut Criterion) {
+fn std_str_clone_large_and_modify(c: &mut Criterion) {
     let std_str = String::from("I am a very long string that will get allocated on the heap");
-    c.bench_function("std str clone large", |b| b.iter(|| {
-        let mut clone = std_str.clone();
-        clone.push('!');
-        clone.push('!');
-    }));
+    c.bench_function("std str clone large", |b| {
+        b.iter(|| {
+            let mut clone = std_str.clone();
+            clone.push('!');
+            clone.push(' ');
+            clone.push_str("And that is quite cool~");
+        })
+    });
 }
 
 criterion_group!(
@@ -146,7 +152,7 @@ criterion_group!(
     compact_str_reserve_small,
     compact_str_reserve_large,
     compact_str_clone_small,
-    compact_str_clone_large,
+    compact_str_clone_large_and_modify,
 );
 criterion_group!(
     std_string,
@@ -156,7 +162,7 @@ criterion_group!(
     std_str_reserve_small,
     std_str_reserve_large,
     std_str_clone_small,
-    std_str_clone_large,
+    std_str_clone_large_and_modify,
 );
 
 criterion_main!(compact_str, std_string);

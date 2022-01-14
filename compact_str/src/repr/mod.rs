@@ -159,7 +159,7 @@ impl Repr {
 
                 let inline = unsafe { InlineString::from_parts(new_len, inline_buffer) };
                 *self = Repr { inline }
-            },
+            }
             StrongRepr::Inline(_) | StrongRepr::Heap(_) => {
                 unsafe { self.set_len(self.len() - ch.len_utf8()) };
             }

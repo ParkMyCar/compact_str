@@ -52,23 +52,6 @@ impl ArcString {
     }
 
     #[inline]
-    pub fn reserve(&mut self, additional: usize) {
-        debug_assert!(additional > 0);
-
-        // Only reallocate if we don't have enough space for `additional` bytes
-        if additional > self.capacity() - self.len() {
-            let required = self.capacity() + additional;
-            let amortized = 3 * self.capacity() / 2;
-            let new_capacity = core::cmp::max(amortized, required);
-
-            // TODO: Handle overflows in the case of __very__ large Strings
-            debug_assert!(new_capacity > self.capacity());
-
-            *self = ArcString::new(self.as_str(), new_capacity - self.len());
-        }
-    }
-
-    #[inline]
     pub const fn len(&self) -> usize {
         self.len
     }

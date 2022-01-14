@@ -16,7 +16,9 @@ fuzz_target!(|scenario: Scenario| {
     let mut word = scenario.word;
     let mut compact = CompactStr::new(&word);
 
-    actions.into_iter().for_each(|a| a.perform(&mut word, &mut compact));
+    actions
+        .into_iter()
+        .for_each(|a| a.perform(&mut word, &mut compact));
 });
 
 #[derive(Arbitrary, Debug)]
@@ -39,26 +41,26 @@ impl Modification<'_> {
 
                 assert_eq!(control, compact);
                 assert_eq!(control.len(), compact.len());
-            },
+            }
             Pop => {
                 let a = control.pop();
                 let b = compact.pop();
                 assert_eq!(a, b);
-            },
+            }
             PushStr(s) => {
                 control.push_str(s);
                 compact.push_str(s);
 
                 assert_eq!(control, compact);
                 assert_eq!(control.len(), compact.len());
-            },
+            }
             ExtendChars(chs) => {
                 control.extend(chs.iter());
                 compact.extend(chs.iter());
 
                 assert_eq!(control, compact);
                 assert_eq!(control.len(), compact.len());
-            },
+            }
             ExtendStr(strs) => {
                 control.extend(strs.iter().copied());
                 compact.extend(strs.iter().copied());

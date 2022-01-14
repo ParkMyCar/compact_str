@@ -173,6 +173,7 @@ impl fmt::Debug for ArcString {
 }
 
 impl From<&str> for ArcString {
+    #[inline]
     fn from(text: &str) -> Self {
         ArcString::new(text, 0)
     }

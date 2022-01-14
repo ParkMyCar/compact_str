@@ -23,15 +23,17 @@ impl HeapString {
     ///
     /// If you need to allocate a `HeapString` with additional capacity, see
     /// `HeapString::with_additional(...)`
+    #[inline]
     pub fn new(text: &str) -> Self {
         let padding = PADDING;
-        let string = text.into();
+        let string = ArcString::from(text);
 
         HeapString { padding, string }
     }
 
     /// Creates a `HeapString` from the provided `text` and allocates the underlying buffer with
     /// `additional` capacity
+    #[inline]
     pub fn with_additional(text: &str, additional: usize) -> Self {
         let padding = PADDING;
         let string = ArcString::new(text, additional);
@@ -56,9 +58,10 @@ impl HeapString {
 }
 
 impl From<String> for HeapString {
+    #[inline]
     fn from(s: String) -> Self {
         let padding = PADDING;
-        let string = s.as_str().into();
+        let string = ArcString::from(s.as_str());
 
         HeapString { padding, string }
     }

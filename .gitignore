@@ -5,3 +5,6 @@
 # Fuzzer
 **/artifacts
 **/corpus
+
+# macOS
+**/.DS_Store

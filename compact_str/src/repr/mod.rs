@@ -268,74 +268,86 @@ impl Extend<char> for Repr {
     #[inline]
     fn extend<T: IntoIterator<Item = char>>(&mut self, iter: T) {
         let mut iterator = iter.into_iter();
+        let (lower_bound, _) = iterator.size_hint();
 
-        // If we're the Heap variant pass-through to HeapString's Extend impl since it's optimized
-        if let MutStrongRepr::Heap(heap) = self.cast_mut() {
-            heap.string.extend(iterator);
-            return;
-        } else {
-            let (lower_bound, _) = iterator.size_hint();
-            // If there is no possibility of being able to inline this string, then create a Heap
-            // variant
-            if self.len() + lower_bound > MAX_SIZE {
-                let mut heap = HeapString::with_additional(self.as_str(), lower_bound);
+        match self.cast_mut() {
+            MutStrongRepr::Heap(heap) => {
+                heap.string.extend(iterator)
+            },
+            MutStrongRepr::Packed(packed) => {
+                let mut heap = HeapString::with_additional(packed.as_str(), lower_bound);
                 heap.string.extend(iterator);
 
                 // Replace `self` with the new Repr
                 let heap = ManuallyDrop::new(heap);
                 *self = Repr { heap };
-                return;
-            }
-
-            // Otherwise, keep appending elements, heap allocating if need be
-            while let Some(ch) = iterator.next() {
-                let len = self.len();
-                let char_len = ch.len_utf8();
-
-                // Check if we can transform into the Packed repr
-                if len + char_len == MAX_SIZE && !self.is_heap_allocated() && self.as_slice()[0] <= 127 {
-                    debug_assert!(len != MAX_SIZE);
-
-                    // SAFETY: We know we're the inline variant because our current length does
-                    // not equal MAX_SIZE and we're not heap allocated
-                    let inline = unsafe { &mut self.inline };
-                    let inline_len = inline.len();
-
-                    let mut buffer = [0; MAX_SIZE];
-
-                    // Copy the contents of the InlineString, into a buffer which will be a PackedString
-                    buffer[..inline_len].copy_from_slice(inline.as_slice());
-                    ch.encode_utf8(&mut buffer[inline_len..]);
-
-                    // SAFETY: We created `buffer` from an InlineString which is valid UTF-8, and
-                    // appended a char, which is also valid UTF-8
-                    let packed = unsafe { PackedString::from_parts(buffer) };
-                    *self = Repr { packed };
-                } else if self.len() + char_len > self.capacity() {
-                    let mut heap = HeapString::with_additional(self.as_str(), char_len);
-                    heap.string.push(ch);
+            },
+            MutStrongRepr::Inline(inline) => {
+                if lower_bound + inline.len() > MAX_SIZE {
+                    let mut heap = HeapString::with_additional(inline.as_str(), lower_bound);
                     heap.string.extend(iterator);
 
                     // Replace `self` with the new Repr
                     let heap = ManuallyDrop::new(heap);
                     *self = Repr { heap };
-
-                    // All done
                     return;
-                } else {
-                    // SAFETY: At this point we know we have the Inline variant because we would have returned
-                    // already if we were the Heap variant, and the above check for capacity always returns
-                    // true for the Packed variant, so we would have fallen into the case above
-                    let inline = unsafe { &mut self.inline };
-                    let inline_len = inline.len();
+                }
 
-                    // SAFTEY: We're writing a `char` into the buffer, which we know is valid UTF-8
-                    let buffer = unsafe { inline.as_mut_slice() };
-                    // Write the character into our buffer
-                    ch.encode_utf8(&mut buffer[inline_len..]);
-                    // SAFETY: We just wrote `char_len` bytes into the buffer, so we know this is a
-                    // valid length
-                    unsafe { inline.set_len(inline_len + char_len) };
+                while let Some(ch) = iterator.next() {
+                    let inline_len = inline.len();
+                    let char_len = ch.len_utf8();
+
+                    if inline_len + char_len < MAX_SIZE {
+                        // SAFTEY: We're writing a `char` into the buffer, which we know is valid UTF-8
+                        let buffer = unsafe { inline.as_mut_slice() };
+                        // Write the character into our buffer
+                        ch.encode_utf8(&mut buffer[inline_len..]);
+                        // SAFETY: We just wrote `char_len` bytes into the buffer, so we know this is a
+                        // valid length
+                        unsafe { inline.set_len(inline_len + char_len) };
+                    } else {
+                        // We can't fit the remainder of the iterator in an InlineString, so we
+                        // either need to make a PackedString or HeapString
+                        let maybe_ch2 = iterator.next();
+                        let inline_slice = inline.as_slice();
+
+                        // We can make a PackedString!
+                        if inline_len + char_len == MAX_SIZE && maybe_ch2.is_none() && inline_slice[0] <= 127 {
+                            // Guard against char_len being 0?
+                            debug_assert!(inline_len != MAX_SIZE);
+
+                            // Copy the contents of the InlineString, into a buffer which will be a PackedString
+                            let mut buffer = [0; MAX_SIZE];
+                            buffer[..inline_len].copy_from_slice(inline_slice);
+                            ch.encode_utf8(&mut buffer[inline_len..]);
+
+                            // SAFETY: We created `buffer` from an InlineString which is valid UTF-8, and
+                            // appended a char, which is also valid UTF-8
+                            let packed = unsafe { PackedString::from_parts(buffer) };
+                            *self = Repr { packed };
+                        } else {
+                            // We can't fit the remaining characters in a PackedString, so make a
+                            // HeapString
+                            let mut heap = HeapString::with_additional(inline.as_str(), lower_bound);
+
+                            heap.string.push(ch);
+
+                            // If we had a second character
+                            if let Some(ch2) = maybe_ch2 {
+                                heap.string.push(ch2);
+                            }
+
+                            // Extend the HeapString with the rest of the iterator
+                            heap.string.extend(iterator);
+
+                            // Replace `self` with the new Repr
+                            let heap = ManuallyDrop::new(heap);
+                            *self = Repr { heap };
+                        }
+
+                        // All done!
+                        return;
+                    }
                 }
             }
         }

@@ -24,7 +24,7 @@ impl HeapString {
     #[inline]
     pub fn new(text: &str) -> Self {
         let padding = PADDING;
-        let string = ArcString::from(text);
+        let string = ArcString::new(text, 0);
 
         HeapString { padding, string }
     }

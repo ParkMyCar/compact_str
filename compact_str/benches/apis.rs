@@ -77,25 +77,41 @@ fn compact_str_clone_large_and_modify(c: &mut Criterion) {
     });
 }
 
+fn compact_str_extend_chars_empty(c: &mut Criterion) {
+    c.bench_function("extend chars empty", |b| {
+        b.iter(|| {
+            let mut compact =
+                CompactStr::new("I am a very long string that will get allocated on the heap");
+            compact.extend("".chars());
+        })
+    });
+}
+
 fn compact_str_extend_chars_short(c: &mut Criterion) {
-    c.bench_function("extend chars short", |b| b.iter(|| {
-        let mut compact = CompactStr::new("hello");
-        compact.extend((0..10).map(|_| '!'));
-    }));
+    c.bench_function("extend chars short", |b| {
+        b.iter(|| {
+            let mut compact = CompactStr::new("hello");
+            compact.extend((0..10).map(|_| '!'));
+        })
+    });
 }
 
 fn compact_str_extend_chars_inline_to_heap_20(c: &mut Criterion) {
-    c.bench_function("extend chars inline to heap, 20", |b| b.iter(|| {
-        let mut compact = CompactStr::new("hello world");
-        compact.extend((0..20).map(|_| '!'));
-    }));
+    c.bench_function("extend chars inline to heap, 20", |b| {
+        b.iter(|| {
+            let mut compact = CompactStr::new("hello world");
+            compact.extend((0..20).map(|_| '!'));
+        })
+    });
 }
 
 fn compact_str_extend_chars_heap_20(c: &mut Criterion) {
-    c.bench_function("extend chars heap, 20", |b| b.iter(|| {
-        let mut compact = CompactStr::new("this is a long string that will start on the heap");
-        compact.extend((0..20).map(|_| '!'));
-    }));
+    c.bench_function("extend chars heap, 20", |b| {
+        b.iter(|| {
+            let mut compact = CompactStr::new("this is a long string that will start on the heap");
+            compact.extend((0..20).map(|_| '!'));
+        })
+    });
 }
 
 fn std_string_short_length(c: &mut Criterion) {
@@ -165,18 +181,31 @@ fn std_str_clone_large_and_modify(c: &mut Criterion) {
     });
 }
 
+fn std_str_extend_chars_empty(c: &mut Criterion) {
+    c.bench_function("std str extend chars empty", |b| {
+        b.iter(|| {
+            let mut std_str = String::from("hello");
+            std_str.extend("".chars());
+        })
+    });
+}
+
 fn std_str_extend_chars_short(c: &mut Criterion) {
-    c.bench_function("std str extend chars short", |b| b.iter(|| {
-        let mut std_str = String::from("hello");
-        std_str.extend((0..10).map(|_| '!'));
-    }));
+    c.bench_function("std str extend chars short", |b| {
+        b.iter(|| {
+            let mut std_str = String::from("hello");
+            std_str.extend((0..10).map(|_| '!'));
+        })
+    });
 }
 
 fn std_str_str_extend_chars_20(c: &mut Criterion) {
-    c.bench_function("std str extend chars 20", |b| b.iter(|| {
-        let mut std_str = String::from("hello");
-        std_str.extend((0..20).map(|_| '!'));
-    }));
+    c.bench_function("std str extend chars 20", |b| {
+        b.iter(|| {
+            let mut std_str = String::from("hello");
+            std_str.extend((0..20).map(|_| '!'));
+        })
+    });
 }
 
 criterion_group!(
@@ -188,6 +217,7 @@ criterion_group!(
     compact_str_reserve_large,
     compact_str_clone_small,
     compact_str_clone_large_and_modify,
+    compact_str_extend_chars_empty,
     compact_str_extend_chars_short,
     compact_str_extend_chars_inline_to_heap_20,
     compact_str_extend_chars_heap_20,
@@ -201,6 +231,7 @@ criterion_group!(
     std_str_reserve_large,
     std_str_clone_small,
     std_str_clone_large_and_modify,
+    std_str_extend_chars_empty,
     std_str_extend_chars_short,
     std_str_str_extend_chars_20,
 );

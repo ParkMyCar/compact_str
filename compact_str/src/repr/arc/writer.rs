@@ -71,7 +71,8 @@ impl<'a> ArcStringWriter<'a> {
         ch.encode_utf8(&mut slice[len..]);
         // Increment our length
         //
-        // SAFETY: We just wrote `char_len` bytes into the buffer, so we know this new length is valid
+        // SAFETY: We just wrote `char_len` bytes into the buffer, so we know this new length is
+        // valid
         unsafe { self.arc_string.set_len(len + char_len) };
     }
 

@@ -68,11 +68,6 @@ impl ArcString {
     }
 
     #[inline]
-    pub fn push_str(&mut self, s: &str) {
-        self.writer().push_str(s);
-    }
-
-    #[inline]
     pub fn as_str(&self) -> &str {
         // SAFETY: The only way you can construct an `ArcString` is via a `&str` so it must be valid
         // UTF-8, or the caller has manually made those guarantees

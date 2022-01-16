@@ -24,7 +24,7 @@ fuzz_target!(|scenario: Scenario| {
 #[derive(Arbitrary, Debug)]
 enum Modification<'a> {
     Push(char),
-    Pop,
+    Pop(usize),
     PushStr(&'a str),
     ExtendChars(Vec<char>),
     ExtendStr(Vec<&'a str>),
@@ -42,10 +42,15 @@ impl Modification<'_> {
                 assert_eq!(control, compact);
                 assert_eq!(control.len(), compact.len());
             }
-            Pop => {
-                let a = control.pop();
-                let b = compact.pop();
-                assert_eq!(a, b);
+            Pop(count) => {
+                (0..count).for_each(|_| {
+                    let a = control.pop();
+                    let b = compact.pop();
+                    assert_eq!(a, b);
+                });
+                assert_eq!(control, compact);
+                assert_eq!(control.len(), compact.len());
+                assert_eq!(control.is_empty(), compact.is_empty());
             }
             PushStr(s) => {
                 control.push_str(s);

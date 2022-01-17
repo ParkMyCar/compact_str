@@ -101,7 +101,7 @@ impl<'a> ArcStringWriter<'a> {
     /// # SAFETY
     /// * Callers must guarantee that any modifications they make to the slice are valid UTF-8
     #[inline]
-    pub unsafe fn as_mut_slice(&mut self) -> &'a mut [u8] {
+    pub unsafe fn as_mut_slice(&mut self) -> &mut [u8] {
         self.arc_string.ptr.as_mut().as_mut_bytes()
     }
 

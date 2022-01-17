@@ -239,6 +239,7 @@ fn test_from_char_iter() {
 }
 
 #[test]
+#[cfg_attr(target_pointer_width = 32, ignore)]
 fn test_extend_packed_from_empty() {
     let s = "  0\u{80}A\u{0}𐀀 𐀀¡a𐀀0";
 

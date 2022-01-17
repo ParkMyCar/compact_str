@@ -24,7 +24,7 @@ fuzz_target!(|scenario: Scenario| {
 #[derive(Arbitrary, Debug)]
 enum Modification<'a> {
     Push(char),
-    Pop(usize),
+    Pop(u32),
     PushStr(&'a str),
     ExtendChars(Vec<char>),
     ExtendStr(Vec<&'a str>),

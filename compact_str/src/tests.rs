@@ -254,6 +254,19 @@ fn test_extend_packed_from_empty() {
 }
 
 #[test]
+fn test_pop_empty() {
+    let num_pops = 256;
+    let mut compact = CompactStr::from("");
+
+    (0..num_pops).for_each(|_| {
+        let ch = compact.pop();
+        assert!(ch.is_none());
+    });
+    assert!(compact.is_empty());
+    assert_eq!(compact, "");
+}
+
+#[test]
 fn test_compact_str_is_send_and_sync() {
     fn is_send_and_sync<T: Send + Sync>() {}
     is_send_and_sync::<CompactStr>();

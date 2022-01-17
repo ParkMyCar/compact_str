@@ -1,3 +1,4 @@
+use std::iter::Extend;
 use std::mem::ManuallyDrop;
 
 use static_assertions::{
@@ -10,6 +11,7 @@ mod bytes;
 
 mod iter;
 
+mod arc;
 mod discriminant;
 mod heap;
 mod inline;
@@ -127,6 +129,66 @@ impl Repr {
     }
 
     #[inline]
+    pub fn push(&mut self, ch: char) {
+        let len = self.len();
+        let char_len = ch.len_utf8();
+
+        // Reserve at least enough space for our char, possibly causing a heap allocation
+        self.reserve(char_len);
+
+        // Get a mutable reference to the underlying memory buffer
+        let slice = unsafe { self.as_mut_slice() };
+
+        // Write our character into the underlying buffer
+        ch.encode_utf8(&mut slice[len..]);
+        // Incrament our length
+        unsafe { self.set_len(len + char_len) };
+    }
+
+    #[inline]
+    pub fn pop(&mut self) -> Option<char> {
+        let ch = self.as_str().chars().rev().next()?;
+
+        match self.cast() {
+            StrongRepr::Packed(packed) => {
+                let mut inline_buffer = [0; inline::MAX_INLINE_SIZE];
+
+                let new_len = packed.len() - ch.len_utf8();
+                let buffer: &mut [u8] = &mut inline_buffer[..new_len];
+
+                buffer.copy_from_slice(&packed.as_slice()[..new_len]);
+
+                let inline = unsafe { InlineString::from_parts(new_len, inline_buffer) };
+                *self = Repr { inline }
+            }
+            StrongRepr::Inline(_) | StrongRepr::Heap(_) => {
+                unsafe { self.set_len(self.len() - ch.len_utf8()) };
+            }
+        }
+
+        Some(ch)
+    }
+
+    #[inline]
+    pub fn push_str(&mut self, s: &str) {
+        let len = self.len();
+        let str_len = s.len();
+
+        // Reserve at least enough space for our str, possibly causing a heap allocation
+        self.reserve(str_len);
+
+        let slice = unsafe { self.as_mut_slice() };
+        let buffer = &mut slice[len..len + str_len];
+
+        debug_assert_eq!(buffer.len(), s.as_bytes().len());
+
+        // Copy the string into our buffer
+        buffer.copy_from_slice(s.as_bytes());
+        // Incrament the length of our string
+        unsafe { self.set_len(len + str_len) };
+    }
+
+    #[inline]
     pub unsafe fn set_len(&mut self, length: usize) {
         self.cast_mut().set_len(length)
     }
@@ -199,6 +261,130 @@ impl Drop for Repr {
             // No-op, the value is on the stack and doesn't need to be explicitly dropped
             Discriminant::Inline | Discriminant::Packed => {}
         }
+    }
+}
+
+impl Extend<char> for Repr {
+    #[inline]
+    fn extend<T: IntoIterator<Item = char>>(&mut self, iter: T) {
+        let mut iterator = iter.into_iter().peekable();
+
+        // if the iterator is empty, no work needs to be done!
+        if iterator.peek().is_none() {
+            return;
+        }
+        let (lower_bound, _) = iterator.size_hint();
+
+        match self.cast_mut() {
+            MutStrongRepr::Heap(heap) => heap.string.extend(iterator),
+            MutStrongRepr::Packed(packed) => {
+                let mut heap = HeapString::with_additional(packed.as_str(), lower_bound);
+                heap.string.extend(iterator);
+
+                // Replace `self` with the new Repr
+                let heap = ManuallyDrop::new(heap);
+                *self = Repr { heap };
+            }
+            MutStrongRepr::Inline(inline) => {
+                if lower_bound + inline.len() > MAX_SIZE {
+                    let mut heap = HeapString::with_additional(inline.as_str(), lower_bound);
+                    heap.string.extend(iterator);
+
+                    // Replace `self` with the new Repr
+                    let heap = ManuallyDrop::new(heap);
+                    *self = Repr { heap };
+                    return;
+                }
+
+                while let Some(ch) = iterator.next() {
+                    let inline_len = inline.len();
+                    let char_len = ch.len_utf8();
+
+                    if inline_len + char_len < MAX_SIZE {
+                        // SAFTEY: We're writing a `char` into the buffer, which we know is valid
+                        // UTF-8
+                        let buffer = unsafe { inline.as_mut_slice() };
+                        // Write the character into our buffer
+                        ch.encode_utf8(&mut buffer[inline_len..]);
+                        // SAFETY: We just wrote `char_len` bytes into the buffer, so we know this
+                        // is a valid length
+                        unsafe { inline.set_len(inline_len + char_len) };
+                    } else {
+                        // We can't fit the remainder of the iterator in an InlineString, so we
+                        // either need to make a PackedString or HeapString
+                        let maybe_ch2 = iterator.next();
+                        let inline_slice = inline.as_slice();
+
+                        // We can make a PackedString!
+                        if inline_len + char_len == MAX_SIZE
+                            && maybe_ch2.is_none()
+                            && inline_slice[0] <= 127
+                        {
+                            // Guard against char_len being 0?
+                            debug_assert!(inline_len != MAX_SIZE);
+
+                            // Copy the contents of the InlineString, into a buffer which will be a
+                            // PackedString
+                            let mut buffer = [0; MAX_SIZE];
+                            buffer[..inline_len].copy_from_slice(inline_slice);
+                            ch.encode_utf8(&mut buffer[inline_len..]);
+
+                            // SAFETY: We created `buffer` from an InlineString which is valid
+                            // UTF-8, and appended a char, which is also
+                            // valid UTF-8
+                            let packed = unsafe { PackedString::from_parts(buffer) };
+                            *self = Repr { packed };
+                        } else {
+                            // We can't fit the remaining characters in a PackedString, so make a
+                            // HeapString
+                            let mut heap =
+                                HeapString::with_additional(inline.as_str(), lower_bound);
+
+                            heap.string.push(ch);
+
+                            // If we had a second character
+                            if let Some(ch2) = maybe_ch2 {
+                                heap.string.push(ch2);
+                            }
+
+                            // Extend the HeapString with the rest of the iterator
+                            heap.string.extend(iterator);
+
+                            // Replace `self` with the new Repr
+                            let heap = ManuallyDrop::new(heap);
+                            *self = Repr { heap };
+                        }
+
+                        // All done!
+                        return;
+                    }
+                }
+            }
+        }
+    }
+}
+
+impl<'a> Extend<&'a char> for Repr {
+    fn extend<T: IntoIterator<Item = &'a char>>(&mut self, iter: T) {
+        self.extend(iter.into_iter().copied());
+    }
+}
+
+impl<'a> Extend<&'a str> for Repr {
+    fn extend<T: IntoIterator<Item = &'a str>>(&mut self, iter: T) {
+        iter.into_iter().for_each(|s| self.push_str(s));
+    }
+}
+
+impl Extend<Box<str>> for Repr {
+    fn extend<T: IntoIterator<Item = Box<str>>>(&mut self, iter: T) {
+        iter.into_iter().for_each(move |s| self.push_str(&s));
+    }
+}
+
+impl Extend<String> for Repr {
+    fn extend<T: IntoIterator<Item = String>>(&mut self, iter: T) {
+        iter.into_iter().for_each(move |s| self.push_str(&s));
     }
 }
 
@@ -371,5 +557,136 @@ mod tests {
         unsafe { repr.set_len(new_len) }
 
         assert_eq!(repr.as_str(), long_word);
+    }
+
+    #[test]
+    fn test_push() {
+        let example = "hello world";
+        let mut repr = Repr::new(example);
+        repr.push('!');
+
+        assert_eq!(repr.as_str(), "hello world!");
+        assert_eq!(repr.len(), 12);
+    }
+
+    #[test]
+    fn test_pop() {
+        let example = "hello";
+        let mut repr = Repr::new(example);
+
+        assert_eq!(repr.pop(), Some('o'));
+        assert_eq!(repr.pop(), Some('l'));
+        assert_eq!(repr.pop(), Some('l'));
+
+        assert_eq!(repr.as_str(), "he");
+        assert_eq!(repr.len(), 2);
+    }
+
+    #[test]
+    fn test_push_str() {
+        let example = "hello";
+        let mut repr = Repr::new(example);
+
+        repr.push_str(" world!");
+
+        assert_eq!(repr.as_str(), "hello world!");
+        assert_eq!(repr.len(), 12);
+    }
+
+    #[test]
+    fn test_extend_chars() {
+        let example = "hello";
+        let mut repr = Repr::new(example);
+
+        repr.extend(" world".chars());
+
+        assert_eq!(repr.len(), 11);
+        assert_eq!(repr.as_str(), "hello world");
+        assert!(!repr.is_heap_allocated());
+    }
+
+    #[test]
+    fn test_extend_chars_can_heap_allocate() {
+        let start = "hello";
+        let mut repr = Repr::new(start);
+
+        let chars = (0..100).map(|_| '!');
+        repr.extend(chars);
+
+        let mut control = String::from(start);
+        let chars2 = (0..100).map(|_| '!');
+        control.extend(chars2);
+
+        assert_eq!(repr.as_str(), control.as_str());
+        assert_eq!(repr.len(), 105);
+    }
+
+    #[test]
+    fn test_extend_chars_can_make_packed_repr() {
+        let start = "nyc";
+        let mut repr = Repr::new(start);
+
+        let num_chars = super::MAX_SIZE - start.len();
+        let chars = (0..num_chars).map(|_| '!');
+
+        repr.extend(chars);
+        assert_eq!(repr.len(), super::MAX_SIZE);
+        assert!(!repr.is_heap_allocated());
+    }
+
+    #[test]
+    fn test_extend_short_heap_variant() {
+        let start = "this is a long string that will be heap allocated";
+        let mut repr = Repr::new(start);
+        assert!(repr.is_heap_allocated());
+
+        while repr.len() > 10 {
+            assert!(repr.pop().is_some());
+        }
+        // we don't (yet?) re-inline when characters are popped
+        assert!(repr.is_heap_allocated());
+
+        // extend with one character
+        repr.extend(vec!['!']);
+        // should still be heap allocated
+        assert!(repr.is_heap_allocated());
+
+        // extend with a lot of characters
+        repr.extend((0..100).map(|_| '😊'));
+        // should still be heap allocated
+        assert!(repr.is_heap_allocated());
+    }
+
+    #[test]
+    fn test_extend_strs() {
+        let example = "hello";
+        let mut repr = Repr::new(example);
+
+        let words = vec![" ", "world!", "my name is", " compact", "_str"];
+        repr.extend(words);
+
+        assert_eq!(repr.as_str(), "hello world!my name is compact_str");
+        assert_eq!(repr.len(), 34);
+    }
+
+    #[test]
+    fn test_pop_packed() {
+        let mut repr = Repr::new("i am 24 characters long!");
+        repr.pop();
+
+        assert_eq!(repr.len(), 23);
+        assert_eq!(repr.as_str(), "i am 24 characters long");
+    }
+
+    #[test]
+    fn test_pop_does_not_reinline() {
+        let mut repr = Repr::new("i am a long string that will be heap allocated");
+        assert!(repr.is_heap_allocated());
+
+        while repr.len() > 10 {
+            repr.pop();
+        }
+        // should not have re-inlined the string
+        assert!(repr.is_heap_allocated());
     }
 }

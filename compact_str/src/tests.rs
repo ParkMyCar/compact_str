@@ -20,6 +20,17 @@ fn rand_unicode_collection() -> impl Strategy<Value = Vec<String>> {
     proptest::collection::vec(rand_unicode(), 0..40)
 }
 
+/// Asserts a CompactStr is allocated properly
+fn assert_allocated_properly(compact: &CompactStr) {
+    if compact.len() < MAX_INLINED_SIZE {
+        assert!(!compact.is_heap_allocated())
+    } else if compact.len() == MAX_INLINED_SIZE && compact.as_bytes()[0] <= 127 {
+        assert!(!compact.is_heap_allocated())
+    } else {
+        assert!(compact.is_heap_allocated())
+    }
+}
+
 proptest! {
     #[test]
     #[cfg_attr(miri, ignore)]
@@ -33,14 +44,7 @@ proptest! {
     #[cfg_attr(miri, ignore)]
     fn test_strings_allocated_properly(word in rand_unicode()) {
         let compact = CompactStr::new(&word);
-
-        if compact.len() < MAX_INLINED_SIZE {
-            prop_assert!(!compact.is_heap_allocated())
-        } else if compact.len() == MAX_INLINED_SIZE && compact.as_bytes()[0] <= 127 {
-            prop_assert!(!compact.is_heap_allocated())
-        } else {
-            prop_assert!(compact.is_heap_allocated())
-        }
+        assert_allocated_properly(&compact);
     }
 
     #[test]
@@ -101,6 +105,19 @@ proptest! {
         //
         // NOTE: The reserve and write API's don't currently support the Packed representation
         prop_assert_eq!(compact.is_heap_allocated(), word.len() >= MAX_INLINED_SIZE);
+    }
+
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_extend_chars_allocated_properly((start, extend) in (rand_unicode(), rand_unicode())) {
+        let mut compact = CompactStr::new(&start);
+        compact.extend(extend.chars());
+
+        let mut control = start.clone();
+        control.extend(extend.chars());
+
+        prop_assert_eq!(&compact, &control);
+        assert_allocated_properly(&compact);
     }
 }
 
@@ -219,6 +236,21 @@ fn test_from_char_iter() {
 
     assert!(compact.is_heap_allocated());
     assert_eq!(s, compact);
+}
+
+#[test]
+#[cfg_attr(target_pointer_width = "32", ignore)]
+fn test_extend_packed_from_empty() {
+    let s = "  0\u{80}A\u{0}𐀀 𐀀¡a𐀀0";
+
+    let mut compact = CompactStr::new(s);
+    assert!(!compact.is_heap_allocated());
+
+    // extend from an empty iterator
+    compact.extend("".chars());
+
+    // we should still be heap allocated
+    assert!(!compact.is_heap_allocated());
 }
 
 #[test]

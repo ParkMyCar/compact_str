@@ -11,8 +11,7 @@ use smol_str::SmolStr;
 fn creation(c: &mut Criterion) {
     let mut group = c.benchmark_group("String Creation");
 
-    // generate a list of 30 strings, with each string being length i and composed of all 'a's
-    let words: Vec<String> = (0..30)
+    let words: Vec<String> = vec![0, 11, 12, 22, 23, 24, 25, 50]
         .into_iter()
         .map(|len| (0..len).into_iter().map(|_| 'a').collect())
         .collect();
@@ -43,8 +42,7 @@ criterion_group!(string_creation, creation);
 fn cloning(c: &mut Criterion) {
     let mut group = c.benchmark_group("String Cloning");
 
-    // generate a list of 30 strings, with each string being length i and composed of all 'a's
-    let words: Vec<String> = (0..30)
+    let words: Vec<String> = vec![0, 11, 12, 22, 23, 24, 25, 50]
         .into_iter()
         .map(|len| (0..len).into_iter().map(|_| 'a').collect())
         .collect();
@@ -82,8 +80,7 @@ criterion_group!(string_cloning, cloning);
 fn access(c: &mut Criterion) {
     let mut group = c.benchmark_group("String Access");
 
-    // generate a list of 30 strings, with each string being length i and composed of all 'a's
-    let words: Vec<String> = (0..30)
+    let words: Vec<String> = vec![0, 11, 12, 22, 23, 24, 25, 50]
         .into_iter()
         .map(|len| (0..len).into_iter().map(|_| 'a').collect())
         .collect();

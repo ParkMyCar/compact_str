@@ -1,15 +1,16 @@
-use std::sync::atomic::{
-    AtomicUsize,
-    Ordering,
-};
+use std::iter::Extend;
+use std::sync::atomic::Ordering;
 use std::{
-    alloc,
     fmt,
     mem,
     ptr,
-    slice,
     str,
 };
+
+mod inner;
+use inner::ArcStringInner;
+mod writer;
+use writer::ArcStringWriter;
 
 /// A soft limit on the amount of references that may be made to an `Arc`.
 ///
@@ -29,8 +30,15 @@ impl ArcString {
     #[inline]
     pub fn new(text: &str, additional: usize) -> Self {
         let len = text.len();
-        let capacity = len + additional;
-        let mut ptr = ArcStringInner::with_capacity(capacity);
+
+        let required = len + additional;
+        let amortized = 3 * len / 2;
+        let new_capacity = core::cmp::max(amortized, required);
+
+        // TODO: Handle overflows in the case of __very__ large Strings
+        debug_assert!(new_capacity >= len);
+
+        let mut ptr = ArcStringInner::with_capacity(new_capacity);
 
         // SAFETY: We just created the `ArcStringInner` so we know the pointer is properly aligned,
         // it is non-null, points to an instance of `ArcStringInner`, and the `str_buffer`
@@ -55,6 +63,11 @@ impl ArcString {
     }
 
     #[inline]
+    pub fn push(&mut self, ch: char) {
+        self.writer().push(ch);
+    }
+
+    #[inline]
     pub fn as_str(&self) -> &str {
         // SAFETY: The only way you can construct an `ArcString` is via a `&str` so it must be valid
         // UTF-8, or the caller has manually made those guarantees
@@ -66,38 +79,23 @@ impl ArcString {
         &self.inner().as_bytes()[..self.len]
     }
 
+    /// Returns a mutable reference to the underlying buffer of bytes
+    ///
+    /// # SAFETY:
+    /// * The caller must guarantee any modifications made to the buffer are valid UTF-8
     #[inline]
     pub unsafe fn make_mut_slice(&mut self) -> &mut [u8] {
-        if self
-            .inner()
-            .ref_count
-            .compare_exchange(1, 0, Ordering::Acquire, Ordering::Relaxed)
-            .is_err()
-        {
-            // There is more than one reference to this underlying buffer, so we need to make a new
-            // instance and decrement the count of the original by one
-
-            // Make a new instance with the same capacity as self
-            let additional = self.capacity() - self.len();
-            let new = Self::new(self.as_str(), additional);
-
-            // Assign self to our new instsance
-            *self = new;
-        } else {
-            // We were the sole reference of either kind; bump back up the strong ref count.
-            self.inner().ref_count.store(1, Ordering::Release);
-        }
-
-        // Return a mutable slice to the underlying buffer
-        //
-        // SAFETY: If we still have an instance of `ArcString` then we know the pointer to
-        // `ArcStringInner` is valid for at least as long as the provided ref to `self`
-        self.ptr.as_mut().as_mut_bytes()
+        self.writer().into_mut_slice()
     }
 
     #[inline]
     pub unsafe fn set_len(&mut self, length: usize) {
         self.len = length;
+    }
+
+    #[inline]
+    fn writer(&mut self) -> ArcStringWriter<'_> {
+        ArcStringWriter::new(self)
     }
 
     /// Returns a shared reference to the heap allocated `ArcStringInner`
@@ -149,92 +147,44 @@ impl fmt::Debug for ArcString {
 }
 
 impl From<&str> for ArcString {
+    #[inline]
     fn from(text: &str) -> Self {
         ArcString::new(text, 0)
     }
 }
 
-const UNKNOWN: usize = 0;
-pub type StrBuffer = [u8; UNKNOWN];
-
-#[repr(C)]
-pub struct ArcStringInner {
-    pub ref_count: AtomicUsize,
-    capacity: usize,
-    pub str_buffer: StrBuffer,
+impl Extend<char> for ArcString {
+    #[inline]
+    fn extend<T: IntoIterator<Item = char>>(&mut self, iter: T) {
+        self.writer().extend(iter);
+    }
 }
 
-impl ArcStringInner {
-    pub fn with_capacity(capacity: usize) -> ptr::NonNull<ArcStringInner> {
-        let mut ptr = Self::alloc(capacity);
-
-        // SAFETY: We just allocated an instance of `ArcStringInner` and checked to make sure it
-        // wasn't null, so we know it's aligned properly, that it points to an instance of
-        // `ArcStringInner` and that the "lifetime" is valid
-        unsafe { ptr.as_mut().ref_count = AtomicUsize::new(1) };
-        // SAFTEY: Same as above
-        unsafe { ptr.as_mut().capacity = capacity };
-
-        ptr
-    }
-
+impl<'c> Extend<&'c char> for ArcString {
     #[inline]
-    pub fn as_bytes(&self) -> &[u8] {
-        // SAFETY: Since we have an instance of `ArcStringInner` so we know the buffer is still
-        // valid, and we track the capacity with the creation and adjustment of the buffer
-        unsafe { slice::from_raw_parts(self.str_buffer.as_ptr(), self.capacity) }
+    fn extend<T: IntoIterator<Item = &'c char>>(&mut self, iter: T) {
+        self.writer().extend(iter);
     }
+}
 
-    /// Returns a mutable reference to the underlying buffer of bytes
-    ///
-    /// # Invariants
-    /// * The caller must assert that no other references, or instances of `ArcString` exist before
-    /// calling this method. Otherwise multiple threads could race writing to the underlying buffer.
-    /// * The caller must assert that the underlying buffer is still valid UTF-8
+impl<'s> Extend<&'s str> for ArcString {
     #[inline]
-    pub unsafe fn as_mut_bytes(&mut self) -> &mut [u8] {
-        // SAFETY: Since we have an instance of `ArcStringInner` so we know the buffer is still
-        // valid, and we track the capacity with the creation and adjustment of the buffer
-        //
-        // Note: In terms of mutability, it's up to the caller to assert the provided bytes are
-        // value UTF-8
-        slice::from_raw_parts_mut(self.str_buffer.as_mut_ptr(), self.capacity)
+    fn extend<T: IntoIterator<Item = &'s str>>(&mut self, iter: T) {
+        self.writer().extend(iter);
     }
+}
 
-    fn layout(capacity: usize) -> alloc::Layout {
-        let buffer_layout = alloc::Layout::array::<u8>(capacity).unwrap();
-        alloc::Layout::new::<Self>()
-            .extend(buffer_layout)
-            .unwrap()
-            .0
-            .pad_to_align()
+impl Extend<Box<str>> for ArcString {
+    #[inline]
+    fn extend<T: IntoIterator<Item = Box<str>>>(&mut self, iter: T) {
+        self.writer().extend(iter);
     }
+}
 
-    pub fn alloc(capacity: usize) -> ptr::NonNull<ArcStringInner> {
-        let layout = Self::layout(capacity);
-        debug_assert!(layout.size() > 0);
-
-        // SAFETY: `alloc(...)` has undefined behavior if the layout is zero-sized, but we know the
-        // size of the layout is greater than 0 because we define it (and check for it above)
-        let raw_ptr = unsafe { alloc::alloc(layout) as *mut ArcStringInner };
-
-        // Check to make sure our pointer is non-null, some allocators return null pointers instead
-        // of panicking
-        match ptr::NonNull::new(raw_ptr) {
-            Some(ptr) => ptr,
-            None => alloc::handle_alloc_error(layout),
-        }
-    }
-
-    pub fn dealloc(ptr: ptr::NonNull<ArcStringInner>) {
-        // SAFETY: We know the pointer is non-null and it is properly aligned
-        let capacity = unsafe { ptr.as_ref().capacity };
-        let layout = Self::layout(capacity);
-
-        // SAFETY: There is only one way to allocate an ArcStringInner, and it uses the same layout
-        // we defined above. Also we know the pointer is non-null and we use the same global
-        // allocator as we did in `Self::alloc(...)`
-        unsafe { alloc::dealloc(ptr.as_ptr() as *mut u8, layout) };
+impl Extend<String> for ArcString {
+    #[inline]
+    fn extend<T: IntoIterator<Item = String>>(&mut self, iter: T) {
+        self.writer().extend(iter);
     }
 }
 
@@ -281,6 +231,29 @@ mod test {
     }
 
     #[test]
+    fn test_extend_chars() {
+        let example = "hello";
+        let mut arc = ArcString::from(example);
+
+        arc.extend(" world!".chars());
+
+        assert_eq!(arc.as_str(), "hello world!");
+        assert_eq!(arc.len(), 12);
+    }
+
+    #[test]
+    fn test_extend_strs() {
+        let example = "hello";
+        let mut arc = ArcString::from(example);
+
+        let words = vec![" ", "world!", "my name is", " compact", "_str"];
+        arc.extend(words);
+
+        assert_eq!(arc.as_str(), "hello world!my name is compact_str");
+        assert_eq!(arc.len(), 34);
+    }
+
+    #[test]
     fn test_sanity() {
         let example = "hello world!";
         let arc_str = ArcString::from(example);
@@ -306,10 +279,3 @@ mod test {
 }
 
 static_assertions::const_assert_eq!(mem::size_of::<ArcString>(), 2 * mem::size_of::<usize>());
-// Note: Although the compiler sees `ArcStringInner` as being 16 bytes, it's technically unsized
-// because it contains a buffer of size `capacity`. We manually track the size of this buffer so
-// `ArcString` can only be two words long
-static_assertions::const_assert_eq!(
-    mem::size_of::<ArcStringInner>(),
-    2 * mem::size_of::<usize>()
-);

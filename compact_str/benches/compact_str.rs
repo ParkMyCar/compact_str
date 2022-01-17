@@ -25,5 +25,10 @@ fn heap(c: &mut Criterion) {
     c.bench_function("heap", |b| b.iter(|| CompactStr::new(word)));
 }
 
-criterion_group!(compact_str, empty, inline, packed, heap);
+fn std_string(c: &mut Criterion) {
+    let word = "I am a very long string that will get allocated on the heap";
+    c.bench_function("std_string", |b| b.iter(|| String::from(word)));
+}
+
+criterion_group!(compact_str, empty, inline, packed, heap, std_string);
 criterion_main!(compact_str);

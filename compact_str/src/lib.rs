@@ -161,6 +161,21 @@ impl CompactStr {
         self.repr.as_mut_slice()
     }
 
+    #[inline]
+    pub fn push(&mut self, ch: char) {
+        self.repr.push(ch)
+    }
+
+    #[inline]
+    pub fn pop(&mut self) -> Option<char> {
+        self.repr.pop()
+    }
+
+    #[inline]
+    pub fn push_str(&mut self, s: &str) {
+        self.repr.push_str(s)
+    }
+
     /// # Safety
     /// * TODO: Document safety here
     #[inline]
@@ -311,6 +326,36 @@ impl FromIterator<String> for CompactStr {
     fn from_iter<T: IntoIterator<Item = String>>(iter: T) -> Self {
         let repr = iter.into_iter().collect();
         CompactStr { repr }
+    }
+}
+
+impl Extend<char> for CompactStr {
+    fn extend<T: IntoIterator<Item = char>>(&mut self, iter: T) {
+        self.repr.extend(iter)
+    }
+}
+
+impl<'a> Extend<&'a char> for CompactStr {
+    fn extend<T: IntoIterator<Item = &'a char>>(&mut self, iter: T) {
+        self.repr.extend(iter)
+    }
+}
+
+impl<'a> Extend<&'a str> for CompactStr {
+    fn extend<T: IntoIterator<Item = &'a str>>(&mut self, iter: T) {
+        self.repr.extend(iter)
+    }
+}
+
+impl Extend<Box<str>> for CompactStr {
+    fn extend<T: IntoIterator<Item = Box<str>>>(&mut self, iter: T) {
+        self.repr.extend(iter)
+    }
+}
+
+impl Extend<String> for CompactStr {
+    fn extend<T: IntoIterator<Item = String>>(&mut self, iter: T) {
+        self.repr.extend(iter)
     }
 }
 

@@ -21,3 +21,9 @@ name = "creation"
 path = "fuzz_targets/creation.rs"
 test = false
 doc = false
+
+[[bin]]
+name = "modify"
+path = "fuzz_targets/modify.rs"
+test = false
+doc = false

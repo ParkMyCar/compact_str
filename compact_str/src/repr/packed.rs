@@ -47,6 +47,13 @@ impl PackedString {
         PackedString { buffer }
     }
 
+    /// Creates a `PackedString` from raw parts without checking that it's valid UTF-8, or if the
+    /// first character is <= 127 (aka ASCII)
+    #[inline]
+    pub const unsafe fn from_parts(buffer: [u8; MAX_SIZE]) -> Self {
+        PackedString { buffer }
+    }
+
     #[inline]
     pub const fn len(&self) -> usize {
         MAX_SIZE

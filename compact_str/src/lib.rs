@@ -1,5 +1,5 @@
-//! `CompactStr` is a compact immutable string type that stores itself on the stack, if possible,
-//! and seamlessly interacts with `String`s and `&str`s.
+//! `CompactStr` is a compact string type that stores itself on the stack if possible, otherwise
+//! known as a "small string optimization".
 //!
 //! ### Memory Layout
 //! Normally strings are stored on the heap, since they're dynamically sized. In Rust a `String`
@@ -8,8 +8,10 @@
 //! 2. A pointer to a location on the heap where the string is stored
 //! 3. A `usize` denoting the capacity of the string
 //!
-//! On 64-bit architectures this results in 24 bytes being stored on the stack, 12 bytes for 32-bit
-//! architectures. For small strings, e.g. < 23 characters
+//! On 64-bit architectures this results in 24 bytes being stored on the stack (12 bytes for 32-bit
+//! architectures). For small strings, e.g. <= 23 characters, instead of storing a pointer, length,
+//! and capacity on the stack, you store the string itself! This avoids the need to heap allocate
+//! which reduces the amount of memory used, and improves performance.
 
 use core::borrow::Borrow;
 use core::cmp::Ordering;
@@ -30,13 +32,13 @@ use repr::Repr;
 #[cfg(test)]
 mod tests;
 
-/// A `CompactStr` is a memory efficient immuatable string that can be used almost anywhere a
-/// `String` or `&str` can be used.
+/// A `CompactStr` is a compact string tupe that can be used almost anywhere a `String` or `&str`
+/// can be used.
 ///
 /// ## Using `CompactStr`
 /// ```
 /// use compact_str::CompactStr;
-/// use std::collections::HashMap;
+/// # use std::collections::HashMap;
 ///
 /// // CompactStr auto derefs into a str so you can use all methods from `str` that take a `&self`
 /// if CompactStr::new("hello world!").is_ascii() {
@@ -72,6 +74,54 @@ pub struct CompactStr {
 }
 
 impl CompactStr {
+    /// Creates a new `CompactStr` from any type that implements `AsRef<str>`. If the string is
+    /// short enough, then it will be inlined on the stack!
+    ///
+    /// # Examples
+    /// ```
+    /// use compact_str::CompactStr;
+    ///
+    /// // Using a `&'static str`
+    /// let s = "hello world!";
+    /// let hello = CompactStr::new(&s);
+    ///
+    /// // Using a `String`
+    /// let u = String::from("🦄🌈");
+    /// let unicorn = CompactStr::new(u);
+    ///
+    /// // Using a `Box<str>`
+    /// let b: Box<str> = String::from("📦📦📦").into_boxed_str();
+    /// let boxed = CompactStr::new(&b);
+    /// ```
+    ///
+    /// ### Inlined
+    /// ```
+    /// # use compact_str::CompactStr;
+    /// // We can inline strings up to 12 characters long on 32-bit architectures...
+    /// #[cfg(target_pointer_width = "32")]
+    /// let s = "i'm 12 chars";
+    /// // ...and up to 24 characters on 64-bit architectures!
+    /// #[cfg(target_pointer_width = "64")]
+    /// let s = "i am 24 characters long!";
+    ///
+    /// let compact = CompactStr::new(&s);
+    ///
+    /// assert_eq!(compact, s);
+    /// // we are not allocated on the heap!
+    /// assert!(!compact.is_heap_allocated());
+    /// ```
+    ///
+    /// ### Heap
+    /// ```
+    /// # use compact_str::CompactStr;
+    /// // For longer strings though, we get allocated on the heap
+    /// let long = "I am a longer string that will be allocated on the heap";
+    /// let compact = CompactStr::new(long);
+    ///
+    /// assert_eq!(compact, long);
+    /// // we are allocated on the heap!
+    /// assert!(compact.is_heap_allocated());
+    /// ```
     #[inline]
     pub fn new<T: AsRef<str>>(text: T) -> Self {
         CompactStr {
@@ -79,6 +129,21 @@ impl CompactStr {
         }
     }
 
+    /// Creates a new inline `CompactStr` at compile time.
+    ///
+    /// # Examples
+    /// ```
+    /// use compact_str::CompactStr;
+    ///
+    /// const DEFAULT_NAME: CompactStr = CompactStr::new_inline("untitled");
+    /// ```
+    ///
+    /// Note: Trying to create a long string that can't be inlined, will fail to build.
+    /// ```compile_fail
+    /// # use compact_str::CompactStr;
+    ///
+    /// const LONG: CompactStr = CompactStr::new_inline("this is a long string that can't be stored on the stack");
+    /// ```
     #[inline]
     pub const fn new_inline(text: &str) -> Self {
         CompactStr {
@@ -86,16 +151,81 @@ impl CompactStr {
         }
     }
 
+    /// Creates a new empty `CompactStr` with the provided capacity.
+    ///
+    /// A `CompactStr` will inline strings on the stack, if they're small enough. Specifically, if
+    /// the string is smaller than `std::mem::size_of::<String>` bytes then it will be inlined. This
+    /// means that `CompactStr`s have a minimum capacity of `std::mem::size_of::<String> - 1`, e.g.
+    /// ```
+    /// # use compact_str::CompactStr;
+    /// let empty = CompactStr::with_capacity(0);
+    /// let min_size = std::mem::size_of::<String>() - 1;
+    ///
+    /// assert_eq!(empty.capacity(), min_size);
+    /// assert_ne!(0, min_size);
+    /// assert!(!empty.is_heap_allocated());
+    /// ```
+    ///
+    /// If you create a `CompactStr` with a capacity greater than or equal to
+    /// `std::mem::size_of::<String>`, it will heap allocated, e.g.
+    /// ```
+    /// # use compact_str::CompactStr;
+    /// let heap_size = std::mem::size_of::<String>();
+    /// let empty = CompactStr::with_capacity(heap_size);
+    ///
+    /// assert_eq!(empty.capacity(), heap_size);
+    /// assert!(empty.is_heap_allocated());
+    /// ```
+    ///
+    /// # Note
+    /// A `CompactStr` can inline strings that are equal to `std::mem::size_of::<String>()`, if the
+    /// first character is ASCII. But we
+    /// do this by foregoing any metadata to track the string's length, and using the invariant
+    #[inline]
+    pub fn with_capacity(capacity: usize) -> Self {
+        CompactStr {
+            repr: Repr::with_capacity(capacity),
+        }
+    }
+
+    /// Returns the length of the `CompactStr` in `bytes`, not `chars` or graphemes.
+    ///
+    /// When using UTF-8 encoding (which all strings in Rust do) a single character will be 1 - 4
+    /// bytes long, therefore the return value of this method might not be what a human considers
+    /// the length of the string.
+    ///
+    /// # Examples
+    /// ```
+    /// # use compact_str::CompactStr;
+    /// let ascii = CompactStr::new("hello world");
+    /// assert_eq!(ascii.len(), 11);
+    ///
+    /// let person = CompactStr::new("👱");
+    /// assert_eq!(person.len(), 4);
+    /// ```
     #[inline]
     pub fn len(&self) -> usize {
         self.repr.len()
     }
 
+    /// Returns `true` if the `CompactStr` has a length of 0, `false` otherwise
+    ///
+    /// # Examples
+    /// ```
+    /// # use compact_str::CompactStr;
+    /// let mut msg = CompactStr::new("");
+    /// assert!(msg.is_empty());
+    ///
+    /// // add some characters
+    /// msg.push_str("hello reader!");
+    /// assert!(!msg.is_empty());
+    /// ```
     #[inline]
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
 
+    /// Returns the capacity of the `CompactStr`, in bytes.
     #[inline]
     pub fn capacity(&self) -> usize {
         self.repr.capacity()
@@ -111,7 +241,7 @@ impl CompactStr {
     ///
     /// ### For example:
     /// ```
-    /// use compact_str::CompactStr;
+    /// # use compact_str::CompactStr;
     ///
     /// const WORD: usize = std::mem::size_of::<usize>();
     /// let mut compact = CompactStr::default();
@@ -119,6 +249,7 @@ impl CompactStr {
     ///
     /// compact.reserve(200);
     /// assert!(compact.is_heap_allocated());
+    /// assert!(compact.capacity() >= 200);
     /// ```
     ///
     /// # Panics

@@ -78,21 +78,6 @@ impl CompactStr {
     /// short enough, then it will be inlined on the stack!
     ///
     /// # Examples
-    /// ```
-    /// use compact_str::CompactStr;
-    ///
-    /// // Using a `&'static str`
-    /// let s = "hello world!";
-    /// let hello = CompactStr::new(&s);
-    ///
-    /// // Using a `String`
-    /// let u = String::from("🦄🌈");
-    /// let unicorn = CompactStr::new(u);
-    ///
-    /// // Using a `Box<str>`
-    /// let b: Box<str> = String::from("📦📦📦").into_boxed_str();
-    /// let boxed = CompactStr::new(&b);
-    /// ```
     ///
     /// ### Inlined
     /// ```
@@ -122,6 +107,23 @@ impl CompactStr {
     /// // we are allocated on the heap!
     /// assert!(compact.is_heap_allocated());
     /// ```
+    ///
+    /// ### Creation
+    /// ```
+    /// use compact_str::CompactStr;
+    ///
+    /// // Using a `&'static str`
+    /// let s = "hello world!";
+    /// let hello = CompactStr::new(&s);
+    ///
+    /// // Using a `String`
+    /// let u = String::from("🦄🌈");
+    /// let unicorn = CompactStr::new(u);
+    ///
+    /// // Using a `Box<str>`
+    /// let b: Box<str> = String::from("📦📦📦").into_boxed_str();
+    /// let boxed = CompactStr::new(&b);
+    /// ```
     #[inline]
     pub fn new<T: AsRef<str>>(text: T) -> Self {
         CompactStr {
@@ -141,7 +143,6 @@ impl CompactStr {
     /// Note: Trying to create a long string that can't be inlined, will fail to build.
     /// ```compile_fail
     /// # use compact_str::CompactStr;
-    ///
     /// const LONG: CompactStr = CompactStr::new_inline("this is a long string that can't be stored on the stack");
     /// ```
     #[inline]
@@ -226,6 +227,26 @@ impl CompactStr {
     }
 
     /// Returns the capacity of the `CompactStr`, in bytes.
+    ///
+    /// # Note
+    /// * A `CompactStr` will always have a capacity of at least `std::mem::size_of::<String>() - 1`
+    ///
+    /// # Examples
+    /// ### Minimum Size
+    /// ```
+    /// # use compact_str::CompactStr;
+    /// let min_size = std::mem::size_of::<String>() - 1;
+    /// let compact = CompactStr::new("");
+    ///
+    /// assert!(compact.capacity() >= min_size);
+    /// ```
+    ///
+    /// ### Reserving capacity
+    /// ```
+    /// # use compact_str::CompactStr;
+    /// let compact = CompactStr::with_capacity(128);
+    /// assert_eq!(compact.capacity(), 128);
+    /// ```
     #[inline]
     pub fn capacity(&self) -> usize {
         self.repr.capacity()

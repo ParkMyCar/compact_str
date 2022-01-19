@@ -210,8 +210,8 @@ impl CompactStr {
     /// let ascii = CompactStr::new("hello world");
     /// assert_eq!(ascii.len(), 11);
     ///
-    /// let person = CompactStr::new("👱");
-    /// assert_eq!(person.len(), 4);
+    /// let emoji = CompactStr::new("👱");
+    /// assert_eq!(emoji.len(), 4);
     /// ```
     #[inline]
     pub fn len(&self) -> usize {

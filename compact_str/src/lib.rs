@@ -32,7 +32,7 @@ use repr::Repr;
 #[cfg(test)]
 mod tests;
 
-/// A `CompactStr` is a compact string tupe that can be used almost anywhere a
+/// A `CompactStr` is a compact string type that can be used almost anywhere a
 /// `String` or `&str` can be used.
 ///
 /// ## Using `CompactStr`
@@ -345,7 +345,7 @@ impl CompactStr {
     /// assert_eq!(s, "hello world");
     /// ```
     ///
-    /// # Futher Explanation
+    /// # Further Explanation
     /// When a `CompactStr` becomes sufficiently large, the underlying buffer becomes a reference
     /// counted buffer on the heap. Then, cloning a `CompactStr` increments a reference count
     /// instead of cloning the entire buffer (very similar to `Arc<str>`). To prevent silently
@@ -356,26 +356,72 @@ impl CompactStr {
         self.repr.as_mut_slice()
     }
 
+    /// Appends the given `char` to the end of this `CompactStr`.
+    ///
+    /// # Examples
+    /// ```
+    /// # use compact_str::CompactStr;
+    /// let mut s = CompactStr::new("foo");
+    ///
+    /// s.push('b');
+    /// s.push('a');
+    /// s.push('r');
+    ///
+    /// assert_eq!("foobar", s);
+    /// ```
     #[inline]
     pub fn push(&mut self, ch: char) {
         self.repr.push(ch)
     }
 
+    /// Removes the last character from the `CompactStr` and returns it.
+    /// Returns `None` if this `ComapctStr` is empty.
+    ///
+    /// # Examples
+    /// ```
+    /// # use compact_str::CompactStr;
+    /// let mut s = CompactStr::new("abc");
+    ///
+    /// assert_eq!(s.pop(), Some('c'));
+    /// assert_eq!(s.pop(), Some('b'));
+    /// assert_eq!(s.pop(), Some('a'));
+    ///
+    /// assert_eq!(s.pop(), None);
+    /// ```
     #[inline]
     pub fn pop(&mut self) -> Option<char> {
         self.repr.pop()
     }
 
+    /// Appends a given string slice onto the end of this `CompactStr`
+    ///
+    /// # Examples
+    /// ```
+    /// # use compact_str::CompactStr;
+    /// let mut s = CompactStr::new("abc");
+    ///
+    /// s.push_str("123");
+    ///
+    /// assert_eq!("abc123", s);
+    /// ```
     #[inline]
     pub fn push_str(&mut self, s: &str) {
         self.repr.push_str(s)
     }
 
+    /// Forces the length of the `CompactStr` to `new_len`.
+    ///
+    /// This is a low-level operation that maintains none of the normal invariants for `CompactStr`.
+    /// If you want to modify the `CompactStr` you should use methods like `push`, `push_str` or
+    /// `pop`.
+    ///
     /// # Safety
-    /// * TODO: Document safety here
+    /// * `new_len` must be less than or equal to `capacity()`
+    /// * The elements at `old_len..new_len` must be initialized
+    ///
     #[inline]
-    pub unsafe fn set_len(&mut self, length: usize) {
-        self.repr.set_len(length)
+    pub unsafe fn set_len(&mut self, new_len: usize) {
+        self.repr.set_len(new_len)
     }
 
     /// Returns whether or not the `CompactStr` is heap allocated.

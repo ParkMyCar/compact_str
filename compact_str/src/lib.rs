@@ -191,7 +191,6 @@ impl CompactStr {
     /// "packed" representation. Creating a `CompactStr` with capacity of `size_of::<String>()` will
     /// heap allocate, because at this time we don't know if the first character will be ASCII or
     /// not.
-    ///
     #[inline]
     pub fn with_capacity(capacity: usize) -> Self {
         CompactStr {
@@ -418,7 +417,6 @@ impl CompactStr {
     /// # Safety
     /// * `new_len` must be less than or equal to `capacity()`
     /// * The elements at `old_len..new_len` must be initialized
-    ///
     #[inline]
     pub unsafe fn set_len(&mut self, new_len: usize) {
         self.repr.set_len(new_len)

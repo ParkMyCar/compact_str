@@ -83,6 +83,16 @@ impl Repr {
     }
 
     #[inline]
+    pub fn with_capacity(capacity: usize) -> Self {
+        if capacity <= inline::MAX_INLINE_SIZE {
+            EMPTY
+        } else {
+            let heap = ManuallyDrop::new(HeapString::with_capacity(capacity));
+            Repr { heap }
+        }
+    }
+
+    #[inline]
     pub fn len(&self) -> usize {
         self.cast().len()
     }

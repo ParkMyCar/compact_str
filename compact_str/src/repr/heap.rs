@@ -39,6 +39,15 @@ impl HeapString {
         HeapString { padding, string }
     }
 
+    /// Creates a `HeapString` with the provided capacity.
+    #[inline]
+    pub fn with_capacity(capacity: usize) -> Self {
+        let padding = PADDING;
+        let string = ArcString::with_capacity(capacity);
+
+        HeapString { padding, string }
+    }
+
     /// Makes a mutable reference to the underlying buffer, cloning if there is more than one out
     /// standing reference.
     ///

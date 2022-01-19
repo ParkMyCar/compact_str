@@ -44,8 +44,8 @@ impl CompactStr {
     ///
     /// # Safety
     /// This function is unsafe because it does not check that the provided bytes are valid UTF-8.
-    /// If this constraint is violated, it may cause memory unsafety issues with futures uses of
-    /// the `ComapctStr`, as the rest of the library assumes that `CompactStr`s are valid UTF-8
+    /// If this constraint is violated, it may cause memory safety issues with futures uses of the
+    /// `ComapctStr`, as the rest of the library assumes that `CompactStr`s are valid UTF-8
     ///
     /// # Examples
     /// ```

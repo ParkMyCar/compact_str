@@ -53,6 +53,18 @@ impl ArcString {
     }
 
     #[inline]
+    pub fn with_capacity(capacity: usize) -> Self {
+        // We should never be able to programatically create an `ArcString` with a capacity less
+        // than our max inline size, since then the string should be inlined
+        debug_assert!(capacity >= super::MAX_SIZE);
+
+        let len = 0;
+        let ptr = ArcStringInner::with_capacity(capacity);
+
+        ArcString { len, ptr }
+    }
+
+    #[inline]
     pub const fn len(&self) -> usize {
         self.len
     }

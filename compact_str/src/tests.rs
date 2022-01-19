@@ -72,7 +72,7 @@ proptest! {
         compact.reserve(word.len());
 
         // SAFETY: We're writing a String which we know is UTF-8
-        let slice = unsafe { compact.as_mut_slice() };
+        let slice = unsafe { compact.as_mut_bytes() };
         slice[..word.len()].copy_from_slice(word.as_bytes());
 
         // SAFTEY: We know this is the length of our string, since `compact` started with 0 bytes
@@ -92,7 +92,7 @@ proptest! {
         compact.reserve(word.len());
 
         // SAFETY: We're writing a String which we know is UTF-8
-        let slice = unsafe { compact.as_mut_slice() };
+        let slice = unsafe { compact.as_mut_bytes() };
         slice[..word.len()].copy_from_slice(word.as_bytes());
 
         // SAFTEY: We know this is the length of our string, since `compact` started with 0 bytes

@@ -32,15 +32,16 @@ use repr::Repr;
 #[cfg(test)]
 mod tests;
 
-/// A `CompactStr` is a compact string tupe that can be used almost anywhere a `String` or `&str`
-/// can be used.
+/// A `CompactStr` is a compact string tupe that can be used almost anywhere a
+/// `String` or `&str` can be used.
 ///
 /// ## Using `CompactStr`
 /// ```
 /// use compact_str::CompactStr;
 /// # use std::collections::HashMap;
 ///
-/// // CompactStr auto derefs into a str so you can use all methods from `str` that take a `&self`
+/// // CompactStr auto derefs into a str so you can use all methods from `str`
+/// // that take a `&self`
 /// if CompactStr::new("hello world!").is_ascii() {
 ///     println!("we're all ASCII")
 /// }
@@ -59,7 +60,8 @@ mod tests;
 ///     println!("{}", text.as_ref());
 /// }
 ///
-/// // CompactStr impls AsRef<str> and Borrow<str>, so it can be used anywhere that excepts a generic string
+/// // CompactStr impls AsRef<str> and Borrow<str>, so it can be used anywhere
+/// // that excepts a generic string
 /// if let Some(building) = map.get("nyc") {
 ///     wrapped_print(building);
 /// }
@@ -74,8 +76,8 @@ pub struct CompactStr {
 }
 
 impl CompactStr {
-    /// Creates a new `CompactStr` from any type that implements `AsRef<str>`. If the string is
-    /// short enough, then it will be inlined on the stack!
+    /// Creates a new `CompactStr` from any type that implements `AsRef<str>`.
+    /// If the string is short enough, then it will be inlined on the stack!
     ///
     /// # Examples
     ///
@@ -156,7 +158,9 @@ impl CompactStr {
     ///
     /// A `CompactStr` will inline strings on the stack, if they're small enough. Specifically, if
     /// the string is smaller than `std::mem::size_of::<String>` bytes then it will be inlined. This
-    /// means that `CompactStr`s have a minimum capacity of `std::mem::size_of::<String> - 1`, e.g.
+    /// means that `CompactStr`s have a minimum capacity of `std::mem::size_of::<String> - 1`.
+    ///
+    /// # Examples
     /// ```
     /// # use compact_str::CompactStr;
     /// let empty = CompactStr::with_capacity(0);
@@ -167,10 +171,12 @@ impl CompactStr {
     /// assert!(!empty.is_heap_allocated());
     /// ```
     ///
-    /// If you create a `CompactStr` with a capacity greater than or equal to
-    /// `std::mem::size_of::<String>`, it will heap allocated, e.g.
+    /// ### Heap Allocating
     /// ```
     /// # use compact_str::CompactStr;
+    /// // If you create a `CompactStr` with a capacity greater than or equal to
+    /// // `std::mem::size_of::<String>`, it will heap allocated
+    ///
     /// let heap_size = std::mem::size_of::<String>();
     /// let empty = CompactStr::with_capacity(heap_size);
     ///
@@ -180,8 +186,12 @@ impl CompactStr {
     ///
     /// # Note
     /// A `CompactStr` can inline strings that are equal to `std::mem::size_of::<String>()`, if the
-    /// first character is ASCII. But we
-    /// do this by foregoing any metadata to track the string's length, and using the invariant
+    /// first character is ASCII. But we do this by foregoing any metadata to track the string's
+    /// length, and using the invariant of the first byte being ASCII (i.e. <= 127) to denote this
+    /// "packed" representation. Creating a `CompactStr` with capacity of `size_of::<String>()` will
+    /// heap allocate, because at this time we don't know if the first character will be ASCII or
+    /// not.
+    ///
     #[inline]
     pub fn with_capacity(capacity: usize) -> Self {
         CompactStr {
@@ -241,7 +251,7 @@ impl CompactStr {
     /// assert!(compact.capacity() >= min_size);
     /// ```
     ///
-    /// ### Reserving capacity
+    /// ### Heap Allocated
     /// ```
     /// # use compact_str::CompactStr;
     /// let compact = CompactStr::with_capacity(128);
@@ -260,7 +270,10 @@ impl CompactStr {
     /// * A `CompactStr` will always have at least a capacity of `(WORD * 3) - 1`
     /// * Reserving additional bytes may cause the `CompactStr` to become heap allocated
     ///
-    /// ### For example:
+    /// # Panics
+    /// Panics if the new capacity overflows `usize`
+    ///
+    /// # Examples
     /// ```
     /// # use compact_str::CompactStr;
     ///
@@ -272,21 +285,37 @@ impl CompactStr {
     /// assert!(compact.is_heap_allocated());
     /// assert!(compact.capacity() >= 200);
     /// ```
-    ///
-    /// # Panics
-    /// Panics if the new capacity overflows `usize`
+
     #[inline]
     pub fn reserve(&mut self, additional: usize) {
         self.repr.reserve(additional)
     }
 
+    /// Returns a string slice containing the entire `CompactStr`.
+    ///
+    /// # Examples
+    /// ```
+    /// # use compact_str::CompactStr;
+    /// let s = CompactStr::new("hello");
+    ///
+    /// assert_eq!(s.as_str(), "hello");
+    /// ```
     #[inline]
     pub fn as_str(&self) -> &str {
         self.repr.as_str()
     }
 
+    /// Returns a byte slice of the `CompactStr`s contents.
+    ///
+    /// # Examples
+    /// ```
+    /// # use compact_str::CompactStr;
+    /// let s = CompactStr::new("hello");
+    ///
+    /// assert_eq!(&[104, 101, 108, 108, 111], s.as_bytes());
+    /// ```
     #[inline]
-    pub fn as_slice(&self) -> &[u8] {
+    pub fn as_bytes(&self) -> &[u8] {
         self.repr.as_slice()
     }
 
@@ -298,18 +327,32 @@ impl CompactStr {
     /// underlying buffer (e.g. you previously cloned this `CompactStr`), calling this method will
     /// clone the entire buffer to prevent silently mutating other owned `CompactStr`s.
     ///
-    /// ### Futher Explanation
+    /// # Safety
+    /// * All Rust strings, including `CompactStr`, must be valid UTF-8. The caller must guarantee
+    /// that any modifications made to the underlying buffer are valid UTF-8.
+    ///
+    /// # Examples
+    /// ```
+    /// # use compact_str::CompactStr;
+    /// let mut s = CompactStr::new("hello");
+    ///
+    /// let slice = unsafe { s.as_mut_bytes() };
+    /// // copy bytes into our string
+    /// slice[5..11].copy_from_slice(" world".as_bytes());
+    /// // set the len of the string
+    /// unsafe { s.set_len(11) };
+    ///
+    /// assert_eq!(s, "hello world");
+    /// ```
+    ///
+    /// # Futher Explanation
     /// When a `CompactStr` becomes sufficiently large, the underlying buffer becomes a reference
     /// counted buffer on the heap. Then, cloning a `CompactStr` increments a reference count
     /// instead of cloning the entire buffer (very similar to `Arc<str>`). To prevent silently
     /// mutating the data of other owned `CompactStr`s when taking a mutable slice, we clone the
     /// underlying buffer and mutate that, if more than one outstanding reference exists.
-    ///
-    /// # Safety
-    /// * All Rust strings, including `CompactStr`, must be valid UTF-8. The caller must guarantee
-    /// that any modifications made to the underlying buffer are valid UTF-8.
     #[inline]
-    pub unsafe fn as_mut_slice(&mut self) -> &mut [u8] {
+    pub unsafe fn as_mut_bytes(&mut self) -> &mut [u8] {
         self.repr.as_mut_slice()
     }
 
@@ -335,6 +378,24 @@ impl CompactStr {
         self.repr.set_len(length)
     }
 
+    /// Returns whether or not the `CompactStr` is heap allocated.
+    ///
+    /// # Examples
+    /// ### Inlined
+    /// ```
+    /// # use compact_str::CompactStr;
+    /// let hello = CompactStr::new("hello world");
+    ///
+    /// assert!(!hello.is_heap_allocated());
+    /// ```
+    ///
+    /// ### Heap Allocated
+    /// ```
+    /// # use compact_str::CompactStr;
+    /// let msg = CompactStr::new("this message will self destruct in 5, 4, 3, 2, 1 💥");
+    ///
+    /// assert!(msg.is_heap_allocated());
+    /// ```
     #[inline]
     pub fn is_heap_allocated(&self) -> bool {
         self.repr.is_heap_allocated()

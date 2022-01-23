@@ -18,17 +18,9 @@ unsafe impl Send for BoxString {}
 
 impl BoxString {
     #[inline]
-    pub fn new(text: &str, additional: usize) -> Self {
+    pub fn new(text: &str) -> Self {
         let len = text.len();
-
-        let required = len + additional;
-        let amortized = 3 * len / 2;
-        let new_capacity = core::cmp::max(amortized, required);
-
-        // TODO: Handle overflows in the case of __very__ large Strings
-        debug_assert!(new_capacity >= len);
-
-        let mut ptr = BoxStringInner::with_capacity(new_capacity);
+        let mut ptr = BoxStringInner::with_capacity(len);
 
         // SAFETY: We just created the `BoxStringInner` so we know the pointer is properly aligned,
         // it is non-null, points to an instance of `BoxStringInner`, and the `str_buffer`
@@ -44,10 +36,6 @@ impl BoxString {
 
     #[inline]
     pub fn with_capacity(capacity: usize) -> Self {
-        // We should never be able to programatically create an `BoxString` with a capacity less
-        // than our max inline size, since then the string should be inlined
-        debug_assert!(capacity >= super::MAX_SIZE);
-
         let len = 0;
         let ptr = BoxStringInner::with_capacity(capacity);
 
@@ -58,16 +46,32 @@ impl BoxString {
     #[inline]
     pub fn reserve(&mut self, additional: usize) {
         // We need at least this much space
-        let new_capacity = self.len() + additional;
+        let len = self.len();
+        let required = len + additional;
 
         // We have enough space, so there is no work to do
-        if self.capacity() >= new_capacity {
+        if self.capacity() >= required {
             return;
         }
 
-        // Create a new `BoxString` with enough space for at least `additional` bytes, dropping the
-        // old one
-        *self = BoxString::new(self.as_str(), additional);
+        // We need to grow, so take the max of our amortized amount, or the required amount
+        let amortized = 3 * len / 2;
+        let new_capacity = core::cmp::max(amortized, required);
+
+        // TODO: Handle overflows in the case of __very__ large Strings
+        debug_assert!(new_capacity >= len);
+
+        // Create a new `BoxString`
+        let mut new = BoxString::with_capacity(new_capacity);
+
+        // SAFETY: We're writing a &str which is valid UTF-8
+        let buffer = unsafe { new.as_mut_slice() };
+        buffer[..len].copy_from_slice(self.as_slice());
+        // SAFETY: We just wrote `len` bytes into our buffer
+        unsafe { new.set_len(len) };
+
+        // Set our new BoxString as self
+        *self = new;
     }
 
     #[inline]
@@ -163,7 +167,18 @@ impl BoxString {
 
 impl Clone for BoxString {
     fn clone(&self) -> Self {
-        Self::new(self.as_str(), self.capacity() - self.len())
+        // Create a new BoxString
+        let len = self.len();
+        let mut new = Self::with_capacity(self.capacity());
+
+        // Write the existing String into it
+        // SAFETY: We're writing a &str which we know is valid UTF-8
+        let buffer = unsafe { new.as_mut_slice() };
+        buffer[..len].copy_from_slice(self.as_slice());
+        // SAFETY: We just wrote `len` bytes into our buffer
+        unsafe { new.set_len(len) };
+
+        new
     }
 }
 
@@ -176,7 +191,7 @@ impl fmt::Debug for BoxString {
 impl From<&str> for BoxString {
     #[inline]
     fn from(text: &str) -> Self {
-        BoxString::new(text, 0)
+        BoxString::new(text)
     }
 }
 
@@ -188,6 +203,8 @@ impl Drop for BoxString {
 
 #[cfg(test)]
 mod tests {
+    use proptest::prelude::*;
+    use proptest::strategy::Strategy;
     use super::BoxString;
 
     #[test]
@@ -197,6 +214,27 @@ mod tests {
 
         assert_eq!(box_str.as_str(), example);
         assert_eq!(box_str.len(), example.len());
+    }
+
+    #[test]
+    fn test_push() {
+        let example = "hello world";
+        let mut boxed = BoxString::from(example);
+
+        boxed.push('!');
+        assert_eq!(boxed.as_str(), "hello world!");
+        assert_eq!(boxed.len(), 12);
+    }
+
+    #[test]
+    fn test_push_str() {
+        let example = "hello";
+        let mut boxed = BoxString::from(example);
+
+        boxed.push_str(" world!");
+        assert_eq!(boxed.as_str(), "hello world!");
+        assert_eq!(boxed.len(), 12);
+        assert_eq!(boxed.capacity(), 12);
     }
 
     #[test]
@@ -211,17 +249,21 @@ mod tests {
     }
 
     #[test]
-    fn test_push() {
+    fn test_box_string_capacity() {
         let example = "hello";
         let mut boxed = BoxString::from(example);
 
+        // Starts with a capacity equal to length
+        assert_eq!(boxed.capacity(), 5);
+
         boxed.push(' ');
-        boxed.push('w');
-        assert_eq!(boxed.as_str(), "hello w");
+        // Immediate reallocate to 1.5 * capacity
+        assert_eq!(boxed.len(), 6);
         assert_eq!(boxed.capacity(), 7);
 
-        // Right now our len and cap are both 7, pushing 'o' should cause us to resize
+        boxed.push('w');
         boxed.push('o');
+        // Right now our len and cap are both 7, pushing 'o' should cause us to resize
         assert_eq!(boxed.len(), 8);
         assert_eq!(boxed.capacity(), 10);
 
@@ -235,14 +277,42 @@ mod tests {
     }
 
     #[test]
-    fn test_push_str() {
+    fn test_string_capacity() {
         let example = "hello";
-        let mut boxed = BoxString::from(example);
+        let mut std_string = String::from(example);
 
-        boxed.push_str(" world!");
-        assert_eq!(boxed.as_str(), "hello world!");
-        assert_eq!(boxed.len(), 12);
-        assert_eq!(boxed.capacity(), 12);
+        // `std::String` starts with capacity equal to length
+        assert_eq!(std_string.capacity(), 5);
+
+        // then doubles when re-allocating
+        std_string.push(' ');
+        assert_eq!(std_string.capacity(), 10);
+
+        std_string.push('w');
+        std_string.push('o');
+        std_string.push('r');
+        std_string.push('l');
+
+        // after pushing an 11th element, we double capacity again
+        std_string.push('d');
+        assert_eq!(std_string.capacity(), 20);
+
+        std_string.push('!');
+    }
+
+    // generates random unicode strings, upto 80 chars long
+    fn rand_unicode() -> impl Strategy<Value = String> {
+        proptest::collection::vec(proptest::char::any(), 0..80)
+            .prop_map(|v| v.into_iter().collect())
+    }
+
+    proptest! {
+        #[test]
+        #[cfg_attr(miri, ignore)]
+        fn test_strings_roundtrip(word in rand_unicode()) {
+            let arc_str = BoxString::from(word.as_str());
+            prop_assert_eq!(&word, arc_str.as_str());
+        }
     }
 }
 

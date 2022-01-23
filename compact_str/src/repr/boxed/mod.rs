@@ -54,6 +54,22 @@ impl BoxString {
         BoxString { len, ptr }
     }
 
+    /// Reserve space for at least `additional` bytes
+    #[inline]
+    pub fn reserve(&mut self, additional: usize) {
+        // We need at least this much space
+        let new_capacity = self.len() + additional;
+
+        // We have enough space, so there is no work to do
+        if self.capacity() >= new_capacity {
+            return;
+        }
+
+        // Create a new `BoxString` with enough space for at least `additional` bytes, dropping the
+        // old one
+        *self = BoxString::new(self.as_str(), additional);
+    }
+
     #[inline]
     pub const fn len(&self) -> usize {
         self.len
@@ -62,6 +78,47 @@ impl BoxString {
     #[inline]
     pub fn capacity(&self) -> usize {
         self.inner().capacity
+    }
+
+    #[inline]
+    pub fn push(&mut self, ch: char) {
+        let len = self.len();
+        let char_len = ch.len_utf8();
+
+        // Reserve at least enough space for the new char
+        self.reserve(char_len);
+
+        // SAFETY: We're writing a char into the slice, which is valid UTF-8
+        let slice = unsafe { self.as_mut_slice() };
+
+        // Write our char into the slice
+        ch.encode_utf8(&mut slice[len..]);
+
+        // Increment our length
+        //
+        // SAFETY: We just wrote `char_len` bytes into the buffer, so we know this new length is
+        // valid
+        unsafe { self.set_len(len + char_len) };
+    }
+
+    #[inline]
+    pub fn push_str(&mut self, s: &str) {
+        let len = self.len();
+        let str_len = s.len();
+
+        // Reserve at least enough space for the new str
+        self.reserve(str_len);
+
+        // SAFETY: We're writing a &str into the slice, which is valid UTF-8
+        let slice = unsafe { self.as_mut_slice() };
+        let buffer = &mut slice[len..len + str_len];
+
+        debug_assert_eq!(buffer.len(), s.as_bytes().len());
+
+        // Copy the string into our buffer
+        buffer.copy_from_slice(s.as_bytes());
+        // Incrament the length of our string
+        unsafe { self.set_len(len + str_len) };
     }
 
     #[inline]
@@ -74,6 +131,15 @@ impl BoxString {
     #[inline(always)]
     pub fn as_slice(&self) -> &[u8] {
         &self.inner().as_bytes()[..self.len]
+    }
+
+    /// Returns a mutable reference to the underlying buffer of bytes
+    ///
+    /// # Safety:
+    /// * The caller must guarantee any modifications made to the buffer are valid UTF-8
+    #[inline]
+    pub unsafe fn as_mut_slice(&mut self) -> &mut [u8] {
+        self.ptr.as_mut().as_mut_bytes()
     }
 
     #[inline]
@@ -142,7 +208,41 @@ mod tests {
         assert_eq!(one.as_str(), example);
         drop(one);
         assert_eq!(two.as_str(), example);
+    }
 
+    #[test]
+    fn test_push() {
+        let example = "hello";
+        let mut boxed = BoxString::from(example);
+
+        boxed.push(' ');
+        boxed.push('w');
+        assert_eq!(boxed.as_str(), "hello w");
+        assert_eq!(boxed.capacity(), 7);
+
+        // Right now our len and cap are both 7, pushing 'o' should cause us to resize
+        boxed.push('o');
+        assert_eq!(boxed.len(), 8);
+        assert_eq!(boxed.capacity(), 10);
+
+        boxed.push('r');
+        boxed.push('l');
+        boxed.push('d');
+        assert_eq!(boxed.len(), 11);
+        assert_eq!(boxed.capacity(), 15);
+
+        assert_eq!(boxed.as_str(), "hello world");
+    }
+
+    #[test]
+    fn test_push_str() {
+        let example = "hello";
+        let mut boxed = BoxString::from(example);
+
+        boxed.push_str(" world!");
+        assert_eq!(boxed.as_str(), "hello world!");
+        assert_eq!(boxed.len(), 12);
+        assert_eq!(boxed.capacity(), 12);
     }
 }
 

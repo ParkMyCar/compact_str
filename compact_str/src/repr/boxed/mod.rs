@@ -223,7 +223,7 @@ impl Extend<char> for BoxString {
     }
 }
 
-impl <'c, 'a> Extend<&'c char> for BoxString {
+impl<'c> Extend<&'c char> for BoxString {
     #[inline]
     fn extend<T: IntoIterator<Item = &'c char>>(&mut self, iter: T) {
         self.extend(iter.into_iter().copied());

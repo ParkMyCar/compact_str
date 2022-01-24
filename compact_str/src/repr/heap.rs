@@ -74,4 +74,4 @@ impl From<String> for HeapString {
     }
 }
 
-static_assertions::assert_eq_size!(HeapString, String);
+crate::asserts::assert_size_eq!(HeapString, String);

@@ -24,6 +24,7 @@ use core::iter::FromIterator;
 use core::ops::Deref;
 use core::str::FromStr;
 
+mod asserts;
 mod features;
 
 mod repr;
@@ -616,4 +617,4 @@ impl Extend<String> for CompactStr {
     }
 }
 
-static_assertions::assert_eq_size!(CompactStr, String);
+crate::asserts::assert_size_eq!(CompactStr, String);

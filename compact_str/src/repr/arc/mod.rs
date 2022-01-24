@@ -290,4 +290,4 @@ mod test {
     }
 }
 
-static_assertions::const_assert_eq!(mem::size_of::<ArcString>(), 2 * mem::size_of::<usize>());
+crate::asserts::assert_size!(ArcString, 2 * mem::size_of::<usize>());

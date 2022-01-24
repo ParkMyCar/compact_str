@@ -33,4 +33,4 @@ impl DiscriminantMask {
     }
 }
 
-static_assertions::assert_eq_size!(DiscriminantMask, String);
+crate::asserts::assert_size_eq!(DiscriminantMask, String);

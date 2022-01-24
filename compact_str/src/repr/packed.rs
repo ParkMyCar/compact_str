@@ -92,4 +92,4 @@ impl PackedString {
     }
 }
 
-static_assertions::assert_eq_size!(PackedString, String);
+crate::asserts::assert_size_eq!(PackedString, String);

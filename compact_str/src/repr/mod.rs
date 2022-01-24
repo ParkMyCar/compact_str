@@ -1,11 +1,6 @@
 use std::iter::Extend;
 use std::mem::ManuallyDrop;
 
-use static_assertions::{
-    assert_eq_size,
-    const_assert_eq,
-};
-
 #[cfg(feature = "bytes")]
 mod bytes;
 
@@ -470,12 +465,12 @@ impl<'a> MutStrongRepr<'a> {
     }
 }
 
-assert_eq_size!(Repr, String);
+crate::asserts::assert_size_eq!(Repr, String);
 
 #[cfg(target_pointer_width = "64")]
-const_assert_eq!(std::mem::size_of::<Repr>(), 24);
+crate::asserts::assert_size!(Repr, 24);
 #[cfg(target_pointer_width = "32")]
-const_assert_eq!(std::mem::size_of::<Repr>(), 12);
+crate::asserts::assert_size!(Repr, 12);
 
 #[cfg(test)]
 mod tests {

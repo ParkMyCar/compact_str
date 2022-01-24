@@ -108,7 +108,7 @@ impl InlineString {
     }
 }
 
-static_assertions::assert_eq_size!(InlineString, String);
+crate::asserts::assert_size_eq!(InlineString, String);
 
 #[cfg(test)]
 mod tests {

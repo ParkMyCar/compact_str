@@ -1,3 +1,4 @@
+use core::iter::Extend;
 use core::{
     fmt,
     mem,
@@ -42,6 +43,30 @@ impl BoxString {
         BoxString { len, ptr }
     }
 
+    #[inline]
+    pub fn with_additional(text: &str, additional: usize) -> Self {
+        let len = text.len();
+
+        let required = len + additional;
+        let amortized = 3 * len / 2;
+        let new_capacity = core::cmp::max(amortized, required);
+
+        // TODO: Handle overflows in the case of __very__ large Strings
+        debug_assert!(new_capacity >= len);
+
+        // Create the `BoxString` with our determined capacity
+        let mut new = BoxString::with_capacity(new_capacity);
+
+        // SAFETY: We're writing a &str which is valid UTF-8
+        let buffer = unsafe { new.as_mut_slice() };
+        buffer[..len].copy_from_slice(text.as_bytes());
+
+        // SAFETY: We just wrote `len` bytes into our buffer
+        unsafe { new.set_len(len) };
+
+        new
+    }
+
     /// Reserve space for at least `additional` bytes
     #[inline]
     pub fn reserve(&mut self, additional: usize) {
@@ -54,21 +79,8 @@ impl BoxString {
             return;
         }
 
-        // We need to grow, so take the max of our amortized amount, or the required amount
-        let amortized = 3 * len / 2;
-        let new_capacity = core::cmp::max(amortized, required);
-
-        // TODO: Handle overflows in the case of __very__ large Strings
-        debug_assert!(new_capacity >= len);
-
-        // Create a new `BoxString`
-        let mut new = BoxString::with_capacity(new_capacity);
-
-        // SAFETY: We're writing a &str which is valid UTF-8
-        let buffer = unsafe { new.as_mut_slice() };
-        buffer[..len].copy_from_slice(self.as_slice());
-        // SAFETY: We just wrote `len` bytes into our buffer
-        unsafe { new.set_len(len) };
+        // We need to reserve additional space, so create a new BoxString with additional space
+        let new = BoxString::with_additional(self.as_str(), additional);
 
         // Set our new BoxString as self
         *self = new;
@@ -201,10 +213,49 @@ impl Drop for BoxString {
     }
 }
 
+impl Extend<char> for BoxString {
+    #[inline]
+    fn extend<T: IntoIterator<Item = char>>(&mut self, iter: T) {
+        let iterator = iter.into_iter();
+        let (lower_bound, _) = iterator.size_hint();
+        self.reserve(lower_bound);
+        iterator.for_each(|c| self.push(c));
+    }
+}
+
+impl <'c, 'a> Extend<&'c char> for BoxString {
+    #[inline]
+    fn extend<T: IntoIterator<Item = &'c char>>(&mut self, iter: T) {
+        self.extend(iter.into_iter().copied());
+    }
+}
+
+impl<'s> Extend<&'s str> for BoxString {
+    #[inline]
+    fn extend<T: IntoIterator<Item = &'s str>>(&mut self, iter: T) {
+        iter.into_iter().for_each(|s| self.push_str(s));
+    }
+}
+
+impl Extend<Box<str>> for BoxString {
+    #[inline]
+    fn extend<T: IntoIterator<Item = Box<str>>>(&mut self, iter: T) {
+        iter.into_iter().for_each(|s| self.push_str(&s));
+    }
+}
+
+impl Extend<String> for BoxString {
+    #[inline]
+    fn extend<T: IntoIterator<Item = String>>(&mut self, iter: T) {
+        iter.into_iter().for_each(move |s| self.push_str(&s));
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use proptest::prelude::*;
     use proptest::strategy::Strategy;
+
     use super::BoxString;
 
     #[test]

@@ -41,13 +41,13 @@ impl Repr {
             debug_assert_eq!(size, 0);
             return super::EMPTY;
         }
-        let first_byte = buf.chunk()[0];
+        let first_byte = *buf.chunk().get_unchecked(0);
 
         // Get an "empty" Repr we can write into
         //
         // HACK: There currently isn't a way to provide an "empty" Packed repr, so we do this check
         // and return a "default" Packed repr if the buffer can fit
-        let mut repr = if size == MAX_SIZE && first_byte <= 127 {
+        let mut repr = if size == MAX_SIZE && first_byte != 255 && first_byte >> 6 != 0b00000010 {
             // Note: No need to reserve additional bytes here, because we know we can fit all
             // remaining bytes of `buf` into a Packed repr
             DEFAULT_PACKED
@@ -122,6 +122,17 @@ mod test {
 
         // This repr should __not__ be heap allocated
         assert!(!repr.is_heap_allocated());
+    }
+
+    #[test]
+    fn test_fuzz_panic() {
+        let bytes = &[
+            255, 255, 255, 255, 255, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 1, 12, 0, 0, 96,
+        ];
+        println!("{}", bytes.len());
+        let mut buf: Cursor<&[u8]> = Cursor::new(bytes);
+
+        assert!(Repr::from_utf8_buf(&mut buf).is_err());
     }
 
     #[test]

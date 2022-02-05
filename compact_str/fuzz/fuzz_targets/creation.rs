@@ -29,7 +29,7 @@ fuzz_target!(|method: CreationMethod<'_>| {
             // assert the CompactStr is properly allocated
             if word.len() < MAX_INLINE_LENGTH {
                 assert!(!compact.is_heap_allocated());
-            } else if word.len() == MAX_INLINE_LENGTH && word.as_bytes()[0] <= 127 {
+            } else if word.len() == MAX_INLINE_LENGTH && word.as_bytes()[0] != 0b11111111 && word.as_bytes()[0] >> 6 != 0b00000010 {
                 assert!(!compact.is_heap_allocated());
             } else {
                 assert!(compact.is_heap_allocated());
@@ -83,7 +83,7 @@ fuzz_target!(|method: CreationMethod<'_>| {
                     // assert the CompactStr is properly allocated
                     if s.len() < MAX_INLINE_LENGTH {
                         assert!(!c.is_heap_allocated());
-                    } else if s.len() == MAX_INLINE_LENGTH && s.as_bytes()[0] <= 127 {
+                    } else if s.len() == MAX_INLINE_LENGTH && s.as_bytes()[0] != 0b11111111 && s.as_bytes()[0] >> 6 != 0b00000010 {
                         assert!(!c.is_heap_allocated());
                     } else {
                         assert!(c.is_heap_allocated());

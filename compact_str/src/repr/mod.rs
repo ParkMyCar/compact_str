@@ -29,6 +29,8 @@ const EMPTY: Repr = Repr {
 pub const HEAP_MASK: u8 = 0b11111111;
 pub const LEADING_BIT_MASK: u8 = 0b10000000;
 
+const MAX_INLINE_SIZE: usize = 24;
+
 pub union Repr {
     mask: DiscriminantMask,
     heap: ManuallyDrop<HeapString>,
@@ -44,12 +46,17 @@ impl Repr {
 
         if len == 0 {
             EMPTY
-        } else if len <= inline::MAX_INLINE_SIZE {
-            let inline = InlineString::new(text);
-            Repr { inline }
-        } else if len == MAX_SIZE && text.as_bytes()[0] <= 127 {
+        } else if len == MAX_SIZE
+            && unsafe {
+                *text.as_bytes().get_unchecked(0) != 255
+                    && *text.as_bytes().get_unchecked(0) >> 6 != 0b00000010
+            }
+        {
             let packed = PackedString::new(text);
             Repr { packed }
+        } else if len < MAX_SIZE {
+            let inline = InlineString::new(text);
+            Repr { inline }
         } else {
             let heap = ManuallyDrop::new(HeapString::new(text));
             Repr { heap }
@@ -60,10 +67,13 @@ impl Repr {
     pub const fn new_const(text: &str) -> Self {
         let len = text.len();
 
-        if len <= inline::MAX_INLINE_SIZE {
+        if len <= MAX_INLINE_SIZE {
             let inline = InlineString::new_const(text);
             Repr { inline }
-        } else if len == MAX_SIZE && text.as_bytes()[0] <= 127 {
+        } else if len == MAX_SIZE
+            && text.as_bytes()[0] != 0b11111111
+            && text.as_bytes()[0] >> 6 != 0b00000010
+        {
             let packed = PackedString::new_const(text);
             Repr { packed }
         } else {
@@ -79,7 +89,7 @@ impl Repr {
 
     #[inline]
     pub fn with_capacity(capacity: usize) -> Self {
-        if capacity <= inline::MAX_INLINE_SIZE {
+        if capacity <= MAX_INLINE_SIZE {
             EMPTY
         } else {
             let heap = ManuallyDrop::new(HeapString::with_capacity(capacity));
@@ -156,7 +166,7 @@ impl Repr {
 
         match self.cast() {
             StrongRepr::Packed(packed) => {
-                let mut inline_buffer = [0; inline::MAX_INLINE_SIZE];
+                let mut inline_buffer = [0; MAX_INLINE_SIZE];
 
                 let new_len = packed.len() - ch.len_utf8();
                 let buffer: &mut [u8] = &mut inline_buffer[..new_len];

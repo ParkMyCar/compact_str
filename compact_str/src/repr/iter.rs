@@ -3,12 +3,13 @@
 use core::iter::FromIterator;
 use core::mem::ManuallyDrop;
 
-use super::inline::MAX_INLINE_SIZE;
 use super::{
     HeapString,
     InlineString,
     Repr,
 };
+
+const MAX_INLINE_SIZE: usize = 24;
 
 impl FromIterator<char> for Repr {
     fn from_iter<T: IntoIterator<Item = char>>(iter: T) -> Self {

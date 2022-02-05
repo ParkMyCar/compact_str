@@ -10,7 +10,7 @@ impl PackedString {
     #[inline]
     pub fn new(text: &str) -> Self {
         debug_assert_eq!(text.len(), MAX_SIZE);
-        debug_assert!(text.as_bytes()[0] <= 127);
+        // debug_assert!(text.as_bytes()[0] <= 127);
 
         let mut buffer = [0u8; MAX_SIZE];
         buffer[..text.len()].copy_from_slice(text.as_bytes());
@@ -28,14 +28,14 @@ impl PackedString {
             #[allow(unconditional_panic)]
             ["Provided string has a length greater than MAX_SIZE!"][42];
         }
-        if text.as_bytes()[0] > 127 {
-            // HACK: This allows us to make assertions within a `const fn` without requiring
-            // nightly, see unstable `const_panic` feature. This results in a build
-            // failure, not a runtime panic
-            #[allow(clippy::no_effect)]
-            #[allow(unconditional_panic)]
-            ["leading character of packed string isn't ASCII!"][42];
-        }
+        // if text.as_bytes()[0] > 127 {
+        //     // HACK: This allows us to make assertions within a `const fn` without requiring
+        //     // nightly, see unstable `const_panic` feature. This results in a build
+        //     // failure, not a runtime panic
+        //     #[allow(clippy::no_effect)]
+        //     #[allow(unconditional_panic)]
+        //     ["leading character of packed string isn't ASCII!"][42];
+        // }
 
         let mut buffer = [0u8; MAX_SIZE];
         let mut i = 0;

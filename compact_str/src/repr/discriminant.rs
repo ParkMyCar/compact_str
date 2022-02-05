@@ -21,11 +21,11 @@ pub struct DiscriminantMask {
 }
 
 impl DiscriminantMask {
-    #[inline]
+    #[inline(always)]
     pub const fn discriminant(&self) -> Discriminant {
         if self.val == HEAP_MASK {
             Discriminant::Heap
-        } else if self.val & LEADING_BIT_MASK == LEADING_BIT_MASK {
+        } else if self.val >> 6 == 0b00000010 {
             Discriminant::Inline
         } else {
             Discriminant::Packed

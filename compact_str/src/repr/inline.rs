@@ -3,43 +3,44 @@ use super::{
     MAX_SIZE,
 };
 
-pub const MAX_INLINE_SIZE: usize = MAX_SIZE - core::mem::size_of::<Metadata>();
-
-type Metadata = u8;
+const LENGTH_MASK: u8 = 0b11000000;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct InlineString {
-    metadata: Metadata,
-    buffer: [u8; MAX_INLINE_SIZE],
+    buffer: [u8; MAX_SIZE],
 }
 
 impl InlineString {
     const fn empty() -> Self {
         InlineString {
-            metadata: LEADING_BIT_MASK,
-            buffer: [0u8; MAX_INLINE_SIZE],
+            buffer: [0u8; MAX_SIZE],
         }
     }
 
     #[inline]
     pub fn new(text: &str) -> Self {
-        debug_assert!(text.len() <= MAX_INLINE_SIZE);
+        debug_assert!(text.len() <= MAX_SIZE);
 
         let len = text.len();
-        let mut new = Self::empty();
+        let mut buffer = [0u8; MAX_SIZE];
 
         // set the length
-        new.metadata |= len as u8;
-        // copy the string
-        new.buffer.as_mut()[..len].copy_from_slice(text.as_bytes());
+        buffer[MAX_SIZE - 1] = len as u8 | LENGTH_MASK;
 
-        new
+        // copy the string
+        //
+        // note: in the case where len == MAX_SIZE, we'll overwrite the len, but that's okay because
+        // when reading the length we can detect that the last byte is part of UTF-8 and return a
+        // length of MAX_SIZE
+        unsafe { std::ptr::copy_nonoverlapping(text.as_ptr(), buffer.as_mut_ptr(), len) };
+
+        InlineString { buffer }
     }
 
     #[inline]
     pub const fn new_const(text: &str) -> Self {
-        if text.len() > MAX_INLINE_SIZE {
+        if text.len() > MAX_SIZE {
             // HACK: This allows us to make assertions within a `const fn` without requiring
             // nightly, see unstable `const_panic` feature. This results in a build
             // failure, not a runtime panic
@@ -49,8 +50,10 @@ impl InlineString {
         }
 
         let len = text.len();
-        let metadata = (len as u8) | LEADING_BIT_MASK;
-        let mut buffer = [0u8; MAX_INLINE_SIZE];
+        let mut buffer = [0u8; MAX_SIZE];
+
+        // set the length
+        buffer[MAX_SIZE - 1] = len as u8 | LENGTH_MASK;
 
         // Note: for loops aren't allowed in `const fn`, hence the while
         let mut i = 0;
@@ -59,24 +62,27 @@ impl InlineString {
             i += 1;
         }
 
-        InlineString { metadata, buffer }
+        InlineString { buffer }
     }
 
-    /// Creates an `InlineString` from raw parts without checking that it's valid UTF-8.
+    /// Creates an `InlineString` from raw parts without checking that it's valid UTF-8
     #[inline]
-    pub const unsafe fn from_parts(len: usize, buffer: [u8; MAX_INLINE_SIZE]) -> Self {
-        let metadata = (len as u8) | LEADING_BIT_MASK;
-        InlineString { metadata, buffer }
+    pub const unsafe fn from_parts(len: usize, mut buffer: [u8; MAX_SIZE]) -> Self {
+        if len != MAX_SIZE {
+            buffer[MAX_SIZE - 1] = len as u8 | LENGTH_MASK;
+        }
+        InlineString { buffer }
     }
 
-    #[inline]
-    pub const fn len(&self) -> usize {
-        (self.metadata & !LEADING_BIT_MASK) as usize
+    #[inline(always)]
+    pub fn len(&self) -> usize {
+        let last_byte = self.buffer[MAX_SIZE - 1];
+        core::cmp::min((last_byte.wrapping_sub(LENGTH_MASK)) as usize, MAX_SIZE)
     }
 
     #[inline]
     pub const fn capacity(&self) -> usize {
-        MAX_INLINE_SIZE
+        MAX_SIZE
     }
 
     #[inline]
@@ -101,10 +107,11 @@ impl InlineString {
 
     #[inline]
     pub unsafe fn set_len(&mut self, length: usize) {
-        debug_assert!(length <= MAX_INLINE_SIZE);
+        debug_assert!(length <= MAX_SIZE);
 
-        // Set the leading bit mask, and then or our length
-        self.metadata = LEADING_BIT_MASK | length as u8;
+        if length < MAX_SIZE {
+            self.buffer[MAX_SIZE - 1] = length as u8;
+        }
     }
 }
 
@@ -112,8 +119,59 @@ crate::asserts::assert_size_eq!(InlineString, String);
 
 #[cfg(test)]
 mod tests {
+    use proptest::prelude::*;
+
+    use super::{
+        InlineString,
+        MAX_SIZE,
+    };
+    use crate::tests::rand_unicode_bytes;
+
     #[test]
-    fn test_sanity_not_valid_utf8() {
-        assert!(std::str::from_utf8(&[0b11111111]).is_err())
+    fn test_sanity() {
+        let hello = "hello world!";
+        let inline = InlineString::new(hello);
+
+        assert_eq!(inline.as_str(), hello);
+        assert_eq!(inline.len(), hello.len());
+        assert_eq!(inline.capacity(), MAX_SIZE);
+    }
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(10000))]
+        #[test]
+        #[cfg_attr(miri, ignore)]
+        fn test_roundtrip(s in rand_unicode_bytes(MAX_SIZE)) {
+            let inline = InlineString::new(&s);
+
+            assert_eq!(inline.as_str(), s);
+            assert_eq!(inline.len(), s.len());
+        }
+    }
+
+    #[test]
+    #[ignore] // we run this in CI, but unless you're compiling in release, this takes a while
+    fn test_unused_utf8_bytes() {
+        // test to validate for all char the first and last bytes are never within a specified range
+        // note: according to the UTF-8 spec it shouldn't be, but we double check that here
+        for i in 0..u32::MAX {
+            if let Some(c) = char::from_u32(i) {
+                let mut buf = [0_u8; 4];
+                c.encode_utf8(&mut buf);
+
+                // check ranges for first byte
+                match buf[0] {
+                    x @ 128..=191 => panic!("first byte within 128..=191, {}", x),
+                    x @ 248..=255 => panic!("first byte within 248..=255, {}", x),
+                    _ => (),
+                }
+
+                // check ranges for last byte
+                match buf[c.len_utf8() - 1] {
+                    x @ 192..=255 => panic!("last byte within 192..=255, {}", x),
+                    _ => (),
+                }
+            }
+        }
     }
 }

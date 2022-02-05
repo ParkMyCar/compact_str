@@ -15,6 +15,20 @@ fn rand_unicode() -> impl Strategy<Value = String> {
     proptest::collection::vec(proptest::char::any(), 0..80).prop_map(|v| v.into_iter().collect())
 }
 
+/// `proptest::Strategy` that generates `String`s with upto `len` bytes
+pub fn rand_unicode_bytes(len: usize) -> impl Strategy<Value = String> {
+    proptest::collection::vec(proptest::char::any(), 0..len).prop_map(move |chars| {
+        let mut len_utf8 = 0;
+        chars
+            .into_iter()
+            .take_while(|c| {
+                len_utf8 += c.len_utf8();
+                len_utf8 <= len
+            })
+            .collect::<String>()
+    })
+}
+
 // generates groups upto 40 strings long of random unicode strings, upto 80 chars long
 fn rand_unicode_collection() -> impl Strategy<Value = Vec<String>> {
     proptest::collection::vec(rand_unicode(), 0..40)
@@ -24,7 +38,10 @@ fn rand_unicode_collection() -> impl Strategy<Value = Vec<String>> {
 fn assert_allocated_properly(compact: &CompactStr) {
     if compact.len() < MAX_INLINED_SIZE {
         assert!(!compact.is_heap_allocated())
-    } else if compact.len() == MAX_INLINED_SIZE && compact.as_bytes()[0] <= 127 {
+    } else if compact.len() == MAX_INLINED_SIZE
+        && compact.as_bytes()[0] != 0b11111111
+        && compact.as_bytes()[0] >> 6 != 0b00000010
+    {
         assert!(!compact.is_heap_allocated())
     } else {
         assert!(compact.is_heap_allocated())
@@ -200,7 +217,7 @@ fn test_medium_unicode() {
     let strs = vec![
         ("☕️👀😁🎉", false),
         // str is 24 bytes long, and leading character is non-ASCII, so it gets heap allocated
-        ("🦀😀😃😄😁🦀", true),
+        ("🦀😀😃😄😁🦀", false),
     ];
 
     #[allow(unused_variables)]

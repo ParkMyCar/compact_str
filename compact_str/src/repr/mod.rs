@@ -27,7 +27,6 @@ const EMPTY: Repr = Repr {
 
 // Used as a discriminant to identify different variants
 pub const HEAP_MASK: u8 = 0b11111111;
-pub const LEADING_BIT_MASK: u8 = 0b10000000;
 
 const MAX_INLINE_SIZE: usize = 24;
 

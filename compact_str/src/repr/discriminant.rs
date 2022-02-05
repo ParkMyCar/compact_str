@@ -1,6 +1,5 @@
 use super::{
     HEAP_MASK,
-    LEADING_BIT_MASK,
     MAX_SIZE,
 };
 

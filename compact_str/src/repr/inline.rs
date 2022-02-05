@@ -1,7 +1,4 @@
-use super::{
-    LEADING_BIT_MASK,
-    MAX_SIZE,
-};
+use super::MAX_SIZE;
 
 const LENGTH_MASK: u8 = 0b11000000;
 
@@ -12,12 +9,6 @@ pub struct InlineString {
 }
 
 impl InlineString {
-    const fn empty() -> Self {
-        InlineString {
-            buffer: [0u8; MAX_SIZE],
-        }
-    }
-
     #[inline]
     pub fn new(text: &str) -> Self {
         debug_assert!(text.len() <= MAX_SIZE);
@@ -138,7 +129,6 @@ mod tests {
     }
 
     proptest! {
-        #![proptest_config(ProptestConfig::with_cases(10000))]
         #[test]
         #[cfg_attr(miri, ignore)]
         fn test_roundtrip(s in rand_unicode_bytes(MAX_SIZE)) {

@@ -38,3 +38,7 @@ harness = false
 [[bench]]
 name = "comparison"
 harness = false
+
+[[bench]]
+name = "random"
+harness = false

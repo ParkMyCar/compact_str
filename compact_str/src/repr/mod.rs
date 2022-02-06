@@ -45,15 +45,7 @@ impl Repr {
 
         if len == 0 {
             EMPTY
-        } else if len == MAX_SIZE
-            && unsafe {
-                *text.as_bytes().get_unchecked(0) != 255
-                    && *text.as_bytes().get_unchecked(0) >> 6 != 0b00000010
-            }
-        {
-            let packed = PackedString::new(text);
-            Repr { packed }
-        } else if len < MAX_SIZE {
+        } else if len <= MAX_SIZE {
             let inline = InlineString::new(text);
             Repr { inline }
         } else {
@@ -66,15 +58,9 @@ impl Repr {
     pub const fn new_const(text: &str) -> Self {
         let len = text.len();
 
-        if len <= MAX_INLINE_SIZE {
+        if len <= MAX_SIZE {
             let inline = InlineString::new_const(text);
             Repr { inline }
-        } else if len == MAX_SIZE
-            && text.as_bytes()[0] != 0b11111111
-            && text.as_bytes()[0] >> 6 != 0b00000010
-        {
-            let packed = PackedString::new_const(text);
-            Repr { packed }
         } else {
             // HACK: This allows us to make assertions within a `const fn` without requiring
             // nightly, see unstable `const_panic` feature. This results in a build

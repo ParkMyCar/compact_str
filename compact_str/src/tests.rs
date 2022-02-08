@@ -6,9 +6,9 @@ use proptest::strategy::Strategy;
 use crate::CompactStr;
 
 #[cfg(target_pointer_width = "64")]
-const MAX_INLINED_SIZE: usize = 24;
+const MAX_SIZE: usize = 24;
 #[cfg(target_pointer_width = "32")]
-const MAX_INLINED_SIZE: usize = 12;
+const MAX_SIZE: usize = 12;
 
 // generates random unicode strings, upto 80 chars long
 fn rand_unicode() -> impl Strategy<Value = String> {
@@ -36,12 +36,7 @@ fn rand_unicode_collection() -> impl Strategy<Value = Vec<String>> {
 
 /// Asserts a CompactStr is allocated properly
 fn assert_allocated_properly(compact: &CompactStr) {
-    if compact.len() < MAX_INLINED_SIZE {
-        assert!(!compact.is_heap_allocated())
-    } else if compact.len() == MAX_INLINED_SIZE
-        && compact.as_bytes()[0] != 0b11111111
-        && compact.as_bytes()[0] >> 6 != 0b00000010
-    {
+    if compact.len() <= MAX_SIZE {
         assert!(!compact.is_heap_allocated())
     } else {
         assert!(compact.is_heap_allocated())
@@ -118,10 +113,10 @@ proptest! {
 
         prop_assert_eq!(compact.len(), word.len());
 
-        // The string should be heap allocated if `word` was >= MAX_INLINED_SIZE
+        // The string should be heap allocated if `word` was > MAX_SIZE
         //
         // NOTE: The reserve and write API's don't currently support the Packed representation
-        prop_assert_eq!(compact.is_heap_allocated(), word.len() >= MAX_INLINED_SIZE);
+        prop_assert_eq!(compact.is_heap_allocated(), word.len() > MAX_SIZE);
     }
 
     #[test]
@@ -251,7 +246,7 @@ fn test_from_char_iter() {
     println!("{}", s.len());
     let compact: CompactStr = s.chars().into_iter().collect();
 
-    assert!(compact.is_heap_allocated());
+    assert!(!compact.is_heap_allocated());
     assert_eq!(s, compact);
 }
 

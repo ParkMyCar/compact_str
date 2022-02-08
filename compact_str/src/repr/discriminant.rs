@@ -3,13 +3,12 @@ use super::{
     MAX_SIZE,
 };
 
-const PADDING_SIZE: usize = MAX_SIZE - std::mem::size_of::<Discriminant>();
+const PADDING_SIZE: usize = MAX_SIZE - std::mem::size_of::<u8>();
 
 #[derive(Debug, Copy, Clone)]
 pub enum Discriminant {
     Heap,
     Inline,
-    Packed,
 }
 
 #[repr(C)]

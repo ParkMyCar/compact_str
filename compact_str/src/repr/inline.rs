@@ -79,12 +79,12 @@ impl InlineString {
     #[inline]
     pub fn as_str(&self) -> &str {
         // SAFETY: You can only construct an InlineString via a &str
-        unsafe { ::std::str::from_utf8_unchecked(self.as_slice()) }
+        unsafe { ::std::str::from_utf8_unchecked(&self.as_slice()[..self.len()]) }
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn as_slice(&self) -> &[u8] {
-        &self.buffer[..self.len()]
+        &self.buffer[..]
     }
 
     /// Provides a mutable reference to the underlying buffer
@@ -100,8 +100,10 @@ impl InlineString {
     pub unsafe fn set_len(&mut self, length: usize) {
         debug_assert!(length <= MAX_SIZE);
 
+        // If `length` == MAX_SIZE, then we infer the length to be the capacity of the buffer. We
+        // can infer this because the way we encode length doesn't overlap with any valid UTF-8 bytes
         if length < MAX_SIZE {
-            self.buffer[MAX_SIZE - 1] = length as u8;
+            self.buffer[MAX_SIZE - 1] = length as u8 | LENGTH_MASK;
         }
     }
 }

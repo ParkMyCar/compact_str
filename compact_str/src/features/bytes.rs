@@ -74,7 +74,7 @@ mod test {
 
     use crate::CompactStr;
 
-    const MAX_INLINED_SIZE: usize = core::mem::size_of::<String>();
+    const MAX_SIZE: usize = core::mem::size_of::<String>();
 
     // generates random unicode strings, upto 80 chars long
     fn rand_unicode() -> impl Strategy<Value = String> {
@@ -98,9 +98,7 @@ mod test {
             let mut buf = Cursor::new(word.as_bytes());
             let compact = CompactStr::from_utf8_buf(&mut buf).unwrap();
 
-            if word.len() < MAX_INLINED_SIZE {
-                prop_assert!(!compact.is_heap_allocated())
-            } else if word.len() == MAX_INLINED_SIZE && word.as_bytes()[0] <= 127 {
+            if word.len() <= MAX_SIZE {
                 prop_assert!(!compact.is_heap_allocated())
             } else {
                 prop_assert!(compact.is_heap_allocated())

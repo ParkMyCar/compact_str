@@ -18,10 +18,10 @@ impl Repr {
     /// Converts a buffer of bytes to a `Repr`,
     pub fn from_utf8_buf<B: Buf>(buf: &mut B) -> Result<Self, Utf8Error> {
         // SAFETY: We check below to make sure the provided buffer is valid UTF-8
-        let repr = unsafe { Self::from_utf8_buf_unchecked(buf) };
+        let (repr, bytes_written) = unsafe { Self::from_buf(buf) };
 
         // Check to make sure the provided bytes are valid UTF-8, return the Repr if they are!
-        match core::str::from_utf8(repr.as_slice()) {
+        match core::str::from_utf8(&repr.as_slice()[..bytes_written]) {
             Ok(_) => Ok(repr),
             Err(e) => Err(e),
         }
@@ -32,46 +32,36 @@ impl Repr {
     /// # Safety
     /// The provided buffer must be valid UTF-8
     pub unsafe fn from_utf8_buf_unchecked<B: Buf>(buf: &mut B) -> Self {
-        let size = buf.remaining();
-        let chunk = buf.chunk();
-
-        // Check to make sure we're not empty, so accessing the first byte below doesn't panic
-        if chunk.is_empty() {
-            // If the chunk is empty, then we should have 0 remaining bytes
-            debug_assert_eq!(size, 0);
-            return super::EMPTY;
-        }
-        let first_byte = *buf.chunk().get_unchecked(0);
-
-        // Get an "empty" Repr we can write into
-        //
-        // HACK: There currently isn't a way to provide an "empty" Packed repr, so we do this check
-        // and return a "default" Packed repr if the buffer can fit
-        let mut repr = if size == MAX_SIZE && first_byte != 255 && first_byte >> 6 != 0b00000010 {
-            // Note: No need to reserve additional bytes here, because we know we can fit all
-            // remaining bytes of `buf` into a Packed repr
-            DEFAULT_PACKED
-        } else {
-            let mut default = super::EMPTY;
-            debug_assert_eq!(default.len(), 0);
-
-            // Reserve enough bytes, possibly allocating on the heap, to store the text
-            default.reserve(size);
-
-            default
-        };
-
-        // SAFETY: The caller is responsible for making sure the provided buffer is UTF-8. This
-        // invariant is documented in the public API
-        let slice = repr.as_mut_slice();
-        // Copy the bytes from the buffer into our Repr!
-        buf.copy_to_slice(&mut slice[..size]);
-
-        // Set the length of the Repr
-        // SAFETY: We just wrote `size` bytes into the Repr
-        repr.set_len(size);
-
+        let (repr, _bytes_written) = Self::from_buf(buf);
         repr
+    }
+
+    unsafe fn from_buf<B: Buf>(buf: &mut B) -> (Self, usize) {
+        // Get an empty Repr we can write into
+        let mut repr = super::EMPTY;
+        let mut bytes_written = 0;
+        debug_assert_eq!(repr.len(), bytes_written);
+
+        while buf.has_remaining() {
+            let chunk = buf.chunk();
+            let chunk_len = chunk.len();
+
+            // reserve at least enough space to fit this chunk
+            repr.reserve(chunk_len);
+
+            // SAFETY: The caller is responsible for making sure the provided buffer is UTF-8. This
+            // invariant is documented in the public API
+            let slice = repr.as_mut_slice();
+            // write the chunk into the Repr
+            buf.copy_to_slice(&mut slice[bytes_written..bytes_written + chunk_len]);
+
+            // Set the length of the Repr
+            // SAFETY: We just wrote an additional `chunk_len` bytes into the Repr
+            bytes_written += chunk_len;
+            repr.set_len(bytes_written);
+        }
+
+        (repr, bytes_written)
     }
 }
 
@@ -129,7 +119,22 @@ mod test {
         let bytes = &[
             255, 255, 255, 255, 255, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 1, 12, 0, 0, 96,
         ];
-        println!("{}", bytes.len());
+        let mut buf: Cursor<&[u8]> = Cursor::new(bytes);
+
+        assert!(Repr::from_utf8_buf(&mut buf).is_err());
+    }
+
+    #[test]
+    fn test_valid_repr_but_invalid_utf8() {
+        let bytes = &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 192];
+        let mut buf: Cursor<&[u8]> = Cursor::new(bytes);
+
+        assert!(Repr::from_utf8_buf(&mut buf).is_err());
+    }
+
+    #[test]
+    fn test_fake_heap_variant() {
+        let bytes = &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255];
         let mut buf: Cursor<&[u8]> = Cursor::new(bytes);
 
         assert!(Repr::from_utf8_buf(&mut buf).is_err());

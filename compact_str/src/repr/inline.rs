@@ -101,7 +101,8 @@ impl InlineString {
         debug_assert!(length <= MAX_SIZE);
 
         // If `length` == MAX_SIZE, then we infer the length to be the capacity of the buffer. We
-        // can infer this because the way we encode length doesn't overlap with any valid UTF-8 bytes
+        // can infer this because the way we encode length doesn't overlap with any valid UTF-8
+        // bytes
         if length < MAX_SIZE {
             self.buffer[MAX_SIZE - 1] = length as u8 | LENGTH_MASK;
         }

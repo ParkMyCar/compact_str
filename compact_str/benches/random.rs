@@ -13,11 +13,7 @@ fn if_statement_min(c: &mut Criterion) {
     c.bench_function("if statement min", |b| {
         b.iter(|| {
             for x in vals {
-                let len = if x >= mask {
-                    (x & !mask) as usize
-                } else {
-                    24
-                };
+                let len = if x >= mask { (x & !mask) as usize } else { 24 };
                 black_box(len);
             }
         })

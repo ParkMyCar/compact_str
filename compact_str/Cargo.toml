@@ -18,27 +18,4 @@ bytes = { version = "1", optional = true }
 serde = { version = "1", optional = true }
 
 [dev-dependencies]
-criterion = { version = "0.3", features = ["html_reports"] }
-proptest = "1"
-rand = "0.8"
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-smartstring = "0.2"
-smol_str = "0.1"
-tracing_alloc = { path = "../tracing_alloc" }
-
-[[bench]]
-name = "apis"
-harness = false
-
-[[bench]]
-name = "compact_str"
-harness = false
-
-[[bench]]
-name = "comparison"
-harness = false
-
-[[bench]]
-name = "random"
-harness = false
+proptest = { version = "1", default-features = false, features = ["std"] }

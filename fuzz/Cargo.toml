@@ -10,11 +10,8 @@ cargo-fuzz = true
 
 [dependencies]
 arbitrary = { version = "1", features = ["derive"] }
+compact_str = { path = "../compact_str", features = ["bytes"] }
 libfuzzer-sys = "0.4"
-
-[dependencies.compact_str]
-path = ".."
-features = ["bytes"]
 
 [[bin]]
 name = "creation"

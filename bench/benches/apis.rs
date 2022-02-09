@@ -8,7 +8,7 @@ use criterion::{
     Criterion,
 };
 
-static VERY_LONG_STR: &str = include_str!("moby10b.txt");
+static VERY_LONG_STR: &str = include_str!("../data/moby10b.txt");
 
 fn compact_str_inline_length(c: &mut Criterion) {
     let word = "i am short";

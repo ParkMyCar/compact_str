@@ -40,7 +40,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --release --all-features -- --include-ignored
+          args: --release --all-features --manifest-path=compact_str/Cargo.toml -- --include-ignored
 
   test-nightly:
     name: cargo test nightly
@@ -55,7 +55,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --release --all-features -- --include-ignored
+          args: --release --all-features --manifest-path=compact_str/Cargo.toml -- --include-ignored
 
   miri:
     name: cargo miri test
@@ -70,7 +70,7 @@ jobs:
           components: miri
       - name: Run Miri
         run: |
-          cargo miri test --all-features
+          cargo miri test --all-features --manifest-path=compact_str/Cargo.toml
 
   fuzz-creation:
     name: fuzz creation
@@ -91,7 +91,6 @@ jobs:
           version: latest
       - name: Fuzz!
         run: |
-          cd compact_str
           cargo fuzz run --debug-assertions creation -- -max_total_time=120
 
   fuzz-modify:
@@ -113,7 +112,6 @@ jobs:
           version: latest
       - name: Fuzz!
         run: |
-          cd compact_str
           cargo fuzz run --debug-assertions modify -- -max_total_time=120
 
   example-bytes:

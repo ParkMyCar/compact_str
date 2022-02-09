@@ -26,7 +26,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --all-features
+          args: --all-features --manifest-path=compact_str/Cargo.toml
 
   macos:
     name: macOS
@@ -41,7 +41,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --all-features
+          args: --all-features --manifest-path=compact_str/Cargo.toml
 
   linux_arm7:
     name: Linux ARMv7
@@ -57,7 +57,7 @@ jobs:
         with:
           use-cross: true
           command: test
-          args: --all-features --target armv7-unknown-linux-gnueabihf
+          args: --all-features --manifest-path=compact_str/Cargo.toml --target armv7-unknown-linux-gnueabihf
 
   linux_32bit:
     name: Linux 32-bit
@@ -73,7 +73,7 @@ jobs:
         with:
           use-cross: true
           command: test
-          args: --all-features --target i686-unknown-linux-gnu
+          args: --all-features --manifest-path=compact_str/Cargo.toml --target i686-unknown-linux-gnu
 
   linux_mips_le_32bit:
     name: Linux MIPS Little Endian 32-bit
@@ -89,7 +89,7 @@ jobs:
         with:
           use-cross: true
           command: test
-          args: --all-features --target mipsel-unknown-linux-gnu
+          args: --all-features --manifest-path=compact_str/Cargo.toml --target mipsel-unknown-linux-gnu
 
   linux_powerpc_le_64bit:
     name: Linux PowerPC Little Endian 64-bit
@@ -105,4 +105,4 @@ jobs:
         with:
           use-cross: true
           command: test
-          args: --all-features --target powerpc64le-unknown-linux-gnu
+          args: --all-features --manifest-path=compact_str/Cargo.toml --target powerpc64le-unknown-linux-gnu

@@ -6,13 +6,27 @@ use proptest::strategy::Strategy;
 use crate::CompactStr;
 
 #[cfg(target_pointer_width = "64")]
-const MAX_INLINED_SIZE: usize = 24;
+const MAX_SIZE: usize = 24;
 #[cfg(target_pointer_width = "32")]
-const MAX_INLINED_SIZE: usize = 12;
+const MAX_SIZE: usize = 12;
 
 // generates random unicode strings, upto 80 chars long
 fn rand_unicode() -> impl Strategy<Value = String> {
     proptest::collection::vec(proptest::char::any(), 0..80).prop_map(|v| v.into_iter().collect())
+}
+
+/// `proptest::Strategy` that generates `String`s with up to `len` bytes
+pub fn rand_unicode_bytes(len: usize) -> impl Strategy<Value = String> {
+    proptest::collection::vec(proptest::char::any(), 0..len).prop_map(move |chars| {
+        let mut len_utf8 = 0;
+        chars
+            .into_iter()
+            .take_while(|c| {
+                len_utf8 += c.len_utf8();
+                len_utf8 <= len
+            })
+            .collect::<String>()
+    })
 }
 
 // generates groups upto 40 strings long of random unicode strings, upto 80 chars long
@@ -22,9 +36,7 @@ fn rand_unicode_collection() -> impl Strategy<Value = Vec<String>> {
 
 /// Asserts a CompactStr is allocated properly
 fn assert_allocated_properly(compact: &CompactStr) {
-    if compact.len() < MAX_INLINED_SIZE {
-        assert!(!compact.is_heap_allocated())
-    } else if compact.len() == MAX_INLINED_SIZE && compact.as_bytes()[0] <= 127 {
+    if compact.len() <= MAX_SIZE {
         assert!(!compact.is_heap_allocated())
     } else {
         assert!(compact.is_heap_allocated())
@@ -101,10 +113,10 @@ proptest! {
 
         prop_assert_eq!(compact.len(), word.len());
 
-        // The string should be heap allocated if `word` was >= MAX_INLINED_SIZE
+        // The string should be heap allocated if `word` was > MAX_SIZE
         //
         // NOTE: The reserve and write API's don't currently support the Packed representation
-        prop_assert_eq!(compact.is_heap_allocated(), word.len() >= MAX_INLINED_SIZE);
+        prop_assert_eq!(compact.is_heap_allocated(), word.len() > MAX_SIZE);
     }
 
     #[test]
@@ -158,11 +170,8 @@ fn test_short_unicode() {
     let strs = vec![
         ("🦀", false),
         ("🌧☀️", false),
-        #[cfg(target_pointer_width = "64")]
+        // str is 12 bytes long, and leading character is non-ASCII
         ("咬𓅈ꁈ:_", false),
-        // str is 12 bytes long, and leading character is non-ASCII, so it gets heap allocated
-        #[cfg(target_pointer_width = "32")]
-        ("咬𓅈ꁈ:_", true),
     ];
 
     for (s, is_heap) in strs {
@@ -199,8 +208,8 @@ fn test_medium_ascii() {
 fn test_medium_unicode() {
     let strs = vec![
         ("☕️👀😁🎉", false),
-        // str is 24 bytes long, and leading character is non-ASCII, so it gets heap allocated
-        ("🦀😀😃😄😁🦀", true),
+        // str is 24 bytes long, and leading character is non-ASCII
+        ("🦀😀😃😄😁🦀", false),
     ];
 
     #[allow(unused_variables)]
@@ -229,12 +238,13 @@ fn test_from_str_trait() {
 }
 
 #[test]
+#[cfg_attr(target_pointer_width = "32", ignore)]
 fn test_from_char_iter() {
     let s = "\u{0} 0 \u{0}a𐀀𐀀 𐀀a𐀀";
     println!("{}", s.len());
     let compact: CompactStr = s.chars().into_iter().collect();
 
-    assert!(compact.is_heap_allocated());
+    assert!(!compact.is_heap_allocated());
     assert_eq!(s, compact);
 }
 

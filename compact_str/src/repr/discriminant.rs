@@ -1,34 +1,30 @@
 use super::{
     HEAP_MASK,
-    LEADING_BIT_MASK,
     MAX_SIZE,
 };
 
-const PADDING_SIZE: usize = MAX_SIZE - std::mem::size_of::<Discriminant>();
+const PADDING_SIZE: usize = MAX_SIZE - std::mem::size_of::<u8>();
 
 #[derive(Debug, Copy, Clone)]
 pub enum Discriminant {
     Heap,
     Inline,
-    Packed,
 }
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct DiscriminantMask {
-    val: u8,
     _padding: [u8; PADDING_SIZE],
+    val: u8,
 }
 
 impl DiscriminantMask {
-    #[inline]
+    #[inline(always)]
     pub const fn discriminant(&self) -> Discriminant {
         if self.val == HEAP_MASK {
             Discriminant::Heap
-        } else if self.val & LEADING_BIT_MASK == LEADING_BIT_MASK {
-            Discriminant::Inline
         } else {
-            Discriminant::Packed
+            Discriminant::Inline
         }
     }
 }

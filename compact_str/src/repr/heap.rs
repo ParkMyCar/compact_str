@@ -12,8 +12,8 @@ const PADDING: [u8; PADDING_SIZE] = [HEAP_MASK; PADDING_SIZE];
 #[repr(C)]
 #[derive(Debug, Clone)]
 pub struct HeapString {
-    padding: [u8; PADDING_SIZE],
     pub string: ArcString,
+    padding: [u8; PADDING_SIZE],
 }
 
 impl HeapString {

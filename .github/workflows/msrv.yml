@@ -8,8 +8,6 @@ on:
 name: MSRV
 
 env:
-  # local default for proptest is 100
-  PROPTEST_CASES: 1000
   RUSTFLAGS: "-D warnings"
 
 jobs:

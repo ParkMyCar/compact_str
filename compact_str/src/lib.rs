@@ -9,7 +9,7 @@
 //! 3. A `usize` denoting the capacity of the string
 //!
 //! On 64-bit architectures this results in 24 bytes being stored on the stack (12 bytes for 32-bit
-//! architectures). For small strings, e.g. <= 23 characters, instead of storing a pointer, length,
+//! architectures). For small strings, e.g. <= 24 characters, instead of storing a pointer, length,
 //! and capacity on the stack, you store the string itself! This avoids the need to heap allocate
 //! which reduces the amount of memory used, and improves performance.
 
@@ -165,7 +165,7 @@ impl CompactStr {
     /// ```
     /// # use compact_str::CompactStr;
     /// let empty = CompactStr::with_capacity(0);
-    /// let min_size = std::mem::size_of::<String>() - 1;
+    /// let min_size = std::mem::size_of::<String>();
     ///
     /// assert_eq!(empty.capacity(), min_size);
     /// assert_ne!(0, min_size);
@@ -175,10 +175,10 @@ impl CompactStr {
     /// ### Heap Allocating
     /// ```
     /// # use compact_str::CompactStr;
-    /// // If you create a `CompactStr` with a capacity greater than or equal to
+    /// // If you create a `CompactStr` with a capacity greater than
     /// // `std::mem::size_of::<String>`, it will heap allocated
     ///
-    /// let heap_size = std::mem::size_of::<String>();
+    /// let heap_size = std::mem::size_of::<String>() + 1;
     /// let empty = CompactStr::with_capacity(heap_size);
     ///
     /// assert_eq!(empty.capacity(), heap_size);
@@ -316,7 +316,7 @@ impl CompactStr {
     /// ```
     #[inline]
     pub fn as_bytes(&self) -> &[u8] {
-        self.repr.as_slice()
+        &self.repr.as_slice()[..self.len()]
     }
 
     // TODO: Implement a `try_as_mut_slice(...)` that will fail if it results in cloning?

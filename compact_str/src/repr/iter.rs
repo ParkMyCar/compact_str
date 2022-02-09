@@ -3,11 +3,11 @@
 use core::iter::FromIterator;
 use core::mem::ManuallyDrop;
 
-use super::inline::MAX_INLINE_SIZE;
 use super::{
     HeapString,
     InlineString,
     Repr,
+    MAX_SIZE,
 };
 
 impl FromIterator<char> for Repr {
@@ -16,7 +16,7 @@ impl FromIterator<char> for Repr {
 
         // If the size hint indicates we can't store this inline, then create a heap string
         let (size_hint, _) = iter.size_hint();
-        if size_hint > MAX_INLINE_SIZE {
+        if size_hint > MAX_SIZE {
             let heap = HeapString::from(iter.collect::<String>());
             return Repr {
                 heap: ManuallyDrop::new(heap),
@@ -25,13 +25,13 @@ impl FromIterator<char> for Repr {
 
         // Otherwise, continuously pull chars from the iterator
         let mut curr_len = 0;
-        let mut inline_buf = [0u8; MAX_INLINE_SIZE];
+        let mut inline_buf = [0u8; MAX_SIZE];
         while let Some(c) = iter.next() {
             let char_len = c.len_utf8();
 
             // If this new character is too large to fit into the inline buffer, then create a heap
             // string
-            if char_len + curr_len > MAX_INLINE_SIZE {
+            if char_len + curr_len > MAX_SIZE {
                 let (min_remaining, _) = iter.size_hint();
                 let mut heap_buf = String::with_capacity(char_len + curr_len + min_remaining);
 
@@ -55,8 +55,6 @@ impl FromIterator<char> for Repr {
             curr_len += char_len;
         }
 
-        // TODO: Support PackedString here in an efficient way
-
         // SAFETY: We know `inline_buf` is valid UTF-8 because it consists entriely of `char`s
         let inline = unsafe { InlineString::from_parts(curr_len, inline_buf) };
         Repr { inline }
@@ -78,7 +76,7 @@ where
 {
     // If there are more strings than we can fit bytes inline, then immediately make a `HeapString`
     let (size_hint, _) = iter.size_hint();
-    if size_hint > MAX_INLINE_SIZE {
+    if size_hint > MAX_SIZE {
         let heap = HeapString::from(iter.collect::<String>());
         return Repr {
             heap: ManuallyDrop::new(heap),
@@ -87,13 +85,13 @@ where
 
     // Otherwise, continuously pull strings from the iterator
     let mut curr_len = 0;
-    let mut inline_buf = [0u8; MAX_INLINE_SIZE];
+    let mut inline_buf = [0u8; MAX_SIZE];
     while let Some(s) = iter.next() {
         let str_slice = s.as_ref();
         let bytes_len = str_slice.len();
 
         // this new string is too large to fit into our inline buffer, so heap allocate the rest
-        if bytes_len + curr_len > MAX_INLINE_SIZE {
+        if bytes_len + curr_len > MAX_SIZE {
             let (min_remaining, _) = iter.size_hint();
             let mut heap_buf = String::with_capacity(bytes_len + curr_len + min_remaining);
 
@@ -115,8 +113,6 @@ where
         (&mut inline_buf[curr_len..][..bytes_len]).copy_from_slice(str_slice.as_bytes());
         curr_len += bytes_len;
     }
-
-    // TODO: Support PackedString here in an efficient way
 
     // SAFETY: We know `inline_buf` is valid UTF-8 because it consists entriely of `&str`s
     let inline = unsafe { InlineString::from_parts(curr_len, inline_buf) };
@@ -160,6 +156,25 @@ mod tests {
         let repr: Repr = chars.iter().collect();
 
         assert_eq!(repr.as_str(), "abc");
+        assert!(!repr.is_heap_allocated());
+    }
+
+    #[test]
+    #[cfg_attr(target_pointer_width = "32", ignore)]
+    fn packed_char_iter() {
+        let chars = [
+            '\u{92f01}',
+            '\u{81515}',
+            '\u{81515}',
+            '\u{81515}',
+            '\u{81515}',
+            '\u{41515}',
+        ];
+
+        let repr: Repr = chars.iter().collect();
+        let s: String = chars.iter().collect();
+
+        assert_eq!(repr.as_str(), s.as_str());
         assert!(!repr.is_heap_allocated());
     }
 

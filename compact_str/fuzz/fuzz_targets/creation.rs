@@ -27,9 +27,7 @@ fuzz_target!(|method: CreationMethod<'_>| {
             assert_eq!(compact, word);
 
             // assert the CompactStr is properly allocated
-            if word.len() < MAX_INLINE_LENGTH {
-                assert!(!compact.is_heap_allocated());
-            } else if word.len() == MAX_INLINE_LENGTH && word.as_bytes()[0] <= 127 {
+            if word.len() <= MAX_INLINE_LENGTH {
                 assert!(!compact.is_heap_allocated());
             } else {
                 assert!(compact.is_heap_allocated());
@@ -43,10 +41,7 @@ fuzz_target!(|method: CreationMethod<'_>| {
             assert_eq!(compact, std_str);
 
             // assert the CompactStr is properly allocated
-            //
-            // Note: Creating a CompactStr from an iterator doesn't yet support the Packed
-            // representation, so we can only inline MAX_INLINE_LENGTH - 1
-            if std_str.len() < MAX_INLINE_LENGTH {
+            if std_str.len() <= MAX_INLINE_LENGTH {
                 assert!(!compact.is_heap_allocated());
             } else {
                 assert!(compact.is_heap_allocated());
@@ -60,10 +55,7 @@ fuzz_target!(|method: CreationMethod<'_>| {
             assert_eq!(compact, std_str);
 
             // assert the CompactStr is properly allocated
-            //
-            // Note: Creating a CompactStr from an iterator doesn't yet support the Packed
-            // representation, so we can only inline MAX_INLINE_LENGTH - 1
-            if std_str.len() < MAX_INLINE_LENGTH {
+            if std_str.len() <= MAX_INLINE_LENGTH {
                 assert!(!compact.is_heap_allocated());
             } else {
                 assert!(compact.is_heap_allocated());
@@ -81,9 +73,7 @@ fuzz_target!(|method: CreationMethod<'_>| {
                     assert_eq!(c, s);
 
                     // assert the CompactStr is properly allocated
-                    if s.len() < MAX_INLINE_LENGTH {
-                        assert!(!c.is_heap_allocated());
-                    } else if s.len() == MAX_INLINE_LENGTH && s.as_bytes()[0] <= 127 {
+                    if s.len() <= MAX_INLINE_LENGTH {
                         assert!(!c.is_heap_allocated());
                     } else {
                         assert!(c.is_heap_allocated());

@@ -9,6 +9,7 @@ name: CI
 
 env:
   RUSTFLAGS: "-D warnings"
+  PROPTEST_CASES: 10000
 
 jobs:
   check:
@@ -29,8 +30,6 @@ jobs:
   test:
     name: cargo test
     runs-on: ubuntu-latest
-    env:
-      PROPTEST_CASES: 500
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
@@ -41,13 +40,11 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --all-features
+          args: --release --all-features -- --include-ignored
 
   test-nightly:
     name: cargo test nightly
     runs-on: ubuntu-latest
-    env:
-      PROPTEST_CASES: 500
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
@@ -58,7 +55,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --all-features
+          args: --release --all-features -- --include-ignored
 
   miri:
     name: cargo miri test
@@ -73,7 +70,7 @@ jobs:
           components: miri
       - name: Run Miri
         run: |
-          cargo miri test
+          cargo miri test --all-features
 
   fuzz-creation:
     name: fuzz creation

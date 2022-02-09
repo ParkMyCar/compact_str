@@ -10,7 +10,6 @@ mod arc;
 mod discriminant;
 mod heap;
 mod inline;
-mod packed;
 
 use discriminant::{
     Discriminant,
@@ -18,7 +17,6 @@ use discriminant::{
 };
 use heap::HeapString;
 use inline::InlineString;
-use packed::PackedString;
 
 const MAX_SIZE: usize = std::mem::size_of::<String>();
 const EMPTY: Repr = Repr {
@@ -27,13 +25,11 @@ const EMPTY: Repr = Repr {
 
 // Used as a discriminant to identify different variants
 pub const HEAP_MASK: u8 = 0b11111111;
-pub const LEADING_BIT_MASK: u8 = 0b10000000;
 
 pub union Repr {
     mask: DiscriminantMask,
     heap: ManuallyDrop<HeapString>,
     inline: InlineString,
-    packed: PackedString,
 }
 
 impl Repr {
@@ -44,12 +40,9 @@ impl Repr {
 
         if len == 0 {
             EMPTY
-        } else if len <= inline::MAX_INLINE_SIZE {
+        } else if len <= MAX_SIZE {
             let inline = InlineString::new(text);
             Repr { inline }
-        } else if len == MAX_SIZE && text.as_bytes()[0] <= 127 {
-            let packed = PackedString::new(text);
-            Repr { packed }
         } else {
             let heap = ManuallyDrop::new(HeapString::new(text));
             Repr { heap }
@@ -60,12 +53,9 @@ impl Repr {
     pub const fn new_const(text: &str) -> Self {
         let len = text.len();
 
-        if len <= inline::MAX_INLINE_SIZE {
+        if len <= MAX_SIZE {
             let inline = InlineString::new_const(text);
             Repr { inline }
-        } else if len == MAX_SIZE && text.as_bytes()[0] <= 127 {
-            let packed = PackedString::new_const(text);
-            Repr { packed }
         } else {
             // HACK: This allows us to make assertions within a `const fn` without requiring
             // nightly, see unstable `const_panic` feature. This results in a build
@@ -79,7 +69,7 @@ impl Repr {
 
     #[inline]
     pub fn with_capacity(capacity: usize) -> Self {
-        if capacity <= inline::MAX_INLINE_SIZE {
+        if capacity <= MAX_SIZE {
             EMPTY
         } else {
             let heap = ManuallyDrop::new(HeapString::with_capacity(capacity));
@@ -107,8 +97,8 @@ impl Repr {
             return;
         }
 
-        // Note: Inlined strings (i.e. inline and packed) are already their maximum size. So if our
-        // current capacity isn't large enough, then we always need to create a heap variant
+        // Note: Inlined strings are already their maximum size. So if our current capacity isn't
+        // large enough, then we always need to create a heap variant
 
         // Create a `HeapString` with `text.len() + additional` capacity
         let heap = HeapString::with_additional(self.as_str(), additional);
@@ -154,22 +144,8 @@ impl Repr {
     pub fn pop(&mut self) -> Option<char> {
         let ch = self.as_str().chars().rev().next()?;
 
-        match self.cast() {
-            StrongRepr::Packed(packed) => {
-                let mut inline_buffer = [0; inline::MAX_INLINE_SIZE];
-
-                let new_len = packed.len() - ch.len_utf8();
-                let buffer: &mut [u8] = &mut inline_buffer[..new_len];
-
-                buffer.copy_from_slice(&packed.as_slice()[..new_len]);
-
-                let inline = unsafe { InlineString::from_parts(new_len, inline_buffer) };
-                *self = Repr { inline }
-            }
-            StrongRepr::Inline(_) | StrongRepr::Heap(_) => {
-                unsafe { self.set_len(self.len() - ch.len_utf8()) };
-            }
-        }
+        // SAFETY: We know this is is a valid length which falls on a char boundary
+        unsafe { self.set_len(self.len() - ch.len_utf8()) };
 
         Some(ch)
     }
@@ -205,7 +181,7 @@ impl Repr {
 
     #[inline(always)]
     fn discriminant(&self) -> Discriminant {
-        // SAFETY: `heap`, `inline`, and `packed` all store a discriminant in their first byte
+        // SAFETY: `heap` and `inline` all store a discriminant in their last byte
         unsafe { self.mask.discriminant() }
     }
 
@@ -219,10 +195,6 @@ impl Repr {
             Discriminant::Inline => {
                 // SAFETY: We checked the discriminant to make sure the union is `inline`
                 StrongRepr::Inline(unsafe { &self.inline })
-            }
-            Discriminant::Packed => {
-                // SAFETY: We checked the discriminant to make sure the union is `packed`
-                StrongRepr::Packed(unsafe { &self.packed })
             }
         }
     }
@@ -238,10 +210,6 @@ impl Repr {
                 // SAFETY: We checked the discriminant to make sure the union is `inline`
                 MutStrongRepr::Inline(unsafe { &mut self.inline })
             }
-            Discriminant::Packed => {
-                // SAFETY: We checked the discriminant to make sure the union is `packed`
-                MutStrongRepr::Packed(unsafe { &mut self.packed })
-            }
         }
     }
 }
@@ -251,7 +219,6 @@ impl Clone for Repr {
         match self.cast() {
             StrongRepr::Heap(heap) => Repr { heap: heap.clone() },
             StrongRepr::Inline(inline) => Repr { inline: *inline },
-            StrongRepr::Packed(packed) => Repr { packed: *packed },
         }
     }
 }
@@ -264,7 +231,7 @@ impl Drop for Repr {
                 unsafe { ManuallyDrop::drop(&mut self.heap) };
             }
             // No-op, the value is on the stack and doesn't need to be explicitly dropped
-            Discriminant::Inline | Discriminant::Packed => {}
+            Discriminant::Inline => {}
         }
     }
 }
@@ -282,15 +249,8 @@ impl Extend<char> for Repr {
 
         match self.cast_mut() {
             MutStrongRepr::Heap(heap) => heap.string.extend(iterator),
-            MutStrongRepr::Packed(packed) => {
-                let mut heap = HeapString::with_additional(packed.as_str(), lower_bound);
-                heap.string.extend(iterator);
-
-                // Replace `self` with the new Repr
-                let heap = ManuallyDrop::new(heap);
-                *self = Repr { heap };
-            }
             MutStrongRepr::Inline(inline) => {
+                // Check if the lower_bound of the iterator indicates we'll need to heap allocate
                 if lower_bound + inline.len() > MAX_SIZE {
                     let mut heap = HeapString::with_additional(inline.as_str(), lower_bound);
                     heap.string.extend(iterator);
@@ -301,11 +261,13 @@ impl Extend<char> for Repr {
                     return;
                 }
 
+                // Keep pulling characters off the iterator, eventually heap allocating if we run
+                // out of space inline!
                 while let Some(ch) = iterator.next() {
                     let inline_len = inline.len();
                     let char_len = ch.len_utf8();
 
-                    if inline_len + char_len < MAX_SIZE {
+                    if inline_len + char_len <= MAX_SIZE {
                         // SAFTEY: We're writing a `char` into the buffer, which we know is valid
                         // UTF-8
                         let buffer = unsafe { inline.as_mut_slice() };
@@ -316,49 +278,17 @@ impl Extend<char> for Repr {
                         unsafe { inline.set_len(inline_len + char_len) };
                     } else {
                         // We can't fit the remainder of the iterator in an InlineString, so we
-                        // either need to make a PackedString or HeapString
-                        let maybe_ch2 = iterator.next();
-                        let inline_slice = inline.as_slice();
+                        // either need to make a HeapString
+                        let mut heap = HeapString::with_additional(inline.as_str(), lower_bound);
 
-                        // We can make a PackedString!
-                        if inline_len + char_len == MAX_SIZE
-                            && maybe_ch2.is_none()
-                            && inline_slice[0] <= 127
-                        {
-                            // Guard against char_len being 0?
-                            debug_assert!(inline_len != MAX_SIZE);
+                        // push the char we just popped off, but couldn't fit inline
+                        heap.string.push(ch);
+                        // write in the rest of the iterator!
+                        heap.string.extend(iterator);
 
-                            // Copy the contents of the InlineString, into a buffer which will be a
-                            // PackedString
-                            let mut buffer = [0; MAX_SIZE];
-                            buffer[..inline_len].copy_from_slice(inline_slice);
-                            ch.encode_utf8(&mut buffer[inline_len..]);
-
-                            // SAFETY: We created `buffer` from an InlineString which is valid
-                            // UTF-8, and appended a char, which is also
-                            // valid UTF-8
-                            let packed = unsafe { PackedString::from_parts(buffer) };
-                            *self = Repr { packed };
-                        } else {
-                            // We can't fit the remaining characters in a PackedString, so make a
-                            // HeapString
-                            let mut heap =
-                                HeapString::with_additional(inline.as_str(), lower_bound);
-
-                            heap.string.push(ch);
-
-                            // If we had a second character
-                            if let Some(ch2) = maybe_ch2 {
-                                heap.string.push(ch2);
-                            }
-
-                            // Extend the HeapString with the rest of the iterator
-                            heap.string.extend(iterator);
-
-                            // Replace `self` with the new Repr
-                            let heap = ManuallyDrop::new(heap);
-                            *self = Repr { heap };
-                        }
+                        // Replace `self` with the new Repr
+                        let heap = ManuallyDrop::new(heap);
+                        *self = Repr { heap };
 
                         // All done!
                         return;
@@ -395,9 +325,8 @@ impl Extend<String> for Repr {
 
 #[derive(Debug)]
 enum StrongRepr<'a> {
-    Heap(&'a ManuallyDrop<HeapString>),
     Inline(&'a InlineString),
-    Packed(&'a PackedString),
+    Heap(&'a ManuallyDrop<HeapString>),
 }
 
 impl<'a> StrongRepr<'a> {
@@ -405,7 +334,6 @@ impl<'a> StrongRepr<'a> {
     pub fn len(self) -> usize {
         match self {
             Self::Inline(inline) => inline.len(),
-            Self::Packed(packed) => packed.len(),
             Self::Heap(heap) => heap.string.len(),
         }
     }
@@ -414,7 +342,6 @@ impl<'a> StrongRepr<'a> {
     pub fn capacity(self) -> usize {
         match self {
             Self::Inline(inline) => inline.capacity(),
-            Self::Packed(packed) => packed.capacity(),
             Self::Heap(heap) => heap.string.capacity(),
         }
     }
@@ -423,7 +350,6 @@ impl<'a> StrongRepr<'a> {
     pub fn into_str(self) -> &'a str {
         match self {
             Self::Inline(inline) => inline.as_str(),
-            Self::Packed(packed) => packed.as_str(),
             Self::Heap(heap) => heap.string.as_str(),
         }
     }
@@ -432,7 +358,6 @@ impl<'a> StrongRepr<'a> {
     pub fn into_slice(self) -> &'a [u8] {
         match self {
             Self::Inline(inline) => inline.as_slice(),
-            Self::Packed(packed) => packed.as_slice(),
             Self::Heap(heap) => heap.string.as_slice(),
         }
     }
@@ -440,9 +365,8 @@ impl<'a> StrongRepr<'a> {
 
 #[derive(Debug)]
 enum MutStrongRepr<'a> {
-    Heap(&'a mut ManuallyDrop<HeapString>),
     Inline(&'a mut InlineString),
-    Packed(&'a mut PackedString),
+    Heap(&'a mut ManuallyDrop<HeapString>),
 }
 
 impl<'a> MutStrongRepr<'a> {
@@ -450,7 +374,6 @@ impl<'a> MutStrongRepr<'a> {
     pub unsafe fn into_mut_slice(self) -> &'a mut [u8] {
         match self {
             Self::Inline(inline) => inline.as_mut_slice(),
-            Self::Packed(packed) => packed.as_mut_slice(),
             Self::Heap(heap) => heap.make_mut_slice(),
         }
     }
@@ -459,7 +382,6 @@ impl<'a> MutStrongRepr<'a> {
     pub unsafe fn set_len(self, length: usize) {
         match self {
             Self::Inline(inline) => inline.set_len(length),
-            Self::Packed(packed) => packed.set_len(length),
             Self::Heap(heap) => heap.set_len(length),
         }
     }
@@ -508,13 +430,13 @@ mod tests {
         let short = "abc";
         let mut repr = Repr::new(&short);
 
-        assert_eq!(repr.capacity(), word * 3 - 1);
+        assert_eq!(repr.capacity(), word * 3);
         assert_eq!(repr.as_str(), short);
 
-        // Reserve < WORD * 3 - 1
+        // Reserve < WORD * 3
         repr.reserve(word);
         // This shouldn't cause a resize
-        assert_eq!(repr.capacity(), word * 3 - 1);
+        assert_eq!(repr.capacity(), word * 3);
         // We should not be heap allocated
         assert!(!repr.is_heap_allocated());
 

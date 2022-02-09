@@ -1,2 +1,2 @@
 [workspace]
-members = ["examples/bytes", "examples/serde", "compact_str", "compact_str/fuzz", "tracing_alloc"]
+members = ["bench", "examples/bytes", "examples/serde", "compact_str", "fuzz"]

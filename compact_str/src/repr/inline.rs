@@ -113,8 +113,9 @@ crate::asserts::assert_size_eq!(InlineString, String);
 
 #[cfg(test)]
 mod tests {
-    use proptest::prelude::*;
     use std::convert::TryFrom;
+
+    use proptest::prelude::*;
 
     use super::{
         InlineString,

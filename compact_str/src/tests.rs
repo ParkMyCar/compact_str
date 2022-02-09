@@ -211,7 +211,7 @@ fn test_medium_ascii() {
 fn test_medium_unicode() {
     let strs = vec![
         ("☕️👀😁🎉", false),
-        // str is 24 bytes long, and leading character is non-ASCII, so it gets heap allocated
+        // str is 24 bytes long, and leading character is non-ASCII
         ("🦀😀😃😄😁🦀", false),
     ];
 

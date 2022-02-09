@@ -114,6 +114,7 @@ crate::asserts::assert_size_eq!(InlineString, String);
 #[cfg(test)]
 mod tests {
     use proptest::prelude::*;
+    use std::convert::TryFrom;
 
     use super::{
         InlineString,
@@ -148,7 +149,7 @@ mod tests {
         // test to validate for all char the first and last bytes are never within a specified range
         // note: according to the UTF-8 spec it shouldn't be, but we double check that here
         for i in 0..u32::MAX {
-            if let Some(c) = char::from_u32(i) {
+            if let Ok(c) = char::try_from(i) {
                 let mut buf = [0_u8; 4];
                 c.encode_utf8(&mut buf);
 

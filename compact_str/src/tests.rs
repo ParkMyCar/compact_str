@@ -170,11 +170,8 @@ fn test_short_unicode() {
     let strs = vec![
         ("🦀", false),
         ("🌧☀️", false),
-        #[cfg(target_pointer_width = "64")]
+        // str is 12 bytes long, and leading character is non-ASCII
         ("咬𓅈ꁈ:_", false),
-        // str is 12 bytes long, and leading character is non-ASCII, so it gets heap allocated
-        #[cfg(target_pointer_width = "32")]
-        ("咬𓅈ꁈ:_", true),
     ];
 
     for (s, is_heap) in strs {
@@ -241,6 +238,7 @@ fn test_from_str_trait() {
 }
 
 #[test]
+#[cfg_attr(target_pointer_width = "32", ignore)]
 fn test_from_char_iter() {
     let s = "\u{0} 0 \u{0}a𐀀𐀀 𐀀a𐀀";
     println!("{}", s.len());

@@ -72,6 +72,22 @@ jobs:
         run: |
           cargo miri test --all-features --manifest-path=compact_str/Cargo.toml
 
+  build-offline:
+    name: cargo build --offline
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+      - uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --manifest-path=compact_str/Cargo.toml --offline
+
+
   fuzz-creation:
     name: fuzz creation
     runs-on: ubuntu-latest

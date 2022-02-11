@@ -82,7 +82,7 @@ jobs:
           profile: minimal
           toolchain: stable
           override: true
-      -name: cargo build
+      - name: cargo build
         run: |
           cd compact_str
           cargo build --offline

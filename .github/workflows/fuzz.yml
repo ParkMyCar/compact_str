@@ -6,8 +6,8 @@ on:
 name: Fuzz
 
 jobs:
-  creation_x86_64:
-    name: creation [x86_64]
+  fuzz_x86_64:
+    name: fuzz [x86_64]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -27,30 +27,7 @@ jobs:
         name: Fuzz
         with:
           command: fuzz
-          args: run --debug-assertions creation -- -max_total_time=1200
-
-  modify_x86_64:
-    name: modify [x86_64]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-        name: Checkout compact_str
-      - uses: actions-rs/toolchain@v1
-        name: Install Rust
-        with:
-          profile: minimal
-          toolchain: nightly
-          override: true
-      - uses: actions-rs/install@v0.1
-        name: Install cargo-fuzz
-        with:
-          crate: cargo-fuzz
-          version: latest
-      - uses: actions-rs/cargo@v1
-        name: Fuzz
-        with:
-          command: fuzz
-          args: run --debug-assertions modify -- -max_total_time=1200
+          args: run --debug-assertions compact_str -- -max_total_time=1200
 
   # creation_aarch64:
   #   name: creation [aarch64]

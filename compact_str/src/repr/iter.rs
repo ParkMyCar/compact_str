@@ -74,16 +74,11 @@ where
     String: core::iter::Extend<S>,
     String: FromIterator<S>,
 {
-    // If there are more strings than we can fit bytes inline, then immediately make a `HeapString`
-    let (size_hint, _) = iter.size_hint();
-    if size_hint > MAX_SIZE {
-        let heap = HeapString::from(iter.collect::<String>());
-        return Repr {
-            heap: ManuallyDrop::new(heap),
-        };
-    }
+    // Note: We don't check the lower bound here like we do in the character iterator because it's
+    // possible for the iterator to be full of empty strings! In which case checking the lower bound
+    // could cause us to heap allocate when there's no need.
 
-    // Otherwise, continuously pull strings from the iterator
+    // Continuously pull strings from the iterator
     let mut curr_len = 0;
     let mut inline_buf = [0u8; MAX_SIZE];
     while let Some(s) = iter.next() {

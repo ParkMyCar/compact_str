@@ -80,13 +80,12 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly
+          toolchain: stable
           override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --manifest-path=compact_str/Cargo.toml --offline
-
+      -name: cargo build
+        run: |
+          cd compact_str
+          cargo build --offline
 
   fuzz-creation:
     name: fuzz creation

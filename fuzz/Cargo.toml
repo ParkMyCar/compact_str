@@ -1,7 +1,7 @@
 [package]
 name = "compact_str-fuzz"
 version = "0.0.0"
-authors = ["Automatically generated"]
+authors = ["Parker Timmerman <parker@parkertimmerman.com>"]
 publish = false
 edition = "2018"
 

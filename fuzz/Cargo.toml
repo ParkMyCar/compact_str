@@ -1,7 +1,7 @@
 [package]
 name = "compact_str-fuzz"
 version = "0.0.0"
-authors = ["Automatically generated"]
+authors = ["Parker Timmerman <parker@parkertimmerman.com>"]
 publish = false
 edition = "2018"
 
@@ -14,13 +14,7 @@ compact_str = { path = "../compact_str", features = ["bytes"] }
 libfuzzer-sys = "0.4"
 
 [[bin]]
-name = "creation"
-path = "fuzz_targets/creation.rs"
-test = false
-doc = false
-
-[[bin]]
-name = "modify"
-path = "fuzz_targets/modify.rs"
+name = "compact_str"
+path = "fuzz_targets/compact_str.rs"
 test = false
 doc = false

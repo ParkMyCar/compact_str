@@ -277,6 +277,19 @@ fn test_pop_empty() {
 }
 
 #[test]
+fn test_extend_from_empty_strs() {
+    let strs = vec![
+        "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+        "", "",
+    ];
+    let compact: CompactStr = strs.clone().into_iter().collect();
+
+    assert_eq!(compact, "");
+    assert!(compact.is_empty());
+    assert!(!compact.is_heap_allocated());
+}
+
+#[test]
 fn test_compact_str_is_send_and_sync() {
     fn is_send_and_sync<T: Send + Sync>() {}
     is_send_and_sync::<CompactStr>();

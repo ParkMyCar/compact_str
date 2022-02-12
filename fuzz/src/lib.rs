@@ -3,6 +3,8 @@ use std::io::Cursor;
 use arbitrary::Arbitrary;
 use compact_str::CompactStr;
 
+mod bytes;
+
 const MAX_INLINE_LENGTH: usize = std::mem::size_of::<String>();
 
 /// A framework to generate a `CompactStr` and control `String`, and then run a series of actions

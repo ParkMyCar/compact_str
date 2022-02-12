@@ -10,6 +10,7 @@ cargo-fuzz = true
 
 [dependencies]
 arbitrary = { version = "1", features = ["derive"] }
+bytes = "1"
 compact_str = { path = "../compact_str", features = ["bytes"] }
 libfuzzer-sys = "0.4"
 

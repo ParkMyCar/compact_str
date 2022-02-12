@@ -4,7 +4,6 @@ use bytes::Buf;
 
 use super::{
     Repr,
-    HEAP_MASK,
     MAX_SIZE,
 };
 
@@ -49,7 +48,7 @@ impl Repr {
                 let last_byte = chunk[chunk_len - 1];
                 // If we hit the edge case, reserve additional space to make the repr becomes heap
                 // allocated, which prevents us from writing this last byte inline
-                if last_byte == HEAP_MASK {
+                if last_byte >= 0b11000000 {
                     repr.reserve(MAX_SIZE + 1);
                 }
             }
@@ -153,6 +152,29 @@ mod test {
         let mut buf: Cursor<&[u8]> = Cursor::new(bytes);
 
         assert!(Repr::from_utf8_buf(&mut buf).is_err());
+    }
+
+    #[test]
+    fn test_from_non_contiguous() {
+        let data = [
+            211, 247, 211, 247, 121, 135, 151, 255, 126, 205, 255, 204, 211, 51, 51, 0, 52, 55,
+            247, 204, 45, 37, 44, 210, 132, 50, 206, 121, 135, 151, 255, 126, 205, 255, 204, 211,
+            51, 51, 0, 52, 55, 247, 204, 45, 44, 210, 132, 50, 206, 51,
+        ];
+        let (front, back) = data.split_at(data.len() / 2 + 1);
+        let mut queue = std::collections::VecDeque::with_capacity(data.len());
+
+        // create a non-contiguous slice of memory in queue
+        front.into_iter().copied().for_each(|x| queue.push_back(x));
+        back.into_iter().copied().for_each(|x| queue.push_front(x));
+
+        // make sure it's non-contiguous
+        let (a, b) = queue.as_slices();
+        assert!(data.is_empty() || !a.is_empty());
+        assert!(data.is_empty() || !b.is_empty());
+
+        assert_eq!(data.len(), queue.len());
+        assert!(Repr::from_utf8_buf(&mut queue).is_err());
     }
 
     #[test]

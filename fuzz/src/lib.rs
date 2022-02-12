@@ -1,9 +1,8 @@
+use std::collections::VecDeque;
 use std::io::Cursor;
 
 use arbitrary::Arbitrary;
 use compact_str::CompactStr;
-
-mod bytes;
 
 const MAX_INLINE_LENGTH: usize = std::mem::size_of::<String>();
 
@@ -23,6 +22,7 @@ pub enum Creation<'a> {
     IterChar(Vec<char>),
     IterString(Vec<String>),
     Word(String),
+    NonContiguousBytes(&'a [u8]),
 }
 
 impl Creation<'_> {
@@ -72,6 +72,47 @@ impl Creation<'_> {
                         assert_eq!(c, s);
                         assert_properly_allocated(&c, s);
 
+                        Some((c, s.to_string()))
+                    }
+                    // non-valid UTF-8
+                    (Err(c_err), Err(s_err)) => {
+                        assert_eq!(c_err, s_err);
+                        None
+                    }
+                    _ => panic!("CompactStr and core::str read UTF-8 differently?"),
+                }
+            }
+            // Create a `CompactStr` from a non-contiguous buffer of bytes
+            NonContiguousBytes(data) => {
+                let mut queue = if data.len() > 3 {
+                    // if our data is long, make it non-contiguous
+                    let (front, back) = data.split_at(data.len() / 2 + 1);
+                    let mut queue = VecDeque::with_capacity(data.len());
+
+                    // create a non-contiguous slice of memory in queue
+                    front.into_iter().copied().for_each(|x| queue.push_back(x));
+                    back.into_iter().copied().for_each(|x| queue.push_front(x));
+
+                    // make sure it's non-contiguous
+                    let (a, b) = queue.as_slices();
+                    assert!(data.is_empty() || !a.is_empty());
+                    assert!(data.is_empty() || !b.is_empty());
+
+                    queue
+                } else {
+                    data.iter().copied().collect::<VecDeque<u8>>()
+                };
+
+                // create our CompactStr and control String
+                let mut queue_clone = queue.clone();
+                let compact = CompactStr::from_utf8_buf(&mut queue);
+                let std_str = std::str::from_utf8(queue_clone.make_contiguous());
+
+                match (compact, std_str) {
+                    // valid UTF-8
+                    (Ok(c), Ok(s)) => {
+                        assert_eq!(c, s);
+                        assert_properly_allocated(&c, s);
                         Some((c, s.to_string()))
                     }
                     // non-valid UTF-8

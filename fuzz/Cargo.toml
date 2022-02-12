@@ -9,6 +9,7 @@ edition = "2018"
 cargo-fuzz = true
 
 [dependencies]
+afl = "0.12.1"
 arbitrary = { version = "1", features = ["derive"] }
 bytes = "1"
 compact_str = { path = "../compact_str", features = ["bytes"] }
@@ -17,5 +18,11 @@ libfuzzer-sys = "0.4"
 [[bin]]
 name = "compact_str"
 path = "fuzz_targets/compact_str.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "afl"
+path = "src/bin/afl.rs"
 test = false
 doc = false

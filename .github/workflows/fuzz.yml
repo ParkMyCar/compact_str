@@ -6,8 +6,8 @@ on:
 name: Fuzz
 
 jobs:
-  fuzz_x86_64:
-    name: fuzz [x86_64]
+  libFuzzer_x86_64:
+    name: libFuzzer [x86_64]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -28,6 +28,30 @@ jobs:
         with:
           command: fuzz
           args: run --debug-assertions compact_str -- -max_total_time=1200
+
+  afl++_x86_64:
+    name: AFL++ [x86_64]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        name: Checkout compact_str
+      - uses: actions-rs/toolchain@v1
+        name: Install Rust
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+      - uses: actions-rs/install@v0.1
+        name: Install cargo-afl
+        with:
+          crate: afl
+          version: latest
+      - name: AFL++ Build
+        run: |
+          cd fuzz
+          mkdir afl afl/in afl/out
+          cargo afl build --bin afl --release --features=afl
+          cargo afl fuzz -i afl/in -o afl/out -D -V 1200 ../target/release/afl
 
   # creation_aarch64:
   #   name: creation [aarch64]

@@ -30,3 +30,10 @@ path = "src/bin/afl.rs"
 test = false
 doc = false
 required-features = ["afl"]
+
+[[bin]]
+name = "unit"
+path = "src/bin/unit.rs"
+test = false
+doc = false
+required-features = ["afl"]

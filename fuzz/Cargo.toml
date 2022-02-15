@@ -9,7 +9,7 @@ edition = "2018"
 cargo-fuzz = true
 
 [dependencies]
-arbitrary = { version = "1", features = ["derive"] }
+arbitrary = { git = "https://github.com/ParkMyCar/arbitrary.git", branch = "fix/32bit-panic", features = ["derive"] }
 bytes = "1"
 compact_str = { path = "../compact_str", features = ["bytes"] }
 
@@ -27,13 +27,6 @@ required-features = ["libfuzzer-sys"]
 [[bin]]
 name = "afl"
 path = "src/bin/afl.rs"
-test = false
-doc = false
-required-features = ["afl"]
-
-[[bin]]
-name = "unit"
-path = "src/bin/unit.rs"
 test = false
 doc = false
 required-features = ["afl"]

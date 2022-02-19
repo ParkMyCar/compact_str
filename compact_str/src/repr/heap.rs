@@ -1,18 +1,19 @@
 use core::mem;
 
-use super::arc::ArcString;
+// use super::arc::ArcString;
+use super::boxed::BoxString;
 use super::{
     HEAP_MASK,
     MAX_SIZE,
 };
 
-const PADDING_SIZE: usize = MAX_SIZE - mem::size_of::<ArcString>();
+const PADDING_SIZE: usize = MAX_SIZE - mem::size_of::<BoxString>();
 const PADDING: [u8; PADDING_SIZE] = [HEAP_MASK; PADDING_SIZE];
 
 #[repr(C)]
 #[derive(Debug, Clone)]
 pub struct HeapString {
-    pub string: ArcString,
+    pub string: BoxString,
     padding: [u8; PADDING_SIZE],
 }
 
@@ -24,7 +25,7 @@ impl HeapString {
     #[inline]
     pub fn new(text: &str) -> Self {
         let padding = PADDING;
-        let string = ArcString::new(text, 0);
+        let string = BoxString::new(text);
 
         HeapString { padding, string }
     }
@@ -34,7 +35,7 @@ impl HeapString {
     #[inline]
     pub fn with_additional(text: &str, additional: usize) -> Self {
         let padding = PADDING;
-        let string = ArcString::new(text, additional);
+        let string = BoxString::with_additional(text, additional);
 
         HeapString { padding, string }
     }
@@ -43,7 +44,7 @@ impl HeapString {
     #[inline]
     pub fn with_capacity(capacity: usize) -> Self {
         let padding = PADDING;
-        let string = ArcString::with_capacity(capacity);
+        let string = BoxString::with_capacity(capacity);
 
         HeapString { padding, string }
     }
@@ -55,7 +56,7 @@ impl HeapString {
     /// * Please see `super::Repr` for all invariants
     #[inline]
     pub unsafe fn make_mut_slice(&mut self) -> &mut [u8] {
-        self.string.make_mut_slice()
+        self.string.as_mut_slice()
     }
 
     #[inline]
@@ -68,7 +69,7 @@ impl From<String> for HeapString {
     #[inline]
     fn from(s: String) -> Self {
         let padding = PADDING;
-        let string = ArcString::from(s.as_str());
+        let string = BoxString::from(s.as_str());
 
         HeapString { padding, string }
     }

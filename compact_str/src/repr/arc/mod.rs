@@ -1,3 +1,6 @@
+// TODO: Use this module
+#![allow(dead_code)]
+
 use std::iter::Extend;
 use std::sync::atomic::Ordering;
 use std::{

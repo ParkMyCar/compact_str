@@ -7,6 +7,7 @@ mod bytes;
 mod iter;
 
 mod arc;
+mod boxed;
 mod discriminant;
 mod heap;
 mod inline;

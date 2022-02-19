@@ -24,7 +24,7 @@ jobs:
           crate: cargo-fuzz
           version: latest
       - uses: actions-rs/cargo@v1
-        name: Fuzz
+        name: Fuzz!
         with:
           command: fuzz
           args: run --debug-assertions compact_str -- -max_total_time=1200
@@ -49,9 +49,14 @@ jobs:
       - name: AFL++ Build
         run: |
           cd fuzz
-          mkdir afl afl/in afl/out
           cargo afl build --bin afl --release --features=afl
-          cargo afl fuzz -i afl/in -o afl/out -D -V 1200 ../target/release/afl
+      - name: Fuzz!
+        run: |
+          mkdir afl afl/in afl/out
+          cargo afl fuzz -i afl/in -o afl/out -D -V 30 ../target/release/afl
+      - name: Check for crashes
+        run: |
+          if [ "$(ls -1q ./out | wc -l)" -ne 0 ]; then exit 1; fi
 
   # creation_aarch64:
   #   name: creation [aarch64]

@@ -34,6 +34,7 @@ jobs:
           else
             echo "FUZZ_TIME=1800" >> "$GITHUB_ENV"
           fi
+          echo $FUZZ_TIME
       - uses: actions-rs/cargo@v1
         name: Fuzz!
         with:
@@ -71,6 +72,7 @@ jobs:
           else
             echo "FUZZ_TIME=1800" >> "$GITHUB_ENV"
           fi
+          echo $FUZZ_TIME
       - name: Fuzz!
         run: |
           cd fuzz

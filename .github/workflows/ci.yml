@@ -91,7 +91,7 @@ jobs:
           version: latest
       - name: Fuzz!
         run: |
-          cargo fuzz run --debug-assertions compact_str -- -max_total_time=120
+          cargo fuzz run --features=libfuzzer-sys --debug-assertions compact_str -- -max_total_time=120
 
   example-bytes:
     name: example - bytes

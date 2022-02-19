@@ -27,11 +27,14 @@ jobs:
         name: Fuzz!
         with:
           command: fuzz
-          args: run --debug-assertions compact_str -- -max_total_time=1200
+          args: run --features=libfuzzer-sys --debug-assertions compact_str -- -max_total_time=1800
 
-  afl++_x86_64:
+  afl_x86_64:
     name: AFL++ [x86_64]
     runs-on: ubuntu-latest
+    env:
+      # we do care about crashes, but without this AFL won't run
+      AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES: 1
     steps:
       - uses: actions/checkout@v2
         name: Checkout compact_str
@@ -52,11 +55,51 @@ jobs:
           cargo afl build --bin afl --release --features=afl
       - name: Fuzz!
         run: |
-          mkdir afl afl/in afl/out
-          cargo afl fuzz -i afl/in -o afl/out -D -V 30 ../target/release/afl
+          cd fuzz
+          mkdir afl/out
+          cargo afl fuzz -i afl/in -o afl/out -D -V 1800 ../target/release/afl
       - name: Check for crashes
         run: |
-          if [ "$(ls -1q ./out | wc -l)" -ne 0 ]; then exit 1; fi
+          if [ "$(ls -1q ./fuzz/afl/out/default/crashes/ | wc -l)" -ne 0 ]; then exit 1; fi
+
+  # afl_armv7:
+  #   name: AFL++ [armv7]
+  #   runs-on: ubuntu-latest
+  #   env:
+  #     # we do care about crashes, but without this AFL won't run
+  #     AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES: 1
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #       name: Checkout compact_str
+  #     - uses: actions-rs/toolchain@v1
+  #       name: Install Rust
+  #       with:
+  #         toolchain: stable
+  #         target: armv7-unknown-linux-gnueabihf
+  #         override: true
+  #     - uses: actions-rs/install@v0.1
+  #       name: Install cargo-afl
+  #       with:
+  #         crate: afl
+  #         version: latest
+  #     - uses: actions-rs/cargo@v1
+  #       name: AFL++ Build
+  #       with:
+  #         use-cross: true
+  #         command: afl
+  #         args: build --manifest-path fuzz/Cargo.toml --bin afl --release --features=afl --target armv7-unknown-linux-gnueabihf
+  #     - name: Make out dir
+  #       run: |
+  #         mkdir fuzz/afl/out
+  #     - uses: actions-rs/cargo@v1
+  #       name: Fuzz!
+  #       with:
+  #         use-cross: true
+  #         command: afl
+  #         args: fuzz -i afl/in -o afl/out -D -V 90 ../target/armv7-unknown-linux-gnueabihf/release/afl
+  #     - name: Check for crashes
+  #       run: |
+  #         if [ "$(ls -1q ./fuzz/afl/out | wc -l)" -ne 0 ]; then exit 1; fi
 
   # creation_aarch64:
   #   name: creation [aarch64]

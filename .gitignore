@@ -4,7 +4,6 @@
 
 # Fuzzer
 **/artifacts
-**/corpus
 **/fuzz*.log
 
 # macOS

@@ -45,19 +45,18 @@ jobs:
 
   linux_arm7:
     name: Linux ARMv7
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, ARM]
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
+          profile: minimal
           toolchain: stable
-          target: armv7-unknown-linux-gnueabihf
           override: true
       - uses: actions-rs/cargo@v1
         with:
-          use-cross: true
           command: test
-          args: --all-features --manifest-path=compact_str/Cargo.toml --target armv7-unknown-linux-gnueabihf
+          args: --all-features --manifest-path=compact_str/Cargo.toml
 
   linux_32bit:
     name: Linux 32-bit

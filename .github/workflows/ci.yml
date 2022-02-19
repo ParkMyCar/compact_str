@@ -72,27 +72,6 @@ jobs:
         run: |
           cargo miri test --all-features --manifest-path=compact_str/Cargo.toml
 
-  fuzz:
-    name: fuzz
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-        name: Checkout repo
-      - uses: actions-rs/toolchain@v1
-        name: Install Rust and friends
-        with:
-          profile: minimal
-          toolchain: nightly
-          override: true
-      - uses: actions-rs/install@v0.1
-        name: Install cargo-fuzz
-        with:
-          crate: cargo-fuzz
-          version: latest
-      - name: Fuzz!
-        run: |
-          cargo fuzz run --debug-assertions compact_str -- -max_total_time=120
-
   example-bytes:
     name: example - bytes
     runs-on: ubuntu-latest

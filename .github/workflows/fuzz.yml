@@ -1,4 +1,8 @@
 on:
+  push:
+    branches:
+      - main
+  pull_request:
   workflow_dispatch:
   schedule:
     - cron: '0 01,13 * * *'
@@ -6,8 +10,8 @@ on:
 name: Fuzz
 
 jobs:
-  fuzz_x86_64:
-    name: fuzz [x86_64]
+  libFuzzer_x86_64:
+    name: libFuzzer [x86_64]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -23,11 +27,111 @@ jobs:
         with:
           crate: cargo-fuzz
           version: latest
+      - name: Set Fuzz Time
+        run: |
+          if [[ "${{github.event_name}}" == "push" || "${{github.event_name}}" == "pull_request" ]]; then
+            echo "fuzz_time=120" >> $GITHUB_ENV
+          else
+            echo "fuzz_time=1800" >> $GITHUB_ENV
+          fi
+          echo "${{ env.fuzz_time }}"
       - uses: actions-rs/cargo@v1
-        name: Fuzz
+        name: Fuzz!
         with:
           command: fuzz
-          args: run --debug-assertions compact_str -- -max_total_time=1200
+          args: run --features=libfuzzer-sys --debug-assertions compact_str -- -max_total_time=${{ env.fuzz_time }}
+
+  afl_x86_64:
+    name: AFL++ [x86_64]
+    runs-on: ubuntu-latest
+    env:
+      # we do care about crashes, but without this AFL won't run
+      AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES: 1
+    steps:
+      - uses: actions/checkout@v2
+        name: Checkout compact_str
+      - uses: actions-rs/toolchain@v1
+        name: Install Rust
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+      - uses: actions-rs/install@v0.1
+        name: Install cargo-afl
+        with:
+          crate: afl
+          version: latest
+      - name: AFL++ Build
+        run: |
+          cd fuzz
+          cargo afl build --bin afl --release --features=afl
+      - name: Set Fuzz Time
+        run: |
+          if [[ "${{github.event_name}}" == "push" || "${{github.event_name}}" == "pull_request" ]]; then
+            echo "fuzz_time=120" >> $GITHUB_ENV
+          else
+            echo "fuzz_time=1800" >> $GITHUB_ENV
+          fi
+          echo "${{ env.fuzz_time }}"
+      - name: Fuzz!
+        run: |
+          cd fuzz
+          mkdir afl/out
+          cargo afl fuzz -i afl/in -o afl/out -D -V ${{ env.fuzz_time }} ../target/release/afl
+      - name: Check for Crashes
+        run: |
+          if [ "$(ls -1q ./fuzz/afl/out/default/crashes/ | wc -l)" -ne 0 ]; then exit 1; fi
+      # AFL generates filenames with ":", which upload-artifact fails on, so we need to "detox" them
+      - name: Sanitize Crash Filenames (if present)
+        if: failure()
+        run: |
+          sudo apt-get install -y detox
+          detox -r -v ./fuzz/afl/out/default/crashes/
+      - name: Upload Crashes (if present)
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: Upload Crashes
+          path: ./fuzz/afl/out/default/crashes/
+
+  # afl_armv7:
+  #   name: AFL++ [armv7]
+  #   runs-on: ubuntu-latest
+  #   env:
+  #     # we do care about crashes, but without this AFL won't run
+  #     AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES: 1
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #       name: Checkout compact_str
+  #     - uses: actions-rs/toolchain@v1
+  #       name: Install Rust
+  #       with:
+  #         toolchain: stable
+  #         target: armv7-unknown-linux-gnueabihf
+  #         override: true
+  #     - uses: actions-rs/install@v0.1
+  #       name: Install cargo-afl
+  #       with:
+  #         crate: afl
+  #         version: latest
+  #     - uses: actions-rs/cargo@v1
+  #       name: AFL++ Build
+  #       with:
+  #         use-cross: true
+  #         command: afl
+  #         args: build --manifest-path fuzz/Cargo.toml --bin afl --release --features=afl --target armv7-unknown-linux-gnueabihf
+  #     - name: Make out dir
+  #       run: |
+  #         mkdir fuzz/afl/out
+  #     - uses: actions-rs/cargo@v1
+  #       name: Fuzz!
+  #       with:
+  #         use-cross: true
+  #         command: afl
+  #         args: fuzz -i afl/in -o afl/out -D -V 90 ../target/armv7-unknown-linux-gnueabihf/release/afl
+  #     - name: Check for crashes
+  #       run: |
+  #         if [ "$(ls -1q ./fuzz/afl/out | wc -l)" -ne 0 ]; then exit 1; fi
 
   # creation_aarch64:
   #   name: creation [aarch64]

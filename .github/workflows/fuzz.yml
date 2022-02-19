@@ -1,4 +1,8 @@
 on:
+  push:
+    branches:
+      - main
+  pull_request:
   workflow_dispatch:
   schedule:
     - cron: '0 01,13 * * *'
@@ -23,11 +27,18 @@ jobs:
         with:
           crate: cargo-fuzz
           version: latest
+      - name: Set Fuzz Time
+        run: |
+          if [[ "${{github.event_name}}" == "push" || "${{github.event_name}}" == "pull_request" ]]; then
+            echo "FUZZ_TIME=120" >> "$GITHUB_ENV"
+          else
+            echo "FUZZ_TIME=1800" >> "$GITHUB_ENV"
+          fi
       - uses: actions-rs/cargo@v1
         name: Fuzz!
         with:
           command: fuzz
-          args: run --features=libfuzzer-sys --debug-assertions compact_str -- -max_total_time=1800
+          args: run --features=libfuzzer-sys --debug-assertions compact_str -- -max_total_time=$FUZZ_TIME
 
   afl_x86_64:
     name: AFL++ [x86_64]
@@ -53,11 +64,18 @@ jobs:
         run: |
           cd fuzz
           cargo afl build --bin afl --release --features=afl
+      - name: Set Fuzz Time
+        run: |
+          if [[ "${{github.event_name}}" == "push" || "${{github.event_name}}" == "pull_request" ]]; then
+            echo "FUZZ_TIME=120" >> "$GITHUB_ENV"
+          else
+            echo "FUZZ_TIME=1800" >> "$GITHUB_ENV"
+          fi
       - name: Fuzz!
         run: |
           cd fuzz
           mkdir afl/out
-          cargo afl fuzz -i afl/in -o afl/out -D -V 1800 ../target/release/afl
+          cargo afl fuzz -i afl/in -o afl/out -D -V $FUZZ_TIME ../target/release/afl
       - name: Check for Crashes
         run: |
           if [ "$(ls -1q ./fuzz/afl/out/default/crashes/ | wc -l)" -ne 0 ]; then exit 1; fi

@@ -58,9 +58,21 @@ jobs:
           cd fuzz
           mkdir afl/out
           cargo afl fuzz -i afl/in -o afl/out -D -V 1800 ../target/release/afl
-      - name: Check for crashes
+      - name: Check for Crashes
         run: |
           if [ "$(ls -1q ./fuzz/afl/out/default/crashes/ | wc -l)" -ne 0 ]; then exit 1; fi
+      # AFL generates filenames with ":", which upload-artifact fails on, so we need to "detox" them
+      - name: Sanitize Crash Filenames (if present)
+        if: failure()
+        run: |
+          sudo apt-get install -y detox
+          detox -r -v ./fuzz/afl/out/default/crashes/
+      - name: Upload Crashes (if present)
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: Upload Crashes
+          path: ./fuzz/afl/out/default/crashes/
 
   # afl_armv7:
   #   name: AFL++ [armv7]

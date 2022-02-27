@@ -42,3 +42,20 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: clippy
+
+  doc:
+    name: cargo doc
+    runs-on: ubuntu-latest
+    env:
+      RUSTDOCFLAGS: "-D warnings"
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - uses: actions-rs/cargo@v1
+        with:
+          command: doc
+          args: --all-features --no-deps --manifest-path compact_str/Cargo.toml

@@ -34,7 +34,7 @@ fn rand_unicode_collection() -> impl Strategy<Value = Vec<String>> {
     proptest::collection::vec(rand_unicode(), 0..40)
 }
 
-/// Asserts a CompactStr is allocated properly
+/// Asserts a [`CompactStr`] is allocated properly
 fn assert_allocated_properly(compact: &CompactStr) {
     if compact.len() <= MAX_SIZE {
         assert!(!compact.is_heap_allocated())

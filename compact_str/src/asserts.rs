@@ -1,7 +1,7 @@
 //! Macros used to statically assert the size different components (e.g. structs).
 //!
-//! These macros were directly copied from the [`static-assertions`]
-//! (https://github.com/nvzqz/static-assertions-rs) crate with the following license:
+//! These macros were directly copied from the [`static-assertions`](https://github.com/nvzqz/static-assertions-rs)
+//! crate with the following license:
 //!
 //! MIT License
 //!

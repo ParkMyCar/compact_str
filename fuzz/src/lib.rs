@@ -62,8 +62,8 @@ impl Creation<'_> {
             }
             // Create a `CompactStr` from a slice of bytes
             Bytes(data) => {
-                let compact = CompactStr::from_utf8(&data);
-                let std_str = std::str::from_utf8(&data);
+                let compact = CompactStr::from_utf8(data);
+                let std_str = std::str::from_utf8(data);
 
                 match (compact, std_str) {
                     // valid UTF-8

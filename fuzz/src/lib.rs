@@ -19,10 +19,11 @@ pub struct Scenario<'a> {
 #[derive(Arbitrary, Debug)]
 pub enum Creation<'a> {
     Bytes(&'a [u8]),
+    Buf(&'a [u8]),
     IterChar(Vec<char>),
     IterString(Vec<String>),
     Word(String),
-    NonContiguousBytes(&'a [u8]),
+    NonContiguousBuf(&'a [u8]),
 }
 
 impl Creation<'_> {
@@ -59,8 +60,29 @@ impl Creation<'_> {
 
                 Some((compact, std_str))
             }
-            // Create a `CompactStr` from a buffer of bytes
+            // Create a `CompactStr` from a slice of bytes
             Bytes(data) => {
+                let compact = CompactStr::from_utf8(&data);
+                let std_str = std::str::from_utf8(&data);
+
+                match (compact, std_str) {
+                    // valid UTF-8
+                    (Ok(c), Ok(s)) => {
+                        assert_eq!(c, s);
+                        assert_properly_allocated(&c, s);
+
+                        Some((c, s.to_string()))
+                    }
+                    // non-valid UTF-8
+                    (Err(c_err), Err(s_err)) => {
+                        assert_eq!(c_err, s_err);
+                        None
+                    }
+                    _ => panic!("CompactStr and core::str read UTF-8 differently?"),
+                }
+            },
+            // Create a `CompactStr` from a buffer of bytes
+            Buf(data) => {
                 let mut buffer = Cursor::new(data);
 
                 let compact = CompactStr::from_utf8_buf(&mut buffer);
@@ -83,7 +105,7 @@ impl Creation<'_> {
                 }
             }
             // Create a `CompactStr` from a non-contiguous buffer of bytes
-            NonContiguousBytes(data) => {
+            NonContiguousBuf(data) => {
                 let mut queue = if data.len() > 3 {
                     // if our data is long, make it non-contiguous
                     let (front, back) = data.split_at(data.len() / 2 + 1);

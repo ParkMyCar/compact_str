@@ -76,6 +76,29 @@ proptest! {
 
     #[test]
     #[cfg_attr(miri, ignore)]
+    fn test_from_bytes_roundtrips(word in rand_unicode()) {
+        let bytes = word.into_bytes();
+        let compact = CompactStr::from_utf8(&bytes).unwrap();
+        let word = String::from_utf8(bytes).unwrap();
+
+        prop_assert_eq!(compact, word);
+    }
+
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_from_bytes_only_valid_utf8(bytes in proptest::collection::vec(any::<u8>(), 0..80)) {
+        let compact_result = CompactStr::from_utf8(&bytes);
+        let word_result = String::from_utf8(bytes);
+
+        match (compact_result, word_result) {
+            (Ok(c), Ok(s)) => prop_assert_eq!(c, s),
+            (Err(c_err), Err(s_err)) => prop_assert_eq!(c_err, s_err.utf8_error()),
+            _ => panic!("CompactStr and core::str read UTF-8 differently?"),
+        }
+    }
+
+    #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_reserve_and_write_bytes(word in rand_unicode()) {
         let mut compact = CompactStr::default();
         prop_assert!(compact.is_empty());

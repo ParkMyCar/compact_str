@@ -1,5 +1,6 @@
 use std::iter::Extend;
 use std::mem::ManuallyDrop;
+use std::str::Utf8Error;
 
 #[cfg(feature = "bytes")]
 mod bytes;
@@ -76,6 +77,14 @@ impl Repr {
             let heap = ManuallyDrop::new(HeapString::with_capacity(capacity));
             Repr { heap }
         }
+    }
+
+    #[inline]
+    pub fn from_utf8<B: AsRef<[u8]>>(buf: B) -> Result<Self, Utf8Error> {
+        // Get a &str from the Vec, failing if it's not valid UTF-8
+        let s = core::str::from_utf8(buf.as_ref())?;
+        // Construct a Repr from the &str
+        Ok(Self::new(s))
     }
 
     #[inline]

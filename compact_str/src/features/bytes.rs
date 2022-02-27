@@ -8,7 +8,7 @@ use crate::{
 };
 
 impl CompactStr {
-    /// Converts a buffer of bytes to a `CompactStr`
+    /// Converts a buffer of bytes to a [`CompactStr`]
     ///
     /// # Examples
     /// ### Basic usage
@@ -39,7 +39,7 @@ impl CompactStr {
         Repr::from_utf8_buf(buf).map(|repr| CompactStr { repr })
     }
 
-    /// Converts a buffer of bytes to a `CompactStr`, without checking that the provided buffer is
+    /// Converts a buffer of bytes to a [`CompactStr`], without checking that the provided buffer is
     /// valid UTF-8.
     ///
     /// # Safety

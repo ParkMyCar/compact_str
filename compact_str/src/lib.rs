@@ -1,8 +1,8 @@
-//! `CompactStr` is a compact string type that stores itself on the stack if possible, otherwise
+//! [`CompactStr`] is a compact string type that stores itself on the stack if possible, otherwise
 //! known as a "small string optimization".
 //!
 //! ### Memory Layout
-//! Normally strings are stored on the heap, since they're dynamically sized. In Rust a `String`
+//! Normally strings are stored on the heap, since they're dynamically sized. In Rust a [`String`]
 //! consists of three things:
 //! 1. A `usize` denoting the length of the string
 //! 2. A pointer to a location on the heap where the string is stored
@@ -36,8 +36,8 @@ use repr::Repr;
 #[cfg(test)]
 mod tests;
 
-/// A `CompactStr` is a compact string type that can be used almost anywhere a
-/// `String` or `&str` can be used.
+/// A [`CompactStr`] is a compact string type that can be used almost anywhere a
+/// [`String`] or [`str`] can be used.
 ///
 /// ## Using `CompactStr`
 /// ```
@@ -80,7 +80,7 @@ pub struct CompactStr {
 }
 
 impl CompactStr {
-    /// Creates a new `CompactStr` from any type that implements `AsRef<str>`.
+    /// Creates a new [`CompactStr`] from any type that implements `AsRef<str>`.
     /// If the string is short enough, then it will be inlined on the stack!
     ///
     /// # Examples
@@ -137,7 +137,7 @@ impl CompactStr {
         }
     }
 
-    /// Creates a new inline `CompactStr` at compile time.
+    /// Creates a new inline [`CompactStr`] at compile time.
     ///
     /// # Examples
     /// ```
@@ -158,20 +158,37 @@ impl CompactStr {
         }
     }
 
-    /// Creates a new empty `CompactStr` with the provided capacity.
+    /// Creates a new empty [`CompactStr`] with the capacity to fit at least `capacity` bytes.
     ///
     /// A `CompactStr` will inline strings on the stack, if they're small enough. Specifically, if
-    /// the string is smaller than `std::mem::size_of::<String>` bytes then it will be inlined. This
-    /// means that `CompactStr`s have a minimum capacity of `std::mem::size_of::<String> - 1`.
+    /// the string has a length less than or equal to `std::mem::size_of::<String>` bytes then it
+    /// will be inlined. This also means that `CompactStr`s have a minimum capacity of
+    /// `std::mem::size_of::<String>`.
     ///
     /// # Examples
+    ///
+    /// ### "zero" Capacity
     /// ```
     /// # use compact_str::CompactStr;
+    /// // Creating a CompactStr with a capacity of 0 will create
+    /// // one with capacity of std::mem::size_of::<String>();
     /// let empty = CompactStr::with_capacity(0);
     /// let min_size = std::mem::size_of::<String>();
     ///
     /// assert_eq!(empty.capacity(), min_size);
     /// assert_ne!(0, min_size);
+    /// assert!(!empty.is_heap_allocated());
+    /// ```
+    ///
+    /// ### Max Inline Size
+    /// ```
+    /// # use compact_str::CompactStr;
+    /// // Creating a CompactStr with a capacity of std::mem::size_of::<String>()
+    /// // will not heap allocate.
+    /// let str_size = std::mem::size_of::<String>();
+    /// let empty = CompactStr::with_capacity(str_size);
+    ///
+    /// assert_eq!(empty.capacity(), str_size);
     /// assert!(!empty.is_heap_allocated());
     /// ```
     ///
@@ -187,14 +204,6 @@ impl CompactStr {
     /// assert_eq!(empty.capacity(), heap_size);
     /// assert!(empty.is_heap_allocated());
     /// ```
-    ///
-    /// # Note
-    /// A `CompactStr` can inline strings that are equal to `std::mem::size_of::<String>()`, if the
-    /// first character is ASCII. But we do this by foregoing any metadata to track the string's
-    /// length, and using the invariant of the first byte being ASCII (i.e. <= 127) to denote this
-    /// "packed" representation. Creating a `CompactStr` with capacity of `size_of::<String>()` will
-    /// heap allocate, because at this time we don't know if the first character will be ASCII or
-    /// not.
     #[inline]
     pub fn with_capacity(capacity: usize) -> Self {
         CompactStr {
@@ -235,9 +244,9 @@ impl CompactStr {
         Ok(CompactStr { repr })
     }
 
-    /// Returns the length of the `CompactStr` in `bytes`, not `chars` or graphemes.
+    /// Returns the length of the [`CompactStr`] in `bytes`, not [`char`]s or graphemes.
     ///
-    /// When using UTF-8 encoding (which all strings in Rust do) a single character will be 1 - 4
+    /// When using `UTF-8` encoding (which all strings in Rust do) a single character will be 1 to 4
     /// bytes long, therefore the return value of this method might not be what a human considers
     /// the length of the string.
     ///
@@ -255,7 +264,7 @@ impl CompactStr {
         self.repr.len()
     }
 
-    /// Returns `true` if the `CompactStr` has a length of 0, `false` otherwise
+    /// Returns `true` if the [`CompactStr`] has a length of 0, `false` otherwise
     ///
     /// # Examples
     /// ```
@@ -272,16 +281,16 @@ impl CompactStr {
         self.len() == 0
     }
 
-    /// Returns the capacity of the `CompactStr`, in bytes.
+    /// Returns the capacity of the [`CompactStr`], in bytes.
     ///
     /// # Note
-    /// * A `CompactStr` will always have a capacity of at least `std::mem::size_of::<String>() - 1`
+    /// * A `CompactStr` will always have a capacity of at least `std::mem::size_of::<String>()`
     ///
     /// # Examples
     /// ### Minimum Size
     /// ```
     /// # use compact_str::CompactStr;
-    /// let min_size = std::mem::size_of::<String>() - 1;
+    /// let min_size = std::mem::size_of::<String>();
     /// let compact = CompactStr::new("");
     ///
     /// assert!(compact.capacity() >= min_size);
@@ -298,12 +307,12 @@ impl CompactStr {
         self.repr.capacity()
     }
 
-    /// Ensures that this `CompactStr`'s capacity is at least `additional` bytes longer than its
+    /// Ensures that this [`CompactStr`]'s capacity is at least `additional` bytes longer than its
     /// length. The capacity may be increased by more than `additional` bytes if it chooses, to
     /// prevent frequent reallocations.
     ///
     /// # Note
-    /// * A `CompactStr` will always have at least a capacity of `(WORD * 3) - 1`
+    /// * A `CompactStr` will always have at least a capacity of `std::mem::size_of::<String>()`
     /// * Reserving additional bytes may cause the `CompactStr` to become heap allocated
     ///
     /// # Panics
@@ -327,7 +336,7 @@ impl CompactStr {
         self.repr.reserve(additional)
     }
 
-    /// Returns a string slice containing the entire `CompactStr`.
+    /// Returns a string slice containing the entire [`CompactStr`].
     ///
     /// # Examples
     /// ```
@@ -341,7 +350,7 @@ impl CompactStr {
         self.repr.as_str()
     }
 
-    /// Returns a byte slice of the `CompactStr`s contents.
+    /// Returns a byte slice of the [`CompactStr`]'s contents.
     ///
     /// # Examples
     /// ```
@@ -358,10 +367,6 @@ impl CompactStr {
     // TODO: Implement a `try_as_mut_slice(...)` that will fail if it results in cloning?
     //
     /// Provides a mutable reference to the underlying buffer of bytes.
-    ///
-    /// Note: If the given `CompactStr` is heap allocated, _and_ multiple references exist to the
-    /// underlying buffer (e.g. you previously cloned this `CompactStr`), calling this method will
-    /// clone the entire buffer to prevent silently mutating other owned `CompactStr`s.
     ///
     /// # Safety
     /// * All Rust strings, including `CompactStr`, must be valid UTF-8. The caller must guarantee
@@ -380,19 +385,12 @@ impl CompactStr {
     ///
     /// assert_eq!(s, "hello world");
     /// ```
-    ///
-    /// # Further Explanation
-    /// When a `CompactStr` becomes sufficiently large, the underlying buffer becomes a reference
-    /// counted buffer on the heap. Then, cloning a `CompactStr` increments a reference count
-    /// instead of cloning the entire buffer (very similar to `Arc<str>`). To prevent silently
-    /// mutating the data of other owned `CompactStr`s when taking a mutable slice, we clone the
-    /// underlying buffer and mutate that, if more than one outstanding reference exists.
     #[inline]
     pub unsafe fn as_mut_bytes(&mut self) -> &mut [u8] {
         self.repr.as_mut_slice()
     }
 
-    /// Appends the given `char` to the end of this `CompactStr`.
+    /// Appends the given [`char`] to the end of this [`CompactStr`].
     ///
     /// # Examples
     /// ```
@@ -410,7 +408,7 @@ impl CompactStr {
         self.repr.push(ch)
     }
 
-    /// Removes the last character from the `CompactStr` and returns it.
+    /// Removes the last character from the [`CompactStr`] and returns it.
     /// Returns `None` if this `ComapctStr` is empty.
     ///
     /// # Examples
@@ -429,7 +427,7 @@ impl CompactStr {
         self.repr.pop()
     }
 
-    /// Appends a given string slice onto the end of this `CompactStr`
+    /// Appends a given string slice onto the end of this [`CompactStr`]
     ///
     /// # Examples
     /// ```
@@ -445,7 +443,7 @@ impl CompactStr {
         self.repr.push_str(s)
     }
 
-    /// Forces the length of the `CompactStr` to `new_len`.
+    /// Forces the length of the [`CompactStr`] to `new_len`.
     ///
     /// This is a low-level operation that maintains none of the normal invariants for `CompactStr`.
     /// If you want to modify the `CompactStr` you should use methods like `push`, `push_str` or
@@ -459,7 +457,7 @@ impl CompactStr {
         self.repr.set_len(new_len)
     }
 
-    /// Returns whether or not the `CompactStr` is heap allocated.
+    /// Returns whether or not the [`CompactStr`] is heap allocated.
     ///
     /// # Examples
     /// ### Inlined

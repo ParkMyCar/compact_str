@@ -16,14 +16,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+        name: Checkout compact_str
       - uses: actions-rs/toolchain@v1
+        name: Install Rust
         with:
           profile: minimal
           # We currently use some unstable features in rustfmt, hence the nightly toolchain
           toolchain: nightly
           override: true
       - run: rustup component add rustfmt
+        name: Add rustfmt
       - uses: actions-rs/cargo@v1
+        name: Run rustfmt
         with:
           command: fmt
           args: --all -- --check
@@ -33,12 +37,36 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+        name: Checkout compact_str
       - uses: actions-rs/toolchain@v1
+        name: Install Rust
         with:
           profile: minimal
           toolchain: stable
           override: true
       - run: rustup component add clippy
+        name: Add clippy
       - uses: actions-rs/cargo@v1
+        name: Run clippy
         with:
           command: clippy
+
+  doc:
+    name: cargo doc
+    runs-on: ubuntu-latest
+    env:
+      RUSTDOCFLAGS: "-D warnings"
+    steps:
+      - uses: actions/checkout@v2
+        name: Checkout compact_str
+      - uses: actions-rs/toolchain@v1
+        name: Install Rust
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - uses: actions-rs/cargo@v1
+        name: Run rustdoc
+        with:
+          command: doc
+          args: --all-features --no-deps --manifest-path compact_str/Cargo.toml

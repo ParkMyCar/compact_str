@@ -22,7 +22,10 @@ use core::hash::{
 };
 use core::iter::FromIterator;
 use core::ops::Deref;
-use core::str::FromStr;
+use core::str::{
+    FromStr,
+    Utf8Error,
+};
 
 mod asserts;
 mod features;
@@ -197,6 +200,39 @@ impl CompactStr {
         CompactStr {
             repr: Repr::with_capacity(capacity),
         }
+    }
+
+    /// Convert a slice of bytes into a [`CompactStr`].
+    ///
+    /// A [`CompactStr`] is a contiguous collection of bytes (`u8`s) that is valid [`UTF-8`](https://en.wikipedia.org/wiki/UTF-8).
+    /// This method converts from an arbitrary contiguous collection of bytes into a [`CompactStr`],
+    /// failing if the provided bytes are not `UTF-8`.
+    ///
+    /// Note: If you want to create a [`CompactStr`] from a non-contiguous collection of bytes,
+    /// enable the `bytes` feature of this crate, and checkout [`CompactStr::from_utf8_buf`]
+    ///
+    /// # Examples
+    /// ### Valid UTF-8
+    /// ```
+    /// # use compact_str::CompactStr;
+    /// let bytes = vec![240, 159, 166, 128, 240, 159, 146, 175];
+    /// let compact = CompactStr::from_utf8(bytes).expect("valid UTF-8");
+    ///
+    /// assert_eq!(compact, "🦀💯");
+    /// ```
+    ///
+    /// ### Invalid UTF-8
+    /// ```
+    /// # use compact_str::CompactStr;
+    /// let bytes = vec![255, 255, 255];
+    /// let result = CompactStr::from_utf8(bytes);
+    ///
+    /// assert!(result.is_err());
+    /// ```
+    #[inline]
+    pub fn from_utf8<B: AsRef<[u8]>>(buf: B) -> Result<Self, Utf8Error> {
+        let repr = Repr::from_utf8(buf)?;
+        Ok(CompactStr { repr })
     }
 
     /// Returns the length of the `CompactStr` in `bytes`, not `chars` or graphemes.

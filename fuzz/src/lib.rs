@@ -80,7 +80,7 @@ impl Creation<'_> {
                     }
                     _ => panic!("CompactStr and core::str read UTF-8 differently?"),
                 }
-            },
+            }
             // Create a `CompactStr` from a buffer of bytes
             Buf(data) => {
                 let mut buffer = Cursor::new(data);

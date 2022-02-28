@@ -79,7 +79,7 @@ Internally a `CompactStr` has two variants:
 
 To maximize memory usage, we use a [`union`](https://doc.rust-lang.org/reference/items/unions.html) instead of an `enum`. In Rust an `enum` requires at least 1 byte
 for the discriminant (tracking what variant we are), instead we use a `union` which allows us to manually define the discriminant. `CompactStr` defines the
-discriminant *within* the last byte, using any extra bits for metadata. Specifically the discriminant has three variants:
+discriminant *within* the last byte, using any extra bits for metadata. Specifically the discriminant has two variants:
 
 1. `0b11111111` - All 1s, indicates **heap** allocated
 2. `0b11XXXXXX` - Two leading 1s, indicates **inline**, with the trailing 6 bits used to store the length
@@ -91,18 +91,22 @@ and specifically the overall memory layout of a `CompactStr` is:
 
 <sub>Both variants are 24 bytes long</sub>
 
-For **heap** allocated strings we use a custom `BoxString` which is only 16 bytes on the stack, i.e. `[ ptr<8> | len<8> ]`, and has a heap layout of `[ cap<8> | buf<...> ]`. We then add 8 bytes of padding on the stack to make to make it equal to our inline variant.
+For **heap** allocated strings we use a custom `BoxString` which is only 16 bytes on the stack, i.e. `[ ptr<8> | len<8> ]`, and has a heap layout of `[ cap<8> | buf<...> ]`. We then add 8 bytes of padding on the stack to make the stack size equal to our inline variant.
 
-For **inline** strings we only have a 24 byte buffer on the stack. This might make you wonder how can we store 24 bytes inline if we also need somewhere to store the length? To do this, we utilize the fact that the last byte of our string could only ever have a value in the range `[0, 192)`. We know this because all strings in Rust are valid [UTF-8](https://en.wikipedia.org/wiki/UTF-8), and the only valid byte pattern for the last byte of a UTF-8 character (and thus the possible last byte of a string) is `0b0XXXXXXX` aka `[0, 128)` or `0b10XXXXXX` aka `[128, 192)`. This leaves all values in `[192, 256)` as unused in our last byte. Therefore, we can use values in the range of `[192, 215]` to represent a length in the range of `[0, 23]`, and if our last byte has a value `< 192`, we know that's a UTF-8 character, and can interpret the length as `24`.
+For **inline** strings we only have a 24 byte buffer on the stack. This might make you wonder how can we store a 24 byte long string, inline? Don't we also need to store the length somewhere?
+
+To do this, we utilize the fact that the last byte of our string could only ever have a value in the range `[0, 192)`. We know this because all strings in Rust are valid [UTF-8](https://en.wikipedia.org/wiki/UTF-8), and the only valid byte pattern for the last byte of a UTF-8 character (and thus the possible last byte of a string) is `0b0XXXXXXX` aka `[0, 128)` or `0b10XXXXXX` aka `[128, 192)`. This leaves all values in `[192, 255]` as unused in our last byte. Therefore, we can use values in the range of `[192, 215]` to represent a length in the range of `[0, 23]`, and if our last byte has a value `< 192`, we know that's a UTF-8 character, and can interpret the length as `24`.
 
 Specifically, the last byte on the stack for a `CompactStr` has the following uses:
 * `[0, 192)` - Is the last byte of a UTF-8 char, the `CompactStr` is stored on the stack and implicitly has a length of `24`
-* `[192, 215]` - Denotes a length in the range of `[0, 23]`, this `CompactStr` is store on the stack.
+* `[192, 215]` - Denotes a length in the range of `[0, 23]`, this `CompactStr` is stored on the stack.
 * `[215, 255)` - Unused
 * `255` - Denotes this `CompactStr` is stored on the heap
 
 ### Testing
-Strings and unicode can be quite messy, even further, we're working with things at the bit level. `compact_str` has an _extensive_ test suite comprised of unit testing, property testing, and fuzz testing, to ensure our invariants are upheld and the code is bug free. We test across all major OSes (Windows, macOS, and Linux) and architectures (64-bit big endian, 64-bit little endian, 32-bit big endian, 32-bit little endian). Fuzz testing is run with `libFuzzer` _and_ `AFL++` with `AFL++` running on both `x86_64` and `ARMv7`. We test with [`miri`](https://github.com/rust-lang/miri) to catch cases of undefined behavior, and run all tests on every rust compiler since `v1.49` to ensure support for our minimum supported Rust version (MSRV).
+Strings and unicode can be quite messy, even further, we're working with things at the bit level. `compact_str` has an _extensive_ test suite comprised of unit testing, property testing, and fuzz testing, to ensure our invariants are upheld. We test across all major OSes (Windows, macOS, and Linux), architectures (64-bit and 32-bit), and endian-ness (big endian and little endian).
+
+Fuzz testing is run with `libFuzzer` _and_ `AFL++` with `AFL++` running on both `x86_64` and `ARMv7` architectures. We test with [`miri`](https://github.com/rust-lang/miri) to catch cases of undefined behavior, and run all tests on every rust compiler since `v1.49` to ensure support for our minimum supported Rust version (MSRV).
 
 ### `unsafe` code
 `CompactStr` uses a bit of unsafe code because accessing fields from a `union` is inherently unsafe, the compiler can't guarantee what value is actually stored.

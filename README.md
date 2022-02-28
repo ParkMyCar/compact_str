@@ -1,6 +1,6 @@
 <div align="center">
   <h1><code>compact_str</code></h1>
-  <p><strong>A memory efficient immutable string type that can store up to 24* bytes on the stack.</strong></p>
+  <p><strong>A memory efficient string type that can store up to 24* bytes on the stack.</strong></p>
 
   <a href="https://crates.io/crates/compact_str">
     <img alt="version on crates.io" src="https://img.shields.io/crates/v/compact_str"/>
@@ -9,9 +9,9 @@
   <a href="LICENSE">
     <img alt="mit license" src="https://img.shields.io/crates/l/compact_str"/>
   </a>
-  
+
    <br />
-  
+
   <a href="https://github.com/ParkMyCar/compact_str/actions/workflows/ci.yml">
     <img alt="Continuous Integration Status" src="https://github.com/ParkMyCar/compact_str/actions/workflows/ci.yml/badge.svg?event=push"/>
   </a>
@@ -32,7 +32,7 @@
 <br />
 
 ### About
-A `CompactStr` is a more memory efficient immutable string type, that can store smaller strings on the stack, and transparently stores longer strings on the heap.
+A `CompactStr` is a more memory efficient string type, that can store smaller strings on the stack, and transparently stores longer strings on the heap (aka a small string optimization).
 They can mostly be used as a drop in replacement for `String` and are particularly useful in parsing, deserializing, or any other application where you may
 have smaller strings.
 
@@ -40,14 +40,16 @@ have smaller strings.
 A `CompactStr` specifically has the following properties:
   * `size_of::<CompactStr>() == size_of::<String>()`
   * Stores up to 24 bytes on the stack
-    * Only up to 23 bytes if the leading character is non-ASCII
-    * 12 bytes (or 11 if leading is non-ASCII) if running on a 32 bit architecture
+    * 12 bytes if running on a 32 bit architecture
   * Strings longer than 24 bytes are stored on the heap
-  * `Clone` is `O(1)`
+  * `Clone` is `O(n)`
+  * Heap based string grows at a rate of 1.5x
+    * The std library `String` grows at a rate of 2x
 
 ### Features
 `compact_str` has the following features:
 1. `serde`, which implements [`Deserialize`](https://docs.rs/serde/latest/serde/trait.Deserialize.html) and [`Serialize`](https://docs.rs/serde/latest/serde/trait.Serialize.html) from the popular [`serde`](https://docs.rs/serde/latest/serde/) crate, for `CompactStr`.
+2. `bytes`, which provides two methods `from_utf8_buf<B: Buf>(buf: &mut B)` and `from_utf8_buf_unchecked<B: Buf>(buf: &mut B)`, which allows for the creation of a `CompactStr` from a [`bytes::Buf`](https://docs.rs/bytes/latest/bytes/trait.Buf.html)
 
 ### How it works
 Note: this explanation assumes a 64-bit architecture, for 32-bit architectures generally divide any number by 2.
@@ -68,47 +70,45 @@ don't have to heap allocate so it's more performant. A `CompactStr` is limited t
 
 The memory layout of a `CompactStr` looks something like:
 
-`CompactStr: [ len<1> | buffer<23> ]`
+`CompactStr: [ buffer<23> | len<1> ]`
 
 #### Memory Layout
-Internally a `CompactStr` has three variants:
-1. **Heap** allocated, a string >= 24 bytes long
-2. **Inline**, a string <= 23 bytes long
-3. **Packed**, a string == 24 bytes long and first character is ASCII
+Internally a `CompactStr` has two variants:
+1. **Inline**, a string <= 24 bytes long
+2. **Heap** allocated, a string > 24 bytes long
 
 To maximize memory usage, we use a [`union`](https://doc.rust-lang.org/reference/items/unions.html) instead of an `enum`. In Rust an `enum` requires at least 1 byte
 for the discriminant (tracking what variant we are), instead we use a `union` which allows us to manually define the discriminant. `CompactStr` defines the
-discriminant *within* the first byte, using any extra bits for metadata. Specifically the discriminant has three variants:
+discriminant *within* the last byte, using any extra bits for metadata. Specifically the discriminant has three variants:
 
 1. `0b11111111` - All 1s, indicates **heap** allocated
-2. `0b1XXXXXXX` - Leading 1, indicates **inline**, with the trailing 7 bits used to store the length
-3. `0b0XXXXXXX` - Leading 0, indicates **packed**, with the trailing 7 bits being the first character of the string
+2. `0b11XXXXXX` - Two leading 1s, indicates **inline**, with the trailing 6 bits used to store the length
 
 and specifically the overall memory layout of a `CompactStr` is:
 
-1. `heap:   { _padding: [u8; 8], string: Arc<str> }`
-2. `inline: { metadata: u8, buffer: [u8; 23] }`
-3. `packed: { buffer: [u8; 24] }`
+1. `heap:   { string: BoxString, _padding: [u8; 8] }`
+2. `inline: { buffer: [u8; 24] }`
 
-<sub>All variants are 24 bytes long</sub>
+<sub>Both variants are 24 bytes long</sub>
 
+For **heap** allocated strings we use a custom `BoxString` which is only 16 bytes on the stack, i.e. `[ ptr<8> | len<8> ]`, and has a heap layout of `[ cap<8> | buf<...> ]`. We then add 8 bytes of padding on the stack to make to make it equal to our inline variant.
 
-For **heap** allocated strings we use an `Arc<str>` which is only 16 bytes, so we prefix it with 8 bytes of padding to make it equal to the other sizes. This
-padding is set to all 1's since it doesn't pertain to the actual string at all, and it allows us to define a unique discriminant. You might be wondering though, how
-can we be sure the other two variants will *never* have all 1's as their first byte?
-  * The **inline** variant will never have all 1's for it's first byte because we use the trailing 7 bits to store length, all 1's would indicate a length of 127. Our max length is 23, which is < 127, and even on 128-bit architectures we'd only be able to inline 63 bytes, still < our 127 limit.
-  * The **packed** variant will never have all 1's for it's first byte because we define the first byte to be ASCII. All strings in Rust use UTF-8 encoding, and UTF-8 encoding does not support Extended ASCII. Meaning, our first character will have a decimal value <= 127, guaranteeing the first bit to always be 0.
+For **inline** strings we only have a 24 byte buffer on the stack. This might make you wonder how can we store 24 bytes inline if we also need somewhere to store the length? To do this, we utilize the fact that the last byte of our string could only ever have a value in the range `[0, 192)`. We know this because all strings in Rust are valid [UTF-8](https://en.wikipedia.org/wiki/UTF-8), and the only valid byte pattern for the last byte of a UTF-8 character (and thus the possible last byte of a string) is `0b0XXXXXXX` aka `[0, 128)` or `0b10XXXXXX` aka `[128, 192)`. This leaves all values in `[192, 256)` as unused in our last byte. Therefore, we can use values in the range of `[192, 215]` to represent a length in the range of `[0, 23]`, and if our last byte has a value `< 192`, we know that's a UTF-8 character, and can interpret the length as `24`.
+
+Specifically, the last byte on the stack for a `CompactStr` has the following uses:
+* `[0, 192)` - Is the last byte of a UTF-8 char, the `CompactStr` is stored on the stack and implicitly has a length of `24`
+* `[192, 215]` - Denotes a length in the range of `[0, 23]`, this `CompactStr` is store on the stack.
+* `[215, 255)` - Unused
+* `255` - Denotes this `CompactStr` is stored on the heap
+
+### Testing
+Strings and unicode can be quite messy, even further, we're working with things at the bit level. `compact_str` has an _extensive_ test suite comprised of unit testing, property testing, and fuzz testing, to ensure our invariants are upheld and the code is bug free. We test across all major OSes (Windows, macOS, and Linux) and architectures (64-bit big endian, 64-bit little endian, 32-bit big endian, 32-bit little endian). Fuzz testing is run with `libFuzzer` _and_ `AFL++` with `AFL++` running on both `x86_64` and `ARMv7`. We test with [`miri`](https://github.com/rust-lang/miri) to catch cases of undefined behavior, and run all tests on every rust compiler since `v1.49` to ensure support for our minimum supported Rust version (MSRV).
 
 ### `unsafe` code
 `CompactStr` uses a bit of unsafe code because accessing fields from a `union` is inherently unsafe, the compiler can't guarantee what value is actually stored.
+We also have some manually implemented heap data structures, i.e. `BoxString`, and mess with bytes at a bit level.
 That being said, uses of unsafe code in this library are quite limited and constrained to only where absolutely necessary, and always documented with
 `// SAFETY: <reason>`.
-
-### Testing
-Strings and unicode can be quite messy, even further, we're working with things at the bit level. To guard against bugs, `compact_str` uses a mix of unit testing
-for sanity checks and randomized testing for correctness; then automatically runs these tests on 64-bit, 32-bit, big endian, and little endian architectures.
-Further, every 12 hours 1 billion unicode strings are generated and ensured to roundtrip through `CompactStr`, and we assert their location on either the stack or
-the heap.
 
 ### Similar Crates
 Storing strings on the stack is not a new idea, in fact there are a few other crates in the Rust ecosystem that do similar things, an incomplete list:

@@ -1,5 +1,32 @@
 # Upcoming
 
+# 0.3.0
+### February 27, 2021
+* Add `CompactStr::from_utf8(...)` API
+    * Implemented in [`#57 feature: Add from_utf8 API`](https://github.com/ParkMyCar/compact_str/pull/57)
+* Changed the heap variant from an atomically reference counted string, to a normal heap allocated string
+    * Implenented in [`#56 feature: BoxString`](https://github.com/ParkMyCar/compact_str/pull/56)
+    * Note: This change was made after much deliberation and research into C++ strings and the performance of "copy on write" once mutation is introduced
+* Combined the Inline and Packed variants into one variant, store the discriminant in the last byte instead of first
+    * Implemented in [`#49 refactor: Combine Inline and Packed Variants`](https://github.com/ParkMyCar/compact_str/pull/49)
+    * Note: This simplified the code, and improved the performance of inline string creation and modification
+* Removed all required dependencies from `ComapctStr`
+    * Implemented in [`#48 vendor: static-assertions`](https://github.com/ParkMyCar/compact_str/pull/48)
+* Add more public docs and doc tests for `CompactStr`
+    * Implemented in [`#46 chore: Add public documentation to CompactStr`](https://github.com/ParkMyCar/compact_str/pull/46)
+* Add `CompactStr::pop(...)`, `CompactStr::push(...)`, and `CompactStr::push_str(...)` APIs
+   * Implemented in [`#45 feature: impl the Extend trait for CompactStr`](https://github.com/ParkMyCar/compact_str/pull/40)
+* Implement the [`Extend`](https://doc.rust-lang.org/std/iter/trait.Extend.html) trait for `CompactStr`
+    * Implemented in [`#45 feature: impl the Extend trait for CompactStr`](https://github.com/ParkMyCar/compact_str/pull/40)
+* Add `bytes` feature to `CompactStr`, includes `from_utf8_buf*(...)` APIs
+    * Implemented in [`#40 feature: bytes`](https://github.com/ParkMyCar/compact_str/pull/40)
+* Add a `CompactStr::as_mut_slice(...)` API
+    * Implemented in [`#37 feature: as_mut_slice API`](https://github.com/ParkMyCar/compact_str/pull/37)
+* Add a `CompactStr::reserve(...)` API
+    * Implemented in [`#36 feature: reserve API`](https://github.com/ParkMyCar/compact_str/pull/36)
+* Improve CI, add workflows for MSRV, Miri, All Features, Fuzzing, Docs, and self-hosted ARMv7
+    * Implemented in `#26`, `#32`, `34`, `#35`, `#42`, `#56`
+
 # 0.2.0
 ### November 14, 2021
 * Change Minimum Supported Rust Version to 1.49

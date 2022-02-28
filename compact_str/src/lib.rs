@@ -26,6 +26,7 @@ use core::str::{
     FromStr,
     Utf8Error,
 };
+use std::borrow::Cow;
 
 mod asserts;
 mod features;
@@ -564,6 +565,12 @@ impl From<String> for CompactStr {
 impl<'a> From<&'a String> for CompactStr {
     fn from(s: &'a String) -> Self {
         CompactStr::new(&s)
+    }
+}
+
+impl<'a> From<Cow<'a, str>> for CompactStr {
+    fn from(s: Cow<'a, str>) -> Self {
+        CompactStr::new(s)
     }
 }
 

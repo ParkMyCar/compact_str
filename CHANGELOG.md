@@ -5,8 +5,13 @@
     * Implemented in [`#62 impl From<Cow<'_, str>> for CompactStr`](https://github.com/ParkMyCar/compact_str/pull/62)
 
 
+# 0.3.1
+### March 1, 2022
+* impl `From<Cow<str>>` for `CompactStr`
+    * Implemented in [`#62 impl From<Cow<'_, str>> for CompactStr`](https://github.com/ParkMyCar/compact_str/pull/62)
+
 # 0.3.0
-### February 27, 2021
+### February 27, 2022
 * Add `CompactStr::from_utf8(...)` API
     * Implemented in [`#57 feature: Add from_utf8 API`](https://github.com/ParkMyCar/compact_str/pull/57)
 * Changed the heap variant from an atomically reference counted string, to a normal heap allocated string

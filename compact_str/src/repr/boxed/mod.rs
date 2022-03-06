@@ -11,8 +11,8 @@ use inner::BoxStringInner;
 
 #[repr(C)]
 pub struct BoxString {
-    len: usize,
     ptr: ptr::NonNull<BoxStringInner>,
+    len: usize,
 }
 unsafe impl Sync for BoxString {}
 unsafe impl Send for BoxString {}

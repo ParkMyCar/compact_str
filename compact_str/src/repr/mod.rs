@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::iter::Extend;
 use std::mem::ManuallyDrop;
 use std::str::Utf8Error;
@@ -323,6 +324,12 @@ impl<'a> Extend<&'a str> for Repr {
 
 impl Extend<Box<str>> for Repr {
     fn extend<T: IntoIterator<Item = Box<str>>>(&mut self, iter: T) {
+        iter.into_iter().for_each(move |s| self.push_str(&s));
+    }
+}
+
+impl<'a> Extend<Cow<'a, str>> for Repr {
+    fn extend<T: IntoIterator<Item = Cow<'a, str>>>(&mut self, iter: T) {
         iter.into_iter().for_each(move |s| self.push_str(&s));
     }
 }

@@ -652,6 +652,12 @@ impl Extend<Box<str>> for CompactStr {
     }
 }
 
+impl<'a> Extend<Cow<'a, str>> for CompactStr {
+    fn extend<T: IntoIterator<Item = Cow<'a, str>>>(&mut self, iter: T) {
+        iter.into_iter().for_each(move |s| self.push_str(&s));
+    }
+}
+
 impl Extend<String> for CompactStr {
     fn extend<T: IntoIterator<Item = String>>(&mut self, iter: T) {
         self.repr.extend(iter)

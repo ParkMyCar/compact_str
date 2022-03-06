@@ -99,6 +99,22 @@ proptest! {
 
     #[test]
     #[cfg_attr(miri, ignore)]
+    fn test_from_lossy_cow_roundtrips(bytes in proptest::collection::vec(any::<u8>(), 0..80)) {
+        let cow = String::from_utf8_lossy(&bytes[..]);
+        let compact = CompactStr::from(cow.clone());
+        prop_assert_eq!(cow, compact);
+    }
+
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_from_lossy_cow_allocated_properly(bytes in proptest::collection::vec(any::<u8>(), 0..80)) {
+        let cow = String::from_utf8_lossy(&bytes[..]);
+        let compact = CompactStr::from(cow);
+        assert_allocated_properly(&compact);
+    }
+
+    #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_reserve_and_write_bytes(word in rand_unicode()) {
         let mut compact = CompactStr::default();
         prop_assert!(compact.is_empty());

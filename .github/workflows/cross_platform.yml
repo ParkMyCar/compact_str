@@ -74,6 +74,22 @@ jobs:
           command: test
           args: --release --all-features --manifest-path=compact_str/Cargo.toml --target i686-unknown-linux-gnu
 
+  linux_mips_32bit:
+    name: Linux MIPS Big Endian 32-bit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: mips-unknown-linux-gnu
+          override: true
+      - uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: test
+          args: --release --all-features --manifest-path=compact_str/Cargo.toml --target mips-unknown-linux-gnu
+
   linux_mips_le_32bit:
     name: Linux MIPS Little Endian 32-bit
     runs-on: ubuntu-latest
@@ -89,6 +105,22 @@ jobs:
           use-cross: true
           command: test
           args: --release --all-features --manifest-path=compact_str/Cargo.toml --target mipsel-unknown-linux-gnu
+
+  linux_powerpc_64bit:
+    name: Linux PowerPC Big Endian 64-bit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: powerpc64-unknown-linux-gnu
+          override: true
+      - uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: test
+          args: --release --all-features --manifest-path=compact_str/Cargo.toml --target powerpc64-unknown-linux-gnu -- --include-ignored
 
   linux_powerpc_le_64bit:
     name: Linux PowerPC Little Endian 64-bit

@@ -1,4 +1,9 @@
 # Upcoming
+* impl `Extend<Cow<'_, str>>` for `CompactStr`
+    * Implemented in [`#64 feature: impl Extend<Cow<'_, str>> for CompactStr`](https://github.com/ParkMyCar/compact_str/pull/64)
+* impl `From<Cow<'_, str>>` for `CompactStr`
+    * Implemented in [`#62 impl From<Cow<'_, str>> for CompactStr`](https://github.com/ParkMyCar/compact_str/pull/62)
+
 
 # 0.3.0
 ### February 27, 2021

@@ -532,6 +532,12 @@ impl PartialEq<CompactStr> for &str {
     }
 }
 
+impl<'a> PartialEq<CompactStr> for Cow<'a, str> {
+    fn eq(&self, other: &CompactStr) -> bool {
+        *self == other.as_str()
+    }
+}
+
 impl Ord for CompactStr {
     fn cmp(&self, other: &Self) -> Ordering {
         self.as_str().cmp(other.as_str())
@@ -649,6 +655,12 @@ impl<'a> Extend<&'a str> for CompactStr {
 impl Extend<Box<str>> for CompactStr {
     fn extend<T: IntoIterator<Item = Box<str>>>(&mut self, iter: T) {
         self.repr.extend(iter)
+    }
+}
+
+impl<'a> Extend<Cow<'a, str>> for CompactStr {
+    fn extend<T: IntoIterator<Item = Cow<'a, str>>>(&mut self, iter: T) {
+        iter.into_iter().for_each(move |s| self.push_str(&s));
     }
 }
 

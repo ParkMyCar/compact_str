@@ -1,20 +1,10 @@
-use core::mem;
-
 // use super::arc::ArcString;
 use super::boxed::BoxString;
-use super::{
-    HEAP_MASK,
-    MAX_SIZE,
-};
-
-const PADDING_SIZE: usize = MAX_SIZE - mem::size_of::<BoxString>();
-const PADDING: [u8; PADDING_SIZE] = [HEAP_MASK; PADDING_SIZE];
 
 #[repr(C)]
 #[derive(Debug, Clone)]
 pub struct HeapString {
     pub string: BoxString,
-    padding: [u8; PADDING_SIZE],
 }
 
 impl HeapString {
@@ -24,29 +14,23 @@ impl HeapString {
     /// `HeapString::with_additional(...)`
     #[inline]
     pub fn new(text: &str) -> Self {
-        let padding = PADDING;
         let string = BoxString::new(text);
-
-        HeapString { padding, string }
+        HeapString { string }
     }
 
     /// Creates a `HeapString` from the provided `text` and allocates the underlying buffer with
     /// `additional` capacity
     #[inline]
     pub fn with_additional(text: &str, additional: usize) -> Self {
-        let padding = PADDING;
         let string = BoxString::with_additional(text, additional);
-
-        HeapString { padding, string }
+        HeapString { string }
     }
 
     /// Creates a `HeapString` with the provided capacity.
     #[inline]
     pub fn with_capacity(capacity: usize) -> Self {
-        let padding = PADDING;
         let string = BoxString::with_capacity(capacity);
-
-        HeapString { padding, string }
+        HeapString { string }
     }
 
     /// Makes a mutable reference to the underlying buffer.
@@ -67,10 +51,8 @@ impl HeapString {
 impl From<String> for HeapString {
     #[inline]
     fn from(s: String) -> Self {
-        let padding = PADDING;
         let string = BoxString::from(s.as_str());
-
-        HeapString { padding, string }
+        HeapString { string }
     }
 }
 

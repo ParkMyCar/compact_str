@@ -1,10 +1,12 @@
 use core::iter::Extend;
 use core::{
     fmt,
-    mem,
     ptr,
     str,
 };
+
+mod capacity;
+use capacity::Capacity;
 
 mod inner;
 use inner::BoxStringInner;
@@ -13,6 +15,7 @@ use inner::BoxStringInner;
 pub struct BoxString {
     ptr: ptr::NonNull<BoxStringInner>,
     len: usize,
+    cap: Capacity,
 }
 unsafe impl Sync for BoxString {}
 unsafe impl Send for BoxString {}
@@ -32,15 +35,18 @@ impl BoxString {
         // length. We also know they're non-overlapping because `dest` is newly allocated
         unsafe { buffer_ptr.copy_from_nonoverlapping(text.as_ptr(), len) };
 
-        BoxString { len, ptr }
+        let cap = Capacity::new();
+
+        BoxString { len, ptr, cap }
     }
 
     #[inline]
     pub fn with_capacity(capacity: usize) -> Self {
         let len = 0;
         let ptr = BoxStringInner::with_capacity(capacity);
+        let cap = Capacity::new();
 
-        BoxString { len, ptr }
+        BoxString { len, ptr, cap }
     }
 
     #[inline]
@@ -367,4 +373,4 @@ mod tests {
     }
 }
 
-crate::asserts::assert_size!(BoxString, 2 * mem::size_of::<usize>());
+crate::asserts::assert_size_eq!(BoxString, String);

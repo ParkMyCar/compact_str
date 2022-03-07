@@ -24,6 +24,7 @@ impl BoxString {
     #[inline]
     pub fn new(text: &str) -> Self {
         let len = text.len();
+        let cap = Capacity::new(len).unwrap();
         let mut ptr = BoxStringInner::with_capacity(len);
 
         // SAFETY: We just created the `BoxStringInner` so we know the pointer is properly aligned,
@@ -35,16 +36,14 @@ impl BoxString {
         // length. We also know they're non-overlapping because `dest` is newly allocated
         unsafe { buffer_ptr.copy_from_nonoverlapping(text.as_ptr(), len) };
 
-        let cap = Capacity::new();
-
         BoxString { len, ptr, cap }
     }
 
     #[inline]
     pub fn with_capacity(capacity: usize) -> Self {
         let len = 0;
+        let cap = Capacity::new(capacity).unwrap();
         let ptr = BoxStringInner::with_capacity(capacity);
-        let cap = Capacity::new();
 
         BoxString { len, ptr, cap }
     }

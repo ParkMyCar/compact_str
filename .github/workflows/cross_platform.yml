@@ -120,7 +120,7 @@ jobs:
         with:
           use-cross: true
           command: test
-          args: --release --all-features --manifest-path=compact_str/Cargo.toml --target powerpc-unknown-linux-gnu -- --include-ignored
+          args: --release --all-features --manifest-path=compact_str/Cargo.toml --target powerpc-unknown-linux-gnu
 
   linux_powerpc_le_64bit:
     name: Linux PowerPC Little Endian 64-bit

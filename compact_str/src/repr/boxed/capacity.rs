@@ -2,21 +2,44 @@ use crate::repr::HEAP_MASK;
 
 // how many bytes a `usize` occupies
 const USIZE_SIZE: usize = core::mem::size_of::<usize>();
-
-const SPACE_FOR_CAPACITY: usize = USIZE_SIZE - 1;
 // state that describes the capacity as being stored on the heap
-const CAPACITY_IS_ON_THE_HEAP: [u8; USIZE_SIZE] = [0b11111111; USIZE_SIZE];
+const CAPACITY_IS_ON_THE_HEAP: [u8; USIZE_SIZE] = [HEAP_MASK; USIZE_SIZE];
 
-const FIRST_INVALID_VALUE: usize = (1 << SPACE_FOR_CAPACITY * 8) - 1;
+// how many bytes we can use for capacity
+const SPACE_FOR_CAPACITY: usize = USIZE_SIZE - 1;
+// the maximum value we're able to store, e.g. on 64-bit arch this is 2^56 - 2
+//
+// note: Preferably we'd used usize.pow(..) here, but that's not a `const fn`, so we need to use
+// bitshift operators, and there's a lint against using them in this pattern, which IMO isn't a
+// great lint
+#[allow(clippy::precedence)]
+const MAX_VALUE: usize = (1 << SPACE_FOR_CAPACITY * 8) - 2;
 
-#[derive(Debug, PartialEq, Eq)]
+/// An integer type that uses `core::mem::size_of::<usize>() - 1` bytes to store the capacity of
+/// a heap buffer.
+///
+/// Assumming a 64-bit arch, a [`super::BoxString`] uses 8 bytes for a pointer, 8 bytes for a
+/// length, and then needs 1 byte for a discriminant. We need to store the capacity somewhere, and
+/// we could store it on the heap, but we also have 7 unused bytes. [`Capacity`] handles storing a
+/// value in these 7 bytes, returning an error if it's not possible, at which point we'll store the
+/// capacity on the heap.
+///
+/// # Max Values
+/// * __64-bit:__ `(2 ^ (7 * 8)) - 2 = 72_057_594_037_927_934 ~= 64 petabytes`
+/// * __32-bit:__ `(2 ^ (3 * 8)) - 2 = 16_777_214             ~= 16 megabytes`
+///
+/// Practically speaking, on a 64-bit architecture we'll never need to store the capacity on the
+/// heap, because with it's impossible to create a string that is 64 petabytes or larger. But for
+/// 32-bit architectures we need to be able to store a capacity larger than 16 megabytes, since a
+/// string larger than 16 megabytes probably isn't that uncommon.
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Capacity {
     _buf: [u8; USIZE_SIZE],
 }
 
 impl Capacity {
     pub const fn new(capacity: usize) -> Result<Self, Self> {
-        if capacity >= FIRST_INVALID_VALUE {
+        if capacity > MAX_VALUE {
             // if we need the last byte to encode this capacity then we need to put the capacity on
             // the heap. return an Error so `BoxString` can do the right thing
             Err(Capacity {
@@ -31,6 +54,7 @@ impl Capacity {
         }
     }
 
+    #[allow(dead_code)]
     pub fn as_usize(&self) -> Result<usize, ()> {
         if self._buf == CAPACITY_IS_ON_THE_HEAP {
             Err(())

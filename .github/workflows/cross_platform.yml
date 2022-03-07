@@ -106,21 +106,21 @@ jobs:
           command: test
           args: --release --all-features --manifest-path=compact_str/Cargo.toml --target mipsel-unknown-linux-gnu
 
-  linux_powerpc_64bit:
-    name: Linux PowerPC Big Endian 64-bit
+  linux_powerpc_bit:
+    name: Linux PowerPC Big Endian 32-bit
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-          target: powerpc64-unknown-linux-gnu
+          target: powerpc-unknown-linux-gnu
           override: true
       - uses: actions-rs/cargo@v1
         with:
           use-cross: true
           command: test
-          args: --release --all-features --manifest-path=compact_str/Cargo.toml --target powerpc64-unknown-linux-gnu -- --include-ignored
+          args: --release --all-features --manifest-path=compact_str/Cargo.toml --target powerpc-unknown-linux-gnu -- --include-ignored
 
   linux_powerpc_le_64bit:
     name: Linux PowerPC Little Endian 64-bit

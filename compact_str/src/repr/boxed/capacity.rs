@@ -13,7 +13,7 @@ const SPACE_FOR_CAPACITY: usize = USIZE_SIZE - 1;
 // bitshift operators, and there's a lint against using them in this pattern, which IMO isn't a
 // great lint
 #[allow(clippy::precedence)]
-const MAX_VALUE: usize = (1 << SPACE_FOR_CAPACITY * 8) - 2;
+pub const MAX_VALUE: usize = (1 << SPACE_FOR_CAPACITY * 8) - 2;
 
 /// An integer type that uses `core::mem::size_of::<usize>() - 1` bytes to store the capacity of
 /// a heap buffer.
@@ -54,6 +54,12 @@ impl Capacity {
         }
     }
 
+    pub const unsafe fn new_unchecked(capacity: usize) -> Self {
+        let mut bytes = capacity.to_le_bytes();
+        bytes[core::mem::size_of::<usize>() - 1] = HEAP_MASK;
+        Capacity { _buf: bytes }
+    }
+
     #[allow(dead_code)]
     pub fn as_usize(&self) -> Result<usize, ()> {
         if self._buf == CAPACITY_IS_ON_THE_HEAP {
@@ -69,6 +75,17 @@ impl Capacity {
             }
             Ok(usize::from_le_bytes(usize_buf))
         }
+    }
+
+    #[inline(always)]
+    pub unsafe fn as_usize_unchecked(&self) -> usize {
+        let mut usize_buf = [0u8; USIZE_SIZE];
+        core::ptr::copy_nonoverlapping(
+            self._buf.as_ptr(),
+            usize_buf.as_mut_ptr(),
+            SPACE_FOR_CAPACITY,
+        );
+        usize::from_le_bytes(usize_buf)
     }
 }
 

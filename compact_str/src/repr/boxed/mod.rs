@@ -76,7 +76,7 @@ impl BoxString {
             Ok(cap) => {
                 let ptr = inner::inline_capacity::alloc(capacity);
                 (cap, ptr)
-            },
+            }
             Err(cap) => {
                 let ptr = inner::heap_capacity::alloc(capacity);
                 // write our capacity onto the heap
@@ -165,7 +165,7 @@ impl BoxString {
                     };
                     // interpret those bytes as a usize
                     usize::from_le_bytes(usize_buf)
-                },
+                }
             }
         }
     }
@@ -244,17 +244,15 @@ impl BoxString {
             debug_assert!(self.cap.as_usize().is_ok());
 
             // SAFETY: Since we have an instance of `BoxStringInner` so we know the buffer is still
-            // valid. Also since we're on a 64-bit arch, it's practically impossible for our capacity
-            // to be stored on the heap
+            // valid. Also since we're on a 64-bit arch, it's practically impossible for our
+            // capacity to be stored on the heap
             unsafe { slice::from_raw_parts(self.ptr.as_ptr(), self.cap.as_usize_unchecked()) }
         }
         #[cfg(not(target_pointer_width = "64"))]
         {
             match self.cap.as_usize() {
                 // capacity is on the stack, so read the entire buffer!
-                Ok(cap) => {
-                    unsafe { slice::from_raw_parts(self.ptr.as_ptr(), cap) }
-                },
+                Ok(cap) => unsafe { slice::from_raw_parts(self.ptr.as_ptr(), cap) },
                 // capacity is on the heap, we need to read the capacity, and then read the buffer
                 // starting from an offset
                 Err(_) => {
@@ -272,7 +270,7 @@ impl BoxString {
                     // read `cap` bytes from our buffer, starting at an offset
                     let buf_start = unsafe { self.ptr.as_ptr().add(core::mem::size_of::<usize>()) };
                     unsafe { slice::from_raw_parts(buf_start, cap) }
-                },
+                }
             }
         }
     }
@@ -284,17 +282,15 @@ impl BoxString {
             debug_assert!(self.cap.as_usize().is_ok());
 
             // SAFETY: Since we have an instance of `BoxStringInner` so we know the buffer is still
-            // valid. Also since we're on a 64-bit arch, it's practically impossible for our capacity
-            // to be stored on the heap
+            // valid. Also since we're on a 64-bit arch, it's practically impossible for our
+            // capacity to be stored on the heap
             slice::from_raw_parts_mut(self.ptr.as_ptr(), self.cap.as_usize_unchecked())
         }
         #[cfg(not(target_pointer_width = "64"))]
         {
             match self.cap.as_usize() {
                 // capacity is on the stack, so read the entire buffer!
-                Ok(cap) => {
-                    slice::from_raw_parts_mut(self.ptr.as_ptr(), cap)
-                },
+                Ok(cap) => slice::from_raw_parts_mut(self.ptr.as_ptr(), cap),
                 // capacity is on the heap, we need to read the capacity, and then read the buffer
                 // starting from an offset
                 Err(_) => {
@@ -310,7 +306,7 @@ impl BoxString {
                     // read `cap` bytes from our buffer, starting at an offset
                     let buf_start = self.ptr.as_ptr().add(core::mem::size_of::<usize>());
                     slice::from_raw_parts_mut(buf_start, cap)
-                },
+                }
             }
         }
     }
@@ -324,9 +320,7 @@ impl BoxString {
 
         #[cfg(not(target_pointer_width = "64"))]
         match self.cap.as_usize() {
-            Ok(cap) => {
-                inner::inline_capacity::dealloc(self.ptr, cap)
-            },
+            Ok(cap) => inner::inline_capacity::dealloc(self.ptr, cap),
             Err(_) => {
                 // read our first few bytes to get our capacity
                 let mut usize_buf = [0u8; core::mem::size_of::<usize>()];
@@ -557,8 +551,7 @@ mod tests {
 
     // generates random unicode strings, of a given size
     fn rand_unicode(size: impl Into<SizeRange>) -> impl Strategy<Value = String> {
-        proptest::collection::vec(proptest::char::any(), size)
-            .prop_map(|v| v.into_iter().collect())
+        proptest::collection::vec(proptest::char::any(), size).prop_map(|v| v.into_iter().collect())
     }
 
     proptest! {

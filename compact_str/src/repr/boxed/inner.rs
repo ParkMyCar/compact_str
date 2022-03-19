@@ -4,13 +4,14 @@ pub type StrBuffer = [u8; UNKNOWN];
 pub mod heap_capacity {
     use core::ptr;
     use std::alloc;
+
     use super::StrBuffer;
 
     pub fn alloc(capacity: usize) -> ptr::NonNull<u8> {
         let layout = layout(capacity);
         debug_assert!(layout.size() > 0);
 
-        // SAFETY: `alloc(...)` has undefined behavior if the layout is zero-sized. We know the 
+        // SAFETY: `alloc(...)` has undefined behavior if the layout is zero-sized. We know the
         // layout can't be zero-sized though because we're always at least allocating one `usize`
         let raw_ptr = unsafe { alloc::alloc(layout) };
 
@@ -48,6 +49,7 @@ pub mod heap_capacity {
 pub mod inline_capacity {
     use core::ptr;
     use std::alloc;
+
     use super::StrBuffer;
 
     /// # Safety
@@ -57,7 +59,7 @@ pub mod inline_capacity {
         debug_assert!(layout.size() > 0);
 
         // SAFETY: `alloc(...)` has undefined behavior if the layout is zero-sized. We specify that
-        // `capacity` must be > 0 as a constraint to uphold the safety of this method. If capacity 
+        // `capacity` must be > 0 as a constraint to uphold the safety of this method. If capacity
         // is greater than 0, then our layout will be non-zero-sized.
         let raw_ptr = alloc::alloc(layout);
 

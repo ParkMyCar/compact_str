@@ -87,6 +87,11 @@ impl Capacity {
         );
         usize::from_le_bytes(usize_buf)
     }
+
+    #[inline(always)]
+    pub fn is_heap(&self) -> bool {
+        self._buf == CAPACITY_IS_ON_THE_HEAP
+    }
 }
 
 #[cfg(test)]

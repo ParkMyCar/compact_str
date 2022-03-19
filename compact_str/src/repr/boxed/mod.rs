@@ -11,6 +11,8 @@ use capacity::Capacity;
 
 mod inner;
 
+const MIN_SIZE: usize = core::mem::size_of::<usize>() / 2;
+
 #[repr(C)]
 pub struct BoxString {
     ptr: ptr::NonNull<u8>,
@@ -29,7 +31,7 @@ impl BoxString {
         //
         // Note: practically we should never try to create an empty `BoxString`, since we inline
         // short strings
-        let capacity = core::cmp::max(len, core::mem::size_of::<usize>() / 2);
+        let capacity = core::cmp::max(len, MIN_SIZE);
 
         // SAFETY: `Self::alloc_ptr(...)` requires that capacity is non-zero. Above we set capacity
         // to be at least size_of::<usize>, so we know it'll be non-zero.
@@ -38,7 +40,18 @@ impl BoxString {
         // SAFETY: We know both `src` and `dest` are valid for respectively reads and writes of
         // length `len` because `len` comes from `src`, and `dest` was allocated to be at least that
         // length. We also know they're non-overlapping because `dest` is newly allocated
+        #[cfg(target_pointer_width = "64")]
         unsafe { ptr.as_ptr().copy_from_nonoverlapping(text.as_ptr(), len) };
+
+        #[cfg(not(target_pointer_width = "64"))]
+        {
+            let write_ptr = if cap.is_heap() {
+                unsafe { ptr.as_ptr().add(core::mem::size_of::<usize>()) }
+            } else {
+                ptr.as_ptr()
+            };
+            unsafe { write_ptr.copy_from_nonoverlapping(text.as_ptr(), len) };
+        }
 
         BoxString { len, ptr, cap }
     }
@@ -51,7 +64,7 @@ impl BoxString {
         //
         // Note: practically we should never try to create an empty `BoxString`, since we inline
         // short strings
-        let capacity = core::cmp::max(capacity, core::mem::size_of::<usize>() / 2);
+        let capacity = core::cmp::max(capacity, MIN_SIZE);
 
         // SAFETY: `Self::alloc_ptr(...)` requires that capacity is non-zero. Above we set capacity
         // to be at least size_of::<usize>, so we know it'll be non-zero.

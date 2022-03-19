@@ -576,17 +576,17 @@ mod tests {
         }
     }
 
-    // proptest! {
-    //     // The next line modifies the number of tests.
-    //     #![proptest_config(ProptestConfig::with_cases(16))]
+    proptest! {
+        // The next line modifies the number of tests.
+        #![proptest_config(ProptestConfig::with_cases(16))]
 
-    //     #[test]
-    //     #[cfg_attr(miri, ignore)]
-    //     fn test_large_strings_roundtrip(word in rand_unicode(SIXTEEN_MB - 4..SIXTEEN_MB + 4)) {
-    //         let box_str = BoxString::from(word.as_str());
-    //         prop_assert_eq!(&word, box_str.as_str());
-    //     }
-    // }
+        #[test]
+        #[cfg_attr(miri, ignore)]
+        fn test_large_strings_roundtrip(word in rand_unicode(SIXTEEN_MB - 4..SIXTEEN_MB + 4)) {
+            let box_str = BoxString::from(word.as_str());
+            prop_assert_eq!(&word, box_str.as_str());
+        }
+    }
 }
 
 crate::asserts::assert_size_eq!(BoxString, String);

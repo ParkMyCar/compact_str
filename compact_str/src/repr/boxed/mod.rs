@@ -388,8 +388,8 @@ impl From<String> for BoxString {
             Ok(cap) => {
                 let len = s.len();
                 let raw_ptr = s.as_ptr() as *mut u8;
-                
-                let ptr = ptr::NonNull::new(raw_ptr).expect("string with capacity has null ptr?");    
+
+                let ptr = ptr::NonNull::new(raw_ptr).expect("string with capacity has null ptr?");
                 // "forget" `s` so we don't call Drop and deallocate the underlying buffer
                 core::mem::forget(s);
                 // create a new BoxString with our parts!
@@ -585,23 +585,88 @@ mod tests {
     }
 
     #[test]
+    fn test_32_bit_max_inline_cap_with_modification() {
+        // 65 is the ASCII value of 'A'
+        // `SIXTEEN_MB - 2` is the max value we can store for capacity inline, when on 32-bit archs
+        let word_buf = vec![65; SIXTEEN_MB - 2];
+        let string = String::from_utf8(word_buf).unwrap();
+
+        let mut box_string = BoxString::new(&string);
+
+        // make sure the capacity was able to be stored inline
+        assert_eq!(box_string.cap.as_usize(), Ok(SIXTEEN_MB - 2));
+        // assert the strings are equal
+        assert_eq!(&string, box_string.as_str());
+
+        // push a single character
+        box_string.push('!');
+        // assert the string is still correct
+        assert_eq!(&format!("{}!", string), box_string.as_str());
+
+        // on 32-bit archs the capacity will be stored on the heap
+        #[cfg(target_pointer_width = "32")]
+        assert!(box_string.cap.as_usize().is_err());
+        // on 64-bit archs it's still inlined
+        #[cfg(not(target_pointer_width = "32"))]
+        assert!(box_string.cap.as_usize().is_ok());
+
+        // push a string
+        box_string.push_str("hello!");
+
+        // on 32-bit archs the capacity will still be stored on the heap, since the capacity hasn't changed
+        #[cfg(target_pointer_width = "32")]
+        assert!(box_string.cap.as_usize().is_err());
+        // on 64-bit archs it's still inlined
+        #[cfg(not(target_pointer_width = "32"))]
+        assert!(box_string.cap.as_usize().is_ok());
+
+        // assert the string is still correct
+        assert_eq!(&format!("{}!hello!", string), box_string.as_str());
+    }
+
+    #[test]
     fn test_32_bit_min_heap_cap() {
         // 65 is the ASCII value of 'A'
         // `SIXTEEN_MB - 1` is the min value for capacity that gets stored on the heap
         let word_buf = vec![65; SIXTEEN_MB - 1];
         let string = String::from_utf8(word_buf).unwrap();
 
-        let box_string = BoxString::new(&string);
+        let mut box_string = BoxString::new(&string);
 
         // on 32-bit archs the capacity will be stored on the heap
         #[cfg(target_pointer_width = "32")]
         assert!(box_string.cap.as_usize().is_err());
-
+        // on 64-bit archs it's still inlined
         #[cfg(not(target_pointer_width = "32"))]
         assert_eq!(box_string.cap.as_usize(), Ok(SIXTEEN_MB - 1));
 
         // assert the strings are equal
         assert_eq!(&string, box_string.as_str());
+
+         // push a single character
+         box_string.push('!');
+         // assert the string is still correct
+         assert_eq!(&format!("{}!", string), box_string.as_str());
+
+         // on 32-bit archs the capacity will be stored on the heap
+         #[cfg(target_pointer_width = "32")]
+         assert!(box_string.cap.as_usize().is_err());
+         // on 64-bit archs it's still inlined
+         #[cfg(not(target_pointer_width = "32"))]
+         assert!(box_string.cap.as_usize().is_ok());
+
+         // push a string
+         box_string.push_str("hello!");
+
+         // on 32-bit archs the capacity will still be stored on the heap, since the capacity hasn't changed
+         #[cfg(target_pointer_width = "32")]
+         assert!(box_string.cap.as_usize().is_err());
+         // on 64-bit archs it's still inlined
+         #[cfg(not(target_pointer_width = "32"))]
+         assert!(box_string.cap.as_usize().is_ok());
+
+         // assert the string is still correct
+        assert_eq!(&format!("{}!hello!", string), box_string.as_str());
     }
 
     // generates random unicode strings, of a given size
@@ -623,18 +688,6 @@ mod tests {
             let s: String = word.clone();
             let box_str = BoxString::from(s);
 
-            prop_assert_eq!(&word, box_str.as_str());
-        }
-    }
-
-    proptest! {
-        // The next line modifies the number of tests.
-        #![proptest_config(ProptestConfig::with_cases(16))]
-
-        #[test]
-        #[cfg_attr(miri, ignore)]
-        fn test_large_strings_roundtrip(word in rand_unicode(SIXTEEN_MB - 4..SIXTEEN_MB + 4)) {
-            let box_str = BoxString::from(word.as_str());
             prop_assert_eq!(&word, box_str.as_str());
         }
     }

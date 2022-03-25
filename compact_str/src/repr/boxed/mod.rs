@@ -41,7 +41,9 @@ impl BoxString {
         // length `len` because `len` comes from `src`, and `dest` was allocated to be at least that
         // length. We also know they're non-overlapping because `dest` is newly allocated
         #[cfg(target_pointer_width = "64")]
-        unsafe { ptr.as_ptr().copy_from_nonoverlapping(text.as_ptr(), len) };
+        unsafe {
+            ptr.as_ptr().copy_from_nonoverlapping(text.as_ptr(), len)
+        };
 
         #[cfg(not(target_pointer_width = "64"))]
         {
@@ -394,7 +396,7 @@ impl From<String> for BoxString {
                 core::mem::forget(s);
                 // create a new BoxString with our parts!
                 BoxString { len, ptr, cap }
-            },
+            }
             Err(_) => BoxString::new(s.as_str()),
         }
     }
@@ -613,7 +615,8 @@ mod tests {
         // push a string
         box_string.push_str("hello!");
 
-        // on 32-bit archs the capacity will still be stored on the heap, since the capacity hasn't changed
+        // on 32-bit archs the capacity will still be stored on the heap, since the capacity hasn't
+        // changed
         #[cfg(target_pointer_width = "32")]
         assert!(box_string.cap.as_usize().is_err());
         // on 64-bit archs it's still inlined
@@ -643,29 +646,30 @@ mod tests {
         // assert the strings are equal
         assert_eq!(&string, box_string.as_str());
 
-         // push a single character
-         box_string.push('!');
-         // assert the string is still correct
-         assert_eq!(&format!("{}!", string), box_string.as_str());
+        // push a single character
+        box_string.push('!');
+        // assert the string is still correct
+        assert_eq!(&format!("{}!", string), box_string.as_str());
 
-         // on 32-bit archs the capacity will be stored on the heap
-         #[cfg(target_pointer_width = "32")]
-         assert!(box_string.cap.as_usize().is_err());
-         // on 64-bit archs it's still inlined
-         #[cfg(not(target_pointer_width = "32"))]
-         assert!(box_string.cap.as_usize().is_ok());
+        // on 32-bit archs the capacity will be stored on the heap
+        #[cfg(target_pointer_width = "32")]
+        assert!(box_string.cap.as_usize().is_err());
+        // on 64-bit archs it's still inlined
+        #[cfg(not(target_pointer_width = "32"))]
+        assert!(box_string.cap.as_usize().is_ok());
 
-         // push a string
-         box_string.push_str("hello!");
+        // push a string
+        box_string.push_str("hello!");
 
-         // on 32-bit archs the capacity will still be stored on the heap, since the capacity hasn't changed
-         #[cfg(target_pointer_width = "32")]
-         assert!(box_string.cap.as_usize().is_err());
-         // on 64-bit archs it's still inlined
-         #[cfg(not(target_pointer_width = "32"))]
-         assert!(box_string.cap.as_usize().is_ok());
+        // on 32-bit archs the capacity will still be stored on the heap, since the capacity hasn't
+        // changed
+        #[cfg(target_pointer_width = "32")]
+        assert!(box_string.cap.as_usize().is_err());
+        // on 64-bit archs it's still inlined
+        #[cfg(not(target_pointer_width = "32"))]
+        assert!(box_string.cap.as_usize().is_ok());
 
-         // assert the string is still correct
+        // assert the string is still correct
         assert_eq!(&format!("{}!hello!", string), box_string.as_str());
     }
 

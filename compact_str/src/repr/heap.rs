@@ -39,6 +39,12 @@ impl HeapString {
         HeapString { string }
     }
 
+    #[inline]
+    pub fn from_box_str(b: Box<str>) -> Self {
+        let string = BoxString::from_box_str(b);
+        HeapString { string }
+    }
+
     /// Makes a mutable reference to the underlying buffer.
     ///
     /// # Invariants

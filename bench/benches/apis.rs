@@ -1,5 +1,7 @@
 //! Benchmarks for various APIs to make sure `CompactStr` is at least no slower than `String`
 
+use std::time::Instant;
+
 use compact_str::CompactStr;
 use criterion::{
     black_box,
@@ -7,7 +9,6 @@ use criterion::{
     criterion_main,
     Criterion,
 };
-use std::time::Instant;
 
 static VERY_LONG_STR: &str = include_str!("../data/moby10b.txt");
 

@@ -583,6 +583,13 @@ impl<'a> From<Cow<'a, str>> for CompactStr {
     }
 }
 
+impl From<Box<str>> for CompactStr {
+    fn from(b: Box<str>) -> Self {
+        let repr = Repr::from_box_str(b);
+        CompactStr { repr }
+    }
+}
+
 impl FromStr for CompactStr {
     type Err = core::convert::Infallible;
     fn from_str(s: &str) -> Result<CompactStr, Self::Err> {

@@ -99,8 +99,13 @@ impl Repr {
     }
 
     #[inline]
-    pub fn from_box_str(s: Box<str>) -> Self {
-        todo!()
+    pub fn from_box_str(b: Box<str>) -> Self {
+        if b.len() == 0 {
+            EMPTY
+        } else {
+            let heap = ManuallyDrop::new(HeapString::from_box_str(b));
+            Repr { heap }
+        }
     }
 
     #[inline]

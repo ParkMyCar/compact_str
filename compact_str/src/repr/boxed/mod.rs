@@ -134,6 +134,7 @@ impl BoxString {
     #[inline]
     pub fn from_string(s: String) -> Self {
         match Capacity::new(s.capacity()) {
+            // Note: We should never hit this case when using BoxString with CompactStr
             Ok(_) if s.capacity() == 0 => BoxString::new(""),
             Ok(cap) => {
                 let len = s.len();
@@ -146,6 +147,25 @@ impl BoxString {
                 BoxString { len, ptr, cap }
             }
             Err(_) => BoxString::new(s.as_str()),
+        }
+    }
+
+    #[inline]
+    pub fn from_box_str(b: Box<str>) -> Self {
+        match Capacity::new(b.len()) {
+            // Note: We should never hit this case when using BoxString with CompactStr
+            Ok(_) if b.len() == 0 => BoxString::new(""),
+            Ok(cap) => {
+                let len = b.len();
+                let raw_ptr = b.as_ptr() as *mut u8;
+
+                let ptr = ptr::NonNull::new(raw_ptr).expect("string with capacity has null ptr?");
+                // "forget" `s` so we don't call Drop and deallocate the underlying buffer
+                core::mem::forget(b);
+                // create a new BoxString with our parts!
+                BoxString { len, ptr, cap }
+            }
+            Err(_) => BoxString::new(&b),
         }
     }
 

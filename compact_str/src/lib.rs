@@ -566,7 +566,8 @@ impl<'a> From<&'a str> for CompactStr {
 
 impl From<String> for CompactStr {
     fn from(s: String) -> Self {
-        CompactStr::new(&s)
+        let repr = Repr::from_string(s);
+        CompactStr { repr }
     }
 }
 

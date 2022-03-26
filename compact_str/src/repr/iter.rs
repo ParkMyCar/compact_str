@@ -17,7 +17,7 @@ impl FromIterator<char> for Repr {
         // If the size hint indicates we can't store this inline, then create a heap string
         let (size_hint, _) = iter.size_hint();
         if size_hint > MAX_SIZE {
-            let heap = HeapString::from(iter.collect::<String>());
+            let heap = HeapString::from_string(iter.collect());
             return Repr {
                 heap: ManuallyDrop::new(heap),
             };
@@ -44,7 +44,7 @@ impl FromIterator<char> for Repr {
                 // extend heap with remaining characters
                 heap_buf.extend(iter);
 
-                let heap = HeapString::from(heap_buf);
+                let heap = HeapString::from_string(heap_buf);
                 return Repr {
                     heap: ManuallyDrop::new(heap),
                 };
@@ -98,7 +98,7 @@ where
             // extend heap with remaining strings
             heap_buf.extend(iter);
 
-            let heap = HeapString::from(heap_buf);
+            let heap = HeapString::from_string(heap_buf);
             return Repr {
                 heap: ManuallyDrop::new(heap),
             };

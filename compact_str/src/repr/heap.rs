@@ -33,6 +33,12 @@ impl HeapString {
         HeapString { string }
     }
 
+    #[inline]
+    pub fn from_string(s: String) -> Self {
+        let string = BoxString::from_string(s);
+        HeapString { string }
+    }
+
     /// Makes a mutable reference to the underlying buffer.
     ///
     /// # Invariants
@@ -45,14 +51,6 @@ impl HeapString {
     #[inline]
     pub unsafe fn set_len(&mut self, length: usize) {
         self.string.set_len(length)
-    }
-}
-
-impl From<String> for HeapString {
-    #[inline]
-    fn from(s: String) -> Self {
-        let string = BoxString::from(s.as_str());
-        HeapString { string }
     }
 }
 

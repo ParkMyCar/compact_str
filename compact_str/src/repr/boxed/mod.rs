@@ -131,6 +131,24 @@ impl BoxString {
         new
     }
 
+    #[inline]
+    pub fn from_string(s: String) -> Self {
+        match Capacity::new(s.capacity()) {
+            Ok(_) if s.capacity() == 0 => BoxString::new(""),
+            Ok(cap) => {
+                let len = s.len();
+                let raw_ptr = s.as_ptr() as *mut u8;
+
+                let ptr = ptr::NonNull::new(raw_ptr).expect("string with capacity has null ptr?");
+                // "forget" `s` so we don't call Drop and deallocate the underlying buffer
+                core::mem::forget(s);
+                // create a new BoxString with our parts!
+                BoxString { len, ptr, cap }
+            }
+            Err(_) => BoxString::new(s.as_str()),
+        }
+    }
+
     /// Reserve space for at least `additional` bytes
     #[inline]
     pub fn reserve(&mut self, additional: usize) {
@@ -382,26 +400,6 @@ impl From<&str> for BoxString {
     }
 }
 
-impl From<String> for BoxString {
-    #[inline]
-    fn from(s: String) -> Self {
-        match Capacity::new(s.capacity()) {
-            Ok(_) if s.capacity() == 0 => BoxString::new(""),
-            Ok(cap) => {
-                let len = s.len();
-                let raw_ptr = s.as_ptr() as *mut u8;
-
-                let ptr = ptr::NonNull::new(raw_ptr).expect("string with capacity has null ptr?");
-                // "forget" `s` so we don't call Drop and deallocate the underlying buffer
-                core::mem::forget(s);
-                // create a new BoxString with our parts!
-                BoxString { len, ptr, cap }
-            }
-            Err(_) => BoxString::new(s.as_str()),
-        }
-    }
-}
-
 impl Drop for BoxString {
     fn drop(&mut self) {
         unsafe { self.drop_inner() }
@@ -558,7 +556,7 @@ mod tests {
     #[test]
     fn test_from_string_parts() {
         let s = String::from("hello world!");
-        let box_string = BoxString::from(s.clone());
+        let box_string = BoxString::from_string(s.clone());
 
         assert_eq!(s.as_str(), box_string.as_str());
     }
@@ -566,7 +564,7 @@ mod tests {
     #[test]
     fn test_from_string_parts_empty() {
         let s = String::from("");
-        let box_string = BoxString::from(s.clone());
+        let box_string = BoxString::from_string(s.clone());
 
         assert_eq!(s.as_str(), box_string.as_str());
     }
@@ -690,7 +688,7 @@ mod tests {
         #[cfg_attr(miri, ignore)]
         fn test_from_string(word in rand_unicode(0..80)) {
             let s: String = word.clone();
-            let box_str = BoxString::from(s);
+            let box_str = BoxString::from_string(s);
 
             prop_assert_eq!(&word, box_str.as_str());
         }

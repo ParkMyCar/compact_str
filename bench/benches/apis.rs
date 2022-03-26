@@ -7,6 +7,7 @@ use criterion::{
     criterion_main,
     Criterion,
 };
+use std::time::Instant;
 
 static VERY_LONG_STR: &str = include_str!("../data/moby10b.txt");
 
@@ -111,6 +112,72 @@ fn compact_str_extend_chars_heap_20(c: &mut Criterion) {
             let mut compact = CompactStr::new("this is a long string that will start on the heap");
             compact.extend((0..20).map(|_| '!'));
         })
+    });
+}
+
+fn compact_str_from_string_inline(c: &mut Criterion) {
+    c.bench_function("compact_str_from_string_inline", |b| {
+        b.iter_custom(|iters| {
+            let mut durations = vec![];
+            for _ in 0..iters {
+                let word = String::from("I am short");
+
+                // only time how long it takes to go from String -> CompactStr
+                let start = Instant::now();
+                let c = CompactStr::from(word);
+                let duration = start.elapsed();
+
+                // explicitly drop _after_ we've finished timing
+                drop(c);
+
+                durations.push(duration);
+            }
+            durations.into_iter().sum()
+        });
+    });
+}
+
+fn compact_str_from_string_heap(c: &mut Criterion) {
+    c.bench_function("compact_str_from_string_heap", |b| {
+        b.iter_custom(|iters| {
+            let mut durations = vec![];
+            for _ in 0..iters {
+                let word = String::from("I am a long string, look at me!");
+
+                // only time how long it takes to go from String -> CompactStr
+                let start = Instant::now();
+                let c = CompactStr::from(word);
+                let duration = start.elapsed();
+
+                // explicitly drop _after_ we've finished timing
+                drop(c);
+
+                durations.push(duration);
+            }
+            durations.into_iter().sum()
+        });
+    });
+}
+
+fn compact_str_from_string_heap_long(c: &mut Criterion) {
+    c.bench_function("compact_str_from_string_heap_long", |b| {
+        b.iter_custom(|iters| {
+            let mut durations = vec![];
+            for _ in 0..iters {
+                let word = String::from(VERY_LONG_STR);
+
+                // only time how long it takes to go from String -> CompactStr
+                let start = Instant::now();
+                let c = CompactStr::from(word);
+                let duration = start.elapsed();
+
+                // explicitly drop _after_ we've finished timing
+                drop(c);
+
+                durations.push(duration);
+            }
+            durations.into_iter().sum()
+        });
     });
 }
 
@@ -221,6 +288,9 @@ criterion_group!(
     compact_str_extend_chars_short,
     compact_str_extend_chars_inline_to_heap_20,
     compact_str_extend_chars_heap_20,
+    compact_str_from_string_inline,
+    compact_str_from_string_heap,
+    compact_str_from_string_heap_long
 );
 criterion_group!(
     std_string,

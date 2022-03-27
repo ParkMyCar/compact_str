@@ -34,8 +34,8 @@ jobs:
       - uses: actions-rs/cargo@v1
         name: cargo test miri
         with:
-          command: test
-          args: --all-features --manifest-path=compact_str/Cargo.toml
+          command: miri
+          args: test --all-features --manifest-path=compact_str/Cargo.toml
 
   macos:
     name: macOS
@@ -58,8 +58,8 @@ jobs:
       - uses: actions-rs/cargo@v1
         name: cargo test miri
         with:
-          command: test
-          args: --all-features --manifest-path=compact_str/Cargo.toml
+          command: miri
+          args: test --all-features --manifest-path=compact_str/Cargo.toml
 
   linux_arm7:
     name: Linux ARMv7
@@ -82,8 +82,8 @@ jobs:
       - uses: actions-rs/cargo@v1
         name: cargo test miri
         with:
-          command: test
-          args: --all-features --manifest-path=compact_str/Cargo.toml
+          command: miri
+          args: test --all-features --manifest-path=compact_str/Cargo.toml
 
   linux_32bit:
     name: Linux 32-bit
@@ -107,8 +107,8 @@ jobs:
       - uses: actions-rs/cargo@v1
         name: cargo test miri
         with:
-          command: test
-          args: --all-features --manifest-path=compact_str/Cargo.toml -- target i686-unknown-linux-gnu
+          command: miri
+          args: test --all-features --manifest-path=compact_str/Cargo.toml --target i686-unknown-linux-gnu
 
   linux_mips_32bit:
     name: Linux MIPS Big Endian 32-bit
@@ -132,8 +132,8 @@ jobs:
       - uses: actions-rs/cargo@v1
         name: cargo test miri
         with:
-          command: test
-          args: --all-features --manifest-path=compact_str/Cargo.toml -- target mips-unknown-linux-gnu
+          command: miri
+          args: test --all-features --manifest-path=compact_str/Cargo.toml --target mips-unknown-linux-gnu
 
   linux_mips_le_32bit:
     name: Linux MIPS Little Endian 32-bit

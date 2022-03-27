@@ -140,45 +140,72 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+        name: Checkout Repo
       - uses: actions-rs/toolchain@v1
+        name: Install Rust
         with:
-          toolchain: stable
+          toolchain: nightly
           target: mipsel-unknown-linux-gnu
           override: true
+          components: miri
       - uses: actions-rs/cargo@v1
+        name: cargo test
         with:
           use-cross: true
           command: test
           args: --release --all-features --manifest-path=compact_str/Cargo.toml --target mipsel-unknown-linux-gnu
+      - uses: actions-rs/cargo@v1
+        name: cargo test miri
+        with:
+          command: miri
+          args: test --all-features --manifest-path=compact_str/Cargo.toml --target mipsel-unknown-linux-gnu
 
   linux_powerpc_bit:
     name: Linux PowerPC Big Endian 32-bit
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+        name: Checkout Repo
       - uses: actions-rs/toolchain@v1
+        name: Install Rust
         with:
-          toolchain: stable
+          toolchain: nightly
           target: powerpc-unknown-linux-gnu
           override: true
+          components: miri
       - uses: actions-rs/cargo@v1
+        name: cargo test
         with:
           use-cross: true
           command: test
           args: --release --all-features --manifest-path=compact_str/Cargo.toml --target powerpc-unknown-linux-gnu
+      - uses: actions-rs/cargo@v1
+        name: cargo test miri
+        with:
+          command: miri
+          args: test --all-features --manifest-path=compact_str/Cargo.toml --target powerpc-unknown-linux-gnu
 
   linux_powerpc_le_64bit:
     name: Linux PowerPC Little Endian 64-bit
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+        name: Checkout Repo
       - uses: actions-rs/toolchain@v1
+        name: Install Rust
         with:
-          toolchain: stable
+          toolchain: nightly
           target: powerpc64le-unknown-linux-gnu
           override: true
+          components: miri
       - uses: actions-rs/cargo@v1
+        name: cargo test
         with:
           use-cross: true
           command: test
           args: --release --all-features --manifest-path=compact_str/Cargo.toml --target powerpc64le-unknown-linux-gnu -- --include-ignored
+      - uses: actions-rs/cargo@v1
+        name: cargo test miri
+        with:
+          command: miri
+          args: test --all-features --manifest-path=compact_str/Cargo.toml --target powerpc64le-unknown-linux-gnu

@@ -82,10 +82,12 @@ pub struct CompactString {
 
 /// # DEPRECATED
 /// Renamed `CompactStr` to `CompactString`. Using the suffix "String" as opposed to "Str" more
-/// accurately reflects that we own the underlying string
+/// accurately reflects that we own the underlying string.
+/// 
+/// Type alias `CompactStr` will be removed in v0.5
 #[deprecated(
     since = "0.4.0",
-    note = "Renamed to CompactString, which more accurately reflects that it owns the underlying string"
+    note = "Renamed to CompactString, type alias will be removed in v0.5"
 )]
 pub type CompactStr = CompactString;
 

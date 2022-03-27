@@ -1,4 +1,5 @@
 # Upcoming
+* Rename `CompactStr` to `CompactString`, add deprecation note for `CompactStr`
 
 # 0.3.2
 ### March 27, 2022

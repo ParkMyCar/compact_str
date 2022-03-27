@@ -56,7 +56,7 @@ impl InlineString {
         InlineString { buffer }
     }
 
-    /// Creates an `InlineString` from raw parts without checking that it's valid UTF-8
+    /// Creates an [`InlineString`] from raw parts without checking that it's valid UTF-8
     #[inline]
     pub const unsafe fn from_parts(len: usize, mut buffer: [u8; MAX_SIZE]) -> Self {
         if len != MAX_SIZE {
@@ -89,7 +89,7 @@ impl InlineString {
 
     /// Provides a mutable reference to the underlying buffer
     ///
-    /// # Invariants
+    /// # Safety
     /// * Please see `super::Repr` for all invariants
     #[inline]
     pub unsafe fn as_mut_slice(&mut self) -> &mut [u8] {

@@ -15,7 +15,7 @@ fn rand_unicode() -> impl Strategy<Value = String> {
     proptest::collection::vec(proptest::char::any(), 0..80).prop_map(|v| v.into_iter().collect())
 }
 
-/// `proptest::Strategy` that generates `String`s with up to `len` bytes
+/// [`proptest::strategy::Strategy`] that generates [`String`]s with up to `len` bytes
 pub fn rand_unicode_bytes(len: usize) -> impl Strategy<Value = String> {
     proptest::collection::vec(proptest::char::any(), 0..len).prop_map(move |chars| {
         let mut len_utf8 = 0;

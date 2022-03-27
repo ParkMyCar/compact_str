@@ -1,4 +1,4 @@
-use compact_str::CompactStr;
+use compact_str::CompactString;
 use criterion::{
     criterion_group,
     criterion_main,
@@ -18,9 +18,9 @@ fn creation(c: &mut Criterion) {
 
     for word in words {
         group.bench_with_input(
-            BenchmarkId::new("CompactStr", word.len()),
+            BenchmarkId::new("CompactString", word.len()),
             &word,
-            |b, word| b.iter(|| CompactStr::new(word)),
+            |b, word| b.iter(|| CompactString::new(word)),
         );
         group.bench_with_input(BenchmarkId::new("SmolStr", word.len()), &word, |b, word| {
             b.iter(|| SmolStr::new(word))
@@ -48,9 +48,9 @@ fn cloning(c: &mut Criterion) {
         .collect();
 
     for word in words {
-        let compact = CompactStr::new(&word);
+        let compact = CompactString::new(&word);
         group.bench_with_input(
-            BenchmarkId::new("CompactStr", compact.len()),
+            BenchmarkId::new("CompactString", compact.len()),
             &compact,
             |b, compact| b.iter(|| compact.clone()),
         );
@@ -86,9 +86,9 @@ fn access(c: &mut Criterion) {
         .collect();
 
     for word in words {
-        let compact = CompactStr::new(&word);
+        let compact = CompactString::new(&word);
         group.bench_with_input(
-            BenchmarkId::new("CompactStr", compact.len()),
+            BenchmarkId::new("CompactString", compact.len()),
             &compact,
             |b, compact| b.iter(|| compact.as_str()),
         );

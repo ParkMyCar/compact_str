@@ -134,7 +134,7 @@ impl BoxString {
     #[inline]
     pub fn from_string(s: String) -> Self {
         match Capacity::new(s.capacity()) {
-            // Note: We should never hit this case when using BoxString with CompactStr
+            // Note: We should never hit this case when using BoxString with CompactString
             Ok(_) if s.capacity() == 0 => BoxString::new(""),
             Ok(cap) => {
                 let len = s.len();
@@ -153,7 +153,7 @@ impl BoxString {
     #[inline]
     pub fn from_box_str(b: Box<str>) -> Self {
         match Capacity::new(b.len()) {
-            // Note: We should never hit this case when using BoxString with CompactStr
+            // Note: We should never hit this case when using BoxString with CompactString
             Ok(_) if b.len() == 0 => BoxString::new(""),
             Ok(cap) => {
                 let len = b.len();

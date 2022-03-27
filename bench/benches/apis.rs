@@ -1,8 +1,8 @@
-//! Benchmarks for various APIs to make sure `CompactStr` is at least no slower than `String`
+//! Benchmarks for various APIs to make sure `CompactString` is at least no slower than `String`
 
 use std::time::Instant;
 
-use compact_str::CompactStr;
+use compact_str::CompactString;
 use criterion::{
     black_box,
     criterion_group,
@@ -14,7 +14,7 @@ static VERY_LONG_STR: &str = include_str!("../data/moby10b.txt");
 
 fn compact_str_inline_length(c: &mut Criterion) {
     let word = "i am short";
-    let compact_str = CompactStr::new(word);
+    let compact_str = CompactString::new(word);
     c.bench_function("inline length", |b| {
         b.iter(|| {
             let len = black_box(compact_str.len());
@@ -25,7 +25,7 @@ fn compact_str_inline_length(c: &mut Criterion) {
 
 fn compact_str_heap_length(c: &mut Criterion) {
     let word = "I am a very long string that will get allocated on the heap";
-    let compact_str = CompactStr::new(word);
+    let compact_str = CompactString::new(word);
     c.bench_function("heap length", |b| {
         b.iter(|| {
             let len = black_box(compact_str.len());
@@ -35,7 +35,7 @@ fn compact_str_heap_length(c: &mut Criterion) {
 }
 
 fn compact_str_very_big_heap_length(c: &mut Criterion) {
-    let compact_str = CompactStr::new(VERY_LONG_STR);
+    let compact_str = CompactString::new(VERY_LONG_STR);
     c.bench_function("very long heap length", |b| {
         b.iter(|| {
             let len = black_box(compact_str.len());
@@ -47,7 +47,7 @@ fn compact_str_very_big_heap_length(c: &mut Criterion) {
 fn compact_str_reserve_small(c: &mut Criterion) {
     c.bench_function("reserve small", |b| {
         b.iter(|| {
-            let mut compact_str = CompactStr::default();
+            let mut compact_str = CompactString::default();
             black_box(compact_str.reserve(10));
         })
     });
@@ -56,19 +56,19 @@ fn compact_str_reserve_small(c: &mut Criterion) {
 fn compact_str_reserve_large(c: &mut Criterion) {
     c.bench_function("reserve large", |b| {
         b.iter(|| {
-            let mut compact_str = CompactStr::default();
+            let mut compact_str = CompactString::default();
             black_box(compact_str.reserve(100));
         })
     });
 }
 
 fn compact_str_clone_small(c: &mut Criterion) {
-    let compact = CompactStr::new("i am short");
+    let compact = CompactString::new("i am short");
     c.bench_function("clone small", |b| b.iter(|| compact.clone()));
 }
 
 fn compact_str_clone_large_and_modify(c: &mut Criterion) {
-    let compact = CompactStr::new("I am a very long string that will get allocated on the heap");
+    let compact = CompactString::new("I am a very long string that will get allocated on the heap");
     c.bench_function("clone large", |b| {
         b.iter(|| {
             let mut clone = compact.clone();
@@ -83,7 +83,7 @@ fn compact_str_extend_chars_empty(c: &mut Criterion) {
     c.bench_function("extend chars empty", |b| {
         b.iter(|| {
             let mut compact =
-                CompactStr::new("I am a very long string that will get allocated on the heap");
+                CompactString::new("I am a very long string that will get allocated on the heap");
             compact.extend("".chars());
         })
     });
@@ -92,7 +92,7 @@ fn compact_str_extend_chars_empty(c: &mut Criterion) {
 fn compact_str_extend_chars_short(c: &mut Criterion) {
     c.bench_function("extend chars short", |b| {
         b.iter(|| {
-            let mut compact = CompactStr::new("hello");
+            let mut compact = CompactString::new("hello");
             compact.extend((0..10).map(|_| '!'));
         })
     });
@@ -101,7 +101,7 @@ fn compact_str_extend_chars_short(c: &mut Criterion) {
 fn compact_str_extend_chars_inline_to_heap_20(c: &mut Criterion) {
     c.bench_function("extend chars inline to heap, 20", |b| {
         b.iter(|| {
-            let mut compact = CompactStr::new("hello world");
+            let mut compact = CompactString::new("hello world");
             compact.extend((0..20).map(|_| '!'));
         })
     });
@@ -110,7 +110,8 @@ fn compact_str_extend_chars_inline_to_heap_20(c: &mut Criterion) {
 fn compact_str_extend_chars_heap_20(c: &mut Criterion) {
     c.bench_function("extend chars heap, 20", |b| {
         b.iter(|| {
-            let mut compact = CompactStr::new("this is a long string that will start on the heap");
+            let mut compact =
+                CompactString::new("this is a long string that will start on the heap");
             compact.extend((0..20).map(|_| '!'));
         })
     });
@@ -123,9 +124,9 @@ fn compact_str_from_string_inline(c: &mut Criterion) {
             for _ in 0..iters {
                 let word = String::from("I am short");
 
-                // only time how long it takes to go from String -> CompactStr
+                // only time how long it takes to go from String -> CompactString
                 let start = Instant::now();
-                let c = CompactStr::from(word);
+                let c = CompactString::from(word);
                 let duration = start.elapsed();
 
                 // explicitly drop _after_ we've finished timing
@@ -145,9 +146,9 @@ fn compact_str_from_string_heap(c: &mut Criterion) {
             for _ in 0..iters {
                 let word = String::from("I am a long string, look at me!");
 
-                // only time how long it takes to go from String -> CompactStr
+                // only time how long it takes to go from String -> CompactString
                 let start = Instant::now();
-                let c = CompactStr::from(word);
+                let c = CompactString::from(word);
                 let duration = start.elapsed();
 
                 // explicitly drop _after_ we've finished timing
@@ -167,9 +168,9 @@ fn compact_str_from_string_heap_long(c: &mut Criterion) {
             for _ in 0..iters {
                 let word = String::from(VERY_LONG_STR);
 
-                // only time how long it takes to go from String -> CompactStr
+                // only time how long it takes to go from String -> CompactString
                 let start = Instant::now();
-                let c = CompactStr::from(word);
+                let c = CompactString::from(word);
                 let duration = start.elapsed();
 
                 // explicitly drop _after_ we've finished timing

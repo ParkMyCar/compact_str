@@ -2,11 +2,11 @@ use std::collections::VecDeque;
 use std::io::Cursor;
 
 use arbitrary::Arbitrary;
-use compact_str::CompactStr;
+use compact_str::CompactString;
 
 const MAX_INLINE_LENGTH: usize = std::mem::size_of::<String>();
 
-/// A framework to generate a `CompactStr` and control `String`, and then run a series of actions
+/// A framework to generate a `CompactString` and control `String`, and then run a series of actions
 /// and assert equality
 ///
 /// Used for fuzz testing
@@ -18,17 +18,17 @@ pub struct Scenario<'a> {
 
 #[derive(Arbitrary, Debug)]
 pub enum Creation<'a> {
-    /// Create using [`CompactStr::from_utf8`]
+    /// Create using [`CompactString::from_utf8`]
     Bytes(&'a [u8]),
-    /// Create using [`CompactStr::from_utf8_buf`]
+    /// Create using [`CompactString::from_utf8_buf`]
     Buf(&'a [u8]),
     /// Create using an iterator of chars (i.e. the `FromIterator` trait)
     IterChar(Vec<char>),
     /// Create using an iterator of strings (i.e. the `FromIterator` trait)
     IterString(Vec<String>),
-    /// Create using [`CompactStr::new`]
+    /// Create using [`CompactString::new`]
     Word(String),
-    /// Create using [`CompactStr::from_utf8_buf`] when the buffer is non-contiguous
+    /// Create using [`CompactString::from_utf8_buf`] when the buffer is non-contiguous
     NonContiguousBuf(&'a [u8]),
     /// Create using `From<String>`, which consumes the `String` for `O(1)` runtime
     FromString(String),
@@ -37,12 +37,12 @@ pub enum Creation<'a> {
 }
 
 impl Creation<'_> {
-    pub fn create(self) -> Option<(CompactStr, String)> {
+    pub fn create(self) -> Option<(CompactString, String)> {
         use Creation::*;
 
         match self {
             Word(word) => {
-                let compact = CompactStr::new(&word);
+                let compact = CompactString::new(&word);
 
                 assert_eq!(compact, word);
                 assert_properly_allocated(&compact, &word);
@@ -50,7 +50,7 @@ impl Creation<'_> {
                 Some((compact, word))
             }
             FromString(s) => {
-                let compact = CompactStr::from(s.clone());
+                let compact = CompactString::from(s.clone());
 
                 assert_eq!(compact, s);
 
@@ -65,7 +65,7 @@ impl Creation<'_> {
                 Some((compact, s))
             }
             FromBoxStr(b) => {
-                let compact = CompactStr::from(b.clone());
+                let compact = CompactString::from(b.clone());
 
                 assert_eq!(compact, b);
 
@@ -81,7 +81,7 @@ impl Creation<'_> {
                 Some((compact, string))
             }
             IterChar(chars) => {
-                let compact: CompactStr = chars.iter().collect();
+                let compact: CompactString = chars.iter().collect();
                 let std_str: String = chars.iter().collect();
 
                 assert_eq!(compact, std_str);
@@ -90,7 +90,8 @@ impl Creation<'_> {
                 Some((compact, std_str))
             }
             IterString(strings) => {
-                let compact: CompactStr = strings.iter().map::<&str, _>(|s| s.as_ref()).collect();
+                let compact: CompactString =
+                    strings.iter().map::<&str, _>(|s| s.as_ref()).collect();
                 let std_str: String = strings.iter().map::<&str, _>(|s| s.as_ref()).collect();
 
                 assert_eq!(compact, std_str);
@@ -99,7 +100,7 @@ impl Creation<'_> {
                 Some((compact, std_str))
             }
             Bytes(data) => {
-                let compact = CompactStr::from_utf8(data);
+                let compact = CompactString::from_utf8(data);
                 let std_str = std::str::from_utf8(data);
 
                 match (compact, std_str) {
@@ -115,13 +116,13 @@ impl Creation<'_> {
                         assert_eq!(c_err, s_err);
                         None
                     }
-                    _ => panic!("CompactStr and core::str read UTF-8 differently?"),
+                    _ => panic!("CompactString and core::str read UTF-8 differently?"),
                 }
             }
             Buf(data) => {
                 let mut buffer = Cursor::new(data);
 
-                let compact = CompactStr::from_utf8_buf(&mut buffer);
+                let compact = CompactString::from_utf8_buf(&mut buffer);
                 let std_str = std::str::from_utf8(data);
 
                 match (compact, std_str) {
@@ -137,7 +138,7 @@ impl Creation<'_> {
                         assert_eq!(c_err, s_err);
                         None
                     }
-                    _ => panic!("CompactStr and core::str read UTF-8 differently?"),
+                    _ => panic!("CompactString and core::str read UTF-8 differently?"),
                 }
             }
             NonContiguousBuf(data) => {
@@ -160,9 +161,9 @@ impl Creation<'_> {
                     data.iter().copied().collect::<VecDeque<u8>>()
                 };
 
-                // create our CompactStr and control String
+                // create our CompactString and control String
                 let mut queue_clone = queue.clone();
-                let compact = CompactStr::from_utf8_buf(&mut queue);
+                let compact = CompactString::from_utf8_buf(&mut queue);
                 let std_str = std::str::from_utf8(queue_clone.make_contiguous());
 
                 match (compact, std_str) {
@@ -177,7 +178,7 @@ impl Creation<'_> {
                         assert_eq!(c_err, s_err);
                         None
                     }
-                    _ => panic!("CompactStr and core::str read UTF-8 differently?"),
+                    _ => panic!("CompactString and core::str read UTF-8 differently?"),
                 }
             }
         }
@@ -196,7 +197,7 @@ pub enum Action<'a> {
 }
 
 impl Action<'_> {
-    pub fn perform(self, control: &mut String, compact: &mut CompactStr) {
+    pub fn perform(self, control: &mut String, compact: &mut CompactString) {
         use Action::*;
 
         match self {
@@ -267,9 +268,9 @@ impl Action<'_> {
     }
 }
 
-/// Asserts the provided CompactStr is allocated properly either on the stack or on the heap, using
-/// a "control" `&str` for a reference length.
-fn assert_properly_allocated(compact: &CompactStr, control: &str) {
+/// Asserts the provided CompactString is allocated properly either on the stack or on the heap,
+/// using a "control" `&str` for a reference length.
+fn assert_properly_allocated(compact: &CompactString, control: &str) {
     assert_eq!(compact.len(), control.len());
     if control.len() <= MAX_INLINE_LENGTH {
         assert!(!compact.is_heap_allocated());

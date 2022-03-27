@@ -148,8 +148,8 @@ jobs:
           toolchain: stable
           target: powerpc-unknown-linux-gnu
           override: true
+          components: miri
       - uses: actions-rs/cargo@v1
         with:
-          use-cross: true
           command: miri
           args: test --release --all-features --manifest-path=compact_str/Cargo.toml --target powerpc-unknown-linux-gnu

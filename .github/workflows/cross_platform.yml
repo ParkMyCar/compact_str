@@ -23,7 +23,7 @@ jobs:
         name: Install Rust
         with:
           profile: minimal
-          toolchain: stable
+          toolchain: nightly
           override: true
           components: miri
       - uses: actions-rs/cargo@v1
@@ -47,7 +47,7 @@ jobs:
         name: Install Rust
         with:
           profile: minimal
-          toolchain: stable
+          toolchain: nightly
           override: true
           components: miri
       - uses: actions-rs/cargo@v1
@@ -71,7 +71,7 @@ jobs:
         name: Install Rust
         with:
           profile: minimal
-          toolchain: stable
+          toolchain: nightly
           override: true
           components: miri
       - uses: actions-rs/cargo@v1
@@ -94,7 +94,7 @@ jobs:
       - uses: actions-rs/toolchain@v1
         name: Install Rust
         with:
-          toolchain: stable
+          toolchain: nightly
           target: i686-unknown-linux-gnu
           override: true
           components: miri
@@ -119,7 +119,7 @@ jobs:
       - uses: actions-rs/toolchain@v1
         name: Install Rust
         with:
-          toolchain: stable
+          toolchain: nightly
           target: mips-unknown-linux-gnu
           override: true
           components: miri
@@ -182,19 +182,3 @@ jobs:
           use-cross: true
           command: test
           args: --release --all-features --manifest-path=compact_str/Cargo.toml --target powerpc64le-unknown-linux-gnu -- --include-ignored
-
-  linux_powerpc_bit_miri:
-    name: Linux PowerPC Big Endian 32-bit [Miri]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          target: powerpc-unknown-linux-gnu
-          override: true
-          components: miri
-      - uses: actions-rs/cargo@v1
-        with:
-          command: miri
-          args: test --release --all-features --manifest-path=compact_str/Cargo.toml --target powerpc-unknown-linux-gnu

@@ -137,27 +137,3 @@ jobs:
         with:
           name: Upload Crashes
           path: ./fuzz/afl/out/default/crashes/
-
-  # creation_aarch64:
-  #   name: creation [aarch64]
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v2
-  #       name: Checkout compact_str
-  #     - uses: actions-rs/toolchain@v1
-  #       name: Install Rust
-  #       with:
-  #         toolchain: nightly
-  #         target: aarch64-unknown-linux-gnu
-  #         override: true
-  #     - uses: actions-rs/install@v0.1
-  #       name: Install cargo-fuzz
-  #       with:
-  #         crate: cargo-fuzz
-  #         version: latest
-  #     - uses: actions-rs/cargo@v1
-  #       name: Fuzz
-  #       with:
-  #         use-cross: true
-  #         command: fuzz
-  #         args: run --debug-assertions --fuzz-dir compact_str/fuzz --target aarch64-unknown-linux-gnu creation -- -max_total_time=900

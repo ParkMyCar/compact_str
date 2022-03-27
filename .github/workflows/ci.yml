@@ -57,9 +57,24 @@ jobs:
           command: test
           args: --release --all-features --manifest-path=compact_str/Cargo.toml -- --include-ignored
 
-  miri:
-    name: cargo miri test
+  miri_x86_64:
+    name: cargo miri test [x86_64]
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+          components: miri
+      - name: Run Miri
+        run: |
+          cargo miri test --all-features --manifest-path=compact_str/Cargo.toml
+
+  miri_armv7:
+    name: cargo miri test [ARMv7]
+    runs-on: [self-hosted, linux, ARM]
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1

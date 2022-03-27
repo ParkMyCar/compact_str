@@ -1,5 +1,9 @@
 # Upcoming
-* Converting from a `String` or `Box<str>` to a `CompactStr` is `O(1)`
+
+# 0.3.2
+### March 27, 2022
+* Enable `O(1)` conversion from `String` or `Box<str>` to `CompactStr`
+    * Implemented in [`#65 perf: Move Capacity onto the Stack`](https://github.com/ParkMyCar/compact_str/pull/65)
 
 # 0.3.1
 ### March 6, 2022

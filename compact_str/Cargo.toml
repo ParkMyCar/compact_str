@@ -1,14 +1,14 @@
 [package]
 name = "compact_str"
-description = "A memory efficient immutable string type that transparently stores strings on the stack, when possible"
-version = "0.3.1"
+description = "A memory efficient string type that transparently stores strings on the stack, when possible"
+version = "0.3.2"
 authors = ["Parker Timmerman <parker@parkertimmerman.com>"]
 edition = "2018"
 license = "MIT"
 homepage = "https://github.com/ParkMyCar/compact_str"
 repository = "https://github.com/ParkMyCar/compact_str"
 readme = "../README.md"
-keywords = ["string", "compact", "memory", "efficient", "immutable"]
+keywords = ["string", "compact", "small", "memory", "efficient", "mutable"]
 categories = ["encoding", "parsing", "memory-management", "text-processing"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

@@ -128,15 +128,19 @@ impl Repr {
             return;
         }
 
-        // Note: Inlined strings are already their maximum size. So if our current capacity isn't
-        // large enough, then we always need to create a heap variant
+        if new_capacity <= MAX_SIZE {
+            // It's possible to have a `CompactStr` that is heap allocated with a capacity less than
+            // MAX_SIZE, if that `CompactStr` was created From a String or Box<str>.
+            let inline = InlineString::new(self.as_str());
+            *self = Repr { inline }
+        } else {
+            // Create a `HeapString` with `text.len() + additional` capacity
+            let heap = HeapString::with_additional(self.as_str(), additional);
 
-        // Create a `HeapString` with `text.len() + additional` capacity
-        let heap = HeapString::with_additional(self.as_str(), additional);
-
-        // Replace `self` with the new Repr
-        let heap = ManuallyDrop::new(heap);
-        *self = Repr { heap };
+            // Replace `self` with the new Repr
+            let heap = ManuallyDrop::new(heap);
+            *self = Repr { heap };
+        }
     }
 
     #[inline]
@@ -433,7 +437,10 @@ crate::asserts::assert_size!(Repr, 12);
 
 #[cfg(test)]
 mod tests {
-    use super::Repr;
+    use super::{
+        Repr,
+        MAX_SIZE,
+    };
 
     #[test]
     fn test_inline_str() {
@@ -652,5 +659,47 @@ mod tests {
         }
         // should not have re-inlined the string
         assert!(repr.is_heap_allocated());
+    }
+
+    #[test]
+    fn test_from_small_string_then_mutate() {
+        let s = String::from("hello world");
+        assert_eq!(s.capacity(), 11);
+
+        let mut repr = Repr::from_string(s);
+
+        // When converting from a String, we defer inlining the string until necessary to prevent
+        // dropping the heap allocated buffer
+        assert_eq!(repr.capacity(), 11);
+        assert!(repr.is_heap_allocated());
+
+        repr.push('!');
+
+        // Once we push a character we'll need to resize, it's at this point we'll inline the string
+        // since we need to drop the original buffer anyways
+        assert_eq!(repr.capacity(), MAX_SIZE);
+        assert!(!repr.is_heap_allocated());
+        assert_eq!(repr.as_str(), "hello world!");
+    }
+
+    #[test]
+    fn test_from_small_box_str_then_mutate() {
+        let b = String::from("hello world").into_boxed_str();
+        assert_eq!(b.len(), 11);
+
+        let mut repr = Repr::from_box_str(b);
+
+        // When converting from a Box<str>, we defer inlining the string until necessary to prevent
+        // dropping the heap allocated buffer
+        assert_eq!(repr.capacity(), 11);
+        assert!(repr.is_heap_allocated());
+
+        repr.push('!');
+
+        // Once we push a character we'll need to resize, it's at this point we'll inline the string
+        // since we need to drop the original buffer anyways
+        assert_eq!(repr.capacity(), MAX_SIZE);
+        assert!(!repr.is_heap_allocated());
+        assert_eq!(repr.as_str(), "hello world!");
     }
 }

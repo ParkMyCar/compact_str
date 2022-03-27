@@ -18,13 +18,21 @@ pub struct Scenario<'a> {
 
 #[derive(Arbitrary, Debug)]
 pub enum Creation<'a> {
+    /// Create using [`CompactStr::from_utf8`]
     Bytes(&'a [u8]),
+    /// Create using [`CompactStr::from_utf8_buf`]
     Buf(&'a [u8]),
+    /// Create using an iterator of chars (i.e. the `FromIterator` trait)
     IterChar(Vec<char>),
+    /// Create using an iterator of strings (i.e. the `FromIterator` trait)
     IterString(Vec<String>),
+    /// Create using [`CompactStr::new`]
     Word(String),
+    /// Create using [`CompactStr::from_utf8_buf`] when the buffer is non-contiguous
     NonContiguousBuf(&'a [u8]),
+    /// Create using `From<String>`, which consumes the `String` for `O(1)` runtime
     FromString(String),
+    /// Create using `From<Box<str>>`, which consumes the `Box<str>` for `O(1)` runtime
     FromBoxStr(Box<str>),
 }
 
@@ -33,7 +41,6 @@ impl Creation<'_> {
         use Creation::*;
 
         match self {
-            // Create a `CompactStr` from a `&str`
             Word(word) => {
                 let compact = CompactStr::new(&word);
 
@@ -42,7 +49,6 @@ impl Creation<'_> {
 
                 Some((compact, word))
             }
-            // Create a `CompactStr` from a `String` using From<String>
             FromString(s) => {
                 let compact = CompactStr::from(s.clone());
 
@@ -58,7 +64,6 @@ impl Creation<'_> {
 
                 Some((compact, s))
             }
-            // Create a `CompactStr` from a `Box<str>` using From<Box<str>>
             FromBoxStr(b) => {
                 let compact = CompactStr::from(b.clone());
 
@@ -75,7 +80,6 @@ impl Creation<'_> {
                 let string = String::from(b);
                 Some((compact, string))
             }
-            // Create a `CompactStr` from an iterator of `char`s
             IterChar(chars) => {
                 let compact: CompactStr = chars.iter().collect();
                 let std_str: String = chars.iter().collect();
@@ -85,7 +89,6 @@ impl Creation<'_> {
 
                 Some((compact, std_str))
             }
-            // Create a `CompactStr` from an iterator of `String`s
             IterString(strings) => {
                 let compact: CompactStr = strings.iter().map::<&str, _>(|s| s.as_ref()).collect();
                 let std_str: String = strings.iter().map::<&str, _>(|s| s.as_ref()).collect();
@@ -95,7 +98,6 @@ impl Creation<'_> {
 
                 Some((compact, std_str))
             }
-            // Create a `CompactStr` from a slice of bytes
             Bytes(data) => {
                 let compact = CompactStr::from_utf8(data);
                 let std_str = std::str::from_utf8(data);
@@ -116,7 +118,6 @@ impl Creation<'_> {
                     _ => panic!("CompactStr and core::str read UTF-8 differently?"),
                 }
             }
-            // Create a `CompactStr` from a buffer of bytes
             Buf(data) => {
                 let mut buffer = Cursor::new(data);
 
@@ -139,7 +140,6 @@ impl Creation<'_> {
                     _ => panic!("CompactStr and core::str read UTF-8 differently?"),
                 }
             }
-            // Create a `CompactStr` from a non-contiguous buffer of bytes
             NonContiguousBuf(data) => {
                 let mut queue = if data.len() > 3 {
                     // if our data is long, make it non-contiguous

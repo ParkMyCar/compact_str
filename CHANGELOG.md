@@ -4,6 +4,7 @@
 ### March 27, 2022
 * Enable `O(1)` conversion from `String` or `Box<str>` to `CompactStr`
     * Implemented in [`#65 perf: Move Capacity onto the Stack`](https://github.com/ParkMyCar/compact_str/pull/65)
+* Update the README to remove references to "immutable". `CompactStr` became mutable with `v0.3.0`
 
 # 0.3.1
 ### March 6, 2022

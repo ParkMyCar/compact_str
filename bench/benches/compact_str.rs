@@ -30,5 +30,5 @@ fn std_string(c: &mut Criterion) {
     c.bench_function("std_string", |b| b.iter(|| String::from(word)));
 }
 
-criterion_group!(compact_str, empty, inline, packed, heap, std_string);
+criterion_group!(compact_str, empty, inline, packed, heap, std_string,);
 criterion_main!(compact_str);

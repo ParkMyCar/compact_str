@@ -564,7 +564,8 @@ impl<'a> From<&'a str> for CompactStr {
 
 impl From<String> for CompactStr {
     fn from(s: String) -> Self {
-        CompactStr::new(&s)
+        let repr = Repr::from_string(s);
+        CompactStr { repr }
     }
 }
 
@@ -577,6 +578,13 @@ impl<'a> From<&'a String> for CompactStr {
 impl<'a> From<Cow<'a, str>> for CompactStr {
     fn from(s: Cow<'a, str>) -> Self {
         CompactStr::new(s)
+    }
+}
+
+impl From<Box<str>> for CompactStr {
+    fn from(b: Box<str>) -> Self {
+        let repr = Repr::from_box_str(b);
+        CompactStr { repr }
     }
 }
 

@@ -89,6 +89,26 @@ impl Repr {
     }
 
     #[inline]
+    pub fn from_string(s: String) -> Self {
+        if s.capacity() == 0 {
+            EMPTY
+        } else {
+            let heap = ManuallyDrop::new(HeapString::from_string(s));
+            Repr { heap }
+        }
+    }
+
+    #[inline]
+    pub fn from_box_str(b: Box<str>) -> Self {
+        if b.len() == 0 {
+            EMPTY
+        } else {
+            let heap = ManuallyDrop::new(HeapString::from_box_str(b));
+            Repr { heap }
+        }
+    }
+
+    #[inline]
     pub fn len(&self) -> usize {
         self.cast().len()
     }

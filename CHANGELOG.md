@@ -1,5 +1,5 @@
 # Upcoming
-
+* Converting from a `String` or `Box<str>` to a `CompactStr` is `O(1)`
 
 # 0.3.1
 ### March 6, 2022

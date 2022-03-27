@@ -1,56 +1,20 @@
-use core::{
-    ptr,
-    slice,
-};
-use std::alloc;
-
 const UNKNOWN: usize = 0;
 pub type StrBuffer = [u8; UNKNOWN];
 
-#[repr(C)]
-pub struct BoxStringInner {
-    pub capacity: usize,
-    pub buffer: StrBuffer,
-}
+#[cfg(not(target_pointer_width = "64"))]
+pub mod heap_capacity {
+    use core::ptr;
+    use std::alloc;
 
-impl BoxStringInner {
-    #[inline]
-    pub fn with_capacity(capacity: usize) -> ptr::NonNull<BoxStringInner> {
-        let mut ptr = Self::alloc(capacity);
+    use super::StrBuffer;
 
-        // SAFETY: We just allocated an instance of `BoxStringInner` and checked to make sure it
-        // wasn't null, so we know it's aligned properly, that it points to an instance of
-        // `BoxStringInner` and that the "lifetime" is valid
-        unsafe { ptr.as_mut().capacity = capacity };
-
-        ptr
-    }
-
-    #[inline]
-    pub fn as_bytes(&self) -> &[u8] {
-        // SAFETY: Since we have an instance of `BoxStringInner` so we know the buffer is still
-        // valid, and we track the capacity with the creation and adjustment of the buffer
-        unsafe { slice::from_raw_parts(self.buffer.as_ptr(), self.capacity) }
-    }
-
-    /// Returns a mutable reference to the underlying buffer of bytes
-    ///
-    /// # Safety
-    /// * The caller must check that any modifications made to the underlying buffer are valid UTF-8
-    #[inline]
-    pub unsafe fn as_mut_bytes(&mut self) -> &mut [u8] {
-        // SAFETY: Since we have an instance of `BoxStringInner` so we know the buffer is still
-        // valid, and we track the capacity with the creation and adjustment of the buffer
-        slice::from_raw_parts_mut(self.buffer.as_mut_ptr(), self.capacity)
-    }
-
-    pub fn alloc(capacity: usize) -> ptr::NonNull<BoxStringInner> {
-        let layout = Self::layout(capacity);
+    pub fn alloc(capacity: usize) -> ptr::NonNull<u8> {
+        let layout = layout(capacity);
         debug_assert!(layout.size() > 0);
 
-        // SAFETY: `alloc(...)` has undefined behavior if the layout is zero-sized, but we know the
-        // size of the layout is greater than 0 because we define it (and check for it above)
-        let raw_ptr = unsafe { alloc::alloc(layout) as *mut BoxStringInner };
+        // SAFETY: `alloc(...)` has undefined behavior if the layout is zero-sized. We know the
+        // layout can't be zero-sized though because we're always at least allocating one `usize`
+        let raw_ptr = unsafe { alloc::alloc(layout) };
 
         // Check to make sure our pointer is non-null, some allocators return null pointers instead
         // of panicking
@@ -60,20 +24,69 @@ impl BoxStringInner {
         }
     }
 
-    pub fn dealloc(ptr: ptr::NonNull<BoxStringInner>) {
-        // SAFETY: We know the pointer is non-null and it is properly aligned
-        let capacity = unsafe { ptr.as_ref().capacity };
-        let layout = Self::layout(capacity);
+    pub unsafe fn dealloc(ptr: ptr::NonNull<u8>, capacity: usize) {
+        let layout = layout(capacity);
 
-        // SAFETY: There is only one way to allocate a BoxStringInner, and it uses the same layout
-        // we defined above. Also we know the pointer is non-null and we use the same global
-        // allocator as we did in `Self::alloc(...)`
-        unsafe { alloc::dealloc(ptr.as_ptr() as *mut u8, layout) };
+        // SAFETY: TODO
+        alloc::dealloc(ptr.as_ptr(), layout);
+    }
+
+    #[repr(C)]
+    struct BoxStringInnerHeapCapacity {
+        capacity: usize,
+        buffer: StrBuffer,
     }
 
     fn layout(capacity: usize) -> alloc::Layout {
         let buffer_layout = alloc::Layout::array::<u8>(capacity).expect("valid capacity");
-        alloc::Layout::new::<Self>()
+        alloc::Layout::new::<BoxStringInnerHeapCapacity>()
+            .extend(buffer_layout)
+            .expect("valid layout")
+            .0
+            .pad_to_align()
+    }
+}
+
+pub mod inline_capacity {
+    use core::ptr;
+    use std::alloc;
+
+    use super::StrBuffer;
+
+    /// # Safety
+    /// * `capacity` must be > 0
+    pub unsafe fn alloc(capacity: usize) -> ptr::NonNull<u8> {
+        let layout = layout(capacity);
+        debug_assert!(layout.size() > 0);
+
+        // SAFETY: `alloc(...)` has undefined behavior if the layout is zero-sized. We specify that
+        // `capacity` must be > 0 as a constraint to uphold the safety of this method. If capacity
+        // is greater than 0, then our layout will be non-zero-sized.
+        let raw_ptr = alloc::alloc(layout);
+
+        // Check to make sure our pointer is non-null, some allocators return null pointers instead
+        // of panicking
+        match ptr::NonNull::new(raw_ptr) {
+            Some(ptr) => ptr,
+            None => alloc::handle_alloc_error(layout),
+        }
+    }
+
+    pub unsafe fn dealloc(ptr: ptr::NonNull<u8>, capacity: usize) {
+        let layout = layout(capacity);
+
+        // SAFETY: TODO
+        alloc::dealloc(ptr.as_ptr(), layout);
+    }
+
+    #[repr(C)]
+    struct BoxStringInnerInlineCapacity {
+        buffer: StrBuffer,
+    }
+
+    fn layout(capacity: usize) -> alloc::Layout {
+        let buffer_layout = alloc::Layout::array::<u8>(capacity).expect("valid capacity");
+        alloc::Layout::new::<BoxStringInnerInlineCapacity>()
             .extend(buffer_layout)
             .expect("valid layout")
             .0

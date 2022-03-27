@@ -38,6 +38,7 @@ pub struct Capacity {
 }
 
 impl Capacity {
+    #[inline]
     pub const fn new(capacity: usize) -> Result<Self, Self> {
         if capacity > MAX_VALUE {
             // if we need the last byte to encode this capacity then we need to put the capacity on
@@ -54,13 +55,15 @@ impl Capacity {
         }
     }
 
+    #[inline]
+    #[cfg(target_pointer_width = "64")]
     pub const unsafe fn new_unchecked(capacity: usize) -> Self {
         let mut bytes = capacity.to_le_bytes();
         bytes[core::mem::size_of::<usize>() - 1] = HEAP_MASK;
         Capacity { _buf: bytes }
     }
 
-    #[allow(dead_code)]
+    #[inline]
     pub fn as_usize(&self) -> Result<usize, ()> {
         if self._buf == CAPACITY_IS_ON_THE_HEAP {
             Err(())
@@ -78,6 +81,7 @@ impl Capacity {
     }
 
     #[inline(always)]
+    #[cfg(target_pointer_width = "64")]
     pub unsafe fn as_usize_unchecked(&self) -> usize {
         let mut usize_buf = [0u8; USIZE_SIZE];
         core::ptr::copy_nonoverlapping(

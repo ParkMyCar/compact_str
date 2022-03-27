@@ -19,3 +19,4 @@ serde = { version = "1", optional = true }
 
 [dev-dependencies]
 proptest = { version = "1", default-features = false, features = ["std"] }
+test-strategy = "0.2"

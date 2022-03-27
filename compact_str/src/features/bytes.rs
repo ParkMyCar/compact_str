@@ -70,54 +70,50 @@ mod test {
     use std::io::Cursor;
 
     use proptest::prelude::*;
-    use proptest::strategy::Strategy;
+    use test_strategy::proptest;
 
+    use crate::tests::{
+        rand_bytes,
+        rand_unicode,
+    };
     use crate::CompactStr;
 
     const MAX_SIZE: usize = core::mem::size_of::<String>();
 
-    // generates random unicode strings, upto 80 chars long
-    fn rand_unicode() -> impl Strategy<Value = String> {
-        proptest::collection::vec(proptest::char::any(), 0..80)
-            .prop_map(|v| v.into_iter().collect())
+    #[proptest]
+    #[cfg_attr(miri, ignore)]
+    fn test_buffers_roundtrip(#[strategy(rand_unicode())] word: String) {
+        let mut buf = Cursor::new(word.as_bytes());
+        let compact = CompactStr::from_utf8_buf(&mut buf).unwrap();
+
+        proptest::prop_assert_eq!(&word, &compact);
     }
 
-    proptest! {
-        #[test]
-        #[cfg_attr(miri, ignore)]
-        fn test_buffers_roundtrip(word in rand_unicode()) {
-            let mut buf = Cursor::new(word.as_bytes());
-            let compact = CompactStr::from_utf8_buf(&mut buf).unwrap();
+    #[proptest]
+    #[cfg_attr(miri, ignore)]
+    fn test_allocated_properly(#[strategy(rand_unicode())] word: String) {
+        let mut buf = Cursor::new(word.as_bytes());
+        let compact = CompactStr::from_utf8_buf(&mut buf).unwrap();
 
-            prop_assert_eq!(&word, &compact);
+        if word.len() <= MAX_SIZE {
+            proptest::prop_assert!(!compact.is_heap_allocated())
+        } else {
+            proptest::prop_assert!(compact.is_heap_allocated())
         }
+    }
 
-        #[test]
-        #[cfg_attr(miri, ignore)]
-        fn test_allocated_properly(word in rand_unicode()) {
-            let mut buf = Cursor::new(word.as_bytes());
-            let compact = CompactStr::from_utf8_buf(&mut buf).unwrap();
+    #[proptest]
+    #[cfg_attr(miri, ignore)]
+    fn test_only_accept_valid_utf8(#[strategy(rand_bytes())] bytes: Vec<u8>) {
+        let mut buf = Cursor::new(bytes.as_slice());
 
-            if word.len() <= MAX_SIZE {
-                prop_assert!(!compact.is_heap_allocated())
-            } else {
-                prop_assert!(compact.is_heap_allocated())
-            }
-        }
+        let compact_result = CompactStr::from_utf8_buf(&mut buf);
+        let str_result = core::str::from_utf8(bytes.as_slice());
 
-        #[test]
-        #[cfg_attr(miri, ignore)]
-        fn test_only_accept_valid_utf8(bytes in proptest::collection::vec(any::<u8>(), 0..80)) {
-            let mut buf = Cursor::new(bytes.as_slice());
-
-            let compact_result = CompactStr::from_utf8_buf(&mut buf);
-            let str_result = core::str::from_utf8(bytes.as_slice());
-
-            match (compact_result, str_result) {
-                (Ok(c), Ok(s)) => prop_assert_eq!(c, s),
-                (Err(c_err), Err(s_err)) => prop_assert_eq!(c_err, s_err),
-                _ => panic!("CompactStr and core::str read UTF-8 differently?"),
-            }
+        match (compact_result, str_result) {
+            (Ok(c), Ok(s)) => prop_assert_eq!(c, s),
+            (Err(c_err), Err(s_err)) => prop_assert_eq!(c_err, s_err),
+            _ => panic!("CompactStr and core::str read UTF-8 differently?"),
         }
     }
 }

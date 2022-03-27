@@ -206,9 +206,10 @@ impl Extend<String> for ArcString {
 #[cfg(test)]
 mod test {
     use proptest::prelude::*;
-    use proptest::strategy::Strategy;
+    use test_strategy::proptest;
 
     use super::ArcString;
+    use crate::tests::rand_unicode;
 
     #[test]
     fn test_empty() {
@@ -277,19 +278,11 @@ mod test {
         assert_eq!(arc_str.len, example.len());
     }
 
-    // generates random unicode strings, upto 80 chars long
-    fn rand_unicode() -> impl Strategy<Value = String> {
-        proptest::collection::vec(proptest::char::any(), 0..80)
-            .prop_map(|v| v.into_iter().collect())
-    }
-
-    proptest! {
-        #[test]
-        #[cfg_attr(miri, ignore)]
-        fn test_strings_roundtrip(word in rand_unicode()) {
-            let arc_str = ArcString::from(word.as_str());
-            prop_assert_eq!(&word, arc_str.as_str());
-        }
+    #[proptest]
+    #[cfg_attr(miri, ignore)]
+    fn test_strings_roundtrip(#[strategy(rand_unicode())] word: String) {
+        let arc_str = ArcString::from(word.as_str());
+        prop_assert_eq!(&word, arc_str.as_str());
     }
 }
 

@@ -466,11 +466,11 @@ impl Extend<String> for BoxString {
 
 #[cfg(test)]
 mod tests {
-    use proptest::collection::SizeRange;
     use proptest::prelude::*;
-    use proptest::strategy::Strategy;
+    use test_strategy::proptest;
 
     use super::BoxString;
+    use crate::tests::rand_unicode;
 
     const SIXTEEN_MB: usize = 16 * 1024 * 1024;
 
@@ -691,27 +691,20 @@ mod tests {
         assert_eq!(&format!("{}!hello!", string), box_string.as_str());
     }
 
-    // generates random unicode strings, of a given size
-    fn rand_unicode(size: impl Into<SizeRange>) -> impl Strategy<Value = String> {
-        proptest::collection::vec(proptest::char::any(), size).prop_map(|v| v.into_iter().collect())
+    #[proptest]
+    #[cfg_attr(miri, ignore)]
+    fn test_strings_roundtrip(#[strategy(rand_unicode())] word: String) {
+        let box_str = BoxString::from(word.as_str());
+        prop_assert_eq!(&word, box_str.as_str());
     }
 
-    proptest! {
-        #[test]
-        #[cfg_attr(miri, ignore)]
-        fn test_strings_roundtrip(word in rand_unicode(0..80)) {
-            let box_str = BoxString::from(word.as_str());
-            prop_assert_eq!(&word, box_str.as_str());
-        }
+    #[proptest]
+    #[cfg_attr(miri, ignore)]
+    fn test_from_string(#[strategy(rand_unicode())] word: String) {
+        let s: String = word.clone();
+        let box_str = BoxString::from_string(s);
 
-        #[test]
-        #[cfg_attr(miri, ignore)]
-        fn test_from_string(word in rand_unicode(0..80)) {
-            let s: String = word.clone();
-            let box_str = BoxString::from_string(s);
-
-            prop_assert_eq!(&word, box_str.as_str());
-        }
+        prop_assert_eq!(&word, box_str.as_str());
     }
 }
 

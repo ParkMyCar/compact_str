@@ -116,12 +116,13 @@ mod tests {
     use std::convert::TryFrom;
 
     use proptest::prelude::*;
+    use test_strategy::proptest;
 
     use super::{
         InlineString,
         MAX_SIZE,
     };
-    use crate::tests::rand_unicode_bytes;
+    use crate::tests::rand_unicode_with_max_len;
 
     #[test]
     fn test_sanity() {
@@ -133,15 +134,13 @@ mod tests {
         assert_eq!(inline.capacity(), MAX_SIZE);
     }
 
-    proptest! {
-        #[test]
-        #[cfg_attr(miri, ignore)]
-        fn test_roundtrip(s in rand_unicode_bytes(MAX_SIZE)) {
-            let inline = InlineString::new(&s);
+    #[proptest]
+    #[cfg_attr(miri, ignore)]
+    fn test_roundtrip(#[strategy(rand_unicode_with_max_len(MAX_SIZE))] s: String) {
+        let inline = InlineString::new(&s);
 
-            assert_eq!(inline.as_str(), s);
-            assert_eq!(inline.len(), s.len());
-        }
+        prop_assert_eq!(inline.len(), s.len());
+        prop_assert_eq!(inline.as_str(), s);
     }
 
     #[test]

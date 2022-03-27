@@ -2,6 +2,7 @@ use std::str::FromStr;
 
 use proptest::prelude::*;
 use proptest::strategy::Strategy;
+use test_strategy::proptest;
 
 use crate::CompactStr;
 
@@ -10,13 +11,18 @@ const MAX_SIZE: usize = 24;
 #[cfg(target_pointer_width = "32")]
 const MAX_SIZE: usize = 12;
 
-// generates random unicode strings, upto 80 chars long
-fn rand_unicode() -> impl Strategy<Value = String> {
+/// generates random unicode strings, upto 80 chars long
+pub fn rand_unicode() -> impl Strategy<Value = String> {
     proptest::collection::vec(proptest::char::any(), 0..80).prop_map(|v| v.into_iter().collect())
 }
 
+/// generates a random collection of bytes, upto 80 bytes long
+pub fn rand_bytes() -> impl Strategy<Value = Vec<u8>> {
+    proptest::collection::vec(any::<u8>(), 0..80)
+}
+
 /// [`proptest::strategy::Strategy`] that generates [`String`]s with up to `len` bytes
-pub fn rand_unicode_bytes(len: usize) -> impl Strategy<Value = String> {
+pub fn rand_unicode_with_max_len(len: usize) -> impl Strategy<Value = String> {
     proptest::collection::vec(proptest::char::any(), 0..len).prop_map(move |chars| {
         let mut len_utf8 = 0;
         chars
@@ -29,7 +35,7 @@ pub fn rand_unicode_bytes(len: usize) -> impl Strategy<Value = String> {
     })
 }
 
-// generates groups upto 40 strings long of random unicode strings, upto 80 chars long
+/// generates groups upto 40 strings long of random unicode strings, upto 80 chars long
 fn rand_unicode_collection() -> impl Strategy<Value = Vec<String>> {
     proptest::collection::vec(rand_unicode(), 0..40)
 }
@@ -43,133 +49,133 @@ fn assert_allocated_properly(compact: &CompactStr) {
     }
 }
 
-proptest! {
-    #[test]
-    #[cfg_attr(miri, ignore)]
-    fn test_strings_roundtrip(word in rand_unicode()) {
-        let compact = CompactStr::new(&word);
-        prop_assert_eq!(&word, &compact);
+#[proptest]
+#[cfg_attr(miri, ignore)]
+fn test_strings_roundtrip(#[strategy(rand_unicode())] word: String) {
+    let compact = CompactStr::new(&word);
+    prop_assert_eq!(&word, &compact);
+}
+
+#[proptest]
+#[cfg_attr(miri, ignore)]
+fn test_strings_allocated_properly(#[strategy(rand_unicode())] word: String) {
+    let compact = CompactStr::new(&word);
+    assert_allocated_properly(&compact);
+}
+
+#[proptest]
+#[cfg_attr(miri, ignore)]
+fn test_char_iterator_roundtrips(#[strategy(rand_unicode())] word: String) {
+    let compact: CompactStr = word.clone().chars().collect();
+    prop_assert_eq!(&word, &compact)
+}
+
+#[proptest]
+#[cfg_attr(miri, ignore)]
+fn test_string_iterator_roundtrips(#[strategy(rand_unicode_collection())] collection: Vec<String>) {
+    let compact: CompactStr = collection.clone().into_iter().collect();
+    let word: String = collection.into_iter().collect();
+    prop_assert_eq!(&word, &compact);
+}
+
+#[proptest]
+#[cfg_attr(miri, ignore)]
+fn test_from_bytes_roundtrips(#[strategy(rand_unicode())] word: String) {
+    let bytes = word.into_bytes();
+    let compact = CompactStr::from_utf8(&bytes).unwrap();
+    let word = String::from_utf8(bytes).unwrap();
+
+    prop_assert_eq!(compact, word);
+}
+
+#[proptest]
+#[cfg_attr(miri, ignore)]
+fn test_from_bytes_only_valid_utf8(#[strategy(rand_bytes())] bytes: Vec<u8>) {
+    let compact_result = CompactStr::from_utf8(&bytes);
+    let word_result = String::from_utf8(bytes);
+
+    match (compact_result, word_result) {
+        (Ok(c), Ok(s)) => prop_assert_eq!(c, s),
+        (Err(c_err), Err(s_err)) => prop_assert_eq!(c_err, s_err.utf8_error()),
+        _ => panic!("CompactStr and core::str read UTF-8 differently?"),
     }
+}
 
+#[proptest]
+#[cfg_attr(miri, ignore)]
+fn test_from_lossy_cow_roundtrips(#[strategy(rand_bytes())] bytes: Vec<u8>) {
+    let cow = String::from_utf8_lossy(&bytes[..]);
+    let compact = CompactStr::from(cow.clone());
+    prop_assert_eq!(cow, compact);
+}
 
-    #[test]
-    #[cfg_attr(miri, ignore)]
-    fn test_strings_allocated_properly(word in rand_unicode()) {
-        let compact = CompactStr::new(&word);
-        assert_allocated_properly(&compact);
-    }
+#[proptest]
+#[cfg_attr(miri, ignore)]
+fn test_from_lossy_cow_allocated_properly(#[strategy(rand_bytes())] bytes: Vec<u8>) {
+    let cow = String::from_utf8_lossy(&bytes[..]);
+    let compact = CompactStr::from(cow);
+    assert_allocated_properly(&compact);
+}
 
-    #[test]
-    #[cfg_attr(miri, ignore)]
-    fn test_char_iterator_roundtrips(word in rand_unicode()) {
-        let compact: CompactStr = word.clone().chars().collect();
-        prop_assert_eq!(&word, &compact)
-    }
+#[proptest]
+#[cfg_attr(miri, ignore)]
+fn test_reserve_and_write_bytes(#[strategy(rand_unicode())] word: String) {
+    let mut compact = CompactStr::default();
+    prop_assert!(compact.is_empty());
 
-    #[test]
-    #[cfg_attr(miri, ignore)]
-    fn test_string_iterator_roundtrips(collection in rand_unicode_collection()) {
-        let compact: CompactStr = collection.clone().into_iter().collect();
-        let word: String = collection.into_iter().collect();
-        prop_assert_eq!(&word, &compact);
-    }
+    // reserve enough space to write our bytes
+    compact.reserve(word.len());
 
-    #[test]
-    #[cfg_attr(miri, ignore)]
-    fn test_from_bytes_roundtrips(word in rand_unicode()) {
-        let bytes = word.into_bytes();
-        let compact = CompactStr::from_utf8(&bytes).unwrap();
-        let word = String::from_utf8(bytes).unwrap();
+    // SAFETY: We're writing a String which we know is UTF-8
+    let slice = unsafe { compact.as_mut_bytes() };
+    slice[..word.len()].copy_from_slice(word.as_bytes());
 
-        prop_assert_eq!(compact, word);
-    }
+    // SAFTEY: We know this is the length of our string, since `compact` started with 0 bytes
+    // and we just wrote `word.len()` bytes
+    unsafe { compact.set_len(word.len()) }
 
-    #[test]
-    #[cfg_attr(miri, ignore)]
-    fn test_from_bytes_only_valid_utf8(bytes in proptest::collection::vec(any::<u8>(), 0..80)) {
-        let compact_result = CompactStr::from_utf8(&bytes);
-        let word_result = String::from_utf8(bytes);
+    prop_assert_eq!(&word, &compact);
+}
 
-        match (compact_result, word_result) {
-            (Ok(c), Ok(s)) => prop_assert_eq!(c, s),
-            (Err(c_err), Err(s_err)) => prop_assert_eq!(c_err, s_err.utf8_error()),
-            _ => panic!("CompactStr and core::str read UTF-8 differently?"),
-        }
-    }
+#[proptest]
+#[cfg_attr(miri, ignore)]
+fn test_reserve_and_write_bytes_allocated_properly(#[strategy(rand_unicode())] word: String) {
+    let mut compact = CompactStr::default();
+    prop_assert!(compact.is_empty());
 
-    #[test]
-    #[cfg_attr(miri, ignore)]
-    fn test_from_lossy_cow_roundtrips(bytes in proptest::collection::vec(any::<u8>(), 0..80)) {
-        let cow = String::from_utf8_lossy(&bytes[..]);
-        let compact = CompactStr::from(cow.clone());
-        prop_assert_eq!(cow, compact);
-    }
+    // reserve enough space to write our bytes
+    compact.reserve(word.len());
 
-    #[test]
-    #[cfg_attr(miri, ignore)]
-    fn test_from_lossy_cow_allocated_properly(bytes in proptest::collection::vec(any::<u8>(), 0..80)) {
-        let cow = String::from_utf8_lossy(&bytes[..]);
-        let compact = CompactStr::from(cow);
-        assert_allocated_properly(&compact);
-    }
+    // SAFETY: We're writing a String which we know is UTF-8
+    let slice = unsafe { compact.as_mut_bytes() };
+    slice[..word.len()].copy_from_slice(word.as_bytes());
 
-    #[test]
-    #[cfg_attr(miri, ignore)]
-    fn test_reserve_and_write_bytes(word in rand_unicode()) {
-        let mut compact = CompactStr::default();
-        prop_assert!(compact.is_empty());
+    // SAFTEY: We know this is the length of our string, since `compact` started with 0 bytes
+    // and we just wrote `word.len()` bytes
+    unsafe { compact.set_len(word.len()) }
 
-        // reserve enough space to write our bytes
-        compact.reserve(word.len());
+    prop_assert_eq!(compact.len(), word.len());
 
-        // SAFETY: We're writing a String which we know is UTF-8
-        let slice = unsafe { compact.as_mut_bytes() };
-        slice[..word.len()].copy_from_slice(word.as_bytes());
+    // The string should be heap allocated if `word` was > MAX_SIZE
+    //
+    // NOTE: The reserve and write API's don't currently support the Packed representation
+    prop_assert_eq!(compact.is_heap_allocated(), word.len() > MAX_SIZE);
+}
 
-        // SAFTEY: We know this is the length of our string, since `compact` started with 0 bytes
-        // and we just wrote `word.len()` bytes
-        unsafe { compact.set_len(word.len()) }
+#[proptest]
+#[cfg_attr(miri, ignore)]
+fn test_extend_chars_allocated_properly(
+    #[strategy(rand_unicode())] start: String,
+    #[strategy(rand_unicode())] extend: String,
+) {
+    let mut compact = CompactStr::new(&start);
+    compact.extend(extend.chars());
 
-        prop_assert_eq!(&word, &compact);
-    }
+    let mut control = start.clone();
+    control.extend(extend.chars());
 
-    #[test]
-    #[cfg_attr(miri, ignore)]
-    fn test_reserve_and_write_bytes_allocated_properly(word in rand_unicode()) {
-        let mut compact = CompactStr::default();
-        prop_assert!(compact.is_empty());
-
-        // reserve enough space to write our bytes
-        compact.reserve(word.len());
-
-        // SAFETY: We're writing a String which we know is UTF-8
-        let slice = unsafe { compact.as_mut_bytes() };
-        slice[..word.len()].copy_from_slice(word.as_bytes());
-
-        // SAFTEY: We know this is the length of our string, since `compact` started with 0 bytes
-        // and we just wrote `word.len()` bytes
-        unsafe { compact.set_len(word.len()) }
-
-        prop_assert_eq!(compact.len(), word.len());
-
-        // The string should be heap allocated if `word` was > MAX_SIZE
-        //
-        // NOTE: The reserve and write API's don't currently support the Packed representation
-        prop_assert_eq!(compact.is_heap_allocated(), word.len() > MAX_SIZE);
-    }
-
-    #[test]
-    #[cfg_attr(miri, ignore)]
-    fn test_extend_chars_allocated_properly((start, extend) in (rand_unicode(), rand_unicode())) {
-        let mut compact = CompactStr::new(&start);
-        compact.extend(extend.chars());
-
-        let mut control = start.clone();
-        control.extend(extend.chars());
-
-        prop_assert_eq!(&compact, &control);
-        assert_allocated_properly(&compact);
-    }
+    prop_assert_eq!(&compact, &control);
+    assert_allocated_properly(&compact);
 }
 
 #[test]

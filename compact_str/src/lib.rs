@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 //! [`CompactStr`] is a compact string type that stores itself on the stack if possible, otherwise
 //! known as a "small string optimization".
 //!

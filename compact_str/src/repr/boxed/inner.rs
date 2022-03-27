@@ -1,6 +1,7 @@
 const UNKNOWN: usize = 0;
 pub type StrBuffer = [u8; UNKNOWN];
 
+#[cfg(not(target_pointer_width = "64"))]
 pub mod heap_capacity {
     use core::ptr;
     use std::alloc;

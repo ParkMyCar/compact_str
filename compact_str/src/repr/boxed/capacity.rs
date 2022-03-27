@@ -89,6 +89,7 @@ impl Capacity {
     }
 
     #[inline(always)]
+    #[cfg(not(target_pointer_width = "64"))]
     pub fn is_heap(&self) -> bool {
         self._buf == CAPACITY_IS_ON_THE_HEAP
     }

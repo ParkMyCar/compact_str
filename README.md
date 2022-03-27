@@ -43,6 +43,7 @@ A `CompactStr` specifically has the following properties:
     * 12 bytes if running on a 32 bit architecture
   * Strings longer than 24 bytes are stored on the heap
   * `Clone` is `O(n)`
+  * Conversion `From<String>` or `From<Box<str>>` is `O(1)`
   * Heap based string grows at a rate of 1.5x
     * The std library `String` grows at a rate of 2x
 

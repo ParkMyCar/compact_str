@@ -41,13 +41,13 @@ impl Creation<'_> {
                 assert_properly_allocated(&compact, &word);
 
                 Some((compact, word))
-            },
+            }
             // Create a `CompactStr` from a `String` using From<String>
             FromString(s) => {
                 let compact = CompactStr::from(s.clone());
 
                 assert_eq!(compact, s);
-                
+
                 // Note: converting From<String> will always be heap allocated because we use the
                 // underlying buffer from the source String
                 if s.capacity() == 0 {
@@ -57,13 +57,13 @@ impl Creation<'_> {
                 }
 
                 Some((compact, s))
-            },
+            }
             // Create a `CompactStr` from a `Box<str>` using From<Box<str>>
             FromBoxStr(b) => {
                 let compact = CompactStr::from(b.clone());
 
                 assert_eq!(compact, b);
-                
+
                 // Note: converting From<Box<str>> will always be heap allocated because we use the
                 // underlying buffer from the source String
                 if b.len() == 0 {

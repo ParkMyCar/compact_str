@@ -73,17 +73,11 @@ jobs:
           profile: minimal
           toolchain: nightly
           override: true
-          components: miri
       - uses: actions-rs/cargo@v1
         name: cargo test
         with:
           command: test
           args: --release --all-features --manifest-path=compact_str/Cargo.toml
-      - uses: actions-rs/cargo@v1
-        name: cargo test miri
-        with:
-          command: miri
-          args: test --all-features --manifest-path=compact_str/Cargo.toml
 
   linux_32bit:
     name: Linux 32-bit

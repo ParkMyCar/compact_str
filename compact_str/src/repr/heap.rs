@@ -8,17 +8,17 @@ pub struct HeapString {
 }
 
 impl HeapString {
-    /// Creates a `HeapString` from the provided `text`.
+    /// Creates a [`HeapString`] from the provided `text`.
     ///
-    /// If you need to allocate a `HeapString` with additional capacity, see
-    /// `HeapString::with_additional(...)`
+    /// If you need to allocate a [`HeapString`] with additional capacity, see
+    /// `HeapString::with_additional()`
     #[inline]
     pub fn new(text: &str) -> Self {
         let string = BoxString::new(text);
         HeapString { string }
     }
 
-    /// Creates a `HeapString` from the provided `text` and allocates the underlying buffer with
+    /// Creates a [`HeapString`] from the provided `text` and allocates the underlying buffer with
     /// `additional` capacity
     #[inline]
     pub fn with_additional(text: &str, additional: usize) -> Self {
@@ -26,7 +26,7 @@ impl HeapString {
         HeapString { string }
     }
 
-    /// Creates a `HeapString` with the provided capacity.
+    /// Creates a [`HeapString`] with the provided capacity.
     #[inline]
     pub fn with_capacity(capacity: usize) -> Self {
         let string = BoxString::with_capacity(capacity);

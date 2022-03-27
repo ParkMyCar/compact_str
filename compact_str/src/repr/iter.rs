@@ -1,4 +1,4 @@
-//! Implementations of the `FromIterator` trait to make building `CompactStr`s more ergonomic
+//! Implementations of the [`FromIterator`] trait to make building `CompactStr`s more ergonomic
 
 use core::iter::FromIterator;
 use core::mem::ManuallyDrop;

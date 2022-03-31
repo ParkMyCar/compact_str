@@ -87,12 +87,18 @@ discriminant *within* the last byte, using any extra bits for metadata. Specific
 
 and specifically the overall memory layout of a `CompactStr` is:
 
-1. `heap:   { string: BoxString, _padding: [u8; 8] }`
+1. `heap:   { ptr: NonNull<u8>, len: usize, cap: Capacity }`
 2. `inline: { buffer: [u8; 24] }`
 
 <sub>Both variants are 24 bytes long</sub>
 
-For **heap** allocated strings we use a custom `BoxString` which is only 16 bytes on the stack, i.e. `[ ptr<8> | len<8> ]`, and has a heap layout of `[ cap<8> | buf<...> ]`. We then add 8 bytes of padding on the stack to make the stack size equal to our inline variant.
+For **heap** allocated strings we use a custom `BoxString` which normally stores the capacity of the string on the stack, but also optionally allows us to store it on the heap. Since we use the last byte to track our discriminant, we only have 7 bytes to store the capacity, or 3 bytes on a 32-bit architecture. 7 bytes allows us to store a value up to `2^56`, aka 64 petabytes, while 3 bytes only allows us to store a value up to `2^24`, aka 16 megabytes. 
+
+For 64-bit architectures we always inline the capacity, because we can safely assume our strings will never be larger than 64 petabytes, but on 32-bit architectures, when creating or growing a `CompactStr`, if the text is larger than 16MB then we move the capacity onto the heap. 
+
+We handle the capacity in this way for two reaons:
+1. Users shouldn't have to pay for what they don't use. Meaning, in the _majority_ of cases the capacity of the buffer could easily fit into 7 or 3 bytes, so the user shouldn't have to pay the memory cost of storing the capacity on the heap, if they don't need to.
+2. Allows us to convert `From<String>` in `O(1)` time, by taking the parts of a `String` (e.g. `ptr`, `len`, and `cap`) and using those to create a `CompactStr`, without having to do any heap allocations. This is important when using `CompactStr` in large codebases where you might have `CompactStr` working alongside of `String`.
 
 For **inline** strings we only have a 24 byte buffer on the stack. This might make you wonder how can we store a 24 byte long string, inline? Don't we also need to store the length somewhere?
 

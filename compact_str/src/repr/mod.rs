@@ -211,7 +211,7 @@ impl Repr {
 
     #[inline]
     pub fn is_heap_allocated(&self) -> bool {
-        matches!(self.cast(), StrongRepr::Heap(..))
+        matches!(self.discriminant(), Discriminant::Heap)
     }
 
     #[inline(always)]
@@ -259,14 +259,22 @@ impl Clone for Repr {
 }
 
 impl Drop for Repr {
+    #[inline]
     fn drop(&mut self) {
-        match self.discriminant() {
-            Discriminant::Heap => {
-                // SAFETY: We checked the discriminant to make sure the union is `heap`
-                unsafe { ManuallyDrop::drop(&mut self.heap) };
+        if self.is_heap_allocated() {
+            outlined_drop(self)
+        }
+
+        #[inline(never)]
+        fn outlined_drop(this: &mut Repr) {
+            match this.discriminant() {
+                Discriminant::Heap => {
+                    // SAFETY: We checked the discriminant to make sure the union is `heap`
+                    unsafe { ManuallyDrop::drop(&mut this.heap) };
+                }
+                // No-op, the value is on the stack and doesn't need to be explicitly dropped
+                Discriminant::Inline => {}
             }
-            // No-op, the value is on the stack and doesn't need to be explicitly dropped
-            Discriminant::Inline => {}
         }
     }
 }

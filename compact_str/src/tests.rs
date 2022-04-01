@@ -339,3 +339,19 @@ fn test_compact_str_is_send_and_sync() {
     fn is_send_and_sync<T: Send + Sync>() {}
     is_send_and_sync::<CompactStr>();
 }
+
+#[test]
+fn test_fmt_write() {
+    use core::fmt::Write;
+
+    let mut compact = CompactStr::default();
+
+    write!(compact, "test").unwrap();
+    assert_eq!(compact, "test");
+
+    writeln!(compact, "{}", 1234).unwrap();
+    assert_eq!(compact, "test1234\n");
+
+    write!(compact, "{:>8} {} {:<8}", "some", "more", "words").unwrap();
+    assert_eq!(compact, "test1234\n    some more words   ");
+}

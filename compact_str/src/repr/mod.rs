@@ -261,6 +261,8 @@ impl Clone for Repr {
 impl Drop for Repr {
     #[inline]
     fn drop(&mut self) {
+        // By "outlining" the actual Drop code and only calling it if we're a heap variant, it 
+        // allows dropping an inline variant to be as cheap as possible. 
         if self.is_heap_allocated() {
             outlined_drop(self)
         }

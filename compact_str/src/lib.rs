@@ -678,4 +678,11 @@ impl Extend<String> for CompactStr {
     }
 }
 
+impl fmt::Write for CompactStr {
+    fn write_str(&mut self, s: &str) -> fmt::Result {
+        self.push_str(s);
+        Ok(())
+    }
+}
+
 crate::asserts::assert_size_eq!(CompactStr, String);

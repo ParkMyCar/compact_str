@@ -16,20 +16,15 @@
 use core::borrow::Borrow;
 use core::cmp::Ordering;
 use core::fmt;
-use core::hash::{
-    Hash,
-    Hasher,
-};
+use core::hash::{Hash, Hasher};
 use core::iter::FromIterator;
 use core::ops::Deref;
-use core::str::{
-    FromStr,
-    Utf8Error,
-};
+use core::str::{FromStr, Utf8Error};
 use std::borrow::Cow;
 
 mod asserts;
 mod features;
+mod utility;
 
 mod repr;
 use repr::Repr;
@@ -686,3 +681,44 @@ impl fmt::Write for CompactStr {
 }
 
 crate::asserts::assert_size_eq!(CompactStr, String);
+
+/// A trait for converting a value to a `CompactStr`.
+///
+/// This trait is automatically implemented for any type which implements the
+/// [`Display`] trait. As such, `ToCompactStr` shouldn't be implemented directly:
+/// [`Display`] should be implemented instead, and you get the `ToCompactStr`
+/// implementation for free.
+///
+/// [`Display`]: fmt::Display
+pub trait ToCompactStr {
+    /// Converts the given value to a `CompactStr`.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// let i = 5;
+    /// let five = compact_str::CompactStr::from("5");
+    ///
+    /// assert_eq!(five, i.to_string());
+    /// ```
+    fn to_compact_str(&self) -> CompactStr;
+}
+
+/// # Panics
+///
+/// In this implementation, the `to_compact_str` method panics
+/// if the `Display` implementation returns an error.
+/// This indicates an incorrect `Display` implementation
+/// since `std::fmt::Write for String` never returns an error itself and
+/// the implementation of `ToCompactStr::to_compact_str` only panic if the `Display`
+/// implementation is incorrect..
+impl<T: fmt::Display + ?Sized> ToCompactStr for T {
+    #[inline]
+    fn to_compact_str(&self) -> CompactStr {
+        CompactStr {
+            repr: Repr::from_fmt(self),
+        }
+    }
+}

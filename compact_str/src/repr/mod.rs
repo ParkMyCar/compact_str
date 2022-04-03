@@ -1,3 +1,4 @@
+use core::fmt;
 use std::borrow::Cow;
 use std::iter::Extend;
 use std::mem::ManuallyDrop;
@@ -14,12 +15,11 @@ mod discriminant;
 mod heap;
 mod inline;
 
-use discriminant::{
-    Discriminant,
-    DiscriminantMask,
-};
+use discriminant::{Discriminant, DiscriminantMask};
 use heap::HeapString;
 use inline::InlineString;
+
+use crate::utility::format_into_buffer;
 
 const MAX_SIZE: usize = std::mem::size_of::<String>();
 const EMPTY: Repr = Repr {
@@ -105,6 +105,21 @@ impl Repr {
         } else {
             let heap = ManuallyDrop::new(HeapString::from_box_str(b));
             Repr { heap }
+        }
+    }
+
+    #[inline]
+    pub fn from_fmt(val: impl fmt::Display) -> Self {
+        let len = crate::count!("{}", val);
+
+        if len == 0 {
+            EMPTY
+        } else if len <= MAX_SIZE {
+            let mut buffer = [0_u8; MAX_SIZE];
+            let text = format_into_buffer(&mut buffer, &val);
+            Self::new(text)
+        } else {
+            Self::from_string(val.to_string())
         }
     }
 
@@ -447,10 +462,7 @@ crate::asserts::assert_size!(Repr, 12);
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        Repr,
-        MAX_SIZE,
-    };
+    use super::{Repr, MAX_SIZE};
 
     #[test]
     fn test_inline_str() {

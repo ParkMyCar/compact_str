@@ -4,7 +4,7 @@ use proptest::prelude::*;
 use proptest::strategy::Strategy;
 use test_strategy::proptest;
 
-use crate::CompactStr;
+use crate::{CompactStr, ToCompactStr};
 
 #[cfg(target_pointer_width = "64")]
 const MAX_SIZE: usize = 24;
@@ -354,4 +354,35 @@ fn test_fmt_write() {
 
     write!(compact, "{:>8} {} {:<8}", "some", "more", "words").unwrap();
     assert_eq!(compact, "test1234\n    some more words   ");
+}
+
+macro_rules! to_compact_str {
+    ( $fmt:expr $(, $args:tt)* ) => {
+        ToCompactStr::to_compact_str(
+            &core::format_args!(
+                $fmt,
+                $(
+                    $args,
+                )*
+            )
+        )
+    };
+}
+
+#[test]
+fn test_to_compact_str() {
+    assert_eq!("12345", to_compact_str!("{}", "12345"));
+    assert_eq!("112345", to_compact_str!("1{}", "12345"));
+    assert_eq!("1123452", to_compact_str!("1{}{}", "12345", 2));
+    assert_eq!("11234522", to_compact_str!("1{}{}{}", "12345", 2, '2'));
+    assert_eq!(
+        "112345221000",
+        to_compact_str!("1{}{}{}{}", "12345", 2, '2', 1000)
+    );
+
+    // Test string longer than repr::MAX_SIZE
+    assert_eq!(
+        "01234567890123456789999999",
+        to_compact_str!("0{}67890123456789{}", "12345", 999999)
+    );
 }

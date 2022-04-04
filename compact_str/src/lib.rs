@@ -698,8 +698,10 @@ pub trait ToCompactStr {
     /// Basic usage:
     ///
     /// ```
+    /// use compact_str::ToCompactStr;
+    ///
     /// let i = 5;
-    /// let five = compact_str::CompactStr::from("5");
+    /// let five = "5".to_compact_str();
     ///
     /// assert_eq!(five, i.to_string());
     /// ```

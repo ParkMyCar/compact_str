@@ -1,4 +1,4 @@
-use core::fmt;
+use core::fmt::{self, Write};
 use std::borrow::Cow;
 use std::iter::Extend;
 use std::mem::ManuallyDrop;
@@ -119,7 +119,9 @@ impl Repr {
             let text = format_into_buffer(&mut buffer, &val);
             Self::new(text)
         } else {
-            Self::from_string(val.to_string())
+            let mut string = String::with_capacity(len);
+            write!(&mut string, "{}", val).expect("fmt::Display incorrectly implemented!");
+            Self::from_string(string)
         }
     }
 

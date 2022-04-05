@@ -355,3 +355,13 @@ fn test_fmt_write() {
     write!(compact, "{:>8} {} {:<8}", "some", "more", "words").unwrap();
     assert_eq!(compact, "test1234\n    some more words   ");
 }
+
+#[test]
+fn test_plus_operator() {
+    assert_eq!(CompactStr::from("a") + CompactStr::from("b"), "ab");
+    assert_eq!(CompactStr::from("a") + &CompactStr::from("b"), "ab");
+    assert_eq!(CompactStr::from("a") + "b", "ab");
+    assert_eq!(CompactStr::from("a") + &String::from("b"), "ab");
+    assert_eq!(CompactStr::from("a") + String::from("b"), "ab");
+    assert_eq!(String::from("a") + CompactStr::from("b"), "ab");
+}

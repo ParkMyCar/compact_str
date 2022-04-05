@@ -21,7 +21,10 @@ use core::hash::{
     Hasher,
 };
 use core::iter::FromIterator;
-use core::ops::Deref;
+use core::ops::{
+    Add,
+    Deref,
+};
 use core::str::{
     FromStr,
     Utf8Error,
@@ -682,6 +685,54 @@ impl fmt::Write for CompactStr {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         self.push_str(s);
         Ok(())
+    }
+}
+
+impl Add<Self> for CompactStr {
+    type Output = Self;
+    fn add(mut self, rhs: Self) -> Self::Output {
+        self.push_str(&rhs);
+        self
+    }
+}
+
+impl Add<&Self> for CompactStr {
+    type Output = Self;
+    fn add(mut self, rhs: &Self) -> Self::Output {
+        self.push_str(rhs);
+        self
+    }
+}
+
+impl Add<&str> for CompactStr {
+    type Output = Self;
+    fn add(mut self, rhs: &str) -> Self::Output {
+        self.push_str(rhs);
+        self
+    }
+}
+
+impl Add<&String> for CompactStr {
+    type Output = Self;
+    fn add(mut self, rhs: &String) -> Self::Output {
+        self.push_str(rhs);
+        self
+    }
+}
+
+impl Add<String> for CompactStr {
+    type Output = Self;
+    fn add(mut self, rhs: String) -> Self::Output {
+        self.push_str(&rhs);
+        self
+    }
+}
+
+impl Add<CompactStr> for String {
+    type Output = Self;
+    fn add(mut self, rhs: CompactStr) -> Self::Output {
+        self.push_str(&rhs);
+        self
     }
 }
 

@@ -1,4 +1,7 @@
+use core::fmt;
+
 use super::MAX_SIZE;
+use crate::utility::format_into_buffer;
 
 const LENGTH_MASK: u8 = 0b11000000;
 
@@ -25,6 +28,25 @@ impl InlineString {
         // when reading the length we can detect that the last byte is part of UTF-8 and return a
         // length of MAX_SIZE
         unsafe { std::ptr::copy_nonoverlapping(text.as_ptr(), buffer.as_mut_ptr(), len) };
+
+        InlineString { buffer }
+    }
+
+    #[inline]
+    pub fn from_fmt(val: impl fmt::Display, len: usize) -> Self {
+        debug_assert!(len <= MAX_SIZE);
+
+        let mut buffer = [0u8; MAX_SIZE];
+
+        // set the length
+        buffer[MAX_SIZE - 1] = len as u8 | LENGTH_MASK;
+
+        // format the val into buffer.
+        //
+        // note: in the case where len == MAX_SIZE, we'll overwrite the len, but that's okay because
+        // when reading the length we can detect that the last byte is part of UTF-8 and return a
+        // length of MAX_SIZE
+        format_into_buffer(&mut buffer, &val);
 
         InlineString { buffer }
     }
@@ -118,10 +140,7 @@ mod tests {
     use proptest::prelude::*;
     use test_strategy::proptest;
 
-    use super::{
-        InlineString,
-        MAX_SIZE,
-    };
+    use super::{InlineString, MAX_SIZE};
     use crate::tests::rand_unicode_with_max_len;
 
     #[test]

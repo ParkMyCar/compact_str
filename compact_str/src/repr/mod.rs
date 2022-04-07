@@ -19,8 +19,6 @@ use discriminant::{Discriminant, DiscriminantMask};
 use heap::HeapString;
 use inline::InlineString;
 
-use crate::utility::format_into_buffer;
-
 const MAX_SIZE: usize = std::mem::size_of::<String>();
 const EMPTY: Repr = Repr {
     inline: InlineString::new_const(""),
@@ -115,9 +113,8 @@ impl Repr {
         if len == 0 {
             EMPTY
         } else if len <= MAX_SIZE {
-            let mut buffer = [0_u8; MAX_SIZE];
-            let text = format_into_buffer(&mut buffer, &val);
-            Self::new(text)
+            let inline = InlineString::from_fmt(val, len);
+            Repr { inline }
         } else {
             let mut string = String::with_capacity(len);
             write!(&mut string, "{}", val).expect("fmt::Display incorrectly implemented!");

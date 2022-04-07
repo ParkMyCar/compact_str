@@ -356,6 +356,16 @@ fn test_fmt_write() {
     assert_eq!(compact, "test1234\n    some more words   ");
 }
 
+#[test]
+fn test_plus_operator() {
+    assert_eq!(CompactStr::from("a") + CompactStr::from("b"), "ab");
+    assert_eq!(CompactStr::from("a") + &CompactStr::from("b"), "ab");
+    assert_eq!(CompactStr::from("a") + "b", "ab");
+    assert_eq!(CompactStr::from("a") + &String::from("b"), "ab");
+    assert_eq!(CompactStr::from("a") + String::from("b"), "ab");
+    assert_eq!(String::from("a") + CompactStr::from("b"), "ab");
+}
+
 macro_rules! to_compact_str {
     ( $fmt:expr $(, $args:tt)* ) => {
         ToCompactStr::to_compact_str(

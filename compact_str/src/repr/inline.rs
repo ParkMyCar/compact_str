@@ -1,7 +1,7 @@
 use core::fmt;
+use std::io::{Cursor, Write};
 
 use super::MAX_SIZE;
-use crate::utility::format_into_buffer;
 
 const LENGTH_MASK: u8 = 0b11000000;
 
@@ -46,7 +46,8 @@ impl InlineString {
         // note: in the case where len == MAX_SIZE, we'll overwrite the len, but that's okay because
         // when reading the length we can detect that the last byte is part of UTF-8 and return a
         // length of MAX_SIZE
-        format_into_buffer(&mut buffer, &val);
+        write!(&mut Cursor::new(buffer.as_mut_slice()), "{}", val)
+            .expect("fmt::Display incorrectly implemented!");
 
         InlineString { buffer }
     }

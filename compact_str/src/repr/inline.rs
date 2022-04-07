@@ -46,7 +46,7 @@ impl InlineString {
         // note: in the case where len == MAX_SIZE, we'll overwrite the len, but that's okay because
         // when reading the length we can detect that the last byte is part of UTF-8 and return a
         // length of MAX_SIZE
-        write!(buffer.as_mut_slice(), "{}", val).expect("fmt::Display incorrectly implemented!");
+        write!(&mut buffer[..], "{}", val).expect("fmt::Display incorrectly implemented!");
 
         InlineString { buffer }
     }

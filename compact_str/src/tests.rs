@@ -1,3 +1,4 @@
+use std::num;
 use std::str::FromStr;
 
 use proptest::prelude::*;
@@ -381,10 +382,16 @@ macro_rules! to_compact_str {
 
 #[test]
 fn test_to_compact_str() {
+    // Test specialisation for bool, char and String
     assert_eq!(&*true.to_string(), "true".to_compact_str());
     assert_eq!("234", "234".to_compact_str());
     assert_eq!("1", '1'.to_compact_str());
 
+    // Test specialisation for int and nonzero_int using itoa
+    assert_eq!("234", 234.to_compact_str());
+    assert_eq!("234", num::NonZeroU64::new(234).unwrap().to_compact_str());
+
+    // Test generic Display implementation
     assert_eq!("12345", to_compact_str!("{}", "12345"));
     assert_eq!("112345", to_compact_str!("1{}", "12345"));
     assert_eq!("1123452", to_compact_str!("1{}{}", "12345", 2));
@@ -400,4 +407,3 @@ fn test_to_compact_str() {
         to_compact_str!("0{}67890123456789{}", "12345", 999999)
     );
 }
-

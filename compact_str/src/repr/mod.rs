@@ -19,7 +19,7 @@ use discriminant::{Discriminant, DiscriminantMask};
 use heap::HeapString;
 use inline::InlineString;
 
-const MAX_SIZE: usize = std::mem::size_of::<String>();
+pub(crate) const MAX_SIZE: usize = std::mem::size_of::<String>();
 const EMPTY: Repr = Repr {
     inline: InlineString::new_const(""),
 };

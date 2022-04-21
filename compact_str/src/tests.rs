@@ -380,6 +380,12 @@ macro_rules! to_compact_str {
     };
 }
 
+macro_rules! assert_int_MAX_to_compact_str {
+    ($int: ty) => {
+        assert_eq!(&*<$int>::MAX.to_string(), &*<$int>::MAX.to_compact_str());
+    };
+}
+
 #[test]
 fn test_to_compact_str() {
     // Test specialisation for bool, char and String
@@ -390,6 +396,21 @@ fn test_to_compact_str() {
     // Test specialisation for int and nonzero_int using itoa
     assert_eq!("234", 234.to_compact_str());
     assert_eq!("234", num::NonZeroU64::new(234).unwrap().to_compact_str());
+
+    assert_int_MAX_to_compact_str!(u8);
+    assert_int_MAX_to_compact_str!(i8);
+
+    assert_int_MAX_to_compact_str!(u16);
+    assert_int_MAX_to_compact_str!(i16);
+
+    assert_int_MAX_to_compact_str!(u32);
+    assert_int_MAX_to_compact_str!(i32);
+
+    assert_int_MAX_to_compact_str!(u64);
+    assert_int_MAX_to_compact_str!(i64);
+
+    assert_int_MAX_to_compact_str!(usize);
+    assert_int_MAX_to_compact_str!(isize);
 
     // Test specialisation for f32 and f64 using ryu
     assert_eq!("3.2", 3.2_f32.to_compact_str());

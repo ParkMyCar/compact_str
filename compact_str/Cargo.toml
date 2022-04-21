@@ -16,6 +16,7 @@ categories = ["encoding", "parsing", "memory-management", "text-processing"]
 [dependencies]
 bytes = { version = "1", optional = true }
 serde = { version = "1", optional = true }
+castaway = { version = "0.2", optional = true }
 
 [dev-dependencies]
 proptest = { version = "1", default-features = false, features = ["std"] }

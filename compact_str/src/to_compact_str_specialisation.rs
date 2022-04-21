@@ -8,6 +8,11 @@ pub(super) fn to_compact_str_specialised<T>(val: &T) -> Option<CompactStr> {
         return Some(compact_str);
     }
 
+    #[cfg(feature = "to-compact-str-float-spec")]
+    if let Some(compact_str) = float_spec::to_compact_str_specialised(val) {
+        return Some(compact_str);
+    }
+
     if let Ok(boolean) = cast!(val, &bool) {
         Some(CompactStr::new(if *boolean { "true" } else { "false" }))
     } else if let Ok(string) = cast!(val, &String) {
@@ -63,5 +68,28 @@ mod int_spec {
         specialise!(val, usize, num::NonZeroIsize);
 
         None
+    }
+}
+
+#[cfg(feature = "to-compact-str-float-spec")]
+mod float_spec {
+    use super::*;
+
+    use ryu::{Buffer, Float};
+
+    #[inline(always)]
+    fn float_to_compact_str(float: impl Float) -> CompactStr {
+        CompactStr::new(Buffer::new().format(float))
+    }
+
+    #[inline(always)]
+    pub(super) fn to_compact_str_specialised<T>(val: &T) -> Option<CompactStr> {
+        if let Ok(float) = cast!(val, &f32) {
+            Some(float_to_compact_str(*float))
+        } else if let Ok(float) = cast!(val, &f64) {
+            Some(float_to_compact_str(*float))
+        } else {
+            None
+        }
     }
 }

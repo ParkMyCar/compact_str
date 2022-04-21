@@ -391,6 +391,19 @@ fn test_to_compact_str() {
     assert_eq!("234", 234.to_compact_str());
     assert_eq!("234", num::NonZeroU64::new(234).unwrap().to_compact_str());
 
+    // Test specialisation for f32 and f64 using ryu
+    assert_eq!("3.2", 3.2_f32.to_compact_str());
+    assert_eq!("288888.290028", 288888.290028_f64.to_compact_str());
+
+    assert_eq!("inf", f32::INFINITY.to_compact_str());
+    assert_eq!("-inf", f32::NEG_INFINITY.to_compact_str());
+
+    assert_eq!("inf", f64::INFINITY.to_compact_str());
+    assert_eq!("-inf", f64::NEG_INFINITY.to_compact_str());
+
+    assert_eq!("NaN", f32::NAN.to_compact_str());
+    assert_eq!("NaN", f64::NAN.to_compact_str());
+
     // Test generic Display implementation
     assert_eq!("12345", to_compact_str!("{}", "12345"));
     assert_eq!("112345", to_compact_str!("1{}", "12345"));

@@ -2,25 +2,6 @@ use super::CompactStr;
 
 use castaway::cast;
 
-const fn target_pointer_width() -> usize {
-    #[cfg(target_pointer_width = "8")]
-    {
-        8
-    }
-    #[cfg(target_pointer_width = "16")]
-    {
-        16
-    }
-    #[cfg(target_pointer_width = "32")]
-    {
-        32
-    }
-    #[cfg(target_pointer_width = "64")]
-    {
-        64
-    }
-}
-
 #[inline(always)]
 pub(super) fn to_compact_str_specialised<T>(val: &T) -> Option<CompactStr> {
     #[cfg(feature = "to-compact-str-int-spec")]
@@ -51,6 +32,25 @@ mod int_spec {
 
     use core::num;
     use itoa::{Buffer, Integer};
+
+    const fn target_pointer_width() -> usize {
+        #[cfg(target_pointer_width = "8")]
+        {
+            8
+        }
+        #[cfg(target_pointer_width = "16")]
+        {
+            16
+        }
+        #[cfg(target_pointer_width = "32")]
+        {
+            32
+        }
+        #[cfg(target_pointer_width = "64")]
+        {
+            64
+        }
+    }
 
     trait IsNewInlineable {
         const IS_NEW_INLINEABLE: bool;

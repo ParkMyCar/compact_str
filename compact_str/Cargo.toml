@@ -12,12 +12,15 @@ keywords = ["string", "compact", "small", "memory", "mutable"]
 categories = ["encoding", "parsing", "memory-management", "text-processing"]
 
 [features]
+to-compact-str-float-spec = ["ryu", "to-compact-str-specialisation"]
 to-compact-str-int-spec = ["itoa", "to-compact-str-specialisation"]
 to-compact-str-specialisation = ["castaway"]
 
 [dependencies]
 bytes = { version = "1", optional = true }
 serde = { version = "1", optional = true }
+
+# Specialisation
 castaway = { version = "0.2", optional = true }
 itoa = { version = "1", optional = true }
 ryu = { version = "1", optional = true }

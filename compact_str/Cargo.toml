@@ -12,7 +12,7 @@ keywords = ["string", "compact", "small", "memory", "mutable"]
 categories = ["encoding", "parsing", "memory-management", "text-processing"]
 
 [features]
-to-compact-str-int-spec = ["to-compact-str-specialisation"]
+to-compact-str-int-spec = ["itoa", "to-compact-str-specialisation"]
 to-compact-str-specialisation = ["castaway"]
 
 [dependencies]

@@ -770,7 +770,7 @@ pub trait ToCompactStr {
 /// since `std::fmt::Write for String` never returns an error itself and
 /// the implementation of `ToCompactStr::to_compact_str` only panic if the `Display`
 /// implementation is incorrect..
-impl<T: fmt::Display + ?Sized> ToCompactStr for T {
+impl<T: fmt::Display> ToCompactStr for T {
     #[inline]
     fn to_compact_str(&self) -> CompactStr {
         CompactStr {

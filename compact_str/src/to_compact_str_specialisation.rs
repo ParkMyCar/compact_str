@@ -39,25 +39,6 @@ mod int_spec {
     use core::num;
     use itoa::{Buffer, Integer};
 
-    const fn target_pointer_width() -> usize {
-        #[cfg(target_pointer_width = "8")]
-        {
-            8
-        }
-        #[cfg(target_pointer_width = "16")]
-        {
-            16
-        }
-        #[cfg(target_pointer_width = "32")]
-        {
-            32
-        }
-        #[cfg(target_pointer_width = "64")]
-        {
-            64
-        }
-    }
-
     trait IsNewInlineable {
         const IS_NEW_INLINEABLE: bool;
     }
@@ -85,12 +66,12 @@ mod int_spec {
     impl_integer_new_inlineable!(u128, 39);
     impl_integer_new_inlineable!(i128, 40);
 
+    // For 32-bit and 64-bit arch, usize and isize can be stored inlined.
     impl IsNewInlineable for usize {
-        const IS_NEW_INLINEABLE: bool = target_pointer_width() >= 16;
+        const IS_NEW_INLINEABLE: bool = true;
     }
-
     impl IsNewInlineable for isize {
-        const IS_NEW_INLINEABLE: bool = target_pointer_width() >= 16;
+        const IS_NEW_INLINEABLE: bool = true;
     }
 
     fn int_to_compact_str<T: Integer + IsNewInlineable>(int: T) -> CompactStr {

@@ -2,6 +2,7 @@ use super::CompactStr;
 
 use castaway::cast;
 
+#[inline(always)]
 pub(super) fn to_compact_str_specialised<T>(val: &T) -> Option<CompactStr> {
     #[cfg(feature = "to-compact-str-int-spec")]
     if let Some(compact_str) = int_spec::to_compact_str_specialised(val) {
@@ -45,6 +46,7 @@ mod int_spec {
         };
     }
 
+    #[inline(always)]
     pub(super) fn to_compact_str_specialised<T>(val: &T) -> Option<CompactStr> {
         specialise!(val, i8, num::NonZeroI8);
         specialise!(val, u8, num::NonZeroU8);

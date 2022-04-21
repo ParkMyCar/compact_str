@@ -23,7 +23,9 @@ pub(super) fn to_compact_str_specialised<T>(val: &T) -> Option<CompactStr> {
     } else if let Ok(string) = cast!(val, &String) {
         Some(CompactStr::new(&*string))
     } else if let Ok(character) = cast!(val, &char) {
-        Some(CompactStr::new(character.encode_utf8(&mut [0; 4][..])))
+        Some(CompactStr::new_inline(
+            character.encode_utf8(&mut [0; 4][..]),
+        ))
     } else {
         None
     }

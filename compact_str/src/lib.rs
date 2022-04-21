@@ -18,14 +18,8 @@ use core::cmp::Ordering;
 use core::fmt;
 use core::hash::{Hash, Hasher};
 use core::iter::FromIterator;
-use core::ops::{
-    Add,
-    Deref,
-};
-use core::str::{
-    FromStr,
-    Utf8Error,
-};
+use core::ops::{Add, Deref};
+use core::str::{FromStr, Utf8Error};
 use std::borrow::Cow;
 
 mod asserts;
@@ -34,6 +28,9 @@ mod utility;
 
 mod repr;
 use repr::Repr;
+
+#[cfg(feature = "to-compact-str-specialisation")]
+mod to_compact_str_specialisation;
 
 #[cfg(test)]
 mod tests;
@@ -773,6 +770,11 @@ pub trait ToCompactStr {
 impl<T: fmt::Display> ToCompactStr for T {
     #[inline]
     fn to_compact_str(&self) -> CompactStr {
+        #[cfg(feature = "to-compact-str-specialisation")]
+        if let Some(compact_str) = to_compact_str_specialisation::to_compact_str_specialised(self) {
+            return compact_str;
+        }
+
         CompactStr {
             repr: Repr::from_fmt(self),
         }

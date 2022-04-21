@@ -413,6 +413,11 @@ fn test_to_compact_str() {
     assert_int_MAX_to_compact_str!(isize);
 
     // Test specialisation for f32 and f64 using ryu
+    // FIXME: The following assert fails on power pc little endian 64-bit:
+    // Expected: 3.2
+    // Actual: 0.0
+    //
+    // It failed only after float specialisation is added.
     assert_eq!("3.2", 3.2_f32.to_compact_str());
     assert_eq!("288888.290028", 288888.290028_f64.to_compact_str());
 

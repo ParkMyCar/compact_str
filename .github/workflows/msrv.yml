@@ -19,6 +19,7 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
+          default: true
           toolchain: 1.49
       - name: cargo test msrv..
         run: |

@@ -133,6 +133,7 @@ mod int_spec {
 }
 
 #[cfg(feature = "to-compact-str-float-spec")]
+#[cfg(not(target_arch = "powerpc64le"))]
 mod float_spec {
     use super::*;
 

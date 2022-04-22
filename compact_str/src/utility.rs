@@ -3,10 +3,10 @@ use std::io::{Result, Write};
 
 /// A special kind of sink that records the size of bytes writen into it.
 #[derive(Debug, Default)]
-pub struct Sink(usize);
+pub(crate) struct Sink(usize);
 impl Sink {
     #[inline(always)]
-    pub fn count(args: fmt::Arguments) -> usize {
+    pub(crate) fn count(args: fmt::Arguments) -> usize {
         let mut sink = Sink::default();
         write!(&mut sink, "{}", args).unwrap();
         sink.0

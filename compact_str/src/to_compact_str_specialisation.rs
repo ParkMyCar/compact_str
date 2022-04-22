@@ -1,6 +1,13 @@
 use super::CompactStr;
 
-use castaway::cast;
+use castaway::{cast, LifetimeFree};
+
+/// # Safety
+///
+///  - CompactStr does not contain any lifetime
+///  - CompactStr is 'static
+///  - CompactStr is a container to `u8`, which is `LifetimeFree`.
+unsafe impl LifetimeFree for CompactStr {}
 
 #[inline(always)]
 pub(super) fn to_compact_str_specialised<T>(val: &T) -> Option<CompactStr> {
@@ -30,12 +37,14 @@ pub(super) fn to_compact_str_specialised<T>(val: &T) -> Option<CompactStr> {
         } else {
             "false"
         }))
-    } else if let Ok(string) = cast!(val, &String) {
-        Some(CompactStr::new(&*string))
     } else if let Ok(character) = cast!(val, &char) {
         Some(CompactStr::new_inline(
             character.encode_utf8(&mut [0; 4][..]),
         ))
+    } else if let Ok(string) = cast!(val, &String) {
+        Some(CompactStr::new(&*string))
+    } else if let Ok(compact_str) = cast!(val, &CompactStr) {
+        Some(compact_str.clone())
     } else {
         None
     }

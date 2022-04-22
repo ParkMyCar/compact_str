@@ -1,4 +1,4 @@
-use crate::utility::Sink;
+use crate::utility::count;
 
 use core::fmt::{self, Write};
 use std::borrow::Cow;
@@ -110,7 +110,7 @@ impl Repr {
 
     #[inline]
     pub fn from_fmt(val: impl fmt::Display) -> Self {
-        let len = Sink::count(&val);
+        let len = count(&val);
 
         if len == 0 {
             EMPTY

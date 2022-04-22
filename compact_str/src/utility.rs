@@ -3,13 +3,12 @@ use std::io::{Result, Write};
 
 /// A special kind of sink that records the size of bytes writen into it.
 pub(crate) struct Sink(usize);
-impl Sink {
-    #[inline(always)]
-    pub(crate) fn count(args: impl fmt::Display) -> usize {
-        let mut sink = Sink(0);
-        write!(&mut sink, "{}", args).unwrap();
-        sink.0
-    }
+
+#[inline(always)]
+pub(crate) fn count(args: impl fmt::Display) -> usize {
+    let mut sink = Sink(0);
+    write!(&mut sink, "{}", args).unwrap();
+    sink.0
 }
 
 impl Write for Sink {
@@ -27,10 +26,14 @@ impl Write for Sink {
 
 #[cfg(test)]
 mod tests {
+    use super::count;
+
+    use core::format_args;
+
     macro_rules! count {
     ( $fmt:expr $(, $args:tt)* ) => {
-        $crate::utility::Sink::count(
-            core::format_args!(
+        count(
+            format_args!(
                 $fmt,
                 $(
                     $args,

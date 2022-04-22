@@ -6,24 +6,11 @@ use std::io::{Result, Write};
 pub(crate) struct Sink(usize);
 impl Sink {
     #[inline(always)]
-    pub(crate) fn count(args: fmt::Arguments) -> usize {
+    pub(crate) fn count(args: impl fmt::Display) -> usize {
         let mut sink = Sink(0);
         write!(&mut sink, "{}", args).unwrap();
         sink.0
     }
-}
-#[macro_export]
-macro_rules! count {
-    ( $fmt:expr $(, $args:tt)* ) => {
-        $crate::utility::Sink::count(
-            core::format_args!(
-                $fmt,
-                $(
-                    $args,
-                )*
-            )
-        )
-    };
 }
 
 impl Write for Sink {
@@ -41,6 +28,19 @@ impl Write for Sink {
 
 #[cfg(test)]
 mod tests {
+    macro_rules! count {
+    ( $fmt:expr $(, $args:tt)* ) => {
+        $crate::utility::Sink::count(
+            core::format_args!(
+                $fmt,
+                $(
+                    $args,
+                )*
+            )
+        )
+    };
+}
+
     #[test]
     fn test_count() {
         assert_eq!(5, count!("{}", "12345"));

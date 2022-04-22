@@ -135,10 +135,7 @@ mod int_spec {
         specialise!(val, u128, num::NonZeroU128);
 
         specialise!(val, isize, num::NonZeroIsize);
-
-        // castaway::LifetimeFree didn't implement for `num::NonZeroUsize`
-        // and will be fixed in https://github.com/sagebind/castaway/pull/7.
-        specialise!(val, usize, num::NonZeroIsize);
+        specialise!(val, usize, num::NonZeroUsize);
 
         None
     }

@@ -5,6 +5,7 @@ use std::io::{Result, Write};
 #[derive(Debug, Default)]
 pub struct Sink(usize);
 impl Sink {
+    #[inline(always)]
     pub fn count(args: fmt::Arguments) -> usize {
         let mut sink = Sink::default();
         write!(&mut sink, "{}", args).unwrap();
@@ -26,11 +27,13 @@ macro_rules! count {
 }
 
 impl Write for Sink {
+    #[inline(always)]
     fn write(&mut self, buf: &[u8]) -> Result<usize> {
         self.0 += buf.len();
         Ok(buf.len())
     }
 
+    #[inline(always)]
     fn flush(&mut self) -> Result<()> {
         Ok(())
     }

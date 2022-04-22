@@ -9,6 +9,9 @@ use castaway::{cast, LifetimeFree};
 ///  - CompactStr is a container to `u8`, which is `LifetimeFree`.
 unsafe impl LifetimeFree for CompactStr {}
 
+const TRUE_COMPACT_STR: CompactStr = CompactStr::new_inline("true");
+const FALSE_COMPACT_STR: CompactStr = CompactStr::new_inline("false");
+
 #[inline(always)]
 pub(super) fn to_compact_str_specialised<T>(val: &T) -> Option<CompactStr> {
     #[cfg(feature = "to-compact-str-int-spec")]
@@ -32,11 +35,11 @@ pub(super) fn to_compact_str_specialised<T>(val: &T) -> Option<CompactStr> {
     }
 
     if let Ok(boolean) = cast!(val, &bool) {
-        Some(CompactStr::new_inline(if *boolean {
-            "true"
+        Some(if *boolean {
+            TRUE_COMPACT_STR
         } else {
-            "false"
-        }))
+            FALSE_COMPACT_STR
+        })
     } else if let Ok(character) = cast!(val, &char) {
         Some(CompactStr::new_inline(
             character.encode_utf8(&mut [0; 4][..]),

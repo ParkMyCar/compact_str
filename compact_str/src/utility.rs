@@ -31,17 +31,17 @@ mod tests {
     use core::format_args;
 
     macro_rules! count {
-    ( $fmt:expr $(, $args:tt)* ) => {
-        count(
-            format_args!(
-                $fmt,
-                $(
-                    $args,
-                )*
+        ( $fmt:expr $(, $args:tt)* ) => {
+            count(
+                format_args!(
+                    $fmt,
+                    $(
+                        $args,
+                    )*
+                )
             )
-        )
-    };
-}
+        };
+    }
 
     #[test]
     fn test_count() {

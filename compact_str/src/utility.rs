@@ -2,7 +2,6 @@ use core::fmt;
 use std::io::{Result, Write};
 
 /// A special kind of sink that records the size of bytes writen into it.
-#[derive(Debug, Default)]
 pub(crate) struct Sink(usize);
 impl Sink {
     #[inline(always)]

@@ -2,7 +2,7 @@ use core::fmt;
 use std::io::{Result, Write};
 
 /// A special kind of sink that records the size of bytes writen into it.
-pub(crate) struct Sink(usize);
+struct Sink(usize);
 
 #[inline(always)]
 pub(crate) fn count(args: impl fmt::Display) -> usize {

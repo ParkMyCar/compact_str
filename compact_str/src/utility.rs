@@ -7,7 +7,7 @@ pub(crate) struct Sink(usize);
 impl Sink {
     #[inline(always)]
     pub(crate) fn count(args: fmt::Arguments) -> usize {
-        let mut sink = Sink::default();
+        let mut sink = Sink(0);
         write!(&mut sink, "{}", args).unwrap();
         sink.0
     }

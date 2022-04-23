@@ -28,8 +28,7 @@ pub(super) fn to_compact_str_specialised<T>(val: &T) -> Option<CompactStr> {
     // Expected: 3.2
     // Actual: 0.0
     //
-    // It failed only after float specialisation is added.
-    #[cfg(not(target_arch = "powerpc64le"))]
+    //#[cfg(not(target_arch = "powerpc64le"))]
     if let Some(compact_str) = float_spec::to_compact_str_specialised(val) {
         return Some(compact_str);
     }
@@ -142,7 +141,6 @@ mod int_spec {
 }
 
 #[cfg(feature = "to-compact-str-float-spec")]
-#[cfg(not(target_arch = "powerpc64le"))]
 mod float_spec {
     use super::*;
 

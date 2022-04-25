@@ -1,8 +1,4 @@
-use core::fmt;
-use std::io::{Result, Write};
-
-/// A special kind of sink that records the size of bytes writen into it.
-struct Sink(usize);
+use core::fmt::{self, Write};
 
 #[inline(always)]
 pub(crate) fn count(args: impl fmt::Display) -> usize {
@@ -11,15 +7,13 @@ pub(crate) fn count(args: impl fmt::Display) -> usize {
     sink.0
 }
 
+/// A special kind of sink that records the size of bytes writen into it.
+struct Sink(usize);
+
 impl Write for Sink {
     #[inline(always)]
-    fn write(&mut self, buf: &[u8]) -> Result<usize> {
-        self.0 += buf.len();
-        Ok(buf.len())
-    }
-
-    #[inline(always)]
-    fn flush(&mut self) -> Result<()> {
+    fn write_str(&mut self, s: &str) -> fmt::Result {
+        self.0 += s.len();
         Ok(())
     }
 }

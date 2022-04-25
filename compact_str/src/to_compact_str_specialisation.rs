@@ -18,14 +18,10 @@ const FALSE_COMPACT_STR: CompactStr = CompactStr::new_inline("false");
 #[inline(always)]
 pub(super) fn to_compact_str_specialised<T>(val: &T) -> Option<CompactStr> {
     if let Some(compact_str) = int_spec::to_compact_str_specialised(val) {
-        return Some(compact_str);
-    }
-
-    if let Some(compact_str) = float_spec::to_compact_str_specialised(val) {
-        return Some(compact_str);
-    }
-
-    if let Ok(boolean) = cast!(val, &bool) {
+        Some(compact_str)
+    } else if let Some(compact_str) = float_spec::to_compact_str_specialised(val) {
+        Some(compact_str)
+    } else if let Ok(boolean) = cast!(val, &bool) {
         Some(if *boolean {
             TRUE_COMPACT_STR
         } else {

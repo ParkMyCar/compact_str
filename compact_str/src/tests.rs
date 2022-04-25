@@ -367,7 +367,7 @@ fn test_plus_operator() {
     assert_eq!(String::from("a") + CompactStr::from("b"), "ab");
 }
 
-macro_rules! to_compact_str {
+macro_rules! format_compact {
     ( $fmt:expr $(, $args:tt)* ) => {
         ToCompactStr::to_compact_str(
             &core::format_args!(
@@ -435,18 +435,18 @@ fn test_to_compact_str() {
 
     // Test generic Display implementation
     assert_eq!("234", "234".to_compact_str());
-    assert_eq!("12345", to_compact_str!("{}", "12345"));
-    assert_eq!("112345", to_compact_str!("1{}", "12345"));
-    assert_eq!("1123452", to_compact_str!("1{}{}", "12345", 2));
-    assert_eq!("11234522", to_compact_str!("1{}{}{}", "12345", 2, '2'));
+    assert_eq!("12345", format_compact!("{}", "12345"));
+    assert_eq!("112345", format_compact!("1{}", "12345"));
+    assert_eq!("1123452", format_compact!("1{}{}", "12345", 2));
+    assert_eq!("11234522", format_compact!("1{}{}{}", "12345", 2, '2'));
     assert_eq!(
         "112345221000",
-        to_compact_str!("1{}{}{}{}", "12345", 2, '2', 1000)
+        format_compact!("1{}{}{}{}", "12345", 2, '2', 1000)
     );
 
     // Test string longer than repr::MAX_SIZE
     assert_eq!(
         "01234567890123456789999999",
-        to_compact_str!("0{}67890123456789{}", "12345", 999999)
+        format_compact!("0{}67890123456789{}", "12345", 999999)
     );
 }

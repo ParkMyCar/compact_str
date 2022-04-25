@@ -16,10 +16,19 @@
 use core::borrow::Borrow;
 use core::cmp::Ordering;
 use core::fmt;
-use core::hash::{Hash, Hasher};
+use core::hash::{
+    Hash,
+    Hasher,
+};
 use core::iter::FromIterator;
-use core::ops::{Add, Deref};
-use core::str::{FromStr, Utf8Error};
+use core::ops::{
+    Add,
+    Deref,
+};
+use core::str::{
+    FromStr,
+    Utf8Error,
+};
 use std::borrow::Cow;
 
 mod asserts;

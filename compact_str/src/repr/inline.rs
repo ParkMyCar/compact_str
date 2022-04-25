@@ -118,7 +118,10 @@ mod tests {
     use proptest::prelude::*;
     use test_strategy::proptest;
 
-    use super::{InlineString, MAX_SIZE};
+    use super::{
+        InlineString,
+        MAX_SIZE,
+    };
     use crate::tests::rand_unicode_with_max_len;
 
     #[test]

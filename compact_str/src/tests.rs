@@ -5,7 +5,10 @@ use proptest::prelude::*;
 use proptest::strategy::Strategy;
 use test_strategy::proptest;
 
-use crate::{CompactStr, ToCompactStr};
+use crate::{
+    CompactStr,
+    ToCompactStr,
+};
 
 #[cfg(target_pointer_width = "64")]
 const MAX_SIZE: usize = 24;

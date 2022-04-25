@@ -1,6 +1,9 @@
-use super::CompactStr;
+use castaway::{
+    cast,
+    LifetimeFree,
+};
 
-use castaway::{cast, LifetimeFree};
+use super::CompactStr;
 
 /// # Safety
 ///
@@ -42,11 +45,15 @@ pub(super) fn to_compact_str_specialised<T>(val: &T) -> Option<CompactStr> {
 }
 
 mod int_spec {
+    use core::num;
+
+    use itoa::{
+        Buffer,
+        Integer,
+    };
+
     use super::*;
     use crate::repr::MAX_SIZE;
-
-    use core::num;
-    use itoa::{Buffer, Integer};
 
     trait IsNewInlineable {
         const IS_NEW_INLINEABLE: bool;
@@ -129,9 +136,12 @@ mod int_spec {
 }
 
 mod float_spec {
-    use super::*;
+    use ryu::{
+        Buffer,
+        Float,
+    };
 
-    use ryu::{Buffer, Float};
+    use super::*;
 
     #[inline(always)]
     fn float_to_compact_str(float: impl Float) -> CompactStr {

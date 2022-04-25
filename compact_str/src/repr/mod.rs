@@ -14,7 +14,10 @@ mod discriminant;
 mod heap;
 mod inline;
 
-use discriminant::{Discriminant, DiscriminantMask};
+use discriminant::{
+    Discriminant,
+    DiscriminantMask,
+};
 use heap::HeapString;
 use inline::InlineString;
 
@@ -444,7 +447,10 @@ crate::asserts::assert_size!(Repr, 12);
 
 #[cfg(test)]
 mod tests {
-    use super::{Repr, MAX_SIZE};
+    use super::{
+        Repr,
+        MAX_SIZE,
+    };
 
     #[test]
     fn test_inline_str() {

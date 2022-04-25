@@ -1,4 +1,7 @@
-use core::fmt::{self, Write};
+use core::fmt::{
+    self,
+    Write,
+};
 
 #[inline(always)]
 pub(crate) fn count(args: impl fmt::Display) -> usize {
@@ -26,9 +29,9 @@ impl Write for Sink {
 
 #[cfg(test)]
 mod tests {
-    use super::count;
-
     use core::format_args;
+
+    use super::count;
 
     macro_rules! count {
         ( $fmt:expr $(, $args:tt)* ) => {

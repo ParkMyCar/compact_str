@@ -19,9 +19,10 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          default: true
-          toolchain: 1.49
+          toolchain: stable
+      - name: install cargo hack
+        run: cargo install cargo-hack
       - name: cargo test msrv..
         run: |
           cd compact_str
-          cargo test --all-features
+          cargo hack test --feature-powerset --optional-deps --version-range 1.49..

@@ -11,19 +11,13 @@ readme = "../README.md"
 keywords = ["string", "compact", "small", "memory", "mutable"]
 categories = ["encoding", "parsing", "memory-management", "text-processing"]
 
-[features]
-to-compact-str-float-spec = ["ryu", "to-compact-str-specialisation"]
-to-compact-str-int-spec = ["itoa", "to-compact-str-specialisation"]
-to-compact-str-specialisation = ["castaway"]
-
 [dependencies]
 bytes = { version = "1", optional = true }
 serde = { version = "1", optional = true }
 
-# Specialisation
-castaway = { version = "0.2.1", optional = true }
-itoa = { version = "1", optional = true }
-ryu = { version = "1", optional = true }
+castaway = "0.2.1"
+itoa = "1"
+ryu = "1"
 
 [dev-dependencies]
 proptest = { version = "1", default-features = false, features = ["std"] }

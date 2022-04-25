@@ -14,21 +14,10 @@ const FALSE_COMPACT_STR: CompactStr = CompactStr::new_inline("false");
 
 #[inline(always)]
 pub(super) fn to_compact_str_specialised<T>(val: &T) -> Option<CompactStr> {
-    #[cfg(feature = "to-compact-str-int-spec")]
     if let Some(compact_str) = int_spec::to_compact_str_specialised(val) {
         return Some(compact_str);
     }
 
-    #[cfg(feature = "to-compact-str-float-spec")]
-    // FIXME: The tests for float specialisation fail
-    // on power pc little endian 64-bit:
-    //
-    //     assert_eq!("3.2", 3.2_f32.to_compact_str());
-    //
-    // Expected: 3.2
-    // Actual: 0.0
-    //
-    //#[cfg(not(target_arch = "powerpc64le"))]
     if let Some(compact_str) = float_spec::to_compact_str_specialised(val) {
         return Some(compact_str);
     }
@@ -52,7 +41,6 @@ pub(super) fn to_compact_str_specialised<T>(val: &T) -> Option<CompactStr> {
     }
 }
 
-#[cfg(feature = "to-compact-str-int-spec")]
 mod int_spec {
     use super::*;
     use crate::repr::MAX_SIZE;
@@ -140,7 +128,6 @@ mod int_spec {
     }
 }
 
-#[cfg(feature = "to-compact-str-float-spec")]
 mod float_spec {
     use super::*;
 

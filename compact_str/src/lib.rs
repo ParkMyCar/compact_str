@@ -29,7 +29,6 @@ mod utility;
 mod repr;
 use repr::Repr;
 
-#[cfg(feature = "to-compact-str-specialisation")]
 mod to_compact_str_specialisation;
 
 #[cfg(test)]
@@ -770,7 +769,6 @@ pub trait ToCompactStr {
 impl<T: fmt::Display> ToCompactStr for T {
     #[inline]
     fn to_compact_str(&self) -> CompactStr {
-        #[cfg(feature = "to-compact-str-specialisation")]
         if let Some(compact_str) = to_compact_str_specialisation::to_compact_str_specialised(self) {
             return compact_str;
         }

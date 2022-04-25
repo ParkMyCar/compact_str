@@ -24,7 +24,9 @@ use std::borrow::Cow;
 
 mod asserts;
 mod features;
+
 mod utility;
+use utility::count;
 
 mod repr;
 use repr::Repr;
@@ -769,12 +771,17 @@ pub trait ToCompactStr {
 impl<T: fmt::Display> ToCompactStr for T {
     #[inline]
     fn to_compact_str(&self) -> CompactStr {
-        if let Some(compact_str) = to_compact_str_specialisation::to_compact_str_specialised(self) {
-            return compact_str;
-        }
+        use fmt::Write;
 
-        CompactStr {
-            repr: Repr::from_fmt(self),
+        if let Some(compact_str) = to_compact_str_specialisation::to_compact_str_specialised(self) {
+            compact_str
+        } else {
+            let num_bytes = count(self);
+
+            let mut compact_str = CompactStr::with_capacity(num_bytes);
+            write!(&mut compact_str, "{}", self).expect("fmt::Display incorrectly implemented!");
+
+            compact_str
         }
     }
 }

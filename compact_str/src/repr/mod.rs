@@ -1,6 +1,3 @@
-use crate::utility::count;
-
-use core::fmt::{self, Write};
 use std::borrow::Cow;
 use std::iter::Extend;
 use std::mem::ManuallyDrop;
@@ -105,22 +102,6 @@ impl Repr {
         } else {
             let heap = ManuallyDrop::new(HeapString::from_box_str(b));
             Repr { heap }
-        }
-    }
-
-    #[inline]
-    pub fn from_fmt(val: impl fmt::Display) -> Self {
-        let len = count(&val);
-
-        if len == 0 {
-            EMPTY
-        } else if len <= MAX_SIZE {
-            let inline = InlineString::from_fmt(val, len);
-            Repr { inline }
-        } else {
-            let mut string = String::with_capacity(len);
-            write!(&mut string, "{}", val).expect("fmt::Display incorrectly implemented!");
-            Self::from_string(string)
         }
     }
 

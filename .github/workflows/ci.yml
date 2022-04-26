@@ -69,6 +69,15 @@ jobs:
           toolchain: nightly
           override: true
           components: miri
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ github.event.repository.name }}-${{ runner.os }}-cargo-miri-v2
       - name: Run Miri
         run: |
           cargo miri test --all-features --manifest-path=compact_str/Cargo.toml

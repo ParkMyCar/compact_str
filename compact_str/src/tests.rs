@@ -390,8 +390,6 @@ macro_rules! assert_int_MAX_to_compact_str {
 }
 
 #[test]
-// TODO: Fix bug in powerpc64, which is a little endian system
-#[cfg_attr(not(all(target_arch = "powerpc64", target_pointer_width = "64")), ignore)]
 fn test_to_compact_str() {
     // Test specialisation for bool, char and String
     assert_eq!(&*true.to_string(), "true".to_compact_str());
@@ -421,22 +419,26 @@ fn test_to_compact_str() {
     assert_int_MAX_to_compact_str!(isize);
 
     // Test specialisation for f32 and f64 using ryu
-    assert_eq!(
-        (&*3.2_f32.to_string(), &*288888.290028_f64.to_string()),
-        (
-            &*3.2_f32.to_compact_str(),
-            &*288888.290028_f64.to_compact_str()
-        )
-    );
+    // TODO: Fix bug in powerpc64, which is a little endian system
+    #[cfg(not(all(target_arch = "powerpc64", target_pointer_width = "64")))]
+    {
+        assert_eq!(
+            (&*3.2_f32.to_string(), &*288888.290028_f64.to_string()),
+            (
+                &*3.2_f32.to_compact_str(),
+                &*288888.290028_f64.to_compact_str()
+            )
+        );
 
-    assert_eq!("inf", f32::INFINITY.to_compact_str());
-    assert_eq!("-inf", f32::NEG_INFINITY.to_compact_str());
+        assert_eq!("inf", f32::INFINITY.to_compact_str());
+        assert_eq!("-inf", f32::NEG_INFINITY.to_compact_str());
 
-    assert_eq!("inf", f64::INFINITY.to_compact_str());
-    assert_eq!("-inf", f64::NEG_INFINITY.to_compact_str());
+        assert_eq!("inf", f64::INFINITY.to_compact_str());
+        assert_eq!("-inf", f64::NEG_INFINITY.to_compact_str());
 
-    assert_eq!("NaN", f32::NAN.to_compact_str());
-    assert_eq!("NaN", f64::NAN.to_compact_str());
+        assert_eq!("NaN", f32::NAN.to_compact_str());
+        assert_eq!("NaN", f64::NAN.to_compact_str());
+    }
 
     // Test generic Display implementation
     assert_eq!("234", "234".to_compact_str());

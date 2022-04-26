@@ -20,8 +20,11 @@ jobs:
         with:
           profile: minimal
           toolchain: stable
-      - name: install cargo hack
-        run: cargo install cargo-hack
+      - uses: actions-rs/install@v0.1
+        name: Install cargo-hack
+        with:
+          crate: cargo-hack
+          version: latest
       - name: cargo test msrv..
         run: |
           cd compact_str

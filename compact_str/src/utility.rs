@@ -19,12 +19,6 @@ impl Write for Sink {
         self.0 += s.len();
         Ok(())
     }
-
-    #[inline(always)]
-    fn write_char(&mut self, _c: char) -> fmt::Result {
-        self.0 += 1;
-        Ok(())
-    }
 }
 
 #[cfg(test)]

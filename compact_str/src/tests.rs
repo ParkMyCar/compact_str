@@ -1,10 +1,14 @@
+use std::num;
 use std::str::FromStr;
 
 use proptest::prelude::*;
 use proptest::strategy::Strategy;
 use test_strategy::proptest;
 
-use crate::CompactStr;
+use crate::{
+    CompactStr,
+    ToCompactStr,
+};
 
 #[cfg(target_pointer_width = "64")]
 const MAX_SIZE: usize = 24;
@@ -364,4 +368,88 @@ fn test_plus_operator() {
     assert_eq!(CompactStr::from("a") + &String::from("b"), "ab");
     assert_eq!(CompactStr::from("a") + String::from("b"), "ab");
     assert_eq!(String::from("a") + CompactStr::from("b"), "ab");
+}
+
+macro_rules! format_compact {
+    ( $fmt:expr $(, $args:tt)* ) => {
+        ToCompactStr::to_compact_str(
+            &core::format_args!(
+                $fmt,
+                $(
+                    $args,
+                )*
+            )
+        )
+    };
+}
+
+macro_rules! assert_int_MAX_to_compact_str {
+    ($int: ty) => {
+        assert_eq!(&*<$int>::MAX.to_string(), &*<$int>::MAX.to_compact_str());
+    };
+}
+
+#[test]
+fn test_to_compact_str() {
+    // Test specialisation for bool, char and String
+    assert_eq!(&*true.to_string(), "true".to_compact_str());
+    assert_eq!(&*false.to_string(), "false".to_compact_str());
+
+    assert_eq!("1", '1'.to_compact_str());
+    assert_eq!("2333", "2333".to_string().to_compact_str());
+    assert_eq!("2333", "2333".to_compact_str().to_compact_str());
+
+    // Test specialisation for int and nonzero_int using itoa
+    assert_eq!("234", 234.to_compact_str());
+    assert_eq!("234", num::NonZeroU64::new(234).unwrap().to_compact_str());
+
+    assert_int_MAX_to_compact_str!(u8);
+    assert_int_MAX_to_compact_str!(i8);
+
+    assert_int_MAX_to_compact_str!(u16);
+    assert_int_MAX_to_compact_str!(i16);
+
+    assert_int_MAX_to_compact_str!(u32);
+    assert_int_MAX_to_compact_str!(i32);
+
+    assert_int_MAX_to_compact_str!(u64);
+    assert_int_MAX_to_compact_str!(i64);
+
+    assert_int_MAX_to_compact_str!(usize);
+    assert_int_MAX_to_compact_str!(isize);
+
+    // Test specialisation for f32 and f64 using ryu
+    assert_eq!(
+        (&*3.2_f32.to_string(), &*288888.290028_f64.to_string()),
+        (
+            &*3.2_f32.to_compact_str(),
+            &*288888.290028_f64.to_compact_str()
+        )
+    );
+
+    assert_eq!("inf", f32::INFINITY.to_compact_str());
+    assert_eq!("-inf", f32::NEG_INFINITY.to_compact_str());
+
+    assert_eq!("inf", f64::INFINITY.to_compact_str());
+    assert_eq!("-inf", f64::NEG_INFINITY.to_compact_str());
+
+    assert_eq!("NaN", f32::NAN.to_compact_str());
+    assert_eq!("NaN", f64::NAN.to_compact_str());
+
+    // Test generic Display implementation
+    assert_eq!("234", "234".to_compact_str());
+    assert_eq!("12345", format_compact!("{}", "12345"));
+    assert_eq!("112345", format_compact!("1{}", "12345"));
+    assert_eq!("1123452", format_compact!("1{}{}", "12345", 2));
+    assert_eq!("11234522", format_compact!("1{}{}{}", "12345", 2, '2'));
+    assert_eq!(
+        "112345221000",
+        format_compact!("1{}{}{}{}", "12345", 2, '2', 1000)
+    );
+
+    // Test string longer than repr::MAX_SIZE
+    assert_eq!(
+        "01234567890123456789999999",
+        format_compact!("0{}67890123456789{}", "12345", 999999)
+    );
 }

@@ -11,11 +11,13 @@ readme = "../README.md"
 keywords = ["string", "compact", "small", "memory", "mutable"]
 categories = ["encoding", "parsing", "memory-management", "text-processing"]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 bytes = { version = "1", optional = true }
 serde = { version = "1", optional = true }
+
+castaway = "0.2.1"
+itoa = "1"
+ryu = "1"
 
 [dev-dependencies]
 proptest = { version = "1", default-features = false, features = ["std"] }

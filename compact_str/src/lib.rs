@@ -34,8 +34,13 @@ use std::borrow::Cow;
 mod asserts;
 mod features;
 
+mod utility;
+use utility::count;
+
 mod repr;
 use repr::Repr;
+
+mod to_compact_str_specialisation;
 
 #[cfg(test)]
 mod tests;
@@ -737,3 +742,55 @@ impl Add<CompactStr> for String {
 }
 
 crate::asserts::assert_size_eq!(CompactStr, String);
+
+/// A trait for converting a value to a `CompactStr`.
+///
+/// This trait is automatically implemented for any type which implements the
+/// [`Display`] trait. As such, `ToCompactStr` shouldn't be implemented directly:
+/// [`Display`] should be implemented instead, and you get the `ToCompactStr`
+/// implementation for free.
+///
+/// [`Display`]: fmt::Display
+pub trait ToCompactStr {
+    /// Converts the given value to a `CompactStr`.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// use compact_str::ToCompactStr;
+    ///
+    /// let i = 5;
+    /// let five = "5".to_compact_str();
+    ///
+    /// assert_eq!(five, i.to_string());
+    /// ```
+    fn to_compact_str(&self) -> CompactStr;
+}
+
+/// # Panics
+///
+/// In this implementation, the `to_compact_str` method panics
+/// if the `Display` implementation returns an error.
+/// This indicates an incorrect `Display` implementation
+/// since `std::fmt::Write for String` never returns an error itself and
+/// the implementation of `ToCompactStr::to_compact_str` only panic if the `Display`
+/// implementation is incorrect..
+impl<T: fmt::Display> ToCompactStr for T {
+    #[inline]
+    fn to_compact_str(&self) -> CompactStr {
+        use fmt::Write;
+
+        if let Some(compact_str) = to_compact_str_specialisation::to_compact_str_specialised(self) {
+            compact_str
+        } else {
+            let num_bytes = count(self);
+
+            let mut compact_str = CompactStr::with_capacity(num_bytes);
+            write!(&mut compact_str, "{}", self).expect("fmt::Display incorrectly implemented!");
+
+            compact_str
+        }
+    }
+}

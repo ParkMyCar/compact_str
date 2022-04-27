@@ -103,6 +103,15 @@ jobs:
       - name: Update Rust Nightly
         run: |
           rustup update nightly
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ github.event.repository.name }}-${{ runner.os }}-x-plat-windows-v2
       - name: Install cargo-afl
         run: |
           cargo +nightly install afl --force

@@ -20,13 +20,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         name: Checkout Repo
-      - uses: actions-rs/toolchain@v1
-        name: Install Rust
-        with:
-          profile: minimal
-          toolchain: nightly
-          override: true
-          components: miri
       - uses: actions/cache@v2
         with:
           path: |
@@ -41,6 +34,15 @@ jobs:
         with:
           crate: cargo-nextest
           version: latest
+      # Install nightly after cargo-nextest is installed, as cargo-nextest
+      # failed to compile on nightly
+      - uses: actions-rs/toolchain@v1
+        name: Install Rust
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+          components: miri
       - name: cargo test
         run: |
           cargo nextest run --release --all-features --manifest-path=compact_str/Cargo.toml -- --include-ignored
@@ -56,13 +58,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         name: Checkout Repo
-      - uses: actions-rs/toolchain@v1
-        name: Install Rust
-        with:
-          profile: minimal
-          toolchain: nightly
-          override: true
-          components: miri
       - uses: actions/cache@v2
         with:
           path: |
@@ -77,6 +72,15 @@ jobs:
         with:
           crate: cargo-nextest
           version: latest
+      # Install nightly after cargo-nextest is installed, as cargo-nextest
+      # failed to compile on nightly
+      - uses: actions-rs/toolchain@v1
+        name: Install Rust
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+          components: miri
       - name: cargo test
         run: |
           cargo nextest run --release --all-features --manifest-path=compact_str/Cargo.toml -- --include-ignored

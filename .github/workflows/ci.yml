@@ -61,11 +61,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: nightly
-          override: true
       - uses: actions/cache@v2
         with:
           path: |
@@ -80,6 +75,13 @@ jobs:
         with:
           crate: cargo-nextest
           version: latest
+      # Install nightly after cargo-nextest is installed, as cargo-nextest
+      # failed to compile on nightly
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
       - name: cargo test
         run: |
           cargo nextest run --release --all-features --manifest-path=compact_str/Cargo.toml -- --include-ignored

@@ -28,7 +28,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ github.event.repository.name }}-${{ runner.os }}-x-plat-windows-v2
+          key: ${{ github.event.repository.name }}-${{ runner.os }}-x-plat-windows-v3
       - uses: actions-rs/install@v0.1
         name: Install cargo-nextest
         with:
@@ -66,7 +66,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ github.event.repository.name }}-${{ runner.os }}-x-plat-macos-v2
+          key: ${{ github.event.repository.name }}-${{ runner.os }}-x-plat-macos-v3
       - uses: actions-rs/install@v0.1
         name: Install cargo-nextest
         with:
@@ -104,7 +104,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ github.event.repository.name }}-${{ runner.os }}-x-plat-linux-arm7-v2
+          key: ${{ github.event.repository.name }}-${{ runner.os }}-x-plat-linux-arm7-v3
       - uses: actions-rs/install@v0.1
         name: Install cargo-nextest
         with:

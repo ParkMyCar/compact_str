@@ -46,7 +46,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ github.event.repository.name }}-${{ runner.os }}-cargo-test-v2
+          key: ${{ github.event.repository.name }}-${{ runner.os }}-cargo-test-v3
       - uses: actions-rs/install@v0.1
         name: Install cargo-nextest
         with:
@@ -69,7 +69,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ github.event.repository.name }}-${{ runner.os }}-cargo-test-nightly-v2
+          key: ${{ github.event.repository.name }}-${{ runner.os }}-cargo-test-nightly-v3
       - uses: actions-rs/install@v0.1
         name: Install cargo-nextest
         with:

@@ -96,12 +96,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         name: Checkout Repo
-      - uses: actions-rs/toolchain@v1
-        name: Install Rust
-        with:
-          profile: minimal
-          toolchain: nightly
-          override: true
       - uses: actions/cache@v2
         with:
           path: |
@@ -111,11 +105,23 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: ${{ github.event.repository.name }}-${{ runner.os }}-x-plat-linux-arm7-v2
-      - uses: actions-rs/cargo@v1
-        name: cargo test
+      - uses: actions-rs/install@v0.1
+        name: Install cargo-nextest
         with:
-          command: test
-          args: --release --all-features --manifest-path=compact_str/Cargo.toml
+          crate: cargo-nextest
+          version: latest
+      # Install nightly after cargo-nextest is installed, as cargo-nextest
+      # failed to compile on nightly
+      - uses: actions-rs/toolchain@v1
+        name: Install Rust
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+          components: miri
+      - name: cargo test
+        run: |
+          cargo nextest run --release --all-features --manifest-path=compact_str/Cargo.toml
 
   linux_32bit:
     name: Linux 32-bit

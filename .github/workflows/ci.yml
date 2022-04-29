@@ -47,11 +47,8 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: ${{ github.event.repository.name }}-${{ runner.os }}-cargo-test-v3
-      - uses: actions-rs/install@v0.1
-        name: Install cargo-nextest
-        with:
-          crate: cargo-nextest
-          version: latest
+      - name: Install cargo-nextest
+         run: cargo install cargo-nextest
       - name: cargo test
         run: |
           cargo nextest run --release --all-features --manifest-path=compact_str/Cargo.toml -- --include-ignored
@@ -70,11 +67,8 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: ${{ github.event.repository.name }}-${{ runner.os }}-cargo-test-nightly-v3
-      - uses: actions-rs/install@v0.1
-        name: Install cargo-nextest
-        with:
-          crate: cargo-nextest
-          version: latest
+      - name: Install cargo-nextest
+         run: cargo install cargo-nextest
       # Install nightly after cargo-nextest is installed, as cargo-nextest
       # failed to compile on nightly
       - uses: actions-rs/toolchain@v1

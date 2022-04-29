@@ -47,10 +47,14 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: ${{ github.event.repository.name }}-${{ runner.os }}-cargo-test-v2
-      - uses: actions-rs/cargo@v1
+      - uses: actions-rs/install@v0.1
+        name: Install cargo-nextest
         with:
-          command: test
-          args: --release --all-features --manifest-path=compact_str/Cargo.toml -- --include-ignored
+          crate: cargo-nextest
+          version: latest
+      - name: cargo test
+        run: |
+          cargo nextest run --release --all-features --manifest-path=compact_str/Cargo.toml -- --include-ignored
 
   test-nightly:
     name: cargo test nightly
@@ -71,10 +75,14 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: ${{ github.event.repository.name }}-${{ runner.os }}-cargo-test-nightly-v2
-      - uses: actions-rs/cargo@v1
+      - uses: actions-rs/install@v0.1
+        name: Install cargo-nextest
         with:
-          command: test
-          args: --release --all-features --manifest-path=compact_str/Cargo.toml -- --include-ignored
+          crate: cargo-nextest
+          version: latest
+      - name: cargo test
+        run: |
+          cargo nextest run --release --all-features --manifest-path=compact_str/Cargo.toml -- --include-ignored
 
   miri:
     name: cargo miri test

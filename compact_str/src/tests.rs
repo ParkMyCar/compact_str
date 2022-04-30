@@ -566,18 +566,6 @@ fn test_bool_to_compact_str() {
     assert!(!c.is_heap_allocated());
 }
 
-// TODO: Fix the formatting for floats to be like `ToString`
-#[test]
-#[should_panic]
-fn test_f64_scientific() {
-    let val: f64 = 1.3594035585e-314;
-
-    let compact = val.to_compact_str();
-    let word = val.to_string();
-
-    assert_eq!(compact, word);
-}
-
 macro_rules! format_compact {
     ( $fmt:expr $(, $args:tt)* ) => {
         ToCompactStr::to_compact_str(

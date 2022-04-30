@@ -1,3 +1,4 @@
+use std::num;
 use std::collections::VecDeque;
 use std::io::Cursor;
 
@@ -37,14 +38,25 @@ pub enum Creation<'a> {
     FromString(String),
     /// Create using `From<Box<str>>`, which consumes the `Box<str>` for `O(1)` runtime
     FromBoxStr(Box<str>),
-    /// Create from a number using [`ToCompactStr`]
-    NumToCompactStr(NumType),
-    /// Create from a boolean using [`ToCompactStr`]
-    BoolToCompactStr(bool),
-    /// Create from a char using [`ToCompactStr`]
-    CharToCompactStr(char),
-    /// Create from a String using [`ToCompactStr`]
-    StringToComapctStr(String),
+    /// Create from a type that implements [`ToCompactStr`]
+    ToCompactStr(ToCompactStrArg),
+}
+
+/// Types that we're able to convert to a [`CompactStr`]
+/// 
+/// Note: number types, bool, and char all have a special implementation for performance
+#[derive(Arbitrary, Debug)]
+pub enum ToCompactStrArg {
+    /// Create from a number type using [`ToCompactStr`]
+    Num(NumType),
+    /// Create from a non-zero number type using [`ToCompactStr`]
+    NonZeroNum(NonZeroNumType),
+    /// Create from a `bool` using [`ToCompactStr`]
+    Bool(bool),
+    /// Create from a `char` using [`ToCompactStr`]
+    Char(char),
+    /// Create  from a string using [`ToCompactStr`]
+    String(String),
 }
 
 #[derive(Arbitrary, Debug)]
@@ -69,12 +81,44 @@ pub enum NumType {
     U128(u128),
     /// Create from an `i128`
     I128(i128),
+    /// Create from an `usize`
+    Usize(usize),
+    /// Create from an `isize`
+    Isize(isize),
     // TODO: Enable float fuzzing once we fix the formatting
     //
     // /// Create from an `f32`,
     // F32(f32),
     // /// Create from an `f64`
     // F64(f64),
+}
+
+#[derive(Arbitrary, Debug)]
+pub enum NonZeroNumType {
+    /// Create from a `NonZeroU8`
+    U8(num::NonZeroU8),
+    /// Create from a `NonZeroI8`
+    I8(num::NonZeroI8),
+    /// Create from a `NonZeroU16`
+    U16(num::NonZeroU16),
+    /// Create from a `NonZeroI16`
+    I16(num::NonZeroI16),
+    /// Create from a `NonZeroU32`
+    U32(num::NonZeroU32),
+    /// Create from a `NonZeroI32`
+    I32(num::NonZeroI32),
+    /// Create from a `NonZeroU64`
+    U64(num::NonZeroU64),
+    /// Create from a `NonZeroI64`
+    I64(num::NonZeroI64),
+    /// Create from a `NonZeroU128`
+    U128(num::NonZeroU128),
+    /// Create from a `NonZeroI128`
+    I128(num::NonZeroI128),
+    /// Create from a `NonZeroUsize`
+    Usize(num::NonZeroUsize),
+    /// Create from a `NonZeroIsize`
+    Isize(num::NonZeroIsize),
 }
 
 impl Creation<'_> {
@@ -220,65 +264,47 @@ impl Creation<'_> {
                     }
                     _ => panic!("CompactStr and core::str read UTF-8 differently?"),
                 }
-            }
-            NumToCompactStr(num_type) => {
-                // Create a `CompactStr` and `String` from a number
-                let (compact, word) = match num_type {
-                    NumType::U8(val) => (val.to_compact_str(), val.to_string()),
-                    NumType::I8(val) => (val.to_compact_str(), val.to_string()),
-                    NumType::U16(val) => (val.to_compact_str(), val.to_string()),
-                    NumType::I16(val) => (val.to_compact_str(), val.to_string()),
-                    NumType::U32(val) => (val.to_compact_str(), val.to_string()),
-                    NumType::I32(val) => (val.to_compact_str(), val.to_string()),
-                    NumType::U64(val) => (val.to_compact_str(), val.to_string()),
-                    NumType::I64(val) => (val.to_compact_str(), val.to_string()),
-                    NumType::U128(val) => (val.to_compact_str(), val.to_string()),
-                    NumType::I128(val) => (val.to_compact_str(), val.to_string()),
-                    // NumType::F32(val) => (val.to_compact_str(), val.to_string()),
-                    // NumType::F64(val) => (val.to_compact_str(), val.to_string()),
+            },
+            ToCompactStr(arg) => {
+                let (compact, word) = match arg {
+                    ToCompactStrArg::Num(num_type) => match num_type {
+                        NumType::U8(val) => (val.to_compact_str(), val.to_string()),
+                        NumType::I8(val) => (val.to_compact_str(), val.to_string()),
+                        NumType::U16(val) => (val.to_compact_str(), val.to_string()),
+                        NumType::I16(val) => (val.to_compact_str(), val.to_string()),
+                        NumType::U32(val) => (val.to_compact_str(), val.to_string()),
+                        NumType::I32(val) => (val.to_compact_str(), val.to_string()),
+                        NumType::U64(val) => (val.to_compact_str(), val.to_string()),
+                        NumType::I64(val) => (val.to_compact_str(), val.to_string()),
+                        NumType::U128(val) => (val.to_compact_str(), val.to_string()),
+                        NumType::I128(val) => (val.to_compact_str(), val.to_string()),
+                        NumType::Usize(val) => (val.to_compact_str(), val.to_string()),
+                        NumType::Isize(val) => (val.to_compact_str(), val.to_string()),
+                    },
+                    ToCompactStrArg::NonZeroNum(non_zero_type) => match non_zero_type {
+                        NonZeroNumType::U8(val) => (val.to_compact_str(), val.to_string()),
+                        NonZeroNumType::I8(val) => (val.to_compact_str(), val.to_string()),
+                        NonZeroNumType::U16(val) => (val.to_compact_str(), val.to_string()),
+                        NonZeroNumType::I16(val) => (val.to_compact_str(), val.to_string()),
+                        NonZeroNumType::U32(val) => (val.to_compact_str(), val.to_string()),
+                        NonZeroNumType::I32(val) => (val.to_compact_str(), val.to_string()),
+                        NonZeroNumType::U64(val) => (val.to_compact_str(), val.to_string()),
+                        NonZeroNumType::I64(val) => (val.to_compact_str(), val.to_string()),
+                        NonZeroNumType::U128(val) => (val.to_compact_str(), val.to_string()),
+                        NonZeroNumType::I128(val) => (val.to_compact_str(), val.to_string()),
+                        NonZeroNumType::Usize(val) => (val.to_compact_str(), val.to_string()),
+                        NonZeroNumType::Isize(val) => (val.to_compact_str(), val.to_string()),
+                    },
+                    ToCompactStrArg::Bool(bool) => (bool.to_compact_str(), bool.to_string()),
+                    ToCompactStrArg::Char(c) => (c.to_compact_str(), c.to_string()),
+                    ToCompactStrArg::String(word) => (word.to_compact_str(), word),
                 };
-
-                assert_eq!(compact, word);
-
-                // Numbers should always be inlined, except 64 or 128 bit integers, they might be
-                // heap allocated
-                match num_type {
-                    NumType::U64(_) | NumType::I64(_) | NumType::U128(_) | NumType::I128(_) => {
-                        assert_properly_allocated(&compact, &word);
-                    }
-                    _ => assert!(!compact.is_heap_allocated()),
-                };
-
-                Some((compact, word))
-            }
-            BoolToCompactStr(bool) => {
-                let compact = bool.to_compact_str();
-                let word = bool.to_string();
-
-                assert_eq!(compact, word);
-                // Booleans should always be inlined
-                assert!(!compact.is_heap_allocated());
-
-                Some((compact, word))
-            }
-            CharToCompactStr(c) => {
-                let compact = c.to_compact_str();
-                let word = c.to_string();
-
-                assert_eq!(compact, word);
-                // chars should always be inlined
-                assert!(!compact.is_heap_allocated());
-
-                Some((compact, word))
-            }
-            StringToComapctStr(word) => {
-                let compact = word.to_compact_str();
 
                 assert_eq!(compact, word);
                 assert_properly_allocated(&compact, &word);
 
                 Some((compact, word))
-            }
+            },
         }
     }
 }

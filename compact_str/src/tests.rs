@@ -550,6 +550,51 @@ fn test_i64_to_compact_str() {
 }
 
 #[test]
+fn test_u128_to_compact_str() {
+    let vals = [
+        u128::MIN,
+        1,
+        999,
+        123456789,
+        u128::MAX - 2,
+        u128::MAX - 1,
+        u128::MAX,
+    ];
+
+    for x in &vals {
+        let c = x.to_compact_str();
+        let s = x.to_string();
+
+        assert_eq!(c, s);
+    }
+}
+
+#[test]
+fn test_i128_to_compact_str() {
+    let vals = [
+        i128::MIN,
+        i128::MIN + 1,
+        i128::MIN + 2,
+        -22222222,
+        -42,
+        0,
+        1,
+        999,
+        123456789,
+        i128::MAX - 2,
+        i128::MAX - 1,
+        i128::MAX,
+    ];
+
+    for x in &vals {
+        let c = x.to_compact_str();
+        let s = x.to_string();
+
+        assert_eq!(c, s);
+    }
+}
+
+#[test]
 fn test_bool_to_compact_str() {
     let c = true.to_compact_str();
     let s = true.to_string();

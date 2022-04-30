@@ -20,7 +20,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         name: Checkout Repo
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: |
             ~/.cargo/bin/
@@ -55,7 +55,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         name: Checkout Repo
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: |
             ~/.cargo/bin/
@@ -96,7 +96,7 @@ jobs:
           profile: minimal
           toolchain: nightly
           override: true
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: |
             ~/.cargo/bin/
@@ -124,7 +124,7 @@ jobs:
           target: i686-unknown-linux-gnu
           override: true
           components: miri
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: |
             ~/.cargo/bin/
@@ -158,7 +158,7 @@ jobs:
           target: mips-unknown-linux-gnu
           override: true
           components: miri
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: |
             ~/.cargo/bin/
@@ -192,7 +192,7 @@ jobs:
           target: mipsel-unknown-linux-gnu
           override: true
           components: miri
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: |
             ~/.cargo/bin/
@@ -226,7 +226,7 @@ jobs:
           target: powerpc-unknown-linux-gnu
           override: true
           components: miri
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: |
             ~/.cargo/bin/
@@ -260,7 +260,7 @@ jobs:
           target: powerpc64le-unknown-linux-gnu
           override: true
           components: miri
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: |
             ~/.cargo/bin/

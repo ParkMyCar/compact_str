@@ -20,16 +20,22 @@ jobs:
         with:
           profile: minimal
           toolchain: stable
-      - uses: actions/cache@v3
+      - name: Toolchain Cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.rustup/downloads
+            ~/.rustup/toolchains
+            ~/.rustup/update-hashes
+          key: ${{ runner.os }}-x86_64-rustup
+      - name: Cargo Build Cache
+        uses: actions/cache@v3
         with:
           path: |
             ~/.cargo/bin/
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-            ~/.rustup/downloads
-            ~/.rustup/toolchains
-            ~/.rustup/update-hashes
             target/
           key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-cargo-hack
       - name: install cargo hack

@@ -240,10 +240,10 @@ impl Creation<'_> {
 
                 assert_eq!(compact, word);
 
-                // Numbers should always be inlined, except 128-bit integers, they might be heap
-                // allocated
+                // Numbers should always be inlined, except 64 or 128 bit integers, they might be
+                // heap allocated
                 match num_type {
-                    NumType::U128(_) | NumType::I128(_) => {
+                    NumType::U64(_) | NumType::I64(_) | NumType::U128(_) | NumType::I128(_) => {
                         assert_properly_allocated(&compact, &word);
                     }
                     _ => assert!(!compact.is_heap_allocated()),

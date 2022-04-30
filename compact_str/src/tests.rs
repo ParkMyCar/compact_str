@@ -436,7 +436,7 @@ fn test_u32_to_compact_str() {
     // We can't exhaustively test u32 very quickly, so just pick some seemingly interesting values
     let vals: [u32; 6] = [u32::MIN, 1, 42, 999, 123456789, u32::MAX];
 
-    for x in vals {
+    for x in &vals {
         let c = x.to_compact_str();
         let s = x.to_string();
 
@@ -450,7 +450,7 @@ fn test_i32_to_compact_str() {
     // We can't exhaustively test i32 very quickly, so just pick some seemingly interesting values
     let vals: [i32; 9] = [i32::MIN, -12345678, -42, -1, 0, 1, 999, 123456789, i32::MAX];
 
-    for x in vals {
+    for x in &vals {
         let c = x.to_compact_str();
         let s = x.to_string();
 
@@ -462,13 +462,16 @@ fn test_i32_to_compact_str() {
 #[test]
 fn test_u64_to_compact_str() {
     // We can't exhaustively test u64, so just pick some seemingly interesting values
-    let vals: [u64; 7] = [u64::MIN, 0, 1, 999, 123456789, 98765432123456, u64::MAX];
+    let vals: [u64; 6] = [u64::MIN, 1, 999, 123456789, 98765432123456, u64::MAX];
 
-    for x in vals {
+    for x in &vals {
         let c = x.to_compact_str();
         let s = x.to_string();
 
         assert_eq!(c, s);
+
+        // u64 can be up-to 20 characters long, which can't be inlined on 32-bit arches
+        #[cfg(target_pointer_width = "64")]
         assert!(!c.is_heap_allocated());
     }
 }
@@ -478,11 +481,14 @@ fn test_i64_to_compact_str() {
     // We can't exhaustively test i64, so just pick some seemingly interesting values
     let vals: [i64; 8] = [i64::MIN, -22222222, -42, 0, 1, 999, 123456789, i64::MAX];
 
-    for x in vals {
+    for x in &vals {
         let c = x.to_compact_str();
         let s = x.to_string();
 
         assert_eq!(c, s);
+
+        // i64 can be up-to 20 characters long, which can't be inlined on 32-bit arches
+        #[cfg(target_pointer_width = "64")]
         assert!(!c.is_heap_allocated());
     }
 }

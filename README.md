@@ -13,17 +13,17 @@
    <br />
 
   <a href="https://github.com/ParkMyCar/compact_str/actions/workflows/ci.yml">
-    <img alt="Continuous Integration Status" src="https://github.com/ParkMyCar/compact_str/actions/workflows/ci.yml/badge.svg?event=push"/>
+    <img alt="Continuous Integration Status" src="https://github.com/ParkMyCar/compact_str/actions/workflows/ci.yml/badge.svg?branch=main&event=push"/>
   </a>
   <a href="https://github.com/ParkMyCar/compact_str/actions/workflows/cross_platform.yml">
-    <img alt="Cross Platform Status" src="https://github.com/ParkMyCar/compact_str/actions/workflows/cross_platform.yml/badge.svg?event=push"/>
+    <img alt="Cross Platform Status" src="https://github.com/ParkMyCar/compact_str/actions/workflows/cross_platform.yml/badge.svg?branch=main&event=push"/>
   </a>
     <a href="https://github.com/ParkMyCar/compact_str/actions/workflows/msrv.yml">
-    <img alt="Minimum Supported Rust Version Status" src="https://github.com/ParkMyCar/compact_str/actions/workflows/msrv.yml/badge.svg?event=push"/>
+    <img alt="Minimum Supported Rust Version Status" src="https://github.com/ParkMyCar/compact_str/actions/workflows/msrv.yml/badge.svg?branch=main&event=push"/>
   </a>
   </a>
     <a href="https://github.com/ParkMyCar/compact_str/actions/workflows/clippy.yml">
-    <img alt="Clippy Status" src="https://github.com/ParkMyCar/compact_str/actions/workflows/clippy.yml/badge.svg?event=push"/>
+    <img alt="Clippy Status" src="https://github.com/ParkMyCar/compact_str/actions/workflows/clippy.yml/badge.svg?branch=main&event=push"/>
   </a>
 
   <p  align=right><sub>* 12 bytes for 32-bit architectures</sub></p>

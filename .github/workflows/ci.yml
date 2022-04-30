@@ -47,12 +47,11 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-cargo-test-v3
-      - name: Install cargo-nextest
-        run: |
-          which cargo-nextest || cargo install cargo-nextest
-      - name: cargo test
-        run: |
-          cargo nextest run --release --all-features --manifest-path=compact_str/Cargo.toml -- --include-ignored
+      - uses: actions-rs/cargo@v1
+        name: cargo test
+        with:
+          command: test
+          args: --release --all-features --manifest-path=compact_str/Cargo.toml -- --include-ignored
 
   test-nightly:
     name: cargo test nightly
@@ -68,19 +67,16 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-cargo-test-nightly-v3
-      - name: Install cargo-nextest
-        run: |
-          which cargo-nextest || cargo install cargo-nextest
-      # Install nightly after cargo-nextest is installed, as cargo-nextest
-      # failed to compile on nightly
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
           toolchain: nightly
           override: true
-      - name: cargo test
-        run: |
-          cargo nextest run --release --all-features --manifest-path=compact_str/Cargo.toml -- --include-ignored
+      - uses: actions-rs/cargo@v1
+        name: cargo test
+        with:
+          command: test
+          args: --release --all-features --manifest-path=compact_str/Cargo.toml -- --include-ignored
 
   miri:
     name: cargo miri test

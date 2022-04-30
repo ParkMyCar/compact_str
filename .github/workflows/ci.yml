@@ -68,7 +68,7 @@ jobs:
             target/
           key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-cargo-test-nightly-v3
       - name: Install cargo-nextest
-         run: cargo install cargo-nextest
+        run: cargo install cargo-nextest
       # Install nightly after cargo-nextest is installed, as cargo-nextest
       # failed to compile on nightly
       - uses: actions-rs/toolchain@v1

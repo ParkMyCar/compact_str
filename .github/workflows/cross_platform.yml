@@ -28,7 +28,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ github.event.repository.name }}-${{ runner.os }}-x-plat-windows-v3
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-x-plat-windows-v3
       - name: Install cargo-nextest
          run: cargo install cargo-nextest
       # Install nightly after cargo-nextest is installed, as cargo-nextest
@@ -63,7 +63,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ github.event.repository.name }}-${{ runner.os }}-x-plat-macos-v3
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-x-plat-macos-v3
       - name: Install cargo-nextest
          run: cargo install cargo-nextest
       # Install nightly after cargo-nextest is installed, as cargo-nextest
@@ -104,7 +104,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ github.event.repository.name }}-${{ runner.os }}-x-plat-linux-arm7-v2
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-x-plat-linux-arm7-v2
       - uses: actions-rs/cargo@v1
         name: cargo test
         with:
@@ -132,7 +132,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ github.event.repository.name }}-${{ runner.os }}-x-plat-linux-32bit-v2
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-x-plat-linux-32bit-v2
       - uses: actions-rs/cargo@v1
         name: cargo test
         with:
@@ -166,7 +166,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ github.event.repository.name }}-${{ runner.os }}-x-plat-linux-mips-32bit-v2
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-x-plat-linux-mips-32bit-v2
       - uses: actions-rs/cargo@v1
         name: cargo test
         with:
@@ -200,7 +200,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ github.event.repository.name }}-${{ runner.os }}-x-plat-linux-mips-le-32bit-v2
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-x-plat-linux-mips-le-32bit-v2
       - uses: actions-rs/cargo@v1
         name: cargo test
         with:
@@ -234,7 +234,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ github.event.repository.name }}-${{ runner.os }}-x-plat-linux-powerpc-32bit-v2
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-x-plat-linux-powerpc-32bit-v2
       - uses: actions-rs/cargo@v1
         name: cargo test
         with:
@@ -268,7 +268,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ github.event.repository.name }}-${{ runner.os }}-x-plat-linux-powerpc-le-64bit-v2
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-x-plat-linux-powerpc-le-64bit-v2
       - uses: actions-rs/cargo@v1
         name: cargo test
         with:

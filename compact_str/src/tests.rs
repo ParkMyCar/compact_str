@@ -487,7 +487,6 @@ fn test_i64_to_compact_str() {
     }
 }
 
-
 // TODO: Fix the formatting for floats to be like `ToString`
 #[test]
 #[should_panic]

@@ -250,7 +250,7 @@ impl Creation<'_> {
                 };
 
                 Some((compact, word))
-            },
+            }
             BoolToCompactStr(bool) => {
                 let compact = bool.to_compact_str();
                 let word = bool.to_string();
@@ -260,7 +260,7 @@ impl Creation<'_> {
                 assert!(!compact.is_heap_allocated());
 
                 Some((compact, word))
-            },
+            }
             CharToCompactStr(c) => {
                 let compact = c.to_compact_str();
                 let word = c.to_string();
@@ -270,7 +270,7 @@ impl Creation<'_> {
                 assert!(!compact.is_heap_allocated());
 
                 Some((compact, word))
-            },
+            }
             StringToComapctStr(word) => {
                 let compact = word.to_compact_str();
 
@@ -278,7 +278,7 @@ impl Creation<'_> {
                 assert_properly_allocated(&compact, &word);
 
                 Some((compact, word))
-            },
+            }
         }
     }
 }

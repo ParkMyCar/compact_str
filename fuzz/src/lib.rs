@@ -1,6 +1,6 @@
-use std::num;
 use std::collections::VecDeque;
 use std::io::Cursor;
+use std::num;
 
 use arbitrary::Arbitrary;
 use compact_str::{
@@ -43,7 +43,7 @@ pub enum Creation<'a> {
 }
 
 /// Types that we're able to convert to a [`CompactStr`]
-/// 
+///
 /// Note: number types, bool, and char all have a special implementation for performance
 #[derive(Arbitrary, Debug)]
 pub enum ToCompactStrArg {
@@ -264,7 +264,7 @@ impl Creation<'_> {
                     }
                     _ => panic!("CompactStr and core::str read UTF-8 differently?"),
                 }
-            },
+            }
             ToCompactStr(arg) => {
                 let (compact, word) = match arg {
                     ToCompactStrArg::Num(num_type) => match num_type {
@@ -304,7 +304,7 @@ impl Creation<'_> {
                 assert_properly_allocated(&compact, &word);
 
                 Some((compact, word))
-            },
+            }
         }
     }
 }

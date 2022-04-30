@@ -20,6 +20,15 @@ jobs:
         with:
           profile: minimal
           toolchain: stable
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-cargo-hack
       - name: install cargo hack
         run: cargo install cargo-hack
       - name: cargo test msrv..

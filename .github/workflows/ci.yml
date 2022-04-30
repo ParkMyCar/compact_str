@@ -48,7 +48,7 @@ jobs:
             target/
           key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-cargo-test-v3
       - name: Install cargo-nextest
-         run: cargo install cargo-nextest
+        run: cargo install cargo-nextest
       - name: cargo test
         run: |
           cargo nextest run --release --all-features --manifest-path=compact_str/Cargo.toml -- --include-ignored

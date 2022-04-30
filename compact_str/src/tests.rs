@@ -371,6 +371,126 @@ fn test_plus_operator() {
 }
 
 #[test]
+fn test_u8_to_compact_str() {
+    for x in u8::MIN..=u8::MAX {
+        let c = x.to_compact_str();
+        let s = x.to_string();
+
+        assert_eq!(c, s);
+        assert!(!c.is_heap_allocated());
+    }
+}
+
+#[test]
+fn test_i8_to_compact_str() {
+    for x in i8::MIN..=i8::MAX {
+        let c = x.to_compact_str();
+        let s = x.to_string();
+
+        assert_eq!(c, s);
+        assert!(!c.is_heap_allocated());
+    }
+}
+
+#[test]
+fn test_u16_to_compact_str() {
+    for x in u16::MIN..=u16::MAX {
+        let c = x.to_compact_str();
+        let s = x.to_string();
+
+        assert_eq!(c, s);
+        assert!(!c.is_heap_allocated());
+    }
+}
+
+#[test]
+fn test_i16_to_compact_str() {
+    for x in i16::MIN..=i16::MAX {
+        let c = x.to_compact_str();
+        let s = x.to_string();
+
+        assert_eq!(c, s);
+        assert!(!c.is_heap_allocated());
+    }
+}
+
+#[test]
+fn test_bool_to_compact_str() {
+    let c = true.to_compact_str();
+    let s = true.to_string();
+
+    assert_eq!("true", c);
+    assert_eq!(c, s);
+    assert!(!c.is_heap_allocated());
+
+    let c = false.to_compact_str();
+    let s = false.to_string();
+
+    assert_eq!("false", c);
+    assert_eq!(c, s);
+    assert!(!c.is_heap_allocated());
+}
+
+#[test]
+fn test_u32_to_compact_str() {
+    // We can't exhaustively test u32 very quickly, so just pick some seemingly interesting values
+    let vals: [u32; 6] = [u32::MIN, 1, 42, 999, 123456789, u32::MAX];
+
+    for x in vals {
+        let c = x.to_compact_str();
+        let s = x.to_string();
+
+        assert_eq!(c, s);
+        assert!(!c.is_heap_allocated());
+    }
+}
+
+#[test]
+fn test_i32_to_compact_str() {
+    // We can't exhaustively test i32 very quickly, so just pick some seemingly interesting values
+    let vals: [i32; 9] = [i32::MIN, -12345678, -42, -1, 0, 1, 999, 123456789, i32::MAX];
+
+    for x in vals {
+        let c = x.to_compact_str();
+        let s = x.to_string();
+
+        assert_eq!(c, s);
+        assert!(!c.is_heap_allocated());
+    }
+}
+
+#[test]
+fn test_u64_to_compact_str() {
+    // We can't exhaustively test u64, so just pick some seemingly interesting values
+    let vals: [u64; 7] = [u64::MIN, 0, 1, 999, 123456789, 98765432123456, u64::MAX];
+
+    for x in vals {
+        let c = x.to_compact_str();
+        let s = x.to_string();
+
+        assert_eq!(c, s);
+        assert!(!c.is_heap_allocated());
+    }
+}
+
+#[test]
+fn test_i64_to_compact_str() {
+    // We can't exhaustively test i64, so just pick some seemingly interesting values
+    let vals: [i64; 8] = [i64::MIN, -22222222, -42, 0, 1, 999, 123456789, i64::MAX];
+
+    for x in vals {
+        let c = x.to_compact_str();
+        let s = x.to_string();
+
+        assert_eq!(c, s);
+        assert!(!c.is_heap_allocated());
+    }
+}
+
+
+// TODO: Fix the formatting for floats to be like `ToString`
+#[test]
+#[should_panic]
 fn test_f64_scientific() {
     let val: f64 = 1.3594035585e-314;
 

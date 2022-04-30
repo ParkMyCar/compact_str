@@ -20,6 +20,13 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         name: Checkout Repo
+      - uses: actions-rs/toolchain@v1
+        name: Install Rust
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+          components: miri
       - uses: actions/cache@v3
         with:
           path: |
@@ -29,20 +36,11 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-x-plat-windows-v3
-      - name: Install cargo-nextest
-         run: cargo install cargo-nextest
-      # Install nightly after cargo-nextest is installed, as cargo-nextest
-      # failed to compile on nightly
-      - uses: actions-rs/toolchain@v1
-        name: Install Rust
+      - uses: actions-rs/cargo@v1
+        name: cargo test
         with:
-          profile: minimal
-          toolchain: nightly
-          override: true
-          components: miri
-      - name: cargo test
-        run: |
-          cargo nextest run --release --all-features --manifest-path=compact_str/Cargo.toml -- --include-ignored
+          command: test
+          args: --release --all-features --manifest-path=compact_str/Cargo.toml -- --include-ignored
       - uses: actions-rs/cargo@v1
         name: cargo test miri
         with:
@@ -55,6 +53,13 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         name: Checkout Repo
+      - uses: actions-rs/toolchain@v1
+        name: Install Rust
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+          components: miri
       - uses: actions/cache@v3
         with:
           path: |
@@ -64,20 +69,11 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-x-plat-macos-v3
-      - name: Install cargo-nextest
-         run: cargo install cargo-nextest
-      # Install nightly after cargo-nextest is installed, as cargo-nextest
-      # failed to compile on nightly
-      - uses: actions-rs/toolchain@v1
-        name: Install Rust
+      - uses: actions-rs/cargo@v1
+        name: cargo test
         with:
-          profile: minimal
-          toolchain: nightly
-          override: true
-          components: miri
-      - name: cargo test
-        run: |
-          cargo nextest run --release --all-features --manifest-path=compact_str/Cargo.toml -- --include-ignored
+          command: test
+          args: --release --all-features --manifest-path=compact_str/Cargo.toml -- --include-ignored
       - uses: actions-rs/cargo@v1
         name: cargo test miri
         with:

@@ -30,7 +30,7 @@ jobs:
             target/
           key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-cargo-hack
       - name: install cargo hack
-        run: cargo install cargo-hack
+        run: cargo install cargo-hack --force
       - name: cargo test msrv..
         run: |
           cd compact_str

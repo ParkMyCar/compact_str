@@ -2,7 +2,10 @@ use std::collections::VecDeque;
 use std::io::Cursor;
 
 use arbitrary::Arbitrary;
-use compact_str::CompactStr;
+use compact_str::{
+    CompactStr,
+    ToCompactStr,
+};
 
 const MAX_INLINE_LENGTH: usize = std::mem::size_of::<String>();
 
@@ -34,6 +37,44 @@ pub enum Creation<'a> {
     FromString(String),
     /// Create using `From<Box<str>>`, which consumes the `Box<str>` for `O(1)` runtime
     FromBoxStr(Box<str>),
+    /// Create from a number using [`ToCompactStr`]
+    NumToCompactStr(NumType),
+    /// Create from a boolean using [`ToCompactStr`]
+    BoolToCompactStr(bool),
+    /// Create from a char using [`ToCompactStr`]
+    CharToCompactStr(char),
+    /// Create from a String using [`ToCompactStr`]
+    StringToComapctStr(String),
+}
+
+#[derive(Arbitrary, Debug)]
+pub enum NumType {
+    /// Create from an `u8`
+    U8(u8),
+    /// Create from an `i8`
+    I8(i8),
+    /// Create from an `u16`
+    U16(u16),
+    /// Create from an `i16`
+    I16(i16),
+    /// Create from an `u32`
+    U32(u32),
+    /// Create from an `i32`
+    I32(i32),
+    /// Create from an `u64`
+    U64(u64),
+    /// Create from an `i64`
+    I64(i64),
+    /// Create from an `u128`
+    U128(u128),
+    /// Create from an `i128`
+    I128(i128),
+    // TODO: Enable float fuzzing once we fix the formatting
+    //
+    // /// Create from an `f32`,
+    // F32(f32),
+    // /// Create from an `f64`
+    // F64(f64),
 }
 
 impl Creation<'_> {
@@ -180,6 +221,64 @@ impl Creation<'_> {
                     _ => panic!("CompactStr and core::str read UTF-8 differently?"),
                 }
             }
+            NumToCompactStr(num_type) => {
+                // Create a `CompactStr` and `String` from a number
+                let (compact, word) = match num_type {
+                    NumType::U8(val) => (val.to_compact_str(), val.to_string()),
+                    NumType::I8(val) => (val.to_compact_str(), val.to_string()),
+                    NumType::U16(val) => (val.to_compact_str(), val.to_string()),
+                    NumType::I16(val) => (val.to_compact_str(), val.to_string()),
+                    NumType::U32(val) => (val.to_compact_str(), val.to_string()),
+                    NumType::I32(val) => (val.to_compact_str(), val.to_string()),
+                    NumType::U64(val) => (val.to_compact_str(), val.to_string()),
+                    NumType::I64(val) => (val.to_compact_str(), val.to_string()),
+                    NumType::U128(val) => (val.to_compact_str(), val.to_string()),
+                    NumType::I128(val) => (val.to_compact_str(), val.to_string()),
+                    // NumType::F32(val) => (val.to_compact_str(), val.to_string()),
+                    // NumType::F64(val) => (val.to_compact_str(), val.to_string()),
+                };
+
+                assert_eq!(compact, word);
+
+                // Numbers should always be inlined, except 128-bit integers, they might be heap
+                // allocated
+                match num_type {
+                    NumType::U128(_) | NumType::I128(_) => {
+                        assert_properly_allocated(&compact, &word);
+                    }
+                    _ => assert!(!compact.is_heap_allocated()),
+                };
+
+                Some((compact, word))
+            },
+            BoolToCompactStr(bool) => {
+                let compact = bool.to_compact_str();
+                let word = bool.to_string();
+
+                assert_eq!(compact, word);
+                // Booleans should always be inlined
+                assert!(!compact.is_heap_allocated());
+
+                Some((compact, word))
+            },
+            CharToCompactStr(c) => {
+                let compact = c.to_compact_str();
+                let word = c.to_string();
+
+                assert_eq!(compact, word);
+                // chars should always be inlined
+                assert!(!compact.is_heap_allocated());
+
+                Some((compact, word))
+            },
+            StringToComapctStr(word) => {
+                let compact = word.to_compact_str();
+
+                assert_eq!(compact, word);
+                assert_properly_allocated(&compact, &word);
+
+                Some((compact, word))
+            },
         }
     }
 }

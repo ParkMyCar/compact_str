@@ -27,6 +27,18 @@ jobs:
         with:
           crate: cargo-fuzz
           version: latest
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-nightly-fuzz-libfuzzer
+          restore-keys: |
+            ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-nightly-fuzz
+            ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-nightly
       - name: Set Fuzz Time
         run: |
           if [[ "${{github.event_name}}" == "push" || "${{github.event_name}}" == "pull_request" ]]; then
@@ -61,6 +73,18 @@ jobs:
         with:
           crate: afl
           version: latest
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-nightly-fuzz-afl
+          restore-keys: |
+            ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-nightly-fuzz
+            ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-nightly
       - name: AFL++ Build
         run: |
           cd fuzz
@@ -111,7 +135,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-x-plat-windows-v2
+          key: ${{ runner.os }}-armv7-${{ hashFiles('**/Cargo.toml') }}-nightly-fuzz-afl
       - name: Install cargo-afl
         run: |
           cargo +nightly install afl --force

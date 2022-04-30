@@ -37,7 +37,9 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-cargo-hack
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-stable-cargo-hack
+          restore-keys: |
+            ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-stable
       - name: install cargo hack
         run: cargo install cargo-hack --force
       - name: cargo test msrv..

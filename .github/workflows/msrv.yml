@@ -27,6 +27,9 @@ jobs:
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
+            ~/.rustup/downloads
+            ~/.rustup/toolchains
+            ~/.rustup/update-hashes
             target/
           key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-cargo-hack
       - name: install cargo hack

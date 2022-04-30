@@ -27,6 +27,15 @@ jobs:
           toolchain: nightly
           override: true
           components: miri
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-x-plat-windows-v3
       - uses: actions-rs/cargo@v1
         name: cargo test
         with:
@@ -51,6 +60,15 @@ jobs:
           toolchain: nightly
           override: true
           components: miri
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-x-plat-macos-v3
       - uses: actions-rs/cargo@v1
         name: cargo test
         with:
@@ -74,6 +92,15 @@ jobs:
           profile: minimal
           toolchain: nightly
           override: true
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-x-plat-linux-arm7-v2
       - uses: actions-rs/cargo@v1
         name: cargo test
         with:
@@ -93,6 +120,15 @@ jobs:
           target: i686-unknown-linux-gnu
           override: true
           components: miri
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-x-plat-linux-32bit-v2
       - uses: actions-rs/cargo@v1
         name: cargo test
         with:
@@ -118,6 +154,15 @@ jobs:
           target: mips-unknown-linux-gnu
           override: true
           components: miri
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-x-plat-linux-mips-32bit-v2
       - uses: actions-rs/cargo@v1
         name: cargo test
         with:
@@ -143,6 +188,15 @@ jobs:
           target: mipsel-unknown-linux-gnu
           override: true
           components: miri
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-x-plat-linux-mips-le-32bit-v2
       - uses: actions-rs/cargo@v1
         name: cargo test
         with:
@@ -168,6 +222,15 @@ jobs:
           target: powerpc-unknown-linux-gnu
           override: true
           components: miri
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-x-plat-linux-powerpc-32bit-v2
       - uses: actions-rs/cargo@v1
         name: cargo test
         with:
@@ -193,6 +256,15 @@ jobs:
           target: powerpc64le-unknown-linux-gnu
           override: true
           components: miri
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-x-plat-linux-powerpc-le-64bit-v2
       - uses: actions-rs/cargo@v1
         name: cargo test
         with:

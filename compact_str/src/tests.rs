@@ -115,14 +115,6 @@ fn test_from_lossy_cow_roundtrips(#[strategy(rand_bytes())] bytes: Vec<u8>) {
 
 #[proptest]
 #[cfg_attr(miri, ignore)]
-fn test_from_lossy_cow_allocated_properly(#[strategy(rand_bytes())] bytes: Vec<u8>) {
-    let cow = String::from_utf8_lossy(&bytes[..]);
-    let compact = CompactStr::from(cow);
-    assert_allocated_properly(&compact);
-}
-
-#[proptest]
-#[cfg_attr(miri, ignore)]
 fn test_reserve_and_write_bytes(#[strategy(rand_unicode())] word: String) {
     let mut compact = CompactStr::default();
     prop_assert!(compact.is_empty());

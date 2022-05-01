@@ -31,7 +31,9 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-cargo-check-v3
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-stable-check
+          restore-keys: |
+            ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-stable
       - uses: actions-rs/cargo@v1
         with:
           command: check
@@ -55,7 +57,9 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-cargo-test-v3
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-stable-test
+          restore-keys: |
+            ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-stable
       - name: Install cargo-nextest
         uses: taiki-e/install-action@nextest
       - name: cargo test
@@ -75,7 +79,9 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-cargo-test-nightly-v3
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-nightly-test
+          restore-keys: |
+            ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-nightly
       - name: Install cargo-nextest
         uses: taiki-e/install-action@nextest
       # Install nightly after cargo-nextest is installed, as cargo-nextest failed to compile on nightly
@@ -107,7 +113,10 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-cargo-miri-v2
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-nightly-test-miri
+          restore-keys: |
+            ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-nightly-test
+            ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-nightly
       - name: Run Miri
         run: |
           cargo miri test --all-features --manifest-path=compact_str/Cargo.toml
@@ -130,7 +139,10 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-example-bytes
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-nightly-example-bytes
+          restore-keys: |
+            ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-nightly-example
+            ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-nightly
       - uses: actions-rs/cargo@v1
         with:
           command: run
@@ -154,7 +166,10 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-example-bytes
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-nightly-example-bytes
+          restore-keys: |
+            ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-nightly-example
+            ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-nightly
       - uses: actions-rs/cargo@v1
         with:
           command: run

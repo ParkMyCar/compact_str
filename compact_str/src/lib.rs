@@ -584,8 +584,11 @@ impl<'a> From<&'a String> for CompactStr {
 }
 
 impl<'a> From<Cow<'a, str>> for CompactStr {
-    fn from(s: Cow<'a, str>) -> Self {
-        CompactStr::new(s)
+    fn from(cow: Cow<'a, str>) -> Self {
+        match cow {
+            Cow::Borrowed(s) => s.into(),
+            Cow::Owned(s) => s.into(),
+        }
     }
 }
 

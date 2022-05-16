@@ -45,4 +45,4 @@ jobs:
       - name: cargo test msrv..
         run: |
           cd compact_str
-          cargo hack test --feature-powerset --optional-deps --version-range 1.49..
+          cargo hack check --feature-powerset --optional-deps --version-range 1.49..

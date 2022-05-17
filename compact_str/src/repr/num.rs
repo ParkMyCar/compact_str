@@ -21,16 +21,21 @@ const DEC_DIGITS_LUT: &[u8] = b"\
       8081828384858687888990919293949596979899";
 
 macro_rules! impl_IntoRepr {
-    ($t:ident, $conv_ty:ident, $max_size:expr) => {
+    ($t:ident, $conv_ty:ident) => {
         impl IntoRepr for $t {
             #[inline]
             fn into_repr(self) -> Repr {
+                // Determine the number of digits in this value
+                //
+                // Note: this considers the `-` symbol
+                let num_digits = NumChars::num_chars(self);
+
                 // Start with an empty Repr
                 let mut repr = {
                     // For 32-bit machines, we might need to heap allocate
                     #[cfg(target_pointer_width = "32")]
                     {
-                        Repr::with_capacity($max_size)
+                        Repr::with_capacity(num_digits)
                     }
 
                     // For 64-bit machines, we can always fit inline
@@ -39,10 +44,6 @@ macro_rules! impl_IntoRepr {
                         super::EMPTY
                     }
                 };
-                // Determine the number of digits in this value
-                //
-                // Note: this considers the `-` symbol
-                let num_digits = NumChars::num_chars(self);
 
                 #[allow(unused_comparisons)]
                 let is_nonnegative = self >= 0;
@@ -117,24 +118,24 @@ macro_rules! impl_IntoRepr {
     };
 }
 
-impl_IntoRepr!(u8, u32, 3);
-impl_IntoRepr!(i8, u32, 4);
-impl_IntoRepr!(u16, u32, 5);
-impl_IntoRepr!(i16, u32, 6);
-impl_IntoRepr!(u32, u32, 10);
-impl_IntoRepr!(i32, u32, 11);
-impl_IntoRepr!(u64, u64, 20);
-impl_IntoRepr!(i64, u64, 20);
+impl_IntoRepr!(u8, u32);
+impl_IntoRepr!(i8, u32);
+impl_IntoRepr!(u16, u32);
+impl_IntoRepr!(i16, u32);
+impl_IntoRepr!(u32, u32);
+impl_IntoRepr!(i32, u32);
+impl_IntoRepr!(u64, u64);
+impl_IntoRepr!(i64, u64);
 
 #[cfg(target_pointer_width = "32")]
-impl_IntoRepr!(usize, u32, 10);
+impl_IntoRepr!(usize, u32);
 #[cfg(target_pointer_width = "32")]
-impl_IntoRepr!(isize, u32, 11);
+impl_IntoRepr!(isize, u32);
 
 #[cfg(target_pointer_width = "64")]
-impl_IntoRepr!(usize, u64, 20);
+impl_IntoRepr!(usize, u64);
 #[cfg(target_pointer_width = "64")]
-impl_IntoRepr!(isize, u64, 20);
+impl_IntoRepr!(isize, u64);
 
 /// All of these `num_chars(...)` methods are kind of crazy, but they are necessary.
 ///

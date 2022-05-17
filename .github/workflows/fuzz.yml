@@ -76,7 +76,6 @@ jobs:
       - uses: actions/cache@v3
         with:
           path: |
-            ~/.cargo/bin/
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
@@ -130,7 +129,6 @@ jobs:
       - uses: actions/cache@v3
         with:
           path: |
-            ~/.cargo/bin/
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/

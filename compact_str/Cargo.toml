@@ -21,4 +21,4 @@ ryu = "1"
 
 [dev-dependencies]
 proptest = { version = "1", default-features = false, features = ["std"] }
-test-strategy = "0.1.2"
+test-strategy = "0.2"

@@ -1,4 +1,7 @@
-use compact_str::CompactStr;
+use compact_str::{
+    CompactStr,
+    ToCompactStr,
+};
 use criterion::{
     criterion_group,
     criterion_main,
@@ -38,5 +41,49 @@ fn bench_new(c: &mut Criterion) {
     );
 }
 
-criterion_group!(compact_str, bench_new);
+fn bench_to_compact_str(c: &mut Criterion) {
+    c.bench_with_input(
+        BenchmarkId::new("u8::to_compact_str", "42"),
+        &42_u8,
+        |b, num| b.iter(|| num.to_compact_str()),
+    );
+
+    c.bench_with_input(
+        BenchmarkId::new("u32::to_compact_str", "54321"),
+        &54321_u32,
+        |b, num| b.iter(|| num.to_compact_str()),
+    );
+
+    c.bench_with_input(
+        BenchmarkId::new("isize::to_compact_str", "-9999"),
+        &54321_u32,
+        |b, num| b.iter(|| num.to_compact_str()),
+    );
+
+    c.bench_with_input(
+        BenchmarkId::new("u64::to_compact_str", "MAX"),
+        &u64::MAX,
+        |b, num| b.iter(|| num.to_compact_str()),
+    );
+
+    c.bench_with_input(
+        BenchmarkId::new("bool::to_compact_str", "true"),
+        &true,
+        |b, flag| b.iter(|| flag.to_compact_str()),
+    );
+
+    c.bench_with_input(
+        BenchmarkId::new("String::to_compact_str", "hello world!"),
+        &String::from("hello world!"),
+        |b, word| b.iter(|| word.to_compact_str()),
+    );
+
+    c.bench_with_input(
+        BenchmarkId::new("char::to_compact_str", "a"),
+        &'a',
+        |b, c| b.iter(|| c.to_compact_str()),
+    );
+}
+
+criterion_group!(compact_str, bench_new, bench_to_compact_str);
 criterion_main!(compact_str);

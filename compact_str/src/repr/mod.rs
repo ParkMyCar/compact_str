@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::fmt;
 use std::iter::Extend;
 use std::mem::ManuallyDrop;
 use std::str::Utf8Error;
@@ -13,6 +14,10 @@ mod boxed;
 mod discriminant;
 mod heap;
 mod inline;
+mod num;
+
+mod traits;
+pub use traits::IntoRepr;
 
 use discriminant::{
     Discriminant,
@@ -26,7 +31,7 @@ const EMPTY: Repr = Repr {
     inline: InlineString::new_const(""),
 };
 
-// Used as a discriminant to identify different variants
+/// Used as a discriminant to identify different variants
 pub const HEAP_MASK: u8 = 0b11111111;
 
 pub union Repr {
@@ -371,6 +376,13 @@ impl<'a> Extend<Cow<'a, str>> for Repr {
 impl Extend<String> for Repr {
     fn extend<T: IntoIterator<Item = String>>(&mut self, iter: T) {
         iter.into_iter().for_each(move |s| self.push_str(&s));
+    }
+}
+
+impl fmt::Write for Repr {
+    fn write_str(&mut self, s: &str) -> fmt::Result {
+        self.push_str(s);
+        Ok(())
     }
 }
 

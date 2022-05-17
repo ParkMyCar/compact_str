@@ -86,6 +86,8 @@ impl<T: fmt::Display> ToCompactStr for T {
             &f64 as s => s.into_repr(),
             bool as s => s.into_repr(),
             &bool as s => s.into_repr(),
+            char as s => s.into_repr(),
+            &char as s => s.into_repr(),
             String as s => Repr::from_string(s),
             &String as s => Repr::new(&*s),
             CompactStr as s => Repr::new(&*s),

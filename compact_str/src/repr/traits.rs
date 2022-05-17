@@ -34,6 +34,13 @@ impl IntoRepr for bool {
     }
 }
 
+impl IntoRepr for char {
+    fn into_repr(self) -> Repr {
+        let mut buf = [0_u8; 4];
+        Repr::new_const(self.encode_utf8(&mut buf))
+    }
+}
+
 impl IntoRepr for String {
     fn into_repr(self) -> Repr {
         Repr::from_string(self)

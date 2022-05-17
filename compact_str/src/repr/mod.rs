@@ -17,14 +17,13 @@ mod inline;
 mod num;
 
 mod traits;
-pub use traits::IntoRepr;
-
 use discriminant::{
     Discriminant,
     DiscriminantMask,
 };
 use heap::HeapString;
 use inline::InlineString;
+pub use traits::IntoRepr;
 
 pub(crate) const MAX_SIZE: usize = std::mem::size_of::<String>();
 const EMPTY: Repr = Repr {

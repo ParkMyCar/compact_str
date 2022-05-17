@@ -11,7 +11,6 @@ use core::{
 use super::{
     IntoRepr,
     Repr,
-    EMPTY,
 };
 
 const DEC_DIGITS_LUT: &[u8] = b"\
@@ -37,7 +36,7 @@ macro_rules! impl_IntoRepr {
                     // For 64-bit machines, we can always fit inline
                     #[cfg(target_pointer_width = "64")]
                     {
-                        EMPTY
+                        super::EMPTY
                     }
                 };
                 // Determine the number of digits in this value
@@ -403,7 +402,7 @@ mod tests {
             u8::MAX,
         ];
 
-        for x in vals {
+        for x in &vals {
             let repr = u8::into_repr(x);
             assert_eq!(repr.as_str(), x.to_string());
         }
@@ -422,7 +421,7 @@ mod tests {
             i8::MAX,
         ];
 
-        for x in vals {
+        for x in &vals {
             let repr = i8::into_repr(x);
             assert_eq!(repr.as_str(), x.to_string());
         }
@@ -441,7 +440,7 @@ mod tests {
             u16::MAX,
         ];
 
-        for x in vals {
+        for x in &vals {
             let repr = u16::into_repr(x);
             assert_eq!(repr.as_str(), x.to_string());
         }
@@ -460,7 +459,7 @@ mod tests {
             i16::MAX,
         ];
 
-        for x in vals {
+        for x in &vals {
             let repr = i16::into_repr(x);
             assert_eq!(repr.as_str(), x.to_string());
         }
@@ -479,7 +478,7 @@ mod tests {
             u32::MAX,
         ];
 
-        for x in vals {
+        for x in &vals {
             let repr = u32::into_repr(x);
             assert_eq!(repr.as_str(), x.to_string());
         }
@@ -498,7 +497,7 @@ mod tests {
             i32::MAX,
         ];
 
-        for x in vals {
+        for x in &vals {
             let repr = i32::into_repr(x);
             assert_eq!(repr.as_str(), x.to_string());
         }
@@ -517,7 +516,7 @@ mod tests {
             u64::MAX,
         ];
 
-        for x in vals {
+        for x in &vals {
             let repr = u64::into_repr(x);
             assert_eq!(repr.as_str(), x.to_string());
         }
@@ -536,7 +535,7 @@ mod tests {
             i64::MAX,
         ];
 
-        for x in vals {
+        for x in &vals {
             let repr = i64::into_repr(x);
             assert_eq!(repr.as_str(), x.to_string());
         }
@@ -555,7 +554,7 @@ mod tests {
             usize::MAX,
         ];
 
-        for x in vals {
+        for x in &vals {
             let repr = usize::into_repr(x);
             assert_eq!(repr.as_str(), x.to_string());
         }
@@ -574,7 +573,7 @@ mod tests {
             isize::MAX,
         ];
 
-        for x in vals {
+        for x in &vals {
             let repr = isize::into_repr(x);
             assert_eq!(repr.as_str(), x.to_string());
         }

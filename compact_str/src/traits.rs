@@ -2,6 +2,7 @@ use core::fmt::{
     self,
     Write,
 };
+
 use castaway::{
     match_type,
     LifetimeFree,

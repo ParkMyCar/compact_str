@@ -1,7 +1,7 @@
 //! Implementations for efficiently converting a number into a [`Repr`]
 //!
 //! Adapted from the implemenation in the `std` library at
-//! https://github.com/rust-lang/rust/blob/b8214dc6c6fc20d0a660fb5700dca9ebf51ebe89/src/libcore/fmt/num.rs#L188-L266
+//! <https://github.com/rust-lang/rust/blob/b8214dc6c6fc20d0a660fb5700dca9ebf51ebe89/src/libcore/fmt/num.rs#L188-L266>
 
 use core::{
     mem,
@@ -403,7 +403,7 @@ mod tests {
         ];
 
         for x in &vals {
-            let repr = u8::into_repr(x);
+            let repr = u8::into_repr(*x);
             assert_eq!(repr.as_str(), x.to_string());
         }
     }
@@ -422,7 +422,7 @@ mod tests {
         ];
 
         for x in &vals {
-            let repr = i8::into_repr(x);
+            let repr = i8::into_repr(*x);
             assert_eq!(repr.as_str(), x.to_string());
         }
     }
@@ -441,7 +441,7 @@ mod tests {
         ];
 
         for x in &vals {
-            let repr = u16::into_repr(x);
+            let repr = u16::into_repr(*x);
             assert_eq!(repr.as_str(), x.to_string());
         }
     }
@@ -460,7 +460,7 @@ mod tests {
         ];
 
         for x in &vals {
-            let repr = i16::into_repr(x);
+            let repr = i16::into_repr(*x);
             assert_eq!(repr.as_str(), x.to_string());
         }
     }
@@ -479,7 +479,7 @@ mod tests {
         ];
 
         for x in &vals {
-            let repr = u32::into_repr(x);
+            let repr = u32::into_repr(*x);
             assert_eq!(repr.as_str(), x.to_string());
         }
     }
@@ -498,7 +498,7 @@ mod tests {
         ];
 
         for x in &vals {
-            let repr = i32::into_repr(x);
+            let repr = i32::into_repr(*x);
             assert_eq!(repr.as_str(), x.to_string());
         }
     }
@@ -517,7 +517,7 @@ mod tests {
         ];
 
         for x in &vals {
-            let repr = u64::into_repr(x);
+            let repr = u64::into_repr(*x);
             assert_eq!(repr.as_str(), x.to_string());
         }
     }
@@ -536,7 +536,7 @@ mod tests {
         ];
 
         for x in &vals {
-            let repr = i64::into_repr(x);
+            let repr = i64::into_repr(*x);
             assert_eq!(repr.as_str(), x.to_string());
         }
     }
@@ -555,7 +555,7 @@ mod tests {
         ];
 
         for x in &vals {
-            let repr = usize::into_repr(x);
+            let repr = usize::into_repr(*x);
             assert_eq!(repr.as_str(), x.to_string());
         }
     }
@@ -574,7 +574,7 @@ mod tests {
         ];
 
         for x in &vals {
-            let repr = isize::into_repr(x);
+            let repr = isize::into_repr(*x);
             assert_eq!(repr.as_str(), x.to_string());
         }
     }

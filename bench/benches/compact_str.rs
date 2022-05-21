@@ -55,14 +55,20 @@ fn bench_to_compact_str(c: &mut Criterion) {
     );
 
     c.bench_with_input(
-        BenchmarkId::new("isize::to_compact_str", "-9999"),
-        &54321_u32,
+        BenchmarkId::new("isize::to_compact_str", "-9999999"),
+        &-9999999_isize,
         |b, num| b.iter(|| num.to_compact_str()),
     );
 
     c.bench_with_input(
         BenchmarkId::new("u64::to_compact_str", "MAX"),
         &u64::MAX,
+        |b, num| b.iter(|| num.to_compact_str()),
+    );
+
+    c.bench_with_input(
+        BenchmarkId::new("u128::to_compact_str", "12345678909876543210123456789"),
+        &12345678909876543210123456789_u128,
         |b, num| b.iter(|| num.to_compact_str()),
     );
 

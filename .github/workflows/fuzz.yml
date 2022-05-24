@@ -126,14 +126,14 @@ jobs:
       - name: Update Rust Nightly
         run: |
           rustup update nightly
-      - uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-armv7-${{ hashFiles('**/Cargo.toml') }}-nightly-fuzz-afl
+      # - uses: actions/cache@v3
+      #   with:
+      #     path: |
+      #       ~/.cargo/registry/index/
+      #       ~/.cargo/registry/cache/
+      #       ~/.cargo/git/db/
+      #       target/
+      #     key: ${{ runner.os }}-armv7-${{ hashFiles('**/Cargo.toml') }}-nightly-fuzz-afl
       - name: Install cargo-afl
         run: |
           cargo +nightly install afl --force

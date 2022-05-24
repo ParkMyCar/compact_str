@@ -5,6 +5,7 @@
 
 use core::{
     mem,
+    num,
     ptr,
 };
 
@@ -20,6 +21,7 @@ const DEC_DIGITS_LUT: &[u8] = b"\
       6061626364656667686970717273747576777879\
       8081828384858687888990919293949596979899";
 
+/// Defines the implementation of [`IntoRepr`] for integer types
 macro_rules! impl_IntoRepr {
     ($t:ident, $conv_ty:ident) => {
         impl IntoRepr for $t {
@@ -112,8 +114,6 @@ impl_IntoRepr!(u32, u32);
 impl_IntoRepr!(i32, u32);
 impl_IntoRepr!(u64, u64);
 impl_IntoRepr!(i64, u64);
-impl_IntoRepr!(u128, u128);
-impl_IntoRepr!(i128, u128);
 
 #[cfg(target_pointer_width = "32")]
 impl_IntoRepr!(usize, u32);
@@ -124,6 +124,50 @@ impl_IntoRepr!(isize, u32);
 impl_IntoRepr!(usize, u64);
 #[cfg(target_pointer_width = "64")]
 impl_IntoRepr!(isize, u64);
+
+/// For 128-bit integer types we use the [`itoa`] crate because writing into a buffer, and then
+/// copying the amount of characters we've written, is faster than determining the number of
+/// characters and then writing.
+impl IntoRepr for u128 {
+    #[inline]
+    fn into_repr(self) -> Repr {
+        let mut buffer = itoa::Buffer::new();
+        Repr::new(buffer.format(self))
+    }
+}
+
+impl IntoRepr for i128 {
+    #[inline]
+    fn into_repr(self) -> Repr {
+        let mut buffer = itoa::Buffer::new();
+        Repr::new(buffer.format(self))
+    }
+}
+
+/// Defines the implementation of [`IntoRepr`] for NonZero integer types
+macro_rules! impl_NonZero_IntoRepr {
+    ($t:path) => {
+        impl IntoRepr for $t {
+            #[inline]
+            fn into_repr(self) -> Repr {
+                self.get().into_repr()
+            }
+        }
+    };
+}
+
+impl_NonZero_IntoRepr!(num::NonZeroU8);
+impl_NonZero_IntoRepr!(num::NonZeroI8);
+impl_NonZero_IntoRepr!(num::NonZeroU16);
+impl_NonZero_IntoRepr!(num::NonZeroI16);
+impl_NonZero_IntoRepr!(num::NonZeroU32);
+impl_NonZero_IntoRepr!(num::NonZeroI32);
+impl_NonZero_IntoRepr!(num::NonZeroU64);
+impl_NonZero_IntoRepr!(num::NonZeroI64);
+impl_NonZero_IntoRepr!(num::NonZeroUsize);
+impl_NonZero_IntoRepr!(num::NonZeroIsize);
+impl_NonZero_IntoRepr!(num::NonZeroU128);
+impl_NonZero_IntoRepr!(num::NonZeroI128);
 
 /// All of these `num_chars(...)` methods are kind of crazy, but they are necessary.
 ///
@@ -346,139 +390,6 @@ impl NumChars for i64 {
     }
 }
 
-impl NumChars for u128 {
-    #[inline(always)]
-    fn num_chars(val: u128) -> usize {
-        match val {
-            u128::MIN..=9 => 1,
-            10..=99 => 2,
-            100..=999 => 3,
-            1000..=9999 => 4,
-            10000..=99999 => 5,
-            100000..=999999 => 6,
-            1000000..=9999999 => 7,
-            10000000..=99999999 => 8,
-            100000000..=999999999 => 9,
-            1000000000..=9999999999 => 10,
-            10000000000..=99999999999 => 11,
-            100000000000..=999999999999 => 12,
-            1000000000000..=9999999999999 => 13,
-            10000000000000..=99999999999999 => 14,
-            100000000000000..=999999999999999 => 15,
-            1000000000000000..=9999999999999999 => 16,
-            10000000000000000..=99999999999999999 => 17,
-            100000000000000000..=999999999999999999 => 18,
-            1000000000000000000..=9999999999999999999 => 19,
-            10000000000000000000..=99999999999999999999 => 20,
-            100000000000000000000..=999999999999999999999 => 21,
-            1000000000000000000000..=9999999999999999999999 => 22,
-            10000000000000000000000..=99999999999999999999999 => 23,
-            100000000000000000000000..=999999999999999999999999 => 24,
-            1000000000000000000000000..=9999999999999999999999999 => 25,
-            10000000000000000000000000..=99999999999999999999999999 => 26,
-            100000000000000000000000000..=999999999999999999999999999 => 27,
-            1000000000000000000000000000..=9999999999999999999999999999 => 28,
-            10000000000000000000000000000..=99999999999999999999999999999 => 29,
-            100000000000000000000000000000..=999999999999999999999999999999 => 30,
-            1000000000000000000000000000000..=9999999999999999999999999999999 => 31,
-            10000000000000000000000000000000..=99999999999999999999999999999999 => 32,
-            100000000000000000000000000000000..=999999999999999999999999999999999 => 33,
-            1000000000000000000000000000000000..=9999999999999999999999999999999999 => 34,
-            10000000000000000000000000000000000..=99999999999999999999999999999999999 => 35,
-            100000000000000000000000000000000000..=999999999999999999999999999999999999 => 36,
-            1000000000000000000000000000000000000..=9999999999999999999999999999999999999 => 37,
-            10000000000000000000000000000000000000..=99999999999999999999999999999999999999 => 38,
-            100000000000000000000000000000000000000..=u128::MAX => 39,
-        }
-    }
-}
-
-impl NumChars for i128 {
-    #[inline(always)]
-    fn num_chars(val: i128) -> usize {
-        match val {
-            i128::MIN..=-100000000000000000000000000000000000000 => 40,
-            -99999999999999999999999999999999999999..=-10000000000000000000000000000000000000 => 39,
-            -9999999999999999999999999999999999999..=-1000000000000000000000000000000000000 => 38,
-            -999999999999999999999999999999999999..=-100000000000000000000000000000000000 => 37,
-            -99999999999999999999999999999999999..=-10000000000000000000000000000000000 => 36,
-            -9999999999999999999999999999999999..=-1000000000000000000000000000000000 => 35,
-            -999999999999999999999999999999999..=-100000000000000000000000000000000 => 34,
-            -99999999999999999999999999999999..=-10000000000000000000000000000000 => 33,
-            -9999999999999999999999999999999..=-1000000000000000000000000000000 => 32,
-            -999999999999999999999999999999..=-100000000000000000000000000000 => 31,
-            -99999999999999999999999999999..=-10000000000000000000000000000 => 30,
-            -9999999999999999999999999999..=-1000000000000000000000000000 => 29,
-            -999999999999999999999999999..=-100000000000000000000000000 => 28,
-            -99999999999999999999999999..=-10000000000000000000000000 => 27,
-            -9999999999999999999999999..=-1000000000000000000000000 => 26,
-            -999999999999999999999999..=-100000000000000000000000 => 25,
-            -99999999999999999999999..=-10000000000000000000000 => 24,
-            -9999999999999999999999..=-1000000000000000000000 => 23,
-            -999999999999999999999..=-100000000000000000000 => 22,
-            -99999999999999999999..=-10000000000000000000 => 21,
-            -9999999999999999999..=-1000000000000000000 => 20,
-            -999999999999999999..=-100000000000000000 => 19,
-            -99999999999999999..=-10000000000000000 => 18,
-            -9999999999999999..=-1000000000000000 => 17,
-            -999999999999999..=-100000000000000 => 16,
-            -99999999999999..=-10000000000000 => 15,
-            -9999999999999..=-1000000000000 => 14,
-            -999999999999..=-100000000000 => 13,
-            -99999999999..=-10000000000 => 12,
-            -9999999999..=-1000000000 => 11,
-            -999999999..=-100000000 => 10,
-            -99999999..=-10000000 => 9,
-            -9999999..=-1000000 => 8,
-            -999999..=-100000 => 7,
-            -99999..=-10000 => 6,
-            -9999..=-1000 => 5,
-            -999..=-100 => 4,
-            -99..=-10 => 3,
-            -9..=-1 => 2,
-            0..=9 => 1,
-            10..=99 => 2,
-            100..=999 => 3,
-            1000..=9999 => 4,
-            10000..=99999 => 5,
-            100000..=999999 => 6,
-            1000000..=9999999 => 7,
-            10000000..=99999999 => 8,
-            100000000..=999999999 => 9,
-            1000000000..=9999999999 => 10,
-            10000000000..=99999999999 => 11,
-            100000000000..=999999999999 => 12,
-            1000000000000..=9999999999999 => 13,
-            10000000000000..=99999999999999 => 14,
-            100000000000000..=999999999999999 => 15,
-            1000000000000000..=9999999999999999 => 16,
-            10000000000000000..=99999999999999999 => 17,
-            100000000000000000..=999999999999999999 => 18,
-            1000000000000000000..=9999999999999999999 => 19,
-            10000000000000000000..=99999999999999999999 => 20,
-            100000000000000000000..=999999999999999999999 => 21,
-            1000000000000000000000..=9999999999999999999999 => 22,
-            10000000000000000000000..=99999999999999999999999 => 23,
-            100000000000000000000000..=999999999999999999999999 => 24,
-            1000000000000000000000000..=9999999999999999999999999 => 25,
-            10000000000000000000000000..=99999999999999999999999999 => 26,
-            100000000000000000000000000..=999999999999999999999999999 => 27,
-            1000000000000000000000000000..=9999999999999999999999999999 => 28,
-            10000000000000000000000000000..=99999999999999999999999999999 => 29,
-            100000000000000000000000000000..=999999999999999999999999999999 => 30,
-            1000000000000000000000000000000..=9999999999999999999999999999999 => 31,
-            10000000000000000000000000000000..=99999999999999999999999999999999 => 32,
-            100000000000000000000000000000000..=999999999999999999999999999999999 => 33,
-            1000000000000000000000000000000000..=9999999999999999999999999999999999 => 34,
-            10000000000000000000000000000000000..=99999999999999999999999999999999999 => 35,
-            100000000000000000000000000000000000..=999999999999999999999999999999999999 => 36,
-            1000000000000000000000000000000000000..=9999999999999999999999999999999999999 => 37,
-            10000000000000000000000000000000000000..=99999999999999999999999999999999999999 => 38,
-            100000000000000000000000000000000000000..=i128::MAX => 39,
-        }
-    }
-}
-
 impl NumChars for usize {
     fn num_chars(val: usize) -> usize {
         #[cfg(target_pointer_width = "32")]
@@ -509,20 +420,16 @@ impl NumChars for isize {
 
 #[cfg(test)]
 mod tests {
+    use core::num;
+
+    use proptest::prelude::*;
+    use test_strategy::proptest;
+
     use super::IntoRepr;
 
     #[test]
     fn test_from_u8_sanity() {
-        let vals = [
-            u8::MIN,
-            u8::MIN + 1,
-            u8::MIN + 2,
-            0,
-            42,
-            u8::MAX - 2,
-            u8::MAX - 1,
-            u8::MAX,
-        ];
+        let vals = [u8::MIN, u8::MIN + 1, 0, 42, u8::MAX - 1, u8::MAX];
 
         for x in &vals {
             let repr = u8::into_repr(*x);
@@ -530,18 +437,16 @@ mod tests {
         }
     }
 
+    #[proptest]
+    #[cfg_attr(miri, ignore)]
+    fn test_from_u8(val: u8) {
+        let repr = u8::into_repr(val);
+        proptest::prop_assert_eq!(repr.as_str(), val.to_string());
+    }
+
     #[test]
     fn test_from_i8_sanity() {
-        let vals = [
-            i8::MIN,
-            i8::MIN + 1,
-            i8::MIN + 2,
-            0,
-            42,
-            i8::MAX - 2,
-            i8::MAX - 1,
-            i8::MAX,
-        ];
+        let vals = [i8::MIN, i8::MIN + 1, 0, 42, i8::MAX - 1, i8::MAX];
 
         for x in &vals {
             let repr = i8::into_repr(*x);
@@ -549,18 +454,16 @@ mod tests {
         }
     }
 
+    #[proptest]
+    #[cfg_attr(miri, ignore)]
+    fn test_from_i8(val: i8) {
+        let repr = i8::into_repr(val);
+        proptest::prop_assert_eq!(repr.as_str(), val.to_string());
+    }
+
     #[test]
     fn test_from_u16_sanity() {
-        let vals = [
-            u16::MIN,
-            u16::MIN + 1,
-            u16::MIN + 2,
-            0,
-            42,
-            u16::MAX - 2,
-            u16::MAX - 1,
-            u16::MAX,
-        ];
+        let vals = [u16::MIN, u16::MIN + 1, 0, 42, u16::MAX - 1, u16::MAX];
 
         for x in &vals {
             let repr = u16::into_repr(*x);
@@ -568,18 +471,16 @@ mod tests {
         }
     }
 
+    #[proptest]
+    #[cfg_attr(miri, ignore)]
+    fn test_from_u16(val: u16) {
+        let repr = u16::into_repr(val);
+        proptest::prop_assert_eq!(repr.as_str(), val.to_string());
+    }
+
     #[test]
     fn test_from_i16_sanity() {
-        let vals = [
-            i16::MIN,
-            i16::MIN + 1,
-            i16::MIN + 2,
-            0,
-            42,
-            i16::MAX - 2,
-            i16::MAX - 1,
-            i16::MAX,
-        ];
+        let vals = [i16::MIN, i16::MIN + 1, 0, 42, i16::MAX - 1, i16::MAX];
 
         for x in &vals {
             let repr = i16::into_repr(*x);
@@ -587,18 +488,16 @@ mod tests {
         }
     }
 
+    #[proptest]
+    #[cfg_attr(miri, ignore)]
+    fn test_from_i16(val: i16) {
+        let repr = i16::into_repr(val);
+        proptest::prop_assert_eq!(repr.as_str(), val.to_string());
+    }
+
     #[test]
     fn test_from_u32_sanity() {
-        let vals = [
-            u32::MIN,
-            u32::MIN + 1,
-            u32::MIN + 2,
-            0,
-            42,
-            u32::MAX - 2,
-            u32::MAX - 1,
-            u32::MAX,
-        ];
+        let vals = [u32::MIN, u32::MIN + 1, 0, 42, u32::MAX - 1, u32::MAX];
 
         for x in &vals {
             let repr = u32::into_repr(*x);
@@ -606,18 +505,16 @@ mod tests {
         }
     }
 
+    #[proptest]
+    #[cfg_attr(miri, ignore)]
+    fn test_from_u32(val: u32) {
+        let repr = u32::into_repr(val);
+        proptest::prop_assert_eq!(repr.as_str(), val.to_string());
+    }
+
     #[test]
     fn test_from_i32_sanity() {
-        let vals = [
-            i32::MIN,
-            i32::MIN + 1,
-            i32::MIN + 2,
-            0,
-            42,
-            i32::MAX - 2,
-            i32::MAX - 1,
-            i32::MAX,
-        ];
+        let vals = [i32::MIN, i32::MIN + 1, 0, 42, i32::MAX - 1, i32::MAX];
 
         for x in &vals {
             let repr = i32::into_repr(*x);
@@ -625,18 +522,16 @@ mod tests {
         }
     }
 
+    #[proptest]
+    #[cfg_attr(miri, ignore)]
+    fn test_from_i32(val: i32) {
+        let repr = i32::into_repr(val);
+        proptest::prop_assert_eq!(repr.as_str(), val.to_string());
+    }
+
     #[test]
     fn test_from_u64_sanity() {
-        let vals = [
-            u64::MIN,
-            u64::MIN + 1,
-            u64::MIN + 2,
-            0,
-            42,
-            u64::MAX - 2,
-            u64::MAX - 1,
-            u64::MAX,
-        ];
+        let vals = [u64::MIN, u64::MIN + 1, 0, 42, u64::MAX - 1, u64::MAX];
 
         for x in &vals {
             let repr = u64::into_repr(*x);
@@ -644,18 +539,16 @@ mod tests {
         }
     }
 
+    #[proptest]
+    #[cfg_attr(miri, ignore)]
+    fn test_from_u64(val: u64) {
+        let repr = u64::into_repr(val);
+        proptest::prop_assert_eq!(repr.as_str(), val.to_string());
+    }
+
     #[test]
     fn test_from_i64_sanity() {
-        let vals = [
-            i64::MIN,
-            i64::MIN + 1,
-            i64::MIN + 2,
-            0,
-            42,
-            i64::MAX - 2,
-            i64::MAX - 1,
-            i64::MAX,
-        ];
+        let vals = [i64::MIN, i64::MIN + 1, 0, 42, i64::MAX - 1, i64::MAX];
 
         for x in &vals {
             let repr = i64::into_repr(*x);
@@ -663,15 +556,20 @@ mod tests {
         }
     }
 
+    #[proptest]
+    #[cfg_attr(miri, ignore)]
+    fn test_from_i64(val: i64) {
+        let repr = i64::into_repr(val);
+        proptest::prop_assert_eq!(repr.as_str(), val.to_string());
+    }
+
     #[test]
     fn test_from_usize_sanity() {
         let vals = [
             usize::MIN,
             usize::MIN + 1,
-            usize::MIN + 2,
             0,
             42,
-            usize::MAX - 2,
             usize::MAX - 1,
             usize::MAX,
         ];
@@ -682,15 +580,20 @@ mod tests {
         }
     }
 
+    #[proptest]
+    #[cfg_attr(miri, ignore)]
+    fn test_from_usize(val: usize) {
+        let repr = usize::into_repr(val);
+        proptest::prop_assert_eq!(repr.as_str(), val.to_string());
+    }
+
     #[test]
     fn test_from_isize_sanity() {
         let vals = [
             isize::MIN,
             isize::MIN + 1,
-            isize::MIN + 2,
             0,
             42,
-            isize::MAX - 2,
             isize::MAX - 1,
             isize::MAX,
         ];
@@ -701,18 +604,16 @@ mod tests {
         }
     }
 
+    #[proptest]
+    #[cfg_attr(miri, ignore)]
+    fn test_from_isize(val: isize) {
+        let repr = isize::into_repr(val);
+        proptest::prop_assert_eq!(repr.as_str(), val.to_string());
+    }
+
     #[test]
     fn test_from_u128_sanity() {
-        let vals = [
-            u128::MIN,
-            u128::MIN + 1,
-            u128::MIN + 2,
-            0,
-            42,
-            u128::MAX - 2,
-            u128::MAX - 1,
-            u128::MAX,
-        ];
+        let vals = [u128::MIN, u128::MIN + 1, 0, 42, u128::MAX - 1, u128::MAX];
 
         for x in &vals {
             let repr = u128::into_repr(*x);
@@ -720,22 +621,47 @@ mod tests {
         }
     }
 
+    #[proptest]
+    #[cfg_attr(miri, ignore)]
+    fn test_from_u128(val: u128) {
+        let repr = u128::into_repr(val);
+        proptest::prop_assert_eq!(repr.as_str(), val.to_string());
+    }
+
     #[test]
     fn test_from_i128_sanity() {
-        let vals = [
-            i128::MIN,
-            i128::MIN + 1,
-            i128::MIN + 2,
-            0,
-            42,
-            i128::MAX - 2,
-            i128::MAX - 1,
-            i128::MAX,
-        ];
+        let vals = [i128::MIN, i128::MIN + 1, 0, 42, i128::MAX - 1, i128::MAX];
 
         for x in &vals {
             let repr = i128::into_repr(*x);
             assert_eq!(repr.as_str(), x.to_string());
         }
+    }
+
+    #[proptest]
+    #[cfg_attr(miri, ignore)]
+    fn test_from_i128(val: i128) {
+        let repr = i128::into_repr(val);
+        proptest::prop_assert_eq!(repr.as_str(), val.to_string());
+    }
+
+    #[proptest]
+    #[cfg_attr(miri, ignore)]
+    fn test_from_non_zero_u8(
+        #[strategy((1..=u8::MAX).prop_map(|x| unsafe { num::NonZeroU8::new_unchecked(x)} ))]
+        val: num::NonZeroU8,
+    ) {
+        let repr = num::NonZeroU8::into_repr(val);
+        proptest::prop_assert_eq!(repr.as_str(), val.to_string());
+    }
+
+    #[proptest]
+    #[cfg_attr(miri, ignore)]
+    fn test_from_non_zero_u16(
+        #[strategy((1..=u16::MAX).prop_map(|x| unsafe { num::NonZeroU16::new_unchecked(x)} ))]
+        val: num::NonZeroU16,
+    ) {
+        let repr = num::NonZeroU16::into_repr(val);
+        proptest::prop_assert_eq!(repr.as_str(), val.to_string());
     }
 }

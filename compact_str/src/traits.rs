@@ -2,6 +2,7 @@ use core::fmt::{
     self,
     Write,
 };
+use core::num;
 
 use castaway::{
     match_type,
@@ -79,6 +80,18 @@ impl<T: fmt::Display> ToCompactStr for T {
             &char as s => s.into_repr(),
             &String as s => Repr::new(&*s),
             &CompactStr as s => Repr::new(s),
+            &num::NonZeroU8 as s => s.into_repr(),
+            &num::NonZeroI8 as s => s.into_repr(),
+            &num::NonZeroU16 as s => s.into_repr(),
+            &num::NonZeroI16 as s => s.into_repr(),
+            &num::NonZeroU32 as s => s.into_repr(),
+            &num::NonZeroI32 as s => s.into_repr(),
+            &num::NonZeroU64 as s => s.into_repr(),
+            &num::NonZeroI64 as s => s.into_repr(),
+            &num::NonZeroUsize as s => s.into_repr(),
+            &num::NonZeroIsize as s => s.into_repr(),
+            &num::NonZeroU128 as s => s.into_repr(),
+            &num::NonZeroI128 as s => s.into_repr(),
             s => {
                 let num_bytes = count(s);
                 let mut repr = Repr::with_capacity(num_bytes);

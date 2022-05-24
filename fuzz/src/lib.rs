@@ -373,8 +373,8 @@ impl Action<'_> {
                 assert_eq!(control.len(), compact.len());
 
                 // scale a, b to be [0, 1]
-                let c = a as f32 / u8::MAX as f32;
-                let d = b as f32 / u8::MAX as f32;
+                let c = a as f32 / (u8::MAX as f32);
+                let d = b as f32 / (u8::MAX as f32);
 
                 // scale c, b to be [0, compact.len()]
                 let e = (c * compact.len() as f32) as usize;
@@ -382,6 +382,10 @@ impl Action<'_> {
 
                 let lower = core::cmp::min(e, f);
                 let upper = core::cmp::max(e, f);
+
+                // scale lower and upper by 1 so we're always comparing at least one character
+                let lower = core::cmp::min(lower.wrapping_sub(1), lower);
+                let upper = core::cmp::min(upper + 1, compact.len());
 
                 let control_slice = &control.as_bytes()[lower..upper];
                 let compact_slice = &compact.as_bytes()[lower..upper];

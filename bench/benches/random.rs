@@ -36,7 +36,7 @@ fn cmp_min(c: &mut Criterion) {
 
 fn num_digits(c: &mut Criterion) {
     const MIN: u32 = u32::MIN;
-    const HALF: u32 = (u32::MAX / 2);
+    const HALF: u32 = u32::MAX / 2;
     const MAX: u32 = u32::MAX;
 
     #[inline(always)]

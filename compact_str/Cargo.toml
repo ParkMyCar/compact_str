@@ -16,6 +16,7 @@ bytes = { version = "1", optional = true }
 serde = { version = "1", optional = true }
 
 castaway = "0.2.1"
+itoa = "1"
 ryu = "1"
 
 [dev-dependencies]

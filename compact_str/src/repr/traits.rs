@@ -103,7 +103,6 @@ mod tests {
         prop_assert_eq!(val, roundtrip);
     }
 
-
     // `f32` formatting is broken on powerpc64le, not only in `ryu` but also `std`
     //
     // See: https://github.com/rust-lang/rust/issues/96306

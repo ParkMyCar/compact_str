@@ -47,6 +47,15 @@ A `CompactString` specifically has the following properties:
   * Heap based string grows at a rate of 1.5x
     * The std library `String` grows at a rate of 2x
 
+### Traits
+This crate exposes one trait, `ToCompactString` which provides the `to_compact_string(&self)` method for converting types into a `CompactString`. This trait is automatically implemented for all types that implement `std::fmt::Display`, with specialized impls for:
+* `u8`, `u16`, `u32`, `u64`, `usize`, `u128`
+* `i8`, `i16`, `i32`, `i64`, `isize`, `i128`
+* `f32`, `f64`
+* `bool`, `char`
+* `NonZeroU*`, `NonZeroI*`
+* `String`, `CompactString`
+
 ### Features
 `compact_str` has the following features:
 1. `serde`, which implements [`Deserialize`](https://docs.rs/serde/latest/serde/trait.Deserialize.html) and [`Serialize`](https://docs.rs/serde/latest/serde/trait.Serialize.html) from the popular [`serde`](https://docs.rs/serde/latest/serde/) crate, for `CompactString`.

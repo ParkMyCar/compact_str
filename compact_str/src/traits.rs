@@ -46,7 +46,6 @@ pub trait ToCompactString {
 /// * [`CompactString`] does not contain any lifetime
 /// * [`CompactString`] is 'static
 /// * [`CompactString`] is a container to `u8`, which is `LifetimeFree`.
-/// 
 unsafe impl LifetimeFree for CompactString {}
 unsafe impl LifetimeFree for Repr {}
 
@@ -67,7 +66,6 @@ unsafe impl LifetimeFree for Repr {}
 /// * `String`, `CompactString`
 /// * `f32`, `f64`
 ///     * For floats we use [`ryu`] crate which sometimes provides different formatting than [`std`]
-/// 
 impl<T: fmt::Display> ToCompactString for T {
     #[inline]
     fn to_compact_string(&self) -> CompactString {

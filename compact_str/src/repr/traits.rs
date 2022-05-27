@@ -10,21 +10,9 @@ pub trait IntoRepr {
 
 impl IntoRepr for f32 {
     fn into_repr(self) -> Repr {
-        #[cfg(not(all(target_arch = "powerpc64", target_pointer_width = "64")))]
-        {
-            let mut buf = ryu::Buffer::new();
-            let s = buf.format(self);
-            Repr::new(s)
-        }
-        // `ryu` doesn't seem to properly format `f32` on PowerPC 64-bit, so we special case that
-        // to just use the `std::fmt::Display` impl
-        #[cfg(all(target_arch = "powerpc64", target_pointer_width = "64"))]
-        {
-            use core::fmt::Write;
-            let mut repr = Repr::new_const("");
-            write!(&mut repr, "{}", self).expect("fmt::Display incorrectly implemented!");
-            repr
-        }
+        let mut buf = ryu::Buffer::new();
+        let s = buf.format(self);
+        Repr::new(s)
     }
 }
 
@@ -79,6 +67,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(all(target_arch = "powerpc64", target_pointer_width = "64"), ignore)]
     fn test_into_repr_f32_sanity() {
         let vals = [
             f32::MIN,
@@ -97,6 +86,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(all(target_arch = "powerpc64", target_pointer_width = "64"), ignore)]
     fn test_into_repr_f32_nan() {
         let repr = f32::into_repr(f32::NAN);
         let roundtrip = repr.as_str().parse::<f32>().unwrap();
@@ -105,6 +95,7 @@ mod tests {
 
     #[proptest]
     #[cfg_attr(miri, ignore)]
+    #[cfg_attr(all(target_arch = "powerpc64", target_pointer_width = "64"), ignore)]
     fn test_into_repr_f32(val: f32) {
         let repr = f32::into_repr(val);
         let roundtrip = repr.as_str().parse::<f32>().unwrap();

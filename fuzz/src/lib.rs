@@ -4,13 +4,13 @@ use std::num;
 
 use arbitrary::Arbitrary;
 use compact_str::{
-    CompactStr,
-    ToCompactStr,
+    CompactString,
+    ToCompactString,
 };
 
 const MAX_INLINE_LENGTH: usize = std::mem::size_of::<String>();
 
-/// A framework to generate a `CompactStr` and control `String`, and then run a series of actions
+/// A framework to generate a `CompactString` and control `String`, and then run a series of actions
 /// and assert equality
 ///
 /// Used for fuzz testing
@@ -22,40 +22,40 @@ pub struct Scenario<'a> {
 
 #[derive(Arbitrary, Debug)]
 pub enum Creation<'a> {
-    /// Create using [`CompactStr::from_utf8`]
+    /// Create using [`CompactString::from_utf8`]
     Bytes(&'a [u8]),
-    /// Create using [`CompactStr::from_utf8_buf`]
+    /// Create using [`CompactString::from_utf8_buf`]
     Buf(&'a [u8]),
     /// Create using an iterator of chars (i.e. the `FromIterator` trait)
     IterChar(Vec<char>),
     /// Create using an iterator of strings (i.e. the `FromIterator` trait)
     IterString(Vec<String>),
-    /// Create using [`CompactStr::new`]
+    /// Create using [`CompactString::new`]
     Word(String),
-    /// Create using [`CompactStr::from_utf8_buf`] when the buffer is non-contiguous
+    /// Create using [`CompactString::from_utf8_buf`] when the buffer is non-contiguous
     NonContiguousBuf(&'a [u8]),
     /// Create using `From<String>`, which consumes the `String` for `O(1)` runtime
     FromString(String),
     /// Create using `From<Box<str>>`, which consumes the `Box<str>` for `O(1)` runtime
     FromBoxStr(Box<str>),
-    /// Create from a type that implements [`ToCompactStr`]
-    ToCompactStr(ToCompactStrArg),
+    /// Create from a type that implements [`ToCompactString`]
+    ToCompactString(ToCompactStringArg),
 }
 
-/// Types that we're able to convert to a [`CompactStr`]
+/// Types that we're able to convert to a [`CompactString`]
 ///
 /// Note: number types, bool, and char all have a special implementation for performance
 #[derive(Arbitrary, Debug)]
-pub enum ToCompactStrArg {
-    /// Create from a number type using [`ToCompactStr`]
+pub enum ToCompactStringArg {
+    /// Create from a number type using [`ToCompactString`]
     Num(NumType),
-    /// Create from a non-zero number type using [`ToCompactStr`]
+    /// Create from a non-zero number type using [`ToCompactString`]
     NonZeroNum(NonZeroNumType),
-    /// Create from a `bool` using [`ToCompactStr`]
+    /// Create from a `bool` using [`ToCompactString`]
     Bool(bool),
-    /// Create from a `char` using [`ToCompactStr`]
+    /// Create from a `char` using [`ToCompactString`]
     Char(char),
-    /// Create  from a string using [`ToCompactStr`]
+    /// Create  from a string using [`ToCompactString`]
     String(String),
 }
 
@@ -120,12 +120,12 @@ pub enum NonZeroNumType {
 }
 
 impl Creation<'_> {
-    pub fn create(self) -> Option<(CompactStr, String)> {
+    pub fn create(self) -> Option<(CompactString, String)> {
         use Creation::*;
 
         match self {
             Word(word) => {
-                let compact = CompactStr::new(&word);
+                let compact = CompactString::new(&word);
 
                 assert_eq!(compact, word);
                 assert_properly_allocated(&compact, &word);
@@ -133,7 +133,7 @@ impl Creation<'_> {
                 Some((compact, word))
             }
             FromString(s) => {
-                let compact = CompactStr::from(s.clone());
+                let compact = CompactString::from(s.clone());
 
                 assert_eq!(compact, s);
 
@@ -148,7 +148,7 @@ impl Creation<'_> {
                 Some((compact, s))
             }
             FromBoxStr(b) => {
-                let compact = CompactStr::from(b.clone());
+                let compact = CompactString::from(b.clone());
 
                 assert_eq!(compact, b);
 
@@ -164,7 +164,7 @@ impl Creation<'_> {
                 Some((compact, string))
             }
             IterChar(chars) => {
-                let compact: CompactStr = chars.iter().collect();
+                let compact: CompactString = chars.iter().collect();
                 let std_str: String = chars.iter().collect();
 
                 assert_eq!(compact, std_str);
@@ -173,7 +173,8 @@ impl Creation<'_> {
                 Some((compact, std_str))
             }
             IterString(strings) => {
-                let compact: CompactStr = strings.iter().map::<&str, _>(|s| s.as_ref()).collect();
+                let compact: CompactString =
+                    strings.iter().map::<&str, _>(|s| s.as_ref()).collect();
                 let std_str: String = strings.iter().map::<&str, _>(|s| s.as_ref()).collect();
 
                 assert_eq!(compact, std_str);
@@ -182,7 +183,7 @@ impl Creation<'_> {
                 Some((compact, std_str))
             }
             Bytes(data) => {
-                let compact = CompactStr::from_utf8(data);
+                let compact = CompactString::from_utf8(data);
                 let std_str = std::str::from_utf8(data);
 
                 match (compact, std_str) {
@@ -198,13 +199,13 @@ impl Creation<'_> {
                         assert_eq!(c_err, s_err);
                         None
                     }
-                    _ => panic!("CompactStr and core::str read UTF-8 differently?"),
+                    _ => panic!("CompactString and core::str read UTF-8 differently?"),
                 }
             }
             Buf(data) => {
                 let mut buffer = Cursor::new(data);
 
-                let compact = CompactStr::from_utf8_buf(&mut buffer);
+                let compact = CompactString::from_utf8_buf(&mut buffer);
                 let std_str = std::str::from_utf8(data);
 
                 match (compact, std_str) {
@@ -220,7 +221,7 @@ impl Creation<'_> {
                         assert_eq!(c_err, s_err);
                         None
                     }
-                    _ => panic!("CompactStr and core::str read UTF-8 differently?"),
+                    _ => panic!("CompactString and core::str read UTF-8 differently?"),
                 }
             }
             NonContiguousBuf(data) => {
@@ -243,9 +244,9 @@ impl Creation<'_> {
                     data.iter().copied().collect::<VecDeque<u8>>()
                 };
 
-                // create our CompactStr and control String
+                // create our CompactString and control String
                 let mut queue_clone = queue.clone();
-                let compact = CompactStr::from_utf8_buf(&mut queue);
+                let compact = CompactString::from_utf8_buf(&mut queue);
                 let std_str = std::str::from_utf8(queue_clone.make_contiguous());
 
                 match (compact, std_str) {
@@ -260,29 +261,29 @@ impl Creation<'_> {
                         assert_eq!(c_err, s_err);
                         None
                     }
-                    _ => panic!("CompactStr and core::str read UTF-8 differently?"),
+                    _ => panic!("CompactString and core::str read UTF-8 differently?"),
                 }
             }
-            ToCompactStr(arg) => {
+            ToCompactString(arg) => {
                 let (compact, word) = match arg {
-                    ToCompactStrArg::Num(num_type) => match num_type {
-                        NumType::U8(val) => (val.to_compact_str(), val.to_string()),
-                        NumType::I8(val) => (val.to_compact_str(), val.to_string()),
-                        NumType::U16(val) => (val.to_compact_str(), val.to_string()),
-                        NumType::I16(val) => (val.to_compact_str(), val.to_string()),
-                        NumType::U32(val) => (val.to_compact_str(), val.to_string()),
-                        NumType::I32(val) => (val.to_compact_str(), val.to_string()),
-                        NumType::U64(val) => (val.to_compact_str(), val.to_string()),
-                        NumType::I64(val) => (val.to_compact_str(), val.to_string()),
-                        NumType::U128(val) => (val.to_compact_str(), val.to_string()),
-                        NumType::I128(val) => (val.to_compact_str(), val.to_string()),
-                        NumType::Usize(val) => (val.to_compact_str(), val.to_string()),
-                        NumType::Isize(val) => (val.to_compact_str(), val.to_string()),
+                    ToCompactStringArg::Num(num_type) => match num_type {
+                        NumType::U8(val) => (val.to_compact_string(), val.to_string()),
+                        NumType::I8(val) => (val.to_compact_string(), val.to_string()),
+                        NumType::U16(val) => (val.to_compact_string(), val.to_string()),
+                        NumType::I16(val) => (val.to_compact_string(), val.to_string()),
+                        NumType::U32(val) => (val.to_compact_string(), val.to_string()),
+                        NumType::I32(val) => (val.to_compact_string(), val.to_string()),
+                        NumType::U64(val) => (val.to_compact_string(), val.to_string()),
+                        NumType::I64(val) => (val.to_compact_string(), val.to_string()),
+                        NumType::U128(val) => (val.to_compact_string(), val.to_string()),
+                        NumType::I128(val) => (val.to_compact_string(), val.to_string()),
+                        NumType::Usize(val) => (val.to_compact_string(), val.to_string()),
+                        NumType::Isize(val) => (val.to_compact_string(), val.to_string()),
                         // Note: The formatting of floats by `ryu` sometimes differs from that of
                         // `std`, so instead of asserting equality with `std` we just make sure the
                         // value roundtrips
                         NumType::F32(val) => {
-                            let compact = val.to_compact_str();
+                            let compact = val.to_compact_string();
                             let roundtrip = compact.parse::<f32>().unwrap();
 
                             if val.is_nan() {
@@ -294,7 +295,7 @@ impl Creation<'_> {
                             return None;
                         }
                         NumType::F64(val) => {
-                            let compact = val.to_compact_str();
+                            let compact = val.to_compact_string();
                             let roundtrip = compact.parse::<f64>().unwrap();
 
                             if val.is_nan() {
@@ -306,23 +307,23 @@ impl Creation<'_> {
                             return None;
                         }
                     },
-                    ToCompactStrArg::NonZeroNum(non_zero_type) => match non_zero_type {
-                        NonZeroNumType::U8(val) => (val.to_compact_str(), val.to_string()),
-                        NonZeroNumType::I8(val) => (val.to_compact_str(), val.to_string()),
-                        NonZeroNumType::U16(val) => (val.to_compact_str(), val.to_string()),
-                        NonZeroNumType::I16(val) => (val.to_compact_str(), val.to_string()),
-                        NonZeroNumType::U32(val) => (val.to_compact_str(), val.to_string()),
-                        NonZeroNumType::I32(val) => (val.to_compact_str(), val.to_string()),
-                        NonZeroNumType::U64(val) => (val.to_compact_str(), val.to_string()),
-                        NonZeroNumType::I64(val) => (val.to_compact_str(), val.to_string()),
-                        NonZeroNumType::U128(val) => (val.to_compact_str(), val.to_string()),
-                        NonZeroNumType::I128(val) => (val.to_compact_str(), val.to_string()),
-                        NonZeroNumType::Usize(val) => (val.to_compact_str(), val.to_string()),
-                        NonZeroNumType::Isize(val) => (val.to_compact_str(), val.to_string()),
+                    ToCompactStringArg::NonZeroNum(non_zero_type) => match non_zero_type {
+                        NonZeroNumType::U8(val) => (val.to_compact_string(), val.to_string()),
+                        NonZeroNumType::I8(val) => (val.to_compact_string(), val.to_string()),
+                        NonZeroNumType::U16(val) => (val.to_compact_string(), val.to_string()),
+                        NonZeroNumType::I16(val) => (val.to_compact_string(), val.to_string()),
+                        NonZeroNumType::U32(val) => (val.to_compact_string(), val.to_string()),
+                        NonZeroNumType::I32(val) => (val.to_compact_string(), val.to_string()),
+                        NonZeroNumType::U64(val) => (val.to_compact_string(), val.to_string()),
+                        NonZeroNumType::I64(val) => (val.to_compact_string(), val.to_string()),
+                        NonZeroNumType::U128(val) => (val.to_compact_string(), val.to_string()),
+                        NonZeroNumType::I128(val) => (val.to_compact_string(), val.to_string()),
+                        NonZeroNumType::Usize(val) => (val.to_compact_string(), val.to_string()),
+                        NonZeroNumType::Isize(val) => (val.to_compact_string(), val.to_string()),
                     },
-                    ToCompactStrArg::Bool(bool) => (bool.to_compact_str(), bool.to_string()),
-                    ToCompactStrArg::Char(c) => (c.to_compact_str(), c.to_string()),
-                    ToCompactStrArg::String(word) => (word.to_compact_str(), word),
+                    ToCompactStringArg::Bool(bool) => (bool.to_compact_string(), bool.to_string()),
+                    ToCompactStringArg::Char(c) => (c.to_compact_string(), c.to_string()),
+                    ToCompactStringArg::String(word) => (word.to_compact_string(), word),
                 };
 
                 assert_eq!(compact, word);
@@ -346,7 +347,7 @@ pub enum Action<'a> {
 }
 
 impl Action<'_> {
-    pub fn perform(self, control: &mut String, compact: &mut CompactStr) {
+    pub fn perform(self, control: &mut String, compact: &mut CompactString) {
         use Action::*;
 
         match self {
@@ -421,9 +422,9 @@ impl Action<'_> {
     }
 }
 
-/// Asserts the provided CompactStr is allocated properly either on the stack or on the heap, using
-/// a "control" `&str` for a reference length.
-fn assert_properly_allocated(compact: &CompactStr, control: &str) {
+/// Asserts the provided CompactString is allocated properly either on the stack or on the heap,
+/// using a "control" `&str` for a reference length.
+fn assert_properly_allocated(compact: &CompactString, control: &str) {
     assert_eq!(compact.len(), control.len());
     if control.len() <= MAX_INLINE_LENGTH {
         assert!(!compact.is_heap_allocated());

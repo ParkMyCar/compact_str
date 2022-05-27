@@ -133,8 +133,9 @@ impl Repr {
         }
 
         if new_capacity <= MAX_SIZE {
-            // It's possible to have a `CompactStr` that is heap allocated with a capacity less than
-            // MAX_SIZE, if that `CompactStr` was created From a String or Box<str>.
+            // It's possible to have a `CompactString` that is heap allocated with a capacity less
+            // than MAX_SIZE, if that `CompactString` was created From a String or
+            // Box<str>.
             let inline = InlineString::new(self.as_str());
             *self = Repr { inline }
         } else {
@@ -524,7 +525,7 @@ mod tests {
         let word = "abc";
         let new_len = word.len();
 
-        // write bytes into the `CompactStr`
+        // write bytes into the `CompactString`
         slice[..new_len].copy_from_slice(word.as_bytes());
         // set the length
         unsafe { repr.set_len(new_len) }

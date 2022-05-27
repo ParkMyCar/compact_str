@@ -270,7 +270,7 @@ jobs:
         with:
           use-cross: true
           command: test
-          args: --release --all-features --manifest-path=compact_str/Cargo.toml --target powerpc64le-unknown-linux-gnu -- --include-ignored
+          args: --release --all-features --manifest-path=compact_str/Cargo.toml --target powerpc64le-unknown-linux-gnu
       - uses: actions-rs/cargo@v1
         name: cargo test miri
         with:

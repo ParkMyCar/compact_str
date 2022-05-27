@@ -85,12 +85,10 @@ pub enum NumType {
     Usize(usize),
     /// Create from an `isize`
     Isize(isize),
-    // TODO: Enable float fuzzing once we fix the formatting
-    //
-    // /// Create from an `f32`,
-    // F32(f32),
-    // /// Create from an `f64`
-    // F64(f64),
+    /// Create from an `f32`,
+    F32(f32),
+    /// Create from an `f64`
+    F64(f64),
 }
 
 #[derive(Arbitrary, Debug)]
@@ -280,6 +278,33 @@ impl Creation<'_> {
                         NumType::I128(val) => (val.to_compact_str(), val.to_string()),
                         NumType::Usize(val) => (val.to_compact_str(), val.to_string()),
                         NumType::Isize(val) => (val.to_compact_str(), val.to_string()),
+                        // Note: The formatting of floats by `ryu` sometimes differs from that of
+                        // `std`, so instead of asserting equality with `std` we just make sure the
+                        // value roundtrips
+                        NumType::F32(val) => {
+                            let compact = val.to_compact_str();
+                            let roundtrip = compact.parse::<f32>().unwrap();
+
+                            if val.is_nan() {
+                                assert!(roundtrip.is_nan())
+                            } else {
+                                assert_eq!(val, roundtrip);
+                            }
+
+                            return None;
+                        }
+                        NumType::F64(val) => {
+                            let compact = val.to_compact_str();
+                            let roundtrip = compact.parse::<f64>().unwrap();
+
+                            if val.is_nan() {
+                                assert!(roundtrip.is_nan())
+                            } else {
+                                assert_eq!(val, roundtrip);
+                            }
+
+                            return None;
+                        }
                     },
                     ToCompactStrArg::NonZeroNum(non_zero_type) => match non_zero_type {
                         NonZeroNumType::U8(val) => (val.to_compact_str(), val.to_string()),
@@ -373,8 +398,8 @@ impl Action<'_> {
                 assert_eq!(control.len(), compact.len());
 
                 // scale a, b to be [0, 1]
-                let c = a as f32 / u8::MAX as f32;
-                let d = b as f32 / u8::MAX as f32;
+                let c = a as f32 / (u8::MAX as f32);
+                let d = b as f32 / (u8::MAX as f32);
 
                 // scale c, b to be [0, compact.len()]
                 let e = (c * compact.len() as f32) as usize;
@@ -382,6 +407,10 @@ impl Action<'_> {
 
                 let lower = core::cmp::min(e, f);
                 let upper = core::cmp::max(e, f);
+
+                // scale lower and upper by 1 so we're always comparing at least one character
+                let lower = core::cmp::min(lower.wrapping_sub(1), lower);
+                let upper = core::cmp::min(upper + 1, compact.len());
 
                 let control_slice = &control.as_bytes()[lower..upper];
                 let compact_slice = &compact.as_bytes()[lower..upper];

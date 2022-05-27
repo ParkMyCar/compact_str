@@ -226,7 +226,7 @@ impl CompactStr {
     /// failing if the provided bytes are not `UTF-8`.
     ///
     /// Note: If you want to create a [`CompactStr`] from a non-contiguous collection of bytes,
-    /// enable the `bytes` feature of this crate, and checkout [`CompactStr::from_utf8_buf`]
+    /// enable the `bytes` feature of this crate, and see `CompactStr::from_utf8_buf`
     ///
     /// # Examples
     /// ### Valid UTF-8

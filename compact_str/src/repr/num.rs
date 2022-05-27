@@ -420,11 +420,6 @@ impl NumChars for isize {
 
 #[cfg(test)]
 mod tests {
-    use core::num;
-
-    use proptest::prelude::*;
-    use test_strategy::proptest;
-
     use super::IntoRepr;
 
     #[test]
@@ -437,13 +432,6 @@ mod tests {
         }
     }
 
-    #[proptest]
-    #[cfg_attr(miri, ignore)]
-    fn test_from_u8(val: u8) {
-        let repr = u8::into_repr(val);
-        proptest::prop_assert_eq!(repr.as_str(), val.to_string());
-    }
-
     #[test]
     fn test_from_i8_sanity() {
         let vals = [i8::MIN, i8::MIN + 1, 0, 42, i8::MAX - 1, i8::MAX];
@@ -452,13 +440,6 @@ mod tests {
             let repr = i8::into_repr(*x);
             assert_eq!(repr.as_str(), x.to_string());
         }
-    }
-
-    #[proptest]
-    #[cfg_attr(miri, ignore)]
-    fn test_from_i8(val: i8) {
-        let repr = i8::into_repr(val);
-        proptest::prop_assert_eq!(repr.as_str(), val.to_string());
     }
 
     #[test]
@@ -471,13 +452,6 @@ mod tests {
         }
     }
 
-    #[proptest]
-    #[cfg_attr(miri, ignore)]
-    fn test_from_u16(val: u16) {
-        let repr = u16::into_repr(val);
-        proptest::prop_assert_eq!(repr.as_str(), val.to_string());
-    }
-
     #[test]
     fn test_from_i16_sanity() {
         let vals = [i16::MIN, i16::MIN + 1, 0, 42, i16::MAX - 1, i16::MAX];
@@ -486,13 +460,6 @@ mod tests {
             let repr = i16::into_repr(*x);
             assert_eq!(repr.as_str(), x.to_string());
         }
-    }
-
-    #[proptest]
-    #[cfg_attr(miri, ignore)]
-    fn test_from_i16(val: i16) {
-        let repr = i16::into_repr(val);
-        proptest::prop_assert_eq!(repr.as_str(), val.to_string());
     }
 
     #[test]
@@ -505,13 +472,6 @@ mod tests {
         }
     }
 
-    #[proptest]
-    #[cfg_attr(miri, ignore)]
-    fn test_from_u32(val: u32) {
-        let repr = u32::into_repr(val);
-        proptest::prop_assert_eq!(repr.as_str(), val.to_string());
-    }
-
     #[test]
     fn test_from_i32_sanity() {
         let vals = [i32::MIN, i32::MIN + 1, 0, 42, i32::MAX - 1, i32::MAX];
@@ -520,13 +480,6 @@ mod tests {
             let repr = i32::into_repr(*x);
             assert_eq!(repr.as_str(), x.to_string());
         }
-    }
-
-    #[proptest]
-    #[cfg_attr(miri, ignore)]
-    fn test_from_i32(val: i32) {
-        let repr = i32::into_repr(val);
-        proptest::prop_assert_eq!(repr.as_str(), val.to_string());
     }
 
     #[test]
@@ -539,13 +492,6 @@ mod tests {
         }
     }
 
-    #[proptest]
-    #[cfg_attr(miri, ignore)]
-    fn test_from_u64(val: u64) {
-        let repr = u64::into_repr(val);
-        proptest::prop_assert_eq!(repr.as_str(), val.to_string());
-    }
-
     #[test]
     fn test_from_i64_sanity() {
         let vals = [i64::MIN, i64::MIN + 1, 0, 42, i64::MAX - 1, i64::MAX];
@@ -554,13 +500,6 @@ mod tests {
             let repr = i64::into_repr(*x);
             assert_eq!(repr.as_str(), x.to_string());
         }
-    }
-
-    #[proptest]
-    #[cfg_attr(miri, ignore)]
-    fn test_from_i64(val: i64) {
-        let repr = i64::into_repr(val);
-        proptest::prop_assert_eq!(repr.as_str(), val.to_string());
     }
 
     #[test]
@@ -580,13 +519,6 @@ mod tests {
         }
     }
 
-    #[proptest]
-    #[cfg_attr(miri, ignore)]
-    fn test_from_usize(val: usize) {
-        let repr = usize::into_repr(val);
-        proptest::prop_assert_eq!(repr.as_str(), val.to_string());
-    }
-
     #[test]
     fn test_from_isize_sanity() {
         let vals = [
@@ -604,13 +536,6 @@ mod tests {
         }
     }
 
-    #[proptest]
-    #[cfg_attr(miri, ignore)]
-    fn test_from_isize(val: isize) {
-        let repr = isize::into_repr(val);
-        proptest::prop_assert_eq!(repr.as_str(), val.to_string());
-    }
-
     #[test]
     fn test_from_u128_sanity() {
         let vals = [u128::MIN, u128::MIN + 1, 0, 42, u128::MAX - 1, u128::MAX];
@@ -621,13 +546,6 @@ mod tests {
         }
     }
 
-    #[proptest]
-    #[cfg_attr(miri, ignore)]
-    fn test_from_u128(val: u128) {
-        let repr = u128::into_repr(val);
-        proptest::prop_assert_eq!(repr.as_str(), val.to_string());
-    }
-
     #[test]
     fn test_from_i128_sanity() {
         let vals = [i128::MIN, i128::MIN + 1, 0, 42, i128::MAX - 1, i128::MAX];
@@ -636,32 +554,5 @@ mod tests {
             let repr = i128::into_repr(*x);
             assert_eq!(repr.as_str(), x.to_string());
         }
-    }
-
-    #[proptest]
-    #[cfg_attr(miri, ignore)]
-    fn test_from_i128(val: i128) {
-        let repr = i128::into_repr(val);
-        proptest::prop_assert_eq!(repr.as_str(), val.to_string());
-    }
-
-    #[proptest]
-    #[cfg_attr(miri, ignore)]
-    fn test_from_non_zero_u8(
-        #[strategy((1..=u8::MAX).prop_map(|x| unsafe { num::NonZeroU8::new_unchecked(x)} ))]
-        val: num::NonZeroU8,
-    ) {
-        let repr = num::NonZeroU8::into_repr(val);
-        proptest::prop_assert_eq!(repr.as_str(), val.to_string());
-    }
-
-    #[proptest]
-    #[cfg_attr(miri, ignore)]
-    fn test_from_non_zero_u16(
-        #[strategy((1..=u16::MAX).prop_map(|x| unsafe { num::NonZeroU16::new_unchecked(x)} ))]
-        val: num::NonZeroU16,
-    ) {
-        let repr = num::NonZeroU16::into_repr(val);
-        proptest::prop_assert_eq!(repr.as_str(), val.to_string());
     }
 }

@@ -85,12 +85,10 @@ pub enum NumType {
     Usize(usize),
     /// Create from an `isize`
     Isize(isize),
-    // TODO: Enable float fuzzing once we fix the formatting
-    //
-    // /// Create from an `f32`,
-    // F32(f32),
-    // /// Create from an `f64`
-    // F64(f64),
+    /// Create from an `f32`,
+    F32(f32),
+    /// Create from an `f64`
+    F64(f64),
 }
 
 #[derive(Arbitrary, Debug)]
@@ -280,6 +278,33 @@ impl Creation<'_> {
                         NumType::I128(val) => (val.to_compact_str(), val.to_string()),
                         NumType::Usize(val) => (val.to_compact_str(), val.to_string()),
                         NumType::Isize(val) => (val.to_compact_str(), val.to_string()),
+                        // Note: The formatting of floats by `ryu` sometimes differs from that of
+                        // `std`, so instead of asserting equality with `std` we just make sure the
+                        // value roundtrips
+                        NumType::F32(val) => {
+                            let compact = val.to_compact_str();
+                            let roundtrip = compact.parse::<f32>().unwrap();
+
+                            if val.is_nan() {
+                                assert!(roundtrip.is_nan())
+                            } else {
+                                assert_eq!(val, roundtrip);
+                            }
+
+                            return None;
+                        }
+                        NumType::F64(val) => {
+                            let compact = val.to_compact_str();
+                            let roundtrip = compact.parse::<f64>().unwrap();
+
+                            if val.is_nan() {
+                                assert!(roundtrip.is_nan())
+                            } else {
+                                assert_eq!(val, roundtrip);
+                            }
+
+                            return None;
+                        }
                     },
                     ToCompactStrArg::NonZeroNum(non_zero_type) => match non_zero_type {
                         NonZeroNumType::U8(val) => (val.to_compact_str(), val.to_string()),

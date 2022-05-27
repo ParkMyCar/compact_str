@@ -48,7 +48,7 @@ A `CompactString` specifically has the following properties:
     * The std library `String` grows at a rate of 2x
 
 ### Traits
-This crate exposes one trait, `ToCompactString` which provides the `to_compact_string(&self)` method for converting types into a `CompactString`. This trait is automatically implemented for all types that implement `std::fmt::Display`, with specialized impls for:
+This crate exposes one trait, `ToCompactString` which provides the `to_compact_string(&self)` method for converting types into a `CompactString`. This trait is automatically implemented for all types that are `std::fmt::Display`, with specialized higher performance impls for:
 * `u8`, `u16`, `u32`, `u64`, `usize`, `u128`
 * `i8`, `i16`, `i32`, `i64`, `isize`, `i128`
 * `f32`, `f64`

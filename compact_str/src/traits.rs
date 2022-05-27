@@ -14,46 +14,46 @@ use super::repr::{
     Repr,
 };
 use super::utility::count;
-use crate::CompactStr;
+use crate::CompactString;
 
-/// A trait for converting a value to a `CompactStr`.
+/// A trait for converting a value to a `CompactString`.
 ///
 /// This trait is automatically implemented for any type which implements the
-/// [`fmt::Display`] trait. As such, `ToCompactStr` shouldn't be implemented directly:
-/// [`fmt::Display`] should be implemented instead, and you get the `ToCompactStr`
+/// [`fmt::Display`] trait. As such, `ToCompactString` shouldn't be implemented directly:
+/// [`fmt::Display`] should be implemented instead, and you get the `ToCompactString`
 /// implementation for free.
-pub trait ToCompactStr {
-    /// Converts the given value to a `CompactStr`.
+pub trait ToCompactString {
+    /// Converts the given value to a `CompactString`.
     ///
     /// # Examples
     ///
     /// Basic usage:
     ///
     /// ```
-    /// use compact_str::ToCompactStr;
-    /// # use compact_str::CompactStr;
+    /// use compact_str::ToCompactString;
+    /// # use compact_str::CompactString;
     ///
     /// let i = 5;
-    /// let five = CompactStr::new("5");
+    /// let five = CompactString::new("5");
     ///
-    /// assert_eq!(i.to_compact_str(), five);
+    /// assert_eq!(i.to_compact_string(), five);
     /// ```
-    fn to_compact_str(&self) -> CompactStr;
+    fn to_compact_string(&self) -> CompactString;
 }
 
 /// # Safety
 ///
-/// * CompactStr does not contain any lifetime
-/// * CompactStr is 'static
-/// * CompactStr is a container to `u8`, which is `LifetimeFree`.
-unsafe impl LifetimeFree for CompactStr {}
+/// * CompactString does not contain any lifetime
+/// * CompactString is 'static
+/// * CompactString is a container to `u8`, which is `LifetimeFree`.
+unsafe impl LifetimeFree for CompactString {}
 unsafe impl LifetimeFree for Repr {}
 
 /// # Panics
 ///
-/// In this implementation, the `to_compact_str` method panics if the `Display` implementation
+/// In this implementation, the `to_compact_string` method panics if the `Display` implementation
 /// returns an error. This indicates an incorrect `Display` implementation since
-/// `std::fmt::Write for CompactStr` never returns an error itself.
+/// `std::fmt::Write for CompactString` never returns an error itself.
 ///
 /// # Note
 ///
@@ -63,12 +63,12 @@ unsafe impl LifetimeFree for Repr {}
 /// * `NonZeroU*`, `NonZeroI*`
 /// * `bool`
 /// * `char`
-/// * `String`, `CompactStr`
+/// * `String`, `CompactString`
 /// * `f32`, `f64`
 ///     * For floats we use [`ryu`] crate which sometimes provides different formatting than [`std`]
-impl<T: fmt::Display> ToCompactStr for T {
+impl<T: fmt::Display> ToCompactString for T {
     #[inline]
-    fn to_compact_str(&self) -> CompactStr {
+    fn to_compact_string(&self) -> CompactString {
         let repr = match_type!(self, {
             &u8 as s => s.into_repr(),
             &i8 as s => s.into_repr(),
@@ -87,7 +87,7 @@ impl<T: fmt::Display> ToCompactStr for T {
             &bool as s => s.into_repr(),
             &char as s => s.into_repr(),
             &String as s => Repr::new(&*s),
-            &CompactStr as s => Repr::new(s),
+            &CompactString as s => Repr::new(s),
             &num::NonZeroU8 as s => s.into_repr(),
             &num::NonZeroI8 as s => s.into_repr(),
             &num::NonZeroU16 as s => s.into_repr(),
@@ -110,7 +110,7 @@ impl<T: fmt::Display> ToCompactStr for T {
             }
         });
 
-        CompactStr { repr }
+        CompactString { repr }
     }
 }
 
@@ -121,201 +121,201 @@ mod tests {
     use proptest::prelude::*;
     use test_strategy::proptest;
 
-    use super::ToCompactStr;
+    use super::ToCompactString;
 
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_to_compact_str_u8(val: u8) {
-        let compact = val.to_compact_str();
-        prop_assert_eq!(compact.as_str(), val.to_string());
-    }
-
-    #[proptest]
-    #[cfg_attr(miri, ignore)]
-    fn test_to_compact_str_i8(val: i8) {
-        let compact = val.to_compact_str();
+    fn test_to_compact_string_u8(val: u8) {
+        let compact = val.to_compact_string();
         prop_assert_eq!(compact.as_str(), val.to_string());
     }
 
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_to_compact_str_u16(val: u16) {
-        let compact = val.to_compact_str();
+    fn test_to_compact_string_i8(val: i8) {
+        let compact = val.to_compact_string();
         prop_assert_eq!(compact.as_str(), val.to_string());
     }
 
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_to_compact_str_i16(val: i16) {
-        let compact = val.to_compact_str();
-        prop_assert_eq!(compact.as_str(), val.to_string());
-    }
-    #[proptest]
-    #[cfg_attr(miri, ignore)]
-    fn test_to_compact_str_u32(val: u32) {
-        let compact = val.to_compact_str();
-        prop_assert_eq!(compact.as_str(), val.to_string());
-    }
-    #[proptest]
-    #[cfg_attr(miri, ignore)]
-    fn test_to_compact_str_i32(val: i32) {
-        let compact = val.to_compact_str();
-        prop_assert_eq!(compact.as_str(), val.to_string());
-    }
-    #[proptest]
-    #[cfg_attr(miri, ignore)]
-    fn test_to_compact_str_u64(val: u64) {
-        let compact = val.to_compact_str();
-        prop_assert_eq!(compact.as_str(), val.to_string());
-    }
-    #[proptest]
-    #[cfg_attr(miri, ignore)]
-    fn test_to_compact_str_i64(val: i64) {
-        let compact = val.to_compact_str();
-        prop_assert_eq!(compact.as_str(), val.to_string());
-    }
-    #[proptest]
-    #[cfg_attr(miri, ignore)]
-    fn test_to_compact_str_usize(val: usize) {
-        let compact = val.to_compact_str();
-        prop_assert_eq!(compact.as_str(), val.to_string());
-    }
-    #[proptest]
-    #[cfg_attr(miri, ignore)]
-    fn test_to_compact_str_isize(val: isize) {
-        let compact = val.to_compact_str();
-        prop_assert_eq!(compact.as_str(), val.to_string());
-    }
-    #[proptest]
-    #[cfg_attr(miri, ignore)]
-    fn test_to_compact_str_u128(val: u128) {
-        let compact = val.to_compact_str();
-        prop_assert_eq!(compact.as_str(), val.to_string());
-    }
-    #[proptest]
-    #[cfg_attr(miri, ignore)]
-    fn test_to_compact_str_i128(val: i128) {
-        let compact = val.to_compact_str();
+    fn test_to_compact_string_u16(val: u16) {
+        let compact = val.to_compact_string();
         prop_assert_eq!(compact.as_str(), val.to_string());
     }
 
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_to_compact_str_non_zero_u8(
+    fn test_to_compact_string_i16(val: i16) {
+        let compact = val.to_compact_string();
+        prop_assert_eq!(compact.as_str(), val.to_string());
+    }
+    #[proptest]
+    #[cfg_attr(miri, ignore)]
+    fn test_to_compact_string_u32(val: u32) {
+        let compact = val.to_compact_string();
+        prop_assert_eq!(compact.as_str(), val.to_string());
+    }
+    #[proptest]
+    #[cfg_attr(miri, ignore)]
+    fn test_to_compact_string_i32(val: i32) {
+        let compact = val.to_compact_string();
+        prop_assert_eq!(compact.as_str(), val.to_string());
+    }
+    #[proptest]
+    #[cfg_attr(miri, ignore)]
+    fn test_to_compact_string_u64(val: u64) {
+        let compact = val.to_compact_string();
+        prop_assert_eq!(compact.as_str(), val.to_string());
+    }
+    #[proptest]
+    #[cfg_attr(miri, ignore)]
+    fn test_to_compact_string_i64(val: i64) {
+        let compact = val.to_compact_string();
+        prop_assert_eq!(compact.as_str(), val.to_string());
+    }
+    #[proptest]
+    #[cfg_attr(miri, ignore)]
+    fn test_to_compact_string_usize(val: usize) {
+        let compact = val.to_compact_string();
+        prop_assert_eq!(compact.as_str(), val.to_string());
+    }
+    #[proptest]
+    #[cfg_attr(miri, ignore)]
+    fn test_to_compact_string_isize(val: isize) {
+        let compact = val.to_compact_string();
+        prop_assert_eq!(compact.as_str(), val.to_string());
+    }
+    #[proptest]
+    #[cfg_attr(miri, ignore)]
+    fn test_to_compact_string_u128(val: u128) {
+        let compact = val.to_compact_string();
+        prop_assert_eq!(compact.as_str(), val.to_string());
+    }
+    #[proptest]
+    #[cfg_attr(miri, ignore)]
+    fn test_to_compact_string_i128(val: i128) {
+        let compact = val.to_compact_string();
+        prop_assert_eq!(compact.as_str(), val.to_string());
+    }
+
+    #[proptest]
+    #[cfg_attr(miri, ignore)]
+    fn test_to_compact_string_non_zero_u8(
         #[strategy((1..=u8::MAX).prop_map(|x| unsafe { num::NonZeroU8::new_unchecked(x)} ))]
         val: num::NonZeroU8,
     ) {
-        let compact = val.to_compact_str();
+        let compact = val.to_compact_string();
         prop_assert_eq!(compact.as_str(), val.to_string());
     }
 
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_to_compact_str_non_zero_u16(
+    fn test_to_compact_string_non_zero_u16(
         #[strategy((1..=u16::MAX).prop_map(|x| unsafe { num::NonZeroU16::new_unchecked(x)} ))]
         val: num::NonZeroU16,
     ) {
-        let compact = val.to_compact_str();
+        let compact = val.to_compact_string();
         prop_assert_eq!(compact.as_str(), val.to_string());
     }
 
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_to_compact_str_non_zero_u32(
+    fn test_to_compact_string_non_zero_u32(
         #[strategy((1..=u32::MAX).prop_map(|x| unsafe { num::NonZeroU32::new_unchecked(x)} ))]
         val: num::NonZeroU32,
     ) {
-        let compact = val.to_compact_str();
+        let compact = val.to_compact_string();
         prop_assert_eq!(compact.as_str(), val.to_string());
     }
 
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_to_compact_str_non_zero_u64(
+    fn test_to_compact_string_non_zero_u64(
         #[strategy((1..=u64::MAX).prop_map(|x| unsafe { num::NonZeroU64::new_unchecked(x)} ))]
         val: num::NonZeroU64,
     ) {
-        let compact = val.to_compact_str();
+        let compact = val.to_compact_string();
         prop_assert_eq!(compact.as_str(), val.to_string());
     }
 
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_to_compact_str_non_zero_u128(
+    fn test_to_compact_string_non_zero_u128(
         #[strategy((1..=u128::MAX).prop_map(|x| unsafe { num::NonZeroU128::new_unchecked(x)} ))]
         val: num::NonZeroU128,
     ) {
-        let compact = val.to_compact_str();
+        let compact = val.to_compact_string();
         prop_assert_eq!(compact.as_str(), val.to_string());
     }
 
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_to_compact_str_non_zero_usize(
+    fn test_to_compact_string_non_zero_usize(
         #[strategy((1..=usize::MAX).prop_map(|x| unsafe { num::NonZeroUsize::new_unchecked(x)} ))]
         val: num::NonZeroUsize,
     ) {
-        let compact = val.to_compact_str();
+        let compact = val.to_compact_string();
         prop_assert_eq!(compact.as_str(), val.to_string());
     }
 
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_to_compact_str_non_zero_i8(
+    fn test_to_compact_string_non_zero_i8(
         #[strategy((1..=u8::MAX).prop_map(|x| unsafe { num::NonZeroI8::new_unchecked(x as i8)} ))]
         val: num::NonZeroI8,
     ) {
-        let compact = val.to_compact_str();
+        let compact = val.to_compact_string();
         prop_assert_eq!(compact.as_str(), val.to_string());
     }
 
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_to_compact_str_non_zero_i16(
+    fn test_to_compact_string_non_zero_i16(
         #[strategy((1..=u16::MAX).prop_map(|x| unsafe { num::NonZeroI16::new_unchecked(x as i16)} ))]
         val: num::NonZeroI16,
     ) {
-        let compact = val.to_compact_str();
+        let compact = val.to_compact_string();
         prop_assert_eq!(compact.as_str(), val.to_string());
     }
 
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_to_compact_str_non_zero_i32(
+    fn test_to_compact_string_non_zero_i32(
         #[strategy((1..=u32::MAX).prop_map(|x| unsafe { num::NonZeroI32::new_unchecked(x as i32)} ))]
         val: num::NonZeroI32,
     ) {
-        let compact = val.to_compact_str();
+        let compact = val.to_compact_string();
         prop_assert_eq!(compact.as_str(), val.to_string());
     }
 
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_to_compact_str_non_zero_i64(
+    fn test_to_compact_string_non_zero_i64(
         #[strategy((1..=u64::MAX).prop_map(|x| unsafe { num::NonZeroI64::new_unchecked(x as i64)} ))]
         val: num::NonZeroI64,
     ) {
-        let compact = val.to_compact_str();
+        let compact = val.to_compact_string();
         prop_assert_eq!(compact.as_str(), val.to_string());
     }
 
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_to_compact_str_non_zero_i128(
+    fn test_to_compact_string_non_zero_i128(
         #[strategy((1..=u128::MAX).prop_map(|x| unsafe { num::NonZeroI128::new_unchecked(x as i128)} ))]
         val: num::NonZeroI128,
     ) {
-        let compact = val.to_compact_str();
+        let compact = val.to_compact_string();
         prop_assert_eq!(compact.as_str(), val.to_string());
     }
 
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_to_compact_str_non_zero_isize(
+    fn test_to_compact_string_non_zero_isize(
         #[strategy((1..=usize::MAX).prop_map(|x| unsafe { num::NonZeroIsize::new_unchecked(x as isize)} ))]
         val: num::NonZeroIsize,
     ) {
-        let compact = val.to_compact_str();
+        let compact = val.to_compact_string();
         prop_assert_eq!(compact.as_str(), val.to_string());
     }
 }

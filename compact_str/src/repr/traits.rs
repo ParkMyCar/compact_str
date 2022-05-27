@@ -10,9 +10,21 @@ pub trait IntoRepr {
 
 impl IntoRepr for f32 {
     fn into_repr(self) -> Repr {
-        let mut buf = ryu::Buffer::new();
-        let s = buf.format(self);
-        Repr::new(s)
+        #[cfg(not(all(target_arch = "powerpc64", target_pointer_width = "64")))]
+        {
+            let mut buf = ryu::Buffer::new();
+            let s = buf.format(self);
+            Repr::new(s)
+        }
+        // `ryu` doesn't seem to properly format `f32` on PowerPC 64-bit, so we special case that
+        // to just use the `std::fmt::Display` impl
+        #[cfg(all(target_arch = "powerpc64", target_pointer_width = "64"))]
+        {
+            use core::fmt::Write;
+            let mut repr = Repr::new_const("");
+            write!(&mut repr, "{}", self).expect("fmt::Display incorrectly implemented!");
+            repr
+        }
     }
 }
 

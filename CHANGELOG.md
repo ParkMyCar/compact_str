@@ -1,5 +1,24 @@
 # Upcoming
 
+# 0.4
+### May 27, 2022
+* Rename `CompactStr` -> `CompactString` and `ToCompactStr` -> `ToComapctString`
+    * Implemented in [`#97 refactor: Rename CompactStr to CompactString`](https://github.com/ParkMyCar/compact_str/pull/95)
+* Improve performance of `ToCompactStr` by reducing copies for some specialized types
+    * Implemented in [`#95 perf: Reduce copies in ToCompactStr for integer types`](https://github.com/ParkMyCar/compact_str/pull/95)
+* Introduce the `ToCompactStr` trait, with specialized impls for common types
+    * Implemented in [`#16 Add && Impl new trait ToCompactStr`](https://github.com/ParkMyCar/compact_str/pull/16)
+* Improve the performance of `From<Cow<'_, str>>`
+    * Implemented in [`#90 Optimize From<Cow<'a, str>> impl for CompactStr`](https://github.com/ParkMyCar/compact_str/pull/90)
+* impl various `Add<T>` for `CompactStr`, enabling concatination with `+`
+    Implemented in [`#81 impl a bunch of Add<T>s for CompactStr, and Add<CompactStr> for String`](https://github.com/ParkMyCar/compact_str/pull/81)
+* Improved the performance of `Drop` for inlined strings
+    * Implemented in [`#78 perf: Improve the performance of Repr::Drop for Inlined Variants`](https://github.com/ParkMyCar/compact_str/pull/78)
+* impl `fmt::Write` for `CompactStr`
+    * Implemented in [`#73 Implement fmt::Write for CompactStr`](https://github.com/ParkMyCar/compact_str/pull/73)
+* Inline short heap strings when resizing. After enabling `O(1)` conversion from `String` and `Box<str>` it became possible for short strings to be heap allocated. Now if we need to resize a short heap string, we'll inline it, instead of re-heap allocating.
+    * Implemented in [`#70 perf: Inline short heap strings when resizing`](https://github.com/ParkMyCar/compact_str/pull/70)
+
 # 0.3.2
 ### March 27, 2022
 * Enable `O(1)` conversion from `String` or `Box<str>` to `CompactStr`

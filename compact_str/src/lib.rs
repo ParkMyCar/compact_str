@@ -349,7 +349,6 @@ impl CompactString {
     /// assert!(compact.is_heap_allocated());
     /// assert!(compact.capacity() >= 200);
     /// ```
-
     #[inline]
     pub fn reserve(&mut self, additional: usize) {
         self.repr.reserve(additional)
@@ -429,7 +428,7 @@ impl CompactString {
     }
 
     /// Removes the last character from the [`CompactString`] and returns it.
-    /// Returns `None` if this `ComapctStr` is empty.
+    /// Returns `None` if this [`CompactString`] is empty.
     ///
     /// # Examples
     /// ```

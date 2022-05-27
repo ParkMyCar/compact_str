@@ -32,7 +32,7 @@ impl CompactString {
     /// // `bytes::Buf` is implemented for `std::io::Cursor<&[u8]>`
     /// let mut invalid = io::Cursor::new(&[0, 159]);
     ///
-    /// // The provided buffer is invalid, so trying to create a `ComapctStr` will fail
+    /// // The provided buffer is invalid, so trying to create a `CompactString` will fail
     /// assert!(CompactString::from_utf8_buf(&mut invalid).is_err());
     /// ```
     pub fn from_utf8_buf<B: Buf>(buf: &mut B) -> Result<Self, Utf8Error> {
@@ -45,7 +45,7 @@ impl CompactString {
     /// # Safety
     /// This function is unsafe because it does not check that the provided bytes are valid UTF-8.
     /// If this constraint is violated, it may cause memory safety issues with futures uses of the
-    /// `ComapctStr`, as the rest of the library assumes that `CompactString`s are valid UTF-8
+    /// `CompactString`, as the rest of the library assumes that `CompactString`s are valid UTF-8
     ///
     /// # Examples
     /// ```

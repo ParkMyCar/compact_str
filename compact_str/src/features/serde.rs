@@ -9,7 +9,7 @@ use serde::de::{
 
 use crate::CompactString;
 
-fn compact_str<'de: 'a, 'a, D: Deserializer<'de>>(
+fn compact_string<'de: 'a, 'a, D: Deserializer<'de>>(
     deserializer: D,
 ) -> Result<CompactString, D::Error> {
     struct CompactStringVisitor;
@@ -69,6 +69,6 @@ impl serde::Serialize for CompactString {
 
 impl<'de> serde::Deserialize<'de> for CompactString {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        compact_str(deserializer)
+        compact_string(deserializer)
     }
 }

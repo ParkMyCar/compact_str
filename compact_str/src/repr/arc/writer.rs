@@ -1,4 +1,5 @@
 use core::iter::Extend;
+use core::ptr;
 use core::sync::atomic::Ordering;
 
 use super::ArcString;
@@ -17,7 +18,7 @@ impl<'a> ArcStringWriter<'a> {
     #[inline]
     pub fn new(arc_string: &'a mut ArcString) -> Self {
         if arc_string
-            .inner()
+            .header()
             .ref_count
             .compare_exchange(1, 0, Ordering::Acquire, Ordering::Relaxed)
             .is_err()
@@ -34,7 +35,7 @@ impl<'a> ArcStringWriter<'a> {
             *arc_string = new;
         } else {
             // We were the sole reference of either kind; bump back up the strong ref count.
-            arc_string.inner().ref_count.store(1, Ordering::Release);
+            arc_string.header().ref_count.store(1, Ordering::Release);
         }
 
         Self { arc_string }
@@ -64,11 +65,21 @@ impl<'a> ArcStringWriter<'a> {
         // Reserve at least enough space for the new char
         self.reserve(char_len);
 
-        // SAFETY: We're writing a char into the slice, which is valid UTF-8
-        let slice = unsafe { self.as_mut_slice() };
+        // SAFETY: The entire len must be in bounds
+        let string_buf_ptr = unsafe { self.arc_string.ptr.str_buf_ptr_mut().add(len) };
 
-        // Write the char into the slice
-        ch.encode_utf8(&mut slice[len..]);
+        if char_len == 1 {
+            // SAFETY: We reserved space for a single char above
+            unsafe { string_buf_ptr.write(ch as u8) }
+        } else {
+            let mut buf = [0u8; 4];
+            // Write the char into the slice
+            ch.encode_utf8(&mut buf);
+            // SAFETY: `buf` is valid for reads of char_len bytes since we just copied it in
+            // We reserved enough space in `self` to copy it to `string_buf_ptr`
+            unsafe { ptr::copy_nonoverlapping(buf.as_ptr(), string_buf_ptr, char_len) };
+        }
+
         // Increment our length
         //
         // SAFETY: We just wrote `char_len` bytes into the buffer, so we know this new length is
@@ -84,36 +95,15 @@ impl<'a> ArcStringWriter<'a> {
         // Reserve at least enough space for the new str
         self.reserve(str_len);
 
-        // SAFETY: We're writing a &str into the slice, which is valid UTF-8
-        let slice = unsafe { self.as_mut_slice() };
-        let buffer = &mut slice[len..len + str_len];
+        // SAFETY: The entire len must be in bounds
+        let string_buf_ptr = unsafe { self.arc_string.ptr.str_buf_ptr_mut().add(len) };
 
-        debug_assert_eq!(buffer.len(), s.as_bytes().len());
+        // SAFETY: `s` is valid for reads of it's length
+        // We reserved `str_len` space above.
+        unsafe { ptr::copy_nonoverlapping(s.as_ptr(), string_buf_ptr, str_len) };
 
-        // Copy the string into our buffer
-        buffer.copy_from_slice(s.as_bytes());
-        // Incrament the length of our string
+        // Increment the length of our string
         unsafe { self.arc_string.set_len(len + str_len) };
-    }
-
-    /// Returns a reference to a mutable slice of bytes with lifetime `'a`
-    ///
-    /// # SAFETY
-    /// * Callers must guarantee that any modifications they make to the slice are valid UTF-8
-    #[inline]
-    pub unsafe fn as_mut_slice(&mut self) -> &mut [u8] {
-        self.arc_string.ptr.as_mut().as_mut_bytes()
-    }
-
-    /// Transforms the `ArcStringWriter<'a>` into a mutable slice of bytes with lifetime `'a`
-    ///
-    /// # SAFETY
-    /// * Callers must guarantee that any modifications they make to the slice are valid UTF-8
-    #[inline]
-    pub unsafe fn into_mut_slice(self) -> &'a mut [u8] {
-        // SAFETY: If we still have an instance of `ArcString` then we know the pointer to
-        // `ArcStringInner` is valid for at least as long as the provided ref to `self`
-        self.arc_string.ptr.as_mut().as_mut_bytes()
     }
 }
 

@@ -6,12 +6,15 @@ use std::sync::atomic::Ordering;
 use std::{
     fmt,
     mem,
-    ptr,
+    slice,
     str,
 };
 
 mod inner;
-use inner::ArcStringInner;
+use inner::{
+    ArcStringHeader,
+    ArcStringPtr,
+};
 mod writer;
 use writer::ArcStringWriter;
 
@@ -23,9 +26,13 @@ const MAX_REFCOUNT: usize = (isize::MAX) as usize;
 
 #[repr(C)]
 pub struct ArcString {
+    /// The string buffer behind the pointer must be initialized for at least self.len bytes
+    /// and contain valid UTF-8.
+    ptr: ArcStringPtr,
     len: usize,
-    ptr: ptr::NonNull<ArcStringInner>,
 }
+
+// SAFETY: Mutation only happens through `&mut self`
 unsafe impl Sync for ArcString {}
 unsafe impl Send for ArcString {}
 
@@ -41,12 +48,9 @@ impl ArcString {
         // TODO: Handle overflows in the case of __very__ large Strings
         debug_assert!(new_capacity >= len);
 
-        let mut ptr = ArcStringInner::with_capacity(new_capacity);
+        let mut ptr = ArcStringPtr::with_capacity(new_capacity);
 
-        // SAFETY: We just created the `ArcStringInner` so we know the pointer is properly aligned,
-        // it is non-null, points to an instance of `ArcStringInner`, and the `str_buffer`
-        // is valid
-        let buffer_ptr = unsafe { ptr.as_mut().str_buffer.as_mut_ptr() };
+        let buffer_ptr = ptr.str_buf_ptr_mut();
         // SAFETY: We know both `src` and `dest` are valid for respectively reads and writes of
         // length `len` because `len` comes from `src`, and `dest` was allocated to be at least that
         // length. We also know they're non-overlapping because `dest` is newly allocated
@@ -62,7 +66,7 @@ impl ArcString {
         debug_assert!(capacity >= super::MAX_SIZE);
 
         let len = 0;
-        let ptr = ArcStringInner::with_capacity(capacity);
+        let ptr = ArcStringPtr::with_capacity(capacity);
 
         ArcString { len, ptr }
     }
@@ -74,7 +78,7 @@ impl ArcString {
 
     #[inline]
     pub fn capacity(&self) -> usize {
-        self.inner().capacity
+        self.header().capacity
     }
 
     #[inline]
@@ -89,20 +93,6 @@ impl ArcString {
         unsafe { str::from_utf8_unchecked(self.as_slice()) }
     }
 
-    #[inline(always)]
-    pub fn as_slice(&self) -> &[u8] {
-        &self.inner().as_bytes()[..self.len]
-    }
-
-    /// Returns a mutable reference to the underlying buffer of bytes
-    ///
-    /// # SAFETY:
-    /// * The caller must guarantee any modifications made to the buffer are valid UTF-8
-    #[inline]
-    pub unsafe fn make_mut_slice(&mut self) -> &mut [u8] {
-        self.writer().into_mut_slice()
-    }
-
     #[inline]
     pub unsafe fn set_len(&mut self, length: usize) {
         self.len = length;
@@ -115,21 +105,44 @@ impl ArcString {
 
     /// Returns a shared reference to the heap allocated `ArcStringInner`
     #[inline]
-    fn inner(&self) -> &ArcStringInner {
-        // SAFETY: If we still have an instance of `ArcString` then we know the pointer to
-        // `ArcStringInner` is valid for at least as long as the provided ref to `self`
-        unsafe { self.ptr.as_ref() }
+    fn header(&self) -> &ArcStringHeader {
+        self.ptr.header()
     }
 
     #[inline(never)]
     unsafe fn drop_inner(&mut self) {
-        ArcStringInner::dealloc(self.ptr)
+        ArcStringPtr::dealloc(&mut self.ptr)
+    }
+
+    /// Returns a mutable reference to the initialized parts of the underlying buffer of bytes
+    ///
+    /// # Invariants
+    /// * The caller must assert that the underlying buffer is still valid UTF-8
+    #[inline]
+    pub unsafe fn as_mut_bytes(&mut self) -> &mut [u8] {
+        // SAFETY:
+        // We track the length in self.len and assert that it is valid.
+        //
+        // Note: In terms of mutability, it's up to the caller to assert the provided bytes are
+        // value UTF-8
+        slice::from_raw_parts_mut(self.ptr.str_buf_ptr_mut(), self.len)
+    }
+
+    /// Returns a shared reference to the underlying buffer of bytes
+    #[inline(always)]
+    pub fn as_slice(&self) -> &[u8] {
+        // SAFETY:
+        // We track the length in self.len and assert that it is valid.
+        //
+        // Note: In terms of mutability, it's up to the caller to assert the provided bytes are
+        // value UTF-8
+        unsafe { slice::from_raw_parts(self.ptr.str_buf_ptr(), self.len) }
     }
 }
 
 impl Clone for ArcString {
     fn clone(&self) -> Self {
-        let old_count = self.inner().ref_count.fetch_add(1, Ordering::Relaxed);
+        let old_count = self.header().ref_count.fetch_add(1, Ordering::Relaxed);
         assert!(
             old_count < MAX_REFCOUNT,
             "Program has gone wild, ref count > {}",
@@ -147,7 +160,7 @@ impl Drop for ArcString {
     fn drop(&mut self) {
         // This was copied from the implementation of `std::sync::Arc`
         // TODO: Better document the safety invariants here
-        if self.inner().ref_count.fetch_sub(1, Ordering::Release) != 1 {
+        if self.header().ref_count.fetch_sub(1, Ordering::Release) != 1 {
             return;
         }
         std::sync::atomic::fence(Ordering::Acquire);

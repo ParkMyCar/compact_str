@@ -26,17 +26,16 @@
 /// [`ToCompactString::to_compact_string`] never returns an error itself.
 #[macro_export]
 macro_rules! format_compact {
-    ($fmt:expr) => {{ $crate::ToCompactString::to_compact_string(&$fmt) }};
-    ($fmt:expr, $($args:tt)*) => {{
-        $crate::ToCompactString::to_compact_string(&format_args!($fmt, $($args)*))
-    }};
+    ($($arg:tt)*) => {{
+        $crate::ToCompactString::to_compact_string(&format_args!($($arg)*))
+    }}
 }
 
 #[cfg(test)]
 mod tests {
     #[test]
     fn test() {
-        assert_eq!(format_compact!(2), "2");
+        assert_eq!(format_compact!("2"), "2");
         assert_eq!(format_compact!("{}", 2), "2");
     }
 }

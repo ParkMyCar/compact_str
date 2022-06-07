@@ -14,8 +14,8 @@
 /// depending on the intended destination of the string.
 ///
 /// To convert a single value to a string, use the
-/// [`ToCompactString::to_compact_string`] method, which uses
-/// the [`Display`] formatting trait.
+/// `ToCompactString::to_compact_string` method, which uses
+/// the [`std::fmt::Display`] formatting trait.
 ///
 /// # Panics
 ///
@@ -23,7 +23,7 @@
 /// an error.
 ///
 /// This indicates an incorrect implementation since
-/// [`ToCompactString::to_compact_string`] never returns an error itself.
+/// `ToCompactString::to_compact_string` never returns an error itself.
 #[macro_export]
 macro_rules! format_compact {
     ($($arg:tt)*) => {{

@@ -1,9 +1,7 @@
 use super::{
     HEAP_MASK,
-    MAX_SIZE,
+    PADDING_SIZE,
 };
-
-const PADDING_SIZE: usize = MAX_SIZE - std::mem::size_of::<u8>();
 
 #[derive(Debug, Copy, Clone)]
 pub enum Discriminant {
@@ -21,7 +19,9 @@ pub struct DiscriminantMask {
 impl DiscriminantMask {
     #[inline(always)]
     pub const fn discriminant(&self) -> Discriminant {
-        if self.val == HEAP_MASK {
+        if self.val == u8::MAX {
+            panic!("Discriminant was invalid value reserved for Option::None!")
+        } else if self.val == HEAP_MASK {
             Discriminant::Heap
         } else {
             Discriminant::Inline

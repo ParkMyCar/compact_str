@@ -5,7 +5,7 @@
   <a href="https://crates.io/crates/compact_str">
     <img alt="version on crates.io" src="https://img.shields.io/crates/v/compact_str"/>
   </a>
-  <img alt="Minimum supported Rust Version: 1.49" src="https://img.shields.io/badge/MSRV-1.49-blueviolet">
+  <img alt="Minimum supported Rust Version: 1.57" src="https://img.shields.io/badge/MSRV-1.57-blueviolet">
   <a href="LICENSE">
     <img alt="mit license" src="https://img.shields.io/crates/l/compact_str"/>
   </a>

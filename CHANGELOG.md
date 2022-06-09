@@ -1,4 +1,7 @@
 # Upcoming
+* Encode `CompactStr` in such a way that `size_of::<CompactStr>() == size_of::<Option<CompactStr>>()`
+    * Implemented in [`#75: smol option`](https://github.com/ParkMyCar/compact_str/pull/75)
+* Update MSRV to 1.57.
 
 # 0.4
 ### May 27, 2022

@@ -34,7 +34,7 @@ macro_rules! format_compact {
 #[cfg(test)]
 mod tests {
     #[test]
-    fn test() {
+    fn test_macros() {
         assert_eq!(format_compact!("2"), "2");
         assert_eq!(format_compact!("{}", 2), "2");
     }

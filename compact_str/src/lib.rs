@@ -34,6 +34,7 @@ use std::ffi::OsStr;
 
 mod asserts;
 mod features;
+mod macros;
 mod utility;
 
 mod repr;

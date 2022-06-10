@@ -1,4 +1,4 @@
-/// Creates a String using interpolation of runtime expressions.
+/// Creates a `CompactString` using interpolation of runtime expressions.
 ///
 /// The first argument `format_compact!` receives is a format string.
 /// This must be a string literal.

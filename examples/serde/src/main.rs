@@ -1,21 +1,21 @@
 // the fields in `Person` and `Address` are unread, hence the dead code warnings
 #![allow(dead_code)]
 
-use compact_str::CompactStr;
+use compact_str::CompactString;
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 struct Person {
-    name: CompactStr,
+    name: CompactString,
     age: u8,
     address: Address,
-    phones: Vec<CompactStr>,
+    phones: Vec<CompactString>,
 }
 
 #[derive(Debug, Deserialize)]
 struct Address {
-    street: CompactStr,
-    city: CompactStr,
+    street: CompactString,
+    city: CompactString,
 }
 
 fn main() {

@@ -30,6 +30,7 @@ use core::str::{
     Utf8Error,
 };
 use std::borrow::Cow;
+use std::ffi::OsStr;
 
 mod asserts;
 mod features;
@@ -520,6 +521,13 @@ impl AsRef<str> for CompactString {
     #[inline]
     fn as_ref(&self) -> &str {
         self.as_str()
+    }
+}
+
+impl AsRef<OsStr> for CompactString {
+    #[inline]
+    fn as_ref(&self) -> &OsStr {
+        OsStr::new(self.as_str())
     }
 }
 

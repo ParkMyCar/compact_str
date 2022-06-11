@@ -1,4 +1,5 @@
 use core::iter::Extend;
+use core::mem::ManuallyDrop;
 use core::{
     fmt,
     ptr,
@@ -137,12 +138,12 @@ impl BoxString {
             // Note: We should never hit this case when using BoxString with CompactString
             Ok(_) if s.capacity() == 0 => BoxString::new(""),
             Ok(cap) => {
+                // Don't drop `s` to avoid a double free
+                let mut s = ManuallyDrop::new(s.into_bytes());
                 let len = s.len();
-                let raw_ptr = s.as_ptr() as *mut u8;
+                let raw_ptr = s.as_mut_ptr();
 
                 let ptr = ptr::NonNull::new(raw_ptr).expect("string with capacity has null ptr?");
-                // "forget" `s` so we don't call Drop and deallocate the underlying buffer
-                core::mem::forget(s);
                 // create a new BoxString with our parts!
                 BoxString { len, ptr, cap }
             }
@@ -157,11 +158,10 @@ impl BoxString {
             Ok(_) if b.len() == 0 => BoxString::new(""),
             Ok(cap) => {
                 let len = b.len();
-                let raw_ptr = b.as_ptr() as *mut u8;
+                // Don't drop the box here
+                let raw_ptr = Box::into_raw(b).cast::<u8>();
 
                 let ptr = ptr::NonNull::new(raw_ptr).expect("string with capacity has null ptr?");
-                // "forget" `s` so we don't call Drop and deallocate the underlying buffer
-                core::mem::forget(b);
                 // create a new BoxString with our parts!
                 BoxString { len, ptr, cap }
             }

@@ -10,7 +10,7 @@ name: CI
 env:
   RUSTFLAGS: "-D warnings"
   PROPTEST_CASES: 10000
-  MIRIFAGS: "-Zmiri-tag-raw-pointers -Zmiri-check-number-validity"
+  MIRIFLAGS: "-Zmiri-strict-provenance -Zmiri-check-number-validity"
 
 jobs:
   check:

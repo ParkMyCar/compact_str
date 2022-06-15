@@ -1,6 +1,10 @@
 # Upcoming
+* impl `AsRef<OsStr>` for `CompactStr`
+    * Implemented in [`#102 Impl AsRef<OsStr> for CompactString`](https://github.com/ParkMyCar/compact_str/pull/102)
+* Add `format_compact!` macro
+    * Implemented in [`#101 Add macro_rules format_compact!`](https://github.com/ParkMyCar/compact_str/pull/101)
 
-# 0.4
+# 0.4.0
 ### May 27, 2022
 * Rename `CompactStr` -> `CompactString` and `ToCompactStr` -> `ToComapctString`
     * Implemented in [`#97 refactor: Rename CompactStr to CompactString`](https://github.com/ParkMyCar/compact_str/pull/95)

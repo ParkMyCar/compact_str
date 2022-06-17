@@ -20,13 +20,7 @@ impl DiscriminantMask {
     #[inline(always)]
     pub const fn discriminant(&self) -> Discriminant {
         if self.val == u8::MAX {
-            // HACK: This allows us to make assertions within a `const fn` without requiring
-            // nightly, see unstable `const_panic` feature. This results in a build
-            // failure, not a runtime panic
-            #[allow(clippy::no_effect)]
-            #[allow(unconditional_panic)]
-            ["Discriminant was invalid value reserved for Option::None!"][42];
-            Discriminant::Inline
+            panic!("Discriminant was invalid value reserved for Option::None!")
         } else if self.val == HEAP_MASK {
             Discriminant::Heap
         } else {

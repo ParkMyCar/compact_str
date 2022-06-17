@@ -36,11 +36,11 @@ pub const HEAP_MASK: u8 = 0b11111110;
 
 /// This is the "compiler facing" representation for the struct that underpins `CompactString`. The
 /// odd layout enables the compiler to represent an `Option<CompactString>` in the same amount of
-/// bytes as `CompactString`. In other words, it allows the compiler to see a "niche" value, which
-/// the compiler then uses to store the `None` variant.
+/// bytes as `CompactString`. In other words, it allows the compiler to see a "niche" value in
+/// `Repr`, which it then uses to store the `None` variant, without requiring any extra bytes.
 ///
-/// The `size_of::<Repr>()` needs to be the same as `size_of::<String>()`, we construct that with
-/// the following fields.
+/// We want the size of `size_of::<Repr>()` (and thus `CompactString`) to be the same as
+/// `size_of::<String>()`, so we construct a `Repr` with the following fields.
 #[repr(C)]
 pub struct Repr(
     // We have a pointer in the repesentation to properly carry provenance
@@ -90,13 +90,7 @@ impl Repr {
             let inline = InlineString::new_const(text);
             Repr::from_inline(inline)
         } else {
-            // HACK: This allows us to make assertions within a `const fn` without requiring
-            // nightly, see unstable `const_panic` feature. This results in a build
-            // failure, not a runtime panic
-            #[allow(clippy::no_effect)]
-            #[allow(unconditional_panic)]
-            ["Trying to create a non-inline-able string at compile time!"][42];
-            EMPTY
+            panic!("Inline string was too long, max length is `std::mem::size_of::<CompactString>()` bytes");
         }
     }
 
@@ -280,25 +274,25 @@ impl Repr {
 
     #[inline(always)]
     const fn from_inline(repr: InlineString) -> Self {
-        // SAFETY: An `InlineString` and `Repr` have the same size and alignment
+        // SAFETY: An `InlineString` and `Repr` have the same size
         unsafe { std::mem::transmute(repr) }
     }
 
     #[inline(always)]
     const fn from_heap(repr: HeapString) -> Self {
-        // SAFETY: An `HeapString` and `Repr` have the same size and alignment
+        // SAFETY: An `HeapString` and `Repr` have the same size
         unsafe { std::mem::transmute(repr) }
     }
 
     #[inline(always)]
     fn as_union(&self) -> &ReprUnion {
-        // SAFETY: An `ReprUnion` and `Repr` have the same size and alignment
+        // SAFETY: An `ReprUnion` and `Repr` have the same size
         unsafe { &*(self as *const _ as *const _) }
     }
 
     #[inline(always)]
     fn as_union_mut(&mut self) -> &mut ReprUnion {
-        // SAFETY: An `ReprUnion` and `Repr` have the same size and alignment
+        // SAFETY: An `ReprUnion` and `Repr` have the same size
         unsafe { &mut *(self as *mut _ as *mut _) }
     }
 }

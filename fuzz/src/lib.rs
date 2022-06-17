@@ -20,6 +20,29 @@ pub struct Scenario<'a> {
     pub actions: Vec<Action<'a>>,
 }
 
+impl<'a> Scenario<'a> {
+    /// Run the provided scenario, asserting for correct behavior
+    pub fn run(self) {
+        // Given random creation method, if we can create a string
+        if let Some((compact, mut control)) = self.creation.create() {
+            // assert we never misinterpret a valid CompactString as None when transmuted to Option<...>
+            let mut compact = assert_not_option(compact);
+
+            // run some actions, asserting properties along the way
+            self
+                .actions
+                .into_iter()
+                .for_each(|a| a.perform(&mut control, &mut compact));
+
+            // make sure our strings are the same
+            assert_eq!(compact, control);
+
+            // after making all of our modifications, assert again that we don't misinterpret
+            assert_not_option(compact);
+        }
+    }
+}
+
 #[derive(Arbitrary, Debug)]
 pub enum Creation<'a> {
     /// Create using [`CompactString::from_utf8`]
@@ -431,4 +454,24 @@ fn assert_properly_allocated(compact: &CompactString, control: &str) {
     } else {
         assert!(compact.is_heap_allocated());
     }
+}
+
+/// Asserts when the provided [`CompactString`] is `std::mem::transmute`-ed to `Option<CompactString>`
+/// that it is never `None`, and when we unwrap the `Option<CompactString>`, it equals the original
+/// `CompactString`.
+/// 
+/// We use a bit within the discriminant to store whether or not we're "None". We want to make sure
+/// valid `CompactString`s never set this bit, and thus get misinterpreted as `None`
+fn assert_not_option(compact: CompactString) -> CompactString {
+    let clone = compact.clone();
+
+    // transmute the CompactString to Option<CompactString>, they both the same size
+    let maybe_compact: Option<CompactString> = unsafe { std::mem::transmute(clone) };
+
+    // make sure we never consider a valid CompactString as None...
+    assert!(maybe_compact.is_some());
+    // ...and unwrapping the Option gives us the same original value
+    assert_eq!(compact, maybe_compact.unwrap());
+
+    compact
 }

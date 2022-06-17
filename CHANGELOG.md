@@ -1,6 +1,8 @@
 # Upcoming
 * Encode `CompactStr` in such a way that `size_of::<CompactStr>() == size_of::<Option<CompactStr>>()`
+    * Implemented in [`#105 perf: Option<CompactString> same size as CompactString`](https://github.com/ParkMyCar/compact_str/pull/105)
     * Implemented in [`#75: smol option`](https://github.com/ParkMyCar/compact_str/pull/75)
+    * Implemented in [`#22 draft: Optimize Option<CompactStr> to be the same size as CompactStr`](https://github.com/ParkMyCar/compact_str/pull/22)
 * Update MSRV to 1.57
 * impl `AsRef<OsStr>` for `CompactStr`
     * Implemented in [`#102 Impl AsRef<OsStr> for CompactString`](https://github.com/ParkMyCar/compact_str/pull/102)

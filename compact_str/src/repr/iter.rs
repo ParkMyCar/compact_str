@@ -1,7 +1,6 @@
 //! Implementations of the [`FromIterator`] trait to make building `CompactString`s more ergonomic
 
 use core::iter::FromIterator;
-use core::mem::ManuallyDrop;
 
 use super::{
     HeapString,
@@ -18,9 +17,7 @@ impl FromIterator<char> for Repr {
         let (size_hint, _) = iter.size_hint();
         if size_hint > MAX_SIZE {
             let heap = HeapString::from_string(iter.collect());
-            return Repr {
-                heap: ManuallyDrop::new(heap),
-            };
+            return Repr::from_heap(heap);
         }
 
         // Otherwise, continuously pull chars from the iterator
@@ -45,9 +42,7 @@ impl FromIterator<char> for Repr {
                 heap_buf.extend(iter);
 
                 let heap = HeapString::from_string(heap_buf);
-                return Repr {
-                    heap: ManuallyDrop::new(heap),
-                };
+                return Repr::from_heap(heap);
             }
 
             // write the current char into a slice of the unoccupied space
@@ -57,7 +52,7 @@ impl FromIterator<char> for Repr {
 
         // SAFETY: We know `inline_buf` is valid UTF-8 because it consists entriely of `char`s
         let inline = unsafe { InlineString::from_parts(curr_len, inline_buf) };
-        Repr { inline }
+        Repr::from_inline(inline)
     }
 }
 
@@ -99,9 +94,7 @@ where
             heap_buf.extend(iter);
 
             let heap = HeapString::from_string(heap_buf);
-            return Repr {
-                heap: ManuallyDrop::new(heap),
-            };
+            return Repr::from_heap(heap);
         }
 
         // write the current string into a slice of the unoccupied space
@@ -111,7 +104,7 @@ where
 
     // SAFETY: We know `inline_buf` is valid UTF-8 because it consists entriely of `&str`s
     let inline = unsafe { InlineString::from_parts(curr_len, inline_buf) };
-    Repr { inline }
+    Repr::from_inline(inline)
 }
 
 impl<'a> FromIterator<&'a str> for Repr {

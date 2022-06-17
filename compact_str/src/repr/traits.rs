@@ -1,7 +1,7 @@
 use super::Repr;
 
-const FALSE: Repr = Repr::new_const("false");
-const TRUE: Repr = Repr::new_const("true");
+const FALSE: Repr = Repr::new_inline("false");
+const TRUE: Repr = Repr::new_inline("true");
 
 /// Defines how to _efficiently_ create a [`Repr`] from `self`
 pub trait IntoRepr {
@@ -37,7 +37,7 @@ impl IntoRepr for bool {
 impl IntoRepr for char {
     fn into_repr(self) -> Repr {
         let mut buf = [0_u8; 4];
-        Repr::new_const(self.encode_utf8(&mut buf))
+        Repr::new_inline(self.encode_utf8(&mut buf))
     }
 }
 

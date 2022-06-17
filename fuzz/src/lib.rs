@@ -25,12 +25,12 @@ impl<'a> Scenario<'a> {
     pub fn run(self) {
         // Given random creation method, if we can create a string
         if let Some((compact, mut control)) = self.creation.create() {
-            // assert we never misinterpret a valid CompactString as None when transmuted to Option<...>
+            // assert we never misinterpret a valid CompactString as None when transmuted to
+            // Option<...>
             let mut compact = assert_not_option(compact);
 
             // run some actions, asserting properties along the way
-            self
-                .actions
+            self.actions
                 .into_iter()
                 .for_each(|a| a.perform(&mut control, &mut compact));
 
@@ -456,10 +456,10 @@ fn assert_properly_allocated(compact: &CompactString, control: &str) {
     }
 }
 
-/// Asserts when the provided [`CompactString`] is `std::mem::transmute`-ed to `Option<CompactString>`
-/// that it is never `None`, and when we unwrap the `Option<CompactString>`, it equals the original
-/// `CompactString`.
-/// 
+/// Asserts when the provided [`CompactString`] is `std::mem::transmute`-ed to
+/// `Option<CompactString>` that it is never `None`, and when we unwrap the `Option<CompactString>`,
+/// it equals the original `CompactString`.
+///
 /// We use a bit within the discriminant to store whether or not we're "None". We want to make sure
 /// valid `CompactString`s never set this bit, and thus get misinterpreted as `None`
 fn assert_not_option(compact: CompactString) -> CompactString {

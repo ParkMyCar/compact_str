@@ -24,7 +24,6 @@ use discriminant::{
 use heap::HeapString;
 use inline::InlineString;
 use nonmax::NonMaxU8;
-
 pub use traits::IntoRepr;
 
 pub const MAX_SIZE: usize = std::mem::size_of::<String>();
@@ -39,8 +38,8 @@ pub const HEAP_MASK: u8 = 0b11111110;
 /// odd layout enables the compiler to represent an `Option<CompactString>` in the same amount of
 /// bytes as `CompactString`. In other words, it allows the compiler to see a "niche" value, which
 /// the compiler then uses to store the `None` variant.
-/// 
-/// The `size_of::<Repr>()` needs to be the same as `size_of::<String>()`, we construct that with 
+///
+/// The `size_of::<Repr>()` needs to be the same as `size_of::<String>()`, we construct that with
 /// the following fields.
 #[repr(C)]
 pub struct Repr(

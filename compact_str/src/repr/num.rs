@@ -9,10 +9,8 @@ use core::{
     ptr,
 };
 
-use super::{
-    IntoRepr,
-    Repr,
-};
+use super::traits::IntoRepr;
+use super::Repr;
 
 const DEC_DIGITS_LUT: &[u8] = b"\
       0001020304050607080910111213141516171819\

@@ -175,7 +175,7 @@ impl CompactString {
     #[inline]
     pub const fn new_inline(text: &str) -> Self {
         CompactString {
-            repr: Repr::new_const(text),
+            repr: Repr::new_inline(text),
         }
     }
 

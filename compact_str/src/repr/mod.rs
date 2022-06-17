@@ -13,30 +13,57 @@ mod boxed;
 mod discriminant;
 mod heap;
 mod inline;
+mod nonmax;
 mod num;
-
 mod traits;
+
 use discriminant::{
     Discriminant,
     DiscriminantMask,
 };
 use heap::HeapString;
 use inline::InlineString;
+use nonmax::NonMaxU8;
 pub use traits::IntoRepr;
 
-pub(crate) const MAX_SIZE: usize = std::mem::size_of::<String>();
-const EMPTY: Repr = Repr {
-    inline: InlineString::new_const(""),
-};
+pub const MAX_SIZE: usize = std::mem::size_of::<String>();
+
+const PADDING_SIZE: usize = MAX_SIZE - std::mem::size_of::<u8>();
+const EMPTY: Repr = Repr::from_inline(InlineString::new_const(""));
 
 /// Used as a discriminant to identify different variants
-pub const HEAP_MASK: u8 = 0b11111111;
+pub const HEAP_MASK: u8 = 0b11111110;
 
-pub union Repr {
+/// This is the "compiler facing" representation for the struct that underpins `CompactString`. The
+/// odd layout enables the compiler to represent an `Option<CompactString>` in the same amount of
+/// bytes as `CompactString`. In other words, it allows the compiler to see a "niche" value in
+/// `Repr`, which it then uses to store the `None` variant, without requiring any extra bytes.
+///
+/// We want the size of `size_of::<Repr>()` (and thus `CompactString`) to be the same as
+/// `size_of::<String>()`, so we construct a `Repr` with the following fields.
+#[repr(C)]
+pub struct Repr(
+    // We have a pointer in the repesentation to properly carry provenance
+    *const (),
+    // Then we need two `usize`s (aka WORDs) of data, for the first we just define a `usize`...
+    usize,
+    // ...but the second we breakup into multiple pieces...
+    #[cfg(target_pointer_width = "64")] u32,
+    u16,
+    u8,
+    // ...so that the last byte can be a NonMax, which allows the compiler to see a niche value
+    NonMaxU8,
+);
+
+#[repr(C)]
+union ReprUnion {
     mask: DiscriminantMask,
     heap: ManuallyDrop<HeapString>,
     inline: InlineString,
 }
+
+unsafe impl Send for Repr {}
+unsafe impl Sync for Repr {}
 
 impl Repr {
     #[inline]
@@ -48,28 +75,22 @@ impl Repr {
             EMPTY
         } else if len <= MAX_SIZE {
             let inline = InlineString::new(text);
-            Repr { inline }
+            Repr::from_inline(inline)
         } else {
-            let heap = ManuallyDrop::new(HeapString::new(text));
-            Repr { heap }
+            let heap = HeapString::new(text);
+            Repr::from_heap(heap)
         }
     }
 
     #[inline]
-    pub const fn new_const(text: &str) -> Self {
+    pub const fn new_inline(text: &str) -> Self {
         let len = text.len();
 
         if len <= MAX_SIZE {
             let inline = InlineString::new_const(text);
-            Repr { inline }
+            Repr::from_inline(inline)
         } else {
-            // HACK: This allows us to make assertions within a `const fn` without requiring
-            // nightly, see unstable `const_panic` feature. This results in a build
-            // failure, not a runtime panic
-            #[allow(clippy::no_effect)]
-            #[allow(unconditional_panic)]
-            ["Trying to create a non-inline-able string at compile time!"][42];
-            EMPTY
+            panic!("Inline string was too long, max length is `std::mem::size_of::<CompactString>()` bytes");
         }
     }
 
@@ -78,8 +99,8 @@ impl Repr {
         if capacity <= MAX_SIZE {
             EMPTY
         } else {
-            let heap = ManuallyDrop::new(HeapString::with_capacity(capacity));
-            Repr { heap }
+            let heap = HeapString::with_capacity(capacity);
+            Repr::from_heap(heap)
         }
     }
 
@@ -96,8 +117,8 @@ impl Repr {
         if s.capacity() == 0 {
             EMPTY
         } else {
-            let heap = ManuallyDrop::new(HeapString::from_string(s));
-            Repr { heap }
+            let heap = HeapString::from_string(s);
+            Repr::from_heap(heap)
         }
     }
 
@@ -106,8 +127,8 @@ impl Repr {
         if b.len() == 0 {
             EMPTY
         } else {
-            let heap = ManuallyDrop::new(HeapString::from_box_str(b));
-            Repr { heap }
+            let heap = HeapString::from_box_str(b);
+            Repr::from_heap(heap)
         }
     }
 
@@ -136,14 +157,13 @@ impl Repr {
             // than MAX_SIZE, if that `CompactString` was created From a String or
             // Box<str>.
             let inline = InlineString::new(self.as_str());
-            *self = Repr { inline }
+            *self = Repr::from_inline(inline)
         } else {
             // Create a `HeapString` with `text.len() + additional` capacity
             let heap = HeapString::with_additional(self.as_str(), additional);
 
             // Replace `self` with the new Repr
-            let heap = ManuallyDrop::new(heap);
-            *self = Repr { heap };
+            *self = Repr::from_heap(heap);
         }
     }
 
@@ -221,7 +241,7 @@ impl Repr {
     #[inline(always)]
     fn discriminant(&self) -> Discriminant {
         // SAFETY: `heap` and `inline` all store a discriminant in their last byte
-        unsafe { self.mask.discriminant() }
+        unsafe { self.as_union().mask.discriminant() }
     }
 
     #[inline(always)]
@@ -229,11 +249,11 @@ impl Repr {
         match self.discriminant() {
             Discriminant::Heap => {
                 // SAFETY: We checked the discriminant to make sure the union is `heap`
-                StrongRepr::Heap(unsafe { &self.heap })
+                StrongRepr::Heap(unsafe { &self.as_union().heap })
             }
             Discriminant::Inline => {
                 // SAFETY: We checked the discriminant to make sure the union is `inline`
-                StrongRepr::Inline(unsafe { &self.inline })
+                StrongRepr::Inline(unsafe { &self.as_union().inline })
             }
         }
     }
@@ -243,21 +263,45 @@ impl Repr {
         match self.discriminant() {
             Discriminant::Heap => {
                 // SAFETY: We checked the discriminant to make sure the union is `heap`
-                MutStrongRepr::Heap(unsafe { &mut self.heap })
+                MutStrongRepr::Heap(unsafe { &mut self.as_union_mut().heap })
             }
             Discriminant::Inline => {
                 // SAFETY: We checked the discriminant to make sure the union is `inline`
-                MutStrongRepr::Inline(unsafe { &mut self.inline })
+                MutStrongRepr::Inline(unsafe { &mut self.as_union_mut().inline })
             }
         }
+    }
+
+    #[inline(always)]
+    const fn from_inline(repr: InlineString) -> Self {
+        // SAFETY: An `InlineString` and `Repr` have the same size
+        unsafe { std::mem::transmute(repr) }
+    }
+
+    #[inline(always)]
+    const fn from_heap(repr: HeapString) -> Self {
+        // SAFETY: An `HeapString` and `Repr` have the same size
+        unsafe { std::mem::transmute(repr) }
+    }
+
+    #[inline(always)]
+    fn as_union(&self) -> &ReprUnion {
+        // SAFETY: An `ReprUnion` and `Repr` have the same size
+        unsafe { &*(self as *const _ as *const _) }
+    }
+
+    #[inline(always)]
+    fn as_union_mut(&mut self) -> &mut ReprUnion {
+        // SAFETY: An `ReprUnion` and `Repr` have the same size
+        unsafe { &mut *(self as *mut _ as *mut _) }
     }
 }
 
 impl Clone for Repr {
     fn clone(&self) -> Self {
         match self.cast() {
-            StrongRepr::Heap(heap) => Repr { heap: heap.clone() },
-            StrongRepr::Inline(inline) => Repr { inline: *inline },
+            StrongRepr::Heap(heap) => Repr::from_heap((**heap).clone()),
+            StrongRepr::Inline(inline) => Repr::from_inline(*inline),
         }
     }
 }
@@ -276,7 +320,7 @@ impl Drop for Repr {
             match this.discriminant() {
                 Discriminant::Heap => {
                     // SAFETY: We checked the discriminant to make sure the union is `heap`
-                    unsafe { ManuallyDrop::drop(&mut this.heap) };
+                    unsafe { ManuallyDrop::drop(&mut this.as_union_mut().heap) };
                 }
                 // No-op, the value is on the stack and doesn't need to be explicitly dropped
                 Discriminant::Inline => {}
@@ -305,8 +349,7 @@ impl Extend<char> for Repr {
                     heap.string.extend(iterator);
 
                     // Replace `self` with the new Repr
-                    let heap = ManuallyDrop::new(heap);
-                    *self = Repr { heap };
+                    *self = Repr::from_heap(heap);
                     return;
                 }
 
@@ -336,8 +379,7 @@ impl Extend<char> for Repr {
                         heap.string.extend(iterator);
 
                         // Replace `self` with the new Repr
-                        let heap = ManuallyDrop::new(heap);
-                        *self = Repr { heap };
+                        *self = Repr::from_heap(heap);
 
                         // All done!
                         return;
@@ -449,7 +491,7 @@ impl<'a> MutStrongRepr<'a> {
     }
 }
 
-crate::asserts::assert_size_eq!(Repr, String);
+crate::asserts::assert_size_eq!(ReprUnion, Repr, Option<Repr>, String, Option<String>);
 
 #[cfg(target_pointer_width = "64")]
 crate::asserts::assert_size!(Repr, 24);

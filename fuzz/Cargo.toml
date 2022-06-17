@@ -3,7 +3,7 @@ name = "compact_str-fuzz"
 version = "0.0.0"
 authors = ["Parker Timmerman <parker@parkertimmerman.com>"]
 publish = false
-edition = "2018"
+edition = "2021"
 
 [package.metadata]
 cargo-fuzz = true

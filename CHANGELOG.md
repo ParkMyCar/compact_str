@@ -1,7 +1,9 @@
 # Upcoming
+* Remove `CompactStr` type alias to prep for `v0.5`, as the deprecation message noted
+    * Implemented in [`#110 chore: Remove CompactStr type alias`](https://github.com/ParkMyCar/compact_str/pull/110)
 * Add `CompactStringExt` which provides methods to join and concatenate collections into a `CompactString`
     * Implemented in [`#109 feat: CompactStringExt trait`](https://github.com/ParkMyCar/compact_str/pull/109)
-* Encode `CompactStr` in such a way that `size_of::<CompactStr>() == size_of::<Option<CompactStr>>()`
+* Encode `CompactString` in such a way that `size_of::<CompactString>() == size_of::<Option<CompactString>>()`
     * Implemented in [`#105 perf: Option<CompactString> same size as CompactString`](https://github.com/ParkMyCar/compact_str/pull/105)
     * Implemented in [`#75: smol option`](https://github.com/ParkMyCar/compact_str/pull/75)
     * Implemented in [`#22 draft: Optimize Option<CompactStr> to be the same size as CompactStr`](https://github.com/ParkMyCar/compact_str/pull/22)

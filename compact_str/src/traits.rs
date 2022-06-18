@@ -200,25 +200,48 @@ mod tests {
     use proptest::prelude::*;
     use test_strategy::proptest;
 
+    use crate::CompactString;
     use super::{
         ToCompactString,
         CompactStringExt,
     };
 
     #[test]
-    fn test_join_slice() {
-        let items = ["hello", "world"];
-        let c = items.join_compact(" ");
-
+    fn test_join() {
+        let slice = ["hello", "world"];
+        let c = slice.join_compact(" ");
         assert_eq!(c, "hello world");
+
+        let vector = vec!["🍎", "🍊", "🍌"];
+        let c = vector.join_compact(",");
+        assert_eq!(c, "🍎,🍊,🍌");
+    }
+
+    #[proptest]
+    #[cfg_attr(miri, ignore)]
+    fn proptest_join(items: Vec<String>, seperator: String) {
+        let c: CompactString = items.join_compact(&seperator);
+        let s: String = items.join(&seperator);
+        assert_eq!(c, s);
     }
 
     #[test]
-    fn test_join_vec() {
+    fn test_concat() {
         let items = vec!["hello", "world"];
         let c = items.join_compact(" ");
-    
         assert_eq!(c, "hello world");
+
+        let vector = vec!["🍎", "🍊", "🍌"];
+        let c = vector.concat_compact();
+        assert_eq!(c, "🍎🍊🍌");
+    }
+
+    #[proptest]
+    #[cfg_attr(miri, ignore)]
+    fn proptest_concat(items: Vec<String>) {
+        let c: CompactString = items.concat_compact();
+        let s: String = items.concat();
+        assert_eq!(c, s);
     }
 
     #[proptest]

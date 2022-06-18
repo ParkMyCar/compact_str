@@ -137,7 +137,7 @@ mod tests {
 
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_roundtrip(#[strategy(rand_unicode_with_max_len(MAX_SIZE))] s: String) {
+    fn proptest_roundtrip(#[strategy(rand_unicode_with_max_len(MAX_SIZE))] s: String) {
         let inline = InlineString::new(&s);
 
         prop_assert_eq!(inline.len(), s.len());

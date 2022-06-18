@@ -61,7 +61,7 @@ mod tests {
 
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_into_repr_char(val: char) {
+    fn proptest_into_repr_char(val: char) {
         let repr = char::into_repr(val);
         prop_assert_eq!(repr.as_str(), val.to_string());
     }
@@ -93,7 +93,7 @@ mod tests {
 
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_into_repr_f64(val: f64) {
+    fn proptest_into_repr_f64(val: f64) {
         let repr = f64::into_repr(val);
         let roundtrip = repr.as_str().parse::<f64>().unwrap();
 
@@ -136,7 +136,7 @@ mod tests {
     #[proptest]
     #[cfg_attr(miri, ignore)]
     #[cfg_attr(all(target_arch = "powerpc64", target_pointer_width = "64"), ignore)]
-    fn test_into_repr_f32(val: f32) {
+    fn proptest_into_repr_f32(val: f32) {
         let repr = f32::into_repr(val);
         let roundtrip = repr.as_str().parse::<f32>().unwrap();
 

@@ -247,83 +247,83 @@ mod tests {
 
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_to_compact_string_u8(val: u8) {
+    fn proptest_to_compact_string_u8(val: u8) {
         let compact = val.to_compact_string();
         prop_assert_eq!(compact.as_str(), val.to_string());
     }
 
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_to_compact_string_i8(val: i8) {
+    fn proptest_to_compact_string_i8(val: i8) {
         let compact = val.to_compact_string();
         prop_assert_eq!(compact.as_str(), val.to_string());
     }
 
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_to_compact_string_u16(val: u16) {
+    fn proptest_to_compact_string_u16(val: u16) {
         let compact = val.to_compact_string();
         prop_assert_eq!(compact.as_str(), val.to_string());
     }
 
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_to_compact_string_i16(val: i16) {
+    fn proptest_to_compact_string_i16(val: i16) {
         let compact = val.to_compact_string();
         prop_assert_eq!(compact.as_str(), val.to_string());
     }
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_to_compact_string_u32(val: u32) {
+    fn proptest_to_compact_string_u32(val: u32) {
         let compact = val.to_compact_string();
         prop_assert_eq!(compact.as_str(), val.to_string());
     }
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_to_compact_string_i32(val: i32) {
+    fn proptest_to_compact_string_i32(val: i32) {
         let compact = val.to_compact_string();
         prop_assert_eq!(compact.as_str(), val.to_string());
     }
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_to_compact_string_u64(val: u64) {
+    fn proptest_to_compact_string_u64(val: u64) {
         let compact = val.to_compact_string();
         prop_assert_eq!(compact.as_str(), val.to_string());
     }
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_to_compact_string_i64(val: i64) {
+    fn proptest_to_compact_string_i64(val: i64) {
         let compact = val.to_compact_string();
         prop_assert_eq!(compact.as_str(), val.to_string());
     }
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_to_compact_string_usize(val: usize) {
+    fn proptest_to_compact_string_usize(val: usize) {
         let compact = val.to_compact_string();
         prop_assert_eq!(compact.as_str(), val.to_string());
     }
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_to_compact_string_isize(val: isize) {
+    fn proptest_to_compact_string_isize(val: isize) {
         let compact = val.to_compact_string();
         prop_assert_eq!(compact.as_str(), val.to_string());
     }
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_to_compact_string_u128(val: u128) {
+    fn proptest_to_compact_string_u128(val: u128) {
         let compact = val.to_compact_string();
         prop_assert_eq!(compact.as_str(), val.to_string());
     }
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_to_compact_string_i128(val: i128) {
+    fn proptest_to_compact_string_i128(val: i128) {
         let compact = val.to_compact_string();
         prop_assert_eq!(compact.as_str(), val.to_string());
     }
 
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_to_compact_string_non_zero_u8(
+    fn proptest_to_compact_string_non_zero_u8(
         #[strategy((1..=u8::MAX).prop_map(|x| unsafe { num::NonZeroU8::new_unchecked(x)} ))]
         val: num::NonZeroU8,
     ) {
@@ -333,7 +333,7 @@ mod tests {
 
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_to_compact_string_non_zero_u16(
+    fn proptest_to_compact_string_non_zero_u16(
         #[strategy((1..=u16::MAX).prop_map(|x| unsafe { num::NonZeroU16::new_unchecked(x)} ))]
         val: num::NonZeroU16,
     ) {
@@ -343,7 +343,7 @@ mod tests {
 
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_to_compact_string_non_zero_u32(
+    fn proptest_to_compact_string_non_zero_u32(
         #[strategy((1..=u32::MAX).prop_map(|x| unsafe { num::NonZeroU32::new_unchecked(x)} ))]
         val: num::NonZeroU32,
     ) {
@@ -353,7 +353,7 @@ mod tests {
 
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_to_compact_string_non_zero_u64(
+    fn proptest_to_compact_string_non_zero_u64(
         #[strategy((1..=u64::MAX).prop_map(|x| unsafe { num::NonZeroU64::new_unchecked(x)} ))]
         val: num::NonZeroU64,
     ) {
@@ -363,7 +363,7 @@ mod tests {
 
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_to_compact_string_non_zero_u128(
+    fn proptest_to_compact_string_non_zero_u128(
         #[strategy((1..=u128::MAX).prop_map(|x| unsafe { num::NonZeroU128::new_unchecked(x)} ))]
         val: num::NonZeroU128,
     ) {
@@ -373,7 +373,7 @@ mod tests {
 
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_to_compact_string_non_zero_usize(
+    fn proptest_to_compact_string_non_zero_usize(
         #[strategy((1..=usize::MAX).prop_map(|x| unsafe { num::NonZeroUsize::new_unchecked(x)} ))]
         val: num::NonZeroUsize,
     ) {
@@ -383,7 +383,7 @@ mod tests {
 
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_to_compact_string_non_zero_i8(
+    fn proptest_to_compact_string_non_zero_i8(
         #[strategy((1..=u8::MAX).prop_map(|x| unsafe { num::NonZeroI8::new_unchecked(x as i8)} ))]
         val: num::NonZeroI8,
     ) {
@@ -393,7 +393,7 @@ mod tests {
 
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_to_compact_string_non_zero_i16(
+    fn proptest_to_compact_string_non_zero_i16(
         #[strategy((1..=u16::MAX).prop_map(|x| unsafe { num::NonZeroI16::new_unchecked(x as i16)} ))]
         val: num::NonZeroI16,
     ) {
@@ -403,7 +403,7 @@ mod tests {
 
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_to_compact_string_non_zero_i32(
+    fn proptest_to_compact_string_non_zero_i32(
         #[strategy((1..=u32::MAX).prop_map(|x| unsafe { num::NonZeroI32::new_unchecked(x as i32)} ))]
         val: num::NonZeroI32,
     ) {
@@ -413,7 +413,7 @@ mod tests {
 
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_to_compact_string_non_zero_i64(
+    fn proptest_to_compact_string_non_zero_i64(
         #[strategy((1..=u64::MAX).prop_map(|x| unsafe { num::NonZeroI64::new_unchecked(x as i64)} ))]
         val: num::NonZeroI64,
     ) {
@@ -423,7 +423,7 @@ mod tests {
 
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_to_compact_string_non_zero_i128(
+    fn proptest_to_compact_string_non_zero_i128(
         #[strategy((1..=u128::MAX).prop_map(|x| unsafe { num::NonZeroI128::new_unchecked(x as i128)} ))]
         val: num::NonZeroI128,
     ) {
@@ -433,7 +433,7 @@ mod tests {
 
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_to_compact_string_non_zero_isize(
+    fn proptest_to_compact_string_non_zero_isize(
         #[strategy((1..=usize::MAX).prop_map(|x| unsafe { num::NonZeroIsize::new_unchecked(x as isize)} ))]
         val: num::NonZeroIsize,
     ) {

@@ -3,6 +3,10 @@ on:
     branches:
       - main
   pull_request:
+    paths:
+        - 'compact_str/**'
+        - 'fuzz/**'
+        - '.github/workflows/fuzz.yml'
   workflow_dispatch:
   schedule:
     - cron: '0 01,13 * * *'

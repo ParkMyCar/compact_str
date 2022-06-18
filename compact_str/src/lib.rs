@@ -713,6 +713,16 @@ impl fmt::Write for CompactString {
         self.push_str(s);
         Ok(())
     }
+
+    fn write_fmt(mut self: &mut Self, args: fmt::Arguments<'_>) -> fmt::Result {
+        match args.as_str() {
+            Some(s) => {
+                self.push_str(s);
+                Ok(())
+            }
+            None => fmt::write(&mut self, args),
+        }
+    }
 }
 
 impl Add<Self> for CompactString {

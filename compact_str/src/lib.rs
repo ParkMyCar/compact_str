@@ -89,17 +89,6 @@ pub struct CompactString {
     repr: Repr,
 }
 
-/// # DEPRECATED
-/// Renamed `CompactStr` to [`CompactString`]. Using the suffix "String" as opposed to "Str" more
-/// accurately reflects that we own the underlying string.
-///
-/// Type alias `CompactStr` will be removed in v0.5
-#[deprecated(
-    since = "0.4.0",
-    note = "Renamed to CompactString, type alias will be removed in v0.5"
-)]
-pub type CompactStr = CompactString;
-
 impl CompactString {
     /// Creates a new [`CompactString`] from any type that implements `AsRef<str>`.
     /// If the string is short enough, then it will be inlined on the stack!

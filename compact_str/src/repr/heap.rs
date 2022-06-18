@@ -1,4 +1,3 @@
-// use super::arc::ArcString;
 use super::boxed::BoxString;
 
 #[repr(C)]

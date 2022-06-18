@@ -1,4 +1,7 @@
 # Upcoming
+
+# 0.5.0
+### June 18, 2022
 * Add examples for `CompactStringExt` and `ToCompactString` traits, and `format_compact!(...)` macro
     * Implemented in [`#114 cleanup and examples: Removes bounds check, adds more examples, removes const_panic hack `](https://github.com/ParkMyCar/compact_str/pull/9)
 * Remove potential bounds check when converting to &str

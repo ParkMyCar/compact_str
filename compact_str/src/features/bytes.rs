@@ -82,7 +82,7 @@ mod test {
 
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_buffers_roundtrip(#[strategy(rand_unicode())] word: String) {
+    fn proptest_buffers_roundtrip(#[strategy(rand_unicode())] word: String) {
         let mut buf = Cursor::new(word.as_bytes());
         let compact = CompactString::from_utf8_buf(&mut buf).unwrap();
 
@@ -91,7 +91,7 @@ mod test {
 
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_allocated_properly(#[strategy(rand_unicode())] word: String) {
+    fn proptest_allocated_properly(#[strategy(rand_unicode())] word: String) {
         let mut buf = Cursor::new(word.as_bytes());
         let compact = CompactString::from_utf8_buf(&mut buf).unwrap();
 
@@ -104,7 +104,7 @@ mod test {
 
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_only_accept_valid_utf8(#[strategy(rand_bytes())] bytes: Vec<u8>) {
+    fn proptest_only_accept_valid_utf8(#[strategy(rand_bytes())] bytes: Vec<u8>) {
         let mut buf = Cursor::new(bytes.as_slice());
 
         let compact_result = CompactString::from_utf8_buf(&mut buf);

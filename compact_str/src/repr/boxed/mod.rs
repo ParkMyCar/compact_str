@@ -693,14 +693,14 @@ mod tests {
 
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_strings_roundtrip(#[strategy(rand_unicode())] word: String) {
+    fn proptest_strings_roundtrip(#[strategy(rand_unicode())] word: String) {
         let box_str = BoxString::from(word.as_str());
         prop_assert_eq!(&word, box_str.as_str());
     }
 
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn test_from_string(#[strategy(rand_unicode())] word: String) {
+    fn proptest_from_string(#[strategy(rand_unicode())] word: String) {
         let s: String = word.clone();
         let box_str = BoxString::from_string(s);
 

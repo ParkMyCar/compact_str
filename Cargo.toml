@@ -1,9 +1,2 @@
 [workspace]
 members = ["bench", "examples/bytes", "examples/serde", "compact_str", "fuzz"]
-
-[patch.crates-io]
-# there's currently a bug with `arbitrary` that causes panics on 32-bit archs when the provided
-# buffer is >65kb. The fix has been patched but not yet released
-arbitrary = { git = "https://github.com/ParkMyCar/arbitrary.git", branch = "fix/32bit-panic" }
-# we update `test-strategy` to use edition 2018
-test-strategy = { git = "https://github.com/ParkMyCar/test-strategy", branch = "master" }

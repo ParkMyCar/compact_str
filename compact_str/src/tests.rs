@@ -55,28 +55,28 @@ fn assert_allocated_properly(compact: &CompactString) {
 
 #[proptest]
 #[cfg_attr(miri, ignore)]
-fn test_strings_roundtrip(#[strategy(rand_unicode())] word: String) {
+fn proptest_strings_roundtrip(#[strategy(rand_unicode())] word: String) {
     let compact = CompactString::new(&word);
     prop_assert_eq!(&word, &compact);
 }
 
 #[proptest]
 #[cfg_attr(miri, ignore)]
-fn test_strings_allocated_properly(#[strategy(rand_unicode())] word: String) {
+fn proptest_strings_allocated_properly(#[strategy(rand_unicode())] word: String) {
     let compact = CompactString::new(&word);
     assert_allocated_properly(&compact);
 }
 
 #[proptest]
 #[cfg_attr(miri, ignore)]
-fn test_char_iterator_roundtrips(#[strategy(rand_unicode())] word: String) {
+fn proptest_char_iterator_roundtrips(#[strategy(rand_unicode())] word: String) {
     let compact: CompactString = word.clone().chars().collect();
     prop_assert_eq!(&word, &compact)
 }
 
 #[proptest]
 #[cfg_attr(miri, ignore)]
-fn test_string_iterator_roundtrips(#[strategy(rand_unicode_collection())] collection: Vec<String>) {
+fn proptest_string_iterator_roundtrips(#[strategy(rand_unicode_collection())] collection: Vec<String>) {
     let compact: CompactString = collection.clone().into_iter().collect();
     let word: String = collection.into_iter().collect();
     prop_assert_eq!(&word, &compact);
@@ -84,7 +84,7 @@ fn test_string_iterator_roundtrips(#[strategy(rand_unicode_collection())] collec
 
 #[proptest]
 #[cfg_attr(miri, ignore)]
-fn test_from_bytes_roundtrips(#[strategy(rand_unicode())] word: String) {
+fn proptest_from_bytes_roundtrips(#[strategy(rand_unicode())] word: String) {
     let bytes = word.into_bytes();
     let compact = CompactString::from_utf8(&bytes).unwrap();
     let word = String::from_utf8(bytes).unwrap();
@@ -94,7 +94,7 @@ fn test_from_bytes_roundtrips(#[strategy(rand_unicode())] word: String) {
 
 #[proptest]
 #[cfg_attr(miri, ignore)]
-fn test_from_bytes_only_valid_utf8(#[strategy(rand_bytes())] bytes: Vec<u8>) {
+fn proptest_from_bytes_only_valid_utf8(#[strategy(rand_bytes())] bytes: Vec<u8>) {
     let compact_result = CompactString::from_utf8(&bytes);
     let word_result = String::from_utf8(bytes);
 
@@ -107,7 +107,7 @@ fn test_from_bytes_only_valid_utf8(#[strategy(rand_bytes())] bytes: Vec<u8>) {
 
 #[proptest]
 #[cfg_attr(miri, ignore)]
-fn test_from_lossy_cow_roundtrips(#[strategy(rand_bytes())] bytes: Vec<u8>) {
+fn proptest_from_lossy_cow_roundtrips(#[strategy(rand_bytes())] bytes: Vec<u8>) {
     let cow = String::from_utf8_lossy(&bytes[..]);
     let compact = CompactString::from(cow.clone());
     prop_assert_eq!(cow, compact);
@@ -115,7 +115,7 @@ fn test_from_lossy_cow_roundtrips(#[strategy(rand_bytes())] bytes: Vec<u8>) {
 
 #[proptest]
 #[cfg_attr(miri, ignore)]
-fn test_reserve_and_write_bytes(#[strategy(rand_unicode())] word: String) {
+fn proptest_reserve_and_write_bytes(#[strategy(rand_unicode())] word: String) {
     let mut compact = CompactString::default();
     prop_assert!(compact.is_empty());
 
@@ -135,7 +135,7 @@ fn test_reserve_and_write_bytes(#[strategy(rand_unicode())] word: String) {
 
 #[proptest]
 #[cfg_attr(miri, ignore)]
-fn test_reserve_and_write_bytes_allocated_properly(#[strategy(rand_unicode())] word: String) {
+fn proptest_reserve_and_write_bytes_allocated_properly(#[strategy(rand_unicode())] word: String) {
     let mut compact = CompactString::default();
     prop_assert!(compact.is_empty());
 
@@ -160,7 +160,7 @@ fn test_reserve_and_write_bytes_allocated_properly(#[strategy(rand_unicode())] w
 
 #[proptest]
 #[cfg_attr(miri, ignore)]
-fn test_extend_chars_allocated_properly(
+fn proptest_extend_chars_allocated_properly(
     #[strategy(rand_unicode())] start: String,
     #[strategy(rand_unicode())] extend: String,
 ) {
@@ -175,7 +175,7 @@ fn test_extend_chars_allocated_properly(
 }
 
 #[test]
-fn test_const_creation() {
+fn proptest_const_creation() {
     const EMPTY: CompactString = CompactString::new_inline("");
     const SHORT: CompactString = CompactString::new_inline("rust");
 

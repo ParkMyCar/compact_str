@@ -32,12 +32,7 @@ impl InlineString {
     #[inline]
     pub const fn new_const(text: &str) -> Self {
         if text.len() > MAX_SIZE {
-            // HACK: This allows us to make assertions within a `const fn` without requiring
-            // nightly, see unstable `const_panic` feature. This results in a build
-            // failure, not a runtime panic
-            #[allow(clippy::no_effect)]
-            #[allow(unconditional_panic)]
-            ["Provided string has a length greater than MAX_INLINE_SIZE!"][42];
+            panic!("Provided string has a length greater than our MAX_SIZE");
         }
 
         let len = text.len();
@@ -84,7 +79,7 @@ impl InlineString {
 
     #[inline]
     pub fn as_slice(&self) -> &[u8] {
-        &self.buffer[..]
+        &self.buffer.as_slice()
     }
 
     /// Provides a mutable reference to the underlying buffer
@@ -93,7 +88,7 @@ impl InlineString {
     /// * Please see `super::Repr` for all invariants
     #[inline]
     pub unsafe fn as_mut_slice(&mut self) -> &mut [u8] {
-        &mut self.buffer[..]
+        self.buffer.as_mut_slice()
     }
 
     #[inline]

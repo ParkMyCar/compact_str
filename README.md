@@ -38,7 +38,7 @@ have smaller strings.
 
 ### Properties
 A `CompactString` specifically has the following properties:
-  * `size_of::<CompactString>() == size_of::<String>() == size_of::<Option<CompactString>>()`
+  * `size_of::<CompactString>() == size_of::<String>()`
   * Stores up to 24 bytes on the stack
     * 12 bytes if running on a 32 bit architecture
   * Strings longer than 24 bytes are stored on the heap
@@ -46,6 +46,8 @@ A `CompactString` specifically has the following properties:
   * Conversion `From<String>` or `From<Box<str>>` is `O(1)`
   * Heap based string grows at a rate of 1.5x
     * The std library `String` grows at a rate of 2x
+  * Space optimized for `Option<_>`
+    * `size_of::<CompactString>() == size_of::<Option<CompactString>>()`
 
 ### Traits
 This crate exposes two traits, `ToCompactString` and `CompactStringExt`.

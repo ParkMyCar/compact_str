@@ -358,7 +358,7 @@ impl Creation<'_> {
                 assert_properly_allocated(&compact, &word);
 
                 Some((compact, word))
-            },
+            }
             Join(collection, seperator) => {
                 let compact: CompactString = collection.join_compact(seperator);
                 let std_str: String = collection.join(seperator);
@@ -367,7 +367,7 @@ impl Creation<'_> {
                 assert_properly_allocated(&compact, &std_str);
 
                 Some((compact, std_str))
-            },
+            }
             Concat(collection) => {
                 let compact: CompactString = collection.concat_compact();
                 let std_str: String = collection.concat();

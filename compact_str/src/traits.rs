@@ -114,6 +114,52 @@ impl<T: fmt::Display> ToCompactString for T {
     }
 }
 
+pub trait CompactStringExt {
+    fn concat_compact(self) -> CompactString;
+    fn join_compact<S: AsRef<str>>(self, seperator: S) -> CompactString;
+}
+
+impl<C> CompactStringExt for C
+where
+    C: IntoIterator,
+    C::Item: AsRef<str>,
+{
+    /// Concatenates all the items of a collection into a [`CompactString`]
+    /// 
+    /// # Example
+    /// ```
+    /// use compact_str::CompactStringExt;
+    /// 
+    /// let items = ["hello", " ", "world", "!"];
+    /// let compact = items.concat_compact();
+    /// 
+    /// assert_eq!(compact, "hello world!");
+    /// ```
+    fn concat_compact(self) -> CompactString {
+        self.into_iter()
+            .fold(CompactString::new_inline(""), |mut s, item| {
+                s.push_str(item.as_ref());
+                s
+            })
+    }
+
+    fn join_compact<S: AsRef<str>>(self, seperator: S) -> CompactString {
+        let mut compact_string = CompactString::new_inline("");
+
+        let mut iter = self.into_iter().peekable();
+        let sep = seperator.as_ref();
+
+        while let Some(item) = iter.next() {
+            compact_string.push_str(item.as_ref());
+            if iter.peek().is_some() {
+                compact_string.push_str(sep);
+            }
+        }
+
+        compact_string
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use core::num;
@@ -121,7 +167,27 @@ mod tests {
     use proptest::prelude::*;
     use test_strategy::proptest;
 
-    use super::ToCompactString;
+    use super::{
+        ToCompactString,
+        CompactStringExt,
+    };
+
+    #[test]
+    fn test_join_slice() {
+        let items = ["hello", "world"];
+        let c = items.join_compact(" ");
+
+        assert_eq!(c, "hello world");
+    }
+
+    #[test]
+    fn test_join_vec() {
+        let items = vec!["hello", "world"];
+        let items_ref = &items;
+        let c = items_ref.join_compact(" ");
+
+        assert_eq!(c, "hello world");
+    }
 
     #[proptest]
     #[cfg_attr(miri, ignore)]

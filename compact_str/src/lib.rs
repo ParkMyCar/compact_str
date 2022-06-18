@@ -41,7 +41,10 @@ mod repr;
 use repr::Repr;
 
 mod traits;
-pub use traits::ToCompactString;
+pub use traits::{
+    CompactStringExt,
+    ToCompactString,
+};
 
 #[cfg(test)]
 mod tests;

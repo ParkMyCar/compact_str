@@ -73,8 +73,12 @@ impl InlineString {
 
     #[inline]
     pub fn as_str(&self) -> &str {
-        // SAFETY: You can only construct an InlineString via a &str
-        unsafe { ::std::str::from_utf8_unchecked(&self.as_slice()[..self.len()]) }
+        // SAFETY: You can only safely construct an InlineString via a &str which also properly sets
+        // the length of the string
+        unsafe {
+            let slice = self.as_slice().get_unchecked(..self.len());
+            ::std::str::from_utf8_unchecked(slice)
+        }
     }
 
     #[inline]

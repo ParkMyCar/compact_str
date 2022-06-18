@@ -1,4 +1,6 @@
 # Upcoming
+* Add `CompactStringExt` which provides methods to join and concatenate collections into a `CompactString`
+    * Implemented in [`#109 feat: CompactStringExt trait`](https://github.com/ParkMyCar/compact_str/pull/109)
 * Encode `CompactStr` in such a way that `size_of::<CompactStr>() == size_of::<Option<CompactStr>>()`
     * Implemented in [`#105 perf: Option<CompactString> same size as CompactString`](https://github.com/ParkMyCar/compact_str/pull/105)
     * Implemented in [`#75: smol option`](https://github.com/ParkMyCar/compact_str/pull/75)

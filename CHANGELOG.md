@@ -1,4 +1,9 @@
 # Upcoming
+* Add examples for `CompactStringExt` and `ToCompactString` traits, and `format_compact!(...)` macro
+    * Implemented in [`#114 cleanup and examples: Removes bounds check, adds more examples, removes const_panic hack `](https://github.com/ParkMyCar/compact_str/pull/9)
+* Remove potential bounds check when converting to &str
+    * Implemented in [`#114 cleanup and examples: Removes bounds check, adds more examples, removes const_panic hack `](https://github.com/ParkMyCar/compact_str/pull/9)
+    * Implemented in [`#9 Remove potential bounds check from a hot path`](https://github.com/ParkMyCar/compact_str/pull/9)
 * Remove `CompactStr` type alias to prep for `v0.5`, as the deprecation message noted
     * Implemented in [`#110 chore: Remove CompactStr type alias`](https://github.com/ParkMyCar/compact_str/pull/110)
 * Add `CompactStringExt` which provides methods to join and concatenate collections into a `CompactString`

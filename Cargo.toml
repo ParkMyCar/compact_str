@@ -1,2 +1,10 @@
 [workspace]
-members = ["bench", "examples/bytes", "examples/serde", "compact_str", "fuzz"]
+members = [
+    "bench",
+    "examples/bytes",
+    "examples/macros",
+    "examples/serde",
+    "examples/traits",
+    "compact_str",
+    "fuzz",
+]

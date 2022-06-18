@@ -114,15 +114,36 @@ impl<T: fmt::Display> ToCompactString for T {
     }
 }
 
+/// A trait that provides convience methods for creating a [`CompactString`] from a collection of 
+/// items. It is implemented for all types that can be converted into an iterator, and that iterator
+/// yields types that can be converted into a `str`.
+/// 
+/// i.e. `C: IntoIterator<Item = AsRef<str>>`.
+/// 
+/// # Concatenate and Join
+/// Two methods that this trait provides are `concat_compact(...)` and `join_compact(...)`
+/// ```
+/// use compact_str::CompactStringExt;
+/// 
+/// let words = vec!["☀️", "🌕", "🌑", "☀️"];
+/// 
+/// // directly concatenate all the words together
+/// let concat = words.concat_compact();
+/// assert_eq!(concat, "☀️🌕🌑☀️");
+/// 
+/// // join the words, with a seperator
+/// let join = words.join_compact(" ➡️ ");
+/// assert_eq!(join, "☀️ ➡️ 🌕 ➡️ 🌑 ➡️ ☀️");
+/// ```
 pub trait CompactStringExt {
-    fn concat_compact(self) -> CompactString;
-    fn join_compact<S: AsRef<str>>(self, seperator: S) -> CompactString;
+    fn concat_compact(&self) -> CompactString;
+    fn join_compact<S: AsRef<str>>(&self, seperator: S) -> CompactString;
 }
 
-impl<C> CompactStringExt for C
+impl<I, C> CompactStringExt for C
 where
-    C: IntoIterator,
-    C::Item: AsRef<str>,
+    I: AsRef<str>,
+    for<'a> &'a C: IntoIterator<Item = &'a I>,
 {
     /// Concatenates all the items of a collection into a [`CompactString`]
     /// 
@@ -135,7 +156,7 @@ where
     /// 
     /// assert_eq!(compact, "hello world!");
     /// ```
-    fn concat_compact(self) -> CompactString {
+    fn concat_compact(&self) -> CompactString {
         self.into_iter()
             .fold(CompactString::new_inline(""), |mut s, item| {
                 s.push_str(item.as_ref());
@@ -143,7 +164,19 @@ where
             })
     }
 
-    fn join_compact<S: AsRef<str>>(self, seperator: S) -> CompactString {
+    /// Joins all the items of a collection, placing a seperator between them, forming a 
+    /// [`CompactString`]
+    /// 
+    /// # Example
+    /// ```
+    /// use compact_str::CompactStringExt;
+    /// 
+    /// let fruits = vec!["apples", "oranges", "bananas"];
+    /// let compact = fruits.join_compact(", ");
+    /// 
+    /// assert_eq!(compact, "apples, oranges, bananas");
+    /// ```
+    fn join_compact<S: AsRef<str>>(&self, seperator: S) -> CompactString {
         let mut compact_string = CompactString::new_inline("");
 
         let mut iter = self.into_iter().peekable();
@@ -183,9 +216,8 @@ mod tests {
     #[test]
     fn test_join_vec() {
         let items = vec!["hello", "world"];
-        let items_ref = &items;
-        let c = items_ref.join_compact(" ");
-
+        let c = items.join_compact(" ");
+    
         assert_eq!(c, "hello world");
     }
 

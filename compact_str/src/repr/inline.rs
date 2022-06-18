@@ -83,7 +83,7 @@ impl InlineString {
 
     #[inline]
     pub fn as_slice(&self) -> &[u8] {
-        &self.buffer.as_slice()
+        self.buffer.as_slice()
     }
 
     /// Provides a mutable reference to the underlying buffer

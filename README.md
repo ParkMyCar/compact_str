@@ -46,15 +46,26 @@ A `CompactString` specifically has the following properties:
   * Conversion `From<String>` or `From<Box<str>>` is `O(1)`
   * Heap based string grows at a rate of 1.5x
     * The std library `String` grows at a rate of 2x
+  * Space optimized for `Option<_>`
+    * `size_of::<CompactString>() == size_of::<Option<CompactString>>()`
 
 ### Traits
-This crate exposes one trait, `ToCompactString` which provides the `to_compact_string(&self)` method for converting types into a `CompactString`. This trait is automatically implemented for all types that are `std::fmt::Display`, with specialized higher performance impls for:
+This crate exposes two traits, `ToCompactString` and `CompactStringExt`.
+
+#### `ToCompactString`
+Provides the `to_compact_string(&self)` method for converting types into a `CompactString`. This trait is automatically implemented for all types that are `std::fmt::Display`, with specialized higher performance impls for:
 * `u8`, `u16`, `u32`, `u64`, `usize`, `u128`
 * `i8`, `i16`, `i32`, `i64`, `isize`, `i128`
 * `f32`, `f64`
 * `bool`, `char`
 * `NonZeroU*`, `NonZeroI*`
 * `String`, `CompactString`
+
+#### `CompactStringExt`
+Provides two methods `join_compact(seperator: impl AsRef<str>)` and `concat_compact()`. This trait is automatically implemented for all types that can be converted into an iterator and yield types that `impl AsRef<str>`. This allows you to join Vec's, slices, and any other collection to form `CompactString`s.
+
+### Macros
+This crate exposes one macro `format_compact!` that can be used to create `CompactString`s from arguments, like you can `String`s with the `std::format!` macro.
 
 ### Features
 `compact_str` has the following features:
@@ -91,7 +102,7 @@ To maximize memory usage, we use a [`union`](https://doc.rust-lang.org/reference
 for the discriminant (tracking what variant we are), instead we use a `union` which allows us to manually define the discriminant. `CompactString` defines the
 discriminant *within* the last byte, using any extra bits for metadata. Specifically the discriminant has two variants:
 
-1. `0b11111111` - All 1s, indicates **heap** allocated
+1. `0b11111110` - All 1s with a trailing 0, indicates **heap** allocated
 2. `0b11XXXXXX` - Two leading 1s, indicates **inline**, with the trailing 6 bits used to store the length
 
 and specifically the overall memory layout of a `CompactString` is:
@@ -116,8 +127,9 @@ To do this, we utilize the fact that the last byte of our string could only ever
 Specifically, the last byte on the stack for a `CompactString` has the following uses:
 * `[0, 192)` - Is the last byte of a UTF-8 char, the `CompactString` is stored on the stack and implicitly has a length of `24`
 * `[192, 215]` - Denotes a length in the range of `[0, 23]`, this `CompactString` is stored on the stack.
-* `[215, 255)` - Unused
-* `255` - Denotes this `CompactString` is stored on the heap
+* `[215, 254)` - Unused
+* `254` - Denotes this `CompactString` is stored on the heap
+* `255` - Denotes the `None` variant for an `Option<CompactString>`
 
 ### Testing
 Strings and unicode can be quite messy, even further, we're working with things at the bit level. `compact_str` has an _extensive_ test suite comprised of unit testing, property testing, and fuzz testing, to ensure our invariants are upheld. We test across all major OSes (Windows, macOS, and Linux), architectures (64-bit and 32-bit), and endian-ness (big endian and little endian).

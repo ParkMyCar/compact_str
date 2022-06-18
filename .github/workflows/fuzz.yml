@@ -5,6 +5,7 @@ on:
   pull_request:
     paths:
         - 'compact_str/**'
+        - 'fuzz/**'
         - '.github/workflows/fuzz.yml'
   workflow_dispatch:
   schedule:

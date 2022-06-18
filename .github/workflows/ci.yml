@@ -202,8 +202,8 @@ jobs:
           command: run
           args: --manifest-path examples/serde/Cargo.toml
   
-  example-trais:
-    name: example - trais
+  example-traits:
+    name: example - traits
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -227,5 +227,5 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: run
-          args: --manifest-path examples/trais/Cargo.toml
+          args: --manifest-path examples/traits/Cargo.toml
 

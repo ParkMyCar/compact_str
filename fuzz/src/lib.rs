@@ -5,6 +5,7 @@ use std::num;
 use arbitrary::Arbitrary;
 use compact_str::{
     CompactString,
+    CompactStringExt,
     ToCompactString,
 };
 
@@ -63,6 +64,10 @@ pub enum Creation<'a> {
     FromBoxStr(Box<str>),
     /// Create from a type that implements [`ToCompactString`]
     ToCompactString(ToCompactStringArg),
+    /// Create by joining a collection of strings with seperator, using [`CompactStringExt`]
+    Join(Vec<&'a str>, &'a str),
+    /// Create by concatenating a collection of strings, using [`CompactStringExt`]
+    Concat(Vec<&'a str>),
 }
 
 /// Types that we're able to convert to a [`CompactString`]
@@ -353,6 +358,24 @@ impl Creation<'_> {
                 assert_properly_allocated(&compact, &word);
 
                 Some((compact, word))
+            }
+            Join(collection, seperator) => {
+                let compact: CompactString = collection.join_compact(seperator);
+                let std_str: String = collection.join(seperator);
+
+                assert_eq!(compact, std_str);
+                assert_properly_allocated(&compact, &std_str);
+
+                Some((compact, std_str))
+            }
+            Concat(collection) => {
+                let compact: CompactString = collection.concat_compact();
+                let std_str: String = collection.concat();
+
+                assert_eq!(compact, std_str);
+                assert_properly_allocated(&compact, &std_str);
+
+                Some((compact, std_str))
             }
         }
     }

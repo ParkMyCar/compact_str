@@ -162,10 +162,7 @@ impl BoxString {
         // * `length` is less than or equal to capacity, due to internal invaraints.
         // * `capacity` is correctly maintained internally.
         // * `BoxString` only ever contains valid UTF-8.
-        // * `BoxString` capacity is always on the heap.
-        unsafe {
-            String::from_raw_parts(this.ptr.as_ptr(), this.len, this.cap.as_usize_unchecked())
-        }
+        unsafe { String::from_raw_parts(this.ptr.as_ptr(), this.len, this.capacity()) }
     }
 
     #[inline]

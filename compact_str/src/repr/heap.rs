@@ -39,6 +39,11 @@ impl HeapString {
     }
 
     #[inline]
+    pub fn into_string(self) -> String {
+        self.string.into_string()
+    }
+
+    #[inline]
     pub fn from_box_str(b: Box<str>) -> Self {
         let string = BoxString::from_box_str(b);
         HeapString { string }

@@ -123,6 +123,22 @@ impl Repr {
     }
 
     #[inline]
+    pub fn into_string(self) -> String {
+        if self.capacity() == 0 {
+            String::new()
+        } else {
+            match self.cast_into() {
+                StrongIntoRepr::Inline(inline) => String::from(inline.as_str()),
+                StrongIntoRepr::Heap(heap) => {
+                    // `HeapString::into_string()` takes ownership and
+                    // is responsible for avoiding a double-free.
+                    ManuallyDrop::into_inner(heap).into_string()
+                }
+            }
+        }
+    }
+
+    #[inline]
     pub fn from_box_str(b: Box<str>) -> Self {
         if b.len() == 0 {
             EMPTY
@@ -273,6 +289,20 @@ impl Repr {
     }
 
     #[inline(always)]
+    fn cast_into(self) -> StrongIntoRepr {
+        match self.discriminant() {
+            Discriminant::Heap => {
+                // SAFETY: We checked the discriminant to make sure the union is `heap`
+                StrongIntoRepr::Heap(unsafe { self.into_union().heap })
+            }
+            Discriminant::Inline => {
+                // SAFETY: We checked the discriminant to make sure the union is `inline`
+                StrongIntoRepr::Inline(unsafe { self.into_union().inline })
+            }
+        }
+    }
+
+    #[inline(always)]
     const fn from_inline(repr: InlineString) -> Self {
         // SAFETY: An `InlineString` and `Repr` have the same size
         unsafe { std::mem::transmute(repr) }
@@ -294,6 +324,12 @@ impl Repr {
     fn as_union_mut(&mut self) -> &mut ReprUnion {
         // SAFETY: An `ReprUnion` and `Repr` have the same size
         unsafe { &mut *(self as *mut _ as *mut _) }
+    }
+
+    #[inline(always)]
+    fn into_union(self) -> ReprUnion {
+        // SAFETY: An `ReprUnion` and `Repr` have the same size
+        unsafe { std::mem::transmute(self) }
     }
 }
 
@@ -499,6 +535,12 @@ impl<'a> MutStrongRepr<'a> {
             Self::Heap(heap) => heap.set_len(length),
         }
     }
+}
+
+#[derive(Debug)]
+enum StrongIntoRepr {
+    Inline(InlineString),
+    Heap(ManuallyDrop<HeapString>),
 }
 
 crate::asserts::assert_size_eq!(ReprUnion, Repr, Option<Repr>, String, Option<String>);

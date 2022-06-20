@@ -148,6 +148,33 @@ jobs:
           command: run
           args: --manifest-path examples/bytes/Cargo.toml
 
+  example-macros:
+    name: example - macros
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-nightly-example-macros
+          restore-keys: |
+            ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-nightly-example
+            ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-nightly
+      - uses: actions-rs/cargo@v1
+        with:
+          command: run
+          args: --manifest-path examples/macros/Cargo.toml
+
   example-serde:
     name: example - serde
     runs-on: ubuntu-latest
@@ -166,7 +193,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-nightly-example-bytes
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-nightly-example-serde
           restore-keys: |
             ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-nightly-example
             ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-nightly
@@ -174,3 +201,31 @@ jobs:
         with:
           command: run
           args: --manifest-path examples/serde/Cargo.toml
+  
+  example-traits:
+    name: example - traits
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-nightly-example-traits
+          restore-keys: |
+            ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-nightly-example
+            ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-nightly
+      - uses: actions-rs/cargo@v1
+        with:
+          command: run
+          args: --manifest-path examples/traits/Cargo.toml
+

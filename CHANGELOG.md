@@ -1,4 +1,6 @@
 # Upcoming
+* Implemented `From<CompactString>` for `String`
+    * Implemented in [`#118 feat: add impl From<CompactString> for String`](https://github.com/ParkMyCar/compact_str/pull/118)
 
 # 0.5.0
 ### June 18, 2022

@@ -610,6 +610,12 @@ impl From<Box<str>> for CompactString {
     }
 }
 
+impl From<CompactString> for String {
+    fn from(s: CompactString) -> Self {
+        s.repr.into_string()
+    }
+}
+
 impl FromStr for CompactString {
     type Err = core::convert::Infallible;
     fn from_str(s: &str) -> Result<CompactString, Self::Err> {

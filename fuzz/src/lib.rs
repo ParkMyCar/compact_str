@@ -41,7 +41,7 @@ impl<'a> Scenario<'a> {
             // after making all of our modifications, assert again that we don't misinterpret
             let compact = assert_not_option(compact);
 
-            // Convert our CompactString into a String and assert they're equal. This covers our 
+            // Convert our CompactString into a String and assert they're equal. This covers our
             // From<CompactString> for String impl
             let compact_into_string = String::from(compact);
             assert_eq!(compact_into_string, control);

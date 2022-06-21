@@ -726,6 +726,36 @@ fn test_into_string_large_string_with_excess_capacity() {
 }
 
 #[test]
+fn test_into_string_where_32_bit_capacity_is_on_heap() {
+    const SIXTEEN_MB: usize = 16 * 1024 * 1024;
+    let buf = vec![b'a'; SIXTEEN_MB - 1];
+    // SAFETY: `buf` is filled with ASCII `a`s.
+    // This primarily speeds up miri, as we don't need to check every byte
+    // in the input buffer
+    let string = unsafe { String::from_utf8_unchecked(buf) };
+
+    let str_addr = string.as_ptr();
+    let str_len = string.len();
+    let str_cap = string.capacity();
+
+    let compact = CompactString::from(string);
+    let new_string = String::from(compact);
+    let new_str_addr = new_string.as_ptr();
+    let new_str_len = new_string.len();
+    let new_str_cap = new_string.capacity();
+
+    assert_eq!(str_len, new_str_len);
+
+    if cfg!(target_pointer_width = "64") {
+        assert_eq!(str_addr, new_str_addr);
+        assert_eq!(str_cap, new_str_cap);
+    } else {
+        assert_eq!(&new_string.as_bytes()[0..10], b"aaaaaaaaaa");
+        assert_eq!(str_len, new_str_cap);
+    }
+}
+
+#[test]
 fn test_into_string_small_string_with_excess_capacity() {
     let mut string = String::with_capacity(128);
     string.push_str("abcdef");

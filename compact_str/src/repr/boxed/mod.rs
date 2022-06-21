@@ -153,16 +153,21 @@ impl BoxString {
 
     #[inline]
     pub fn into_string(self) -> String {
-        // Ensure that we don't free the data we are transferring to `String`
-        let this = ManuallyDrop::new(self);
+        match self.cap.as_usize() {
+            Ok(cap) => {
+                // Ensure that we don't free the data we are transferring the buffer to `String`
+                let this = ManuallyDrop::new(self);
 
-        // SAFETY:
-        // * The memory in `ptr` was previously allocated by the same allocator the standard library
-        //   uses, with a required alignment of exactly 1.
-        // * `length` is less than or equal to capacity, due to internal invaraints.
-        // * `capacity` is correctly maintained internally.
-        // * `BoxString` only ever contains valid UTF-8.
-        unsafe { String::from_raw_parts(this.ptr.as_ptr(), this.len, this.capacity()) }
+                // SAFETY:
+                // * The memory in `ptr` was previously allocated by the same allocator the standard
+                //   library uses, with a required alignment of exactly 1.
+                // * `length` is less than or equal to capacity, due to internal invaraints.
+                // * `capacity` is correctly maintained internally.
+                // * `BoxString` only ever contains valid UTF-8.
+                unsafe { String::from_raw_parts(this.ptr.as_ptr(), this.len, cap) }
+            }
+            Err(_) => String::from(self.as_str()),
+        }
     }
 
     #[inline]

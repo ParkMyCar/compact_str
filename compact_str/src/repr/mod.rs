@@ -127,9 +127,9 @@ impl Repr {
         if self.capacity() == 0 {
             String::new()
         } else {
-            match self.cast_into() {
-                StrongIntoRepr::Inline(inline) => String::from(inline.as_str()),
-                StrongIntoRepr::Heap(heap) => {
+            match self.cast_into_owned() {
+                StrongOwnedRepr::Inline(inline) => String::from(inline.as_str()),
+                StrongOwnedRepr::Heap(heap) => {
                     // `HeapString::into_string()` takes ownership and
                     // is responsible for avoiding a double-free.
                     ManuallyDrop::into_inner(heap).into_string()
@@ -289,15 +289,15 @@ impl Repr {
     }
 
     #[inline(always)]
-    fn cast_into(self) -> StrongIntoRepr {
+    fn cast_into_owned(self) -> StrongOwnedRepr {
         match self.discriminant() {
             Discriminant::Heap => {
                 // SAFETY: We checked the discriminant to make sure the union is `heap`
-                StrongIntoRepr::Heap(unsafe { self.into_union().heap })
+                StrongOwnedRepr::Heap(unsafe { self.into_union().heap })
             }
             Discriminant::Inline => {
                 // SAFETY: We checked the discriminant to make sure the union is `inline`
-                StrongIntoRepr::Inline(unsafe { self.into_union().inline })
+                StrongOwnedRepr::Inline(unsafe { self.into_union().inline })
             }
         }
     }
@@ -538,7 +538,7 @@ impl<'a> MutStrongRepr<'a> {
 }
 
 #[derive(Debug)]
-enum StrongIntoRepr {
+enum StrongOwnedRepr {
     Inline(InlineString),
     Heap(ManuallyDrop<HeapString>),
 }

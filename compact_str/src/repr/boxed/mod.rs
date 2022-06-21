@@ -612,8 +612,10 @@ mod tests {
     fn test_32_bit_max_inline_cap() {
         // 65 is the ASCII value of 'A'
         // `SIXTEEN_MB - 2` is the max value we can store for capacity inline, when on 32-bit archs
-        let word_buf = vec![65; SIXTEEN_MB - 2];
-        let string = String::from_utf8(word_buf).unwrap();
+        let word_buf = vec![b'A'; SIXTEEN_MB - 2];
+        // SAFETY: We've just created the vector above, and it contains only ASCII characters.
+        // This speeds up `miri` runs significantly.
+        let string = unsafe { String::from_utf8_unchecked(word_buf) };
 
         let box_string = BoxString::new(&string);
 
@@ -627,8 +629,10 @@ mod tests {
     fn test_32_bit_max_inline_cap_with_modification() {
         // 65 is the ASCII value of 'A'
         // `SIXTEEN_MB - 2` is the max value we can store for capacity inline, when on 32-bit archs
-        let word_buf = vec![65; SIXTEEN_MB - 2];
-        let string = String::from_utf8(word_buf).unwrap();
+        let word_buf = vec![b'A'; SIXTEEN_MB - 2];
+        // SAFETY: We've just created the vector above, and it contains only ASCII characters.
+        // This speeds up `miri` runs significantly.
+        let string = unsafe { String::from_utf8_unchecked(word_buf) };
 
         let mut box_string = BoxString::new(&string);
 
@@ -668,8 +672,10 @@ mod tests {
     fn test_32_bit_min_heap_cap() {
         // 65 is the ASCII value of 'A'
         // `SIXTEEN_MB - 1` is the min value for capacity that gets stored on the heap
-        let word_buf = vec![65; SIXTEEN_MB - 1];
-        let string = String::from_utf8(word_buf).unwrap();
+        let word_buf = vec![b'A'; SIXTEEN_MB - 1];
+        // SAFETY: We've just created the vector above, and it contains only ASCII characters.
+        // This speeds up `miri` runs significantly.
+        let string = unsafe { String::from_utf8_unchecked(word_buf) };
 
         let mut box_string = BoxString::new(&string);
 

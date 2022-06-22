@@ -15,6 +15,7 @@ compact_str = { path = "../compact_str", features = ["bytes"] }
 
 # Fuzz with both AFL++ and libFuzzer
 afl = { version = "0.12.1", optional = true }
+honggfuzz = { version = "0.5", optional = true }
 libfuzzer-sys = { version = "0.4", optional = true }
 
 [[bin]]
@@ -30,3 +31,10 @@ path = "src/bin/afl.rs"
 test = false
 doc = false
 required-features = ["afl"]
+
+[[bin]]
+name = "honggfuzz"
+path = "src/bin/honggfuzz.rs"
+test = false
+doc = false
+required-features = ["honggfuzz"]

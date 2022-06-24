@@ -26,8 +26,10 @@ use core::hash::{
 use core::iter::FromIterator;
 use core::ops::{
     Add,
+    Bound,
     Deref,
     DerefMut,
+    RangeBounds,
 };
 use core::str::{
     FromStr,
@@ -511,6 +513,126 @@ impl CompactString {
     #[inline]
     pub fn is_heap_allocated(&self) -> bool {
         self.repr.is_heap_allocated()
+    }
+
+    /// Removes the specified range in the [`CompactString`],
+    /// and replaces it with the given string.
+    /// The given string doesn't need to be the same length as the range.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the starting point or end point do not lie on a [`char`]
+    /// boundary, or if they're out of bounds.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use compact_str::CompactString;
+    /// let mut s = CompactString::new("Hello, world!");
+    ///
+    /// s.replace_range(7..12, "WORLD");
+    /// assert_eq!(s, "Hello, WORLD!");
+    ///
+    /// s.replace_range(7..=11, "you");
+    /// assert_eq!(s, "Hello, you!");
+    ///
+    /// s.replace_range(5.., "! Is it me you're looking for?");
+    /// assert_eq!(s, "Hello! Is it me you're looking for?");
+    /// ```
+    pub fn replace_range(&mut self, range: impl RangeBounds<usize>, replace_with: &str) {
+        #[cold]
+        #[inline(never)]
+        fn illegal_range() -> ! {
+            panic!("illegal range");
+        }
+
+        let data = self.as_mut_str();
+        let total_len = data.len();
+
+        let start = match range.start_bound() {
+            Bound::Included(&n) => n,
+            Bound::Excluded(&n) => match n.checked_add(1) {
+                Some(n) => n,
+                None => illegal_range(),
+            },
+            Bound::Unbounded => 0,
+        };
+        let end = match range.end_bound() {
+            Bound::Included(&n) => match n.checked_add(1) {
+                Some(n) => n,
+                None => illegal_range(),
+            },
+            Bound::Excluded(&n) => n,
+            Bound::Unbounded => total_len,
+        };
+
+        let dest_len = match end.checked_sub(start) {
+            Some(n) => n,
+            None => illegal_range(),
+        };
+
+        if !data.is_char_boundary(start) || !data.is_char_boundary(end) {
+            illegal_range();
+        }
+
+        match dest_len.cmp(&replace_with.len()) {
+            Ordering::Equal => unsafe {
+                // replace into the same size
+                core::ptr::copy_nonoverlapping(
+                    replace_with.as_ptr(),
+                    data.as_mut_ptr().add(start),
+                    dest_len,
+                );
+            },
+            Ordering::Greater => {
+                // self.len() gets smaller
+                let new_len = total_len - (dest_len - replace_with.len());
+                let amount = total_len - end;
+                let data = data.as_mut_ptr();
+                unsafe {
+                    // first insert the replacement string, overwriting the current content
+                    core::ptr::copy_nonoverlapping(
+                        replace_with.as_ptr(),
+                        data.add(start),
+                        replace_with.len(),
+                    );
+                    // then move the tail of the CompactString forward to its new place,
+                    // filling the gap
+                    core::ptr::copy(
+                        data.add(total_len - amount),
+                        data.add(new_len - amount),
+                        amount,
+                    );
+
+                    self.set_len(new_len);
+                }
+            }
+            Ordering::Less => {
+                // self.len() gets bigger
+                self.reserve(replace_with.len() - dest_len);
+                let new_len = total_len + (replace_with.len() - dest_len);
+                let amount = total_len - end;
+                unsafe {
+                    // first grow the string, so MIRI knows that the full range is usable
+                    self.set_len(new_len);
+                    let data = self.as_mut_ptr();
+                    // then move the tail of the CompactString back to its new place
+                    core::ptr::copy(
+                        data.add(total_len - amount),
+                        data.add(new_len - amount),
+                        amount,
+                    );
+                    // and lastly insert the replacement string
+                    core::ptr::copy_nonoverlapping(
+                        replace_with.as_ptr(),
+                        data.add(start),
+                        replace_with.len(),
+                    );
+                }
+            }
+        }
     }
 }
 

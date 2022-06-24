@@ -13,7 +13,10 @@
 //! and capacity on the stack, you store the string itself! This avoids the need to heap allocate
 //! which reduces the amount of memory used, and improves performance.
 
-use core::borrow::Borrow;
+use core::borrow::{
+    Borrow,
+    BorrowMut,
+};
 use core::cmp::Ordering;
 use core::fmt;
 use core::hash::{
@@ -24,6 +27,7 @@ use core::iter::FromIterator;
 use core::ops::{
     Add,
     Deref,
+    DerefMut,
 };
 use core::str::{
     FromStr,
@@ -362,6 +366,22 @@ impl CompactString {
         self.repr.as_str()
     }
 
+    /// Returns a mutable string slice containing the entire [`CompactString`].
+    ///
+    /// # Examples
+    /// ```
+    /// # use compact_str::CompactString;
+    /// let mut s = CompactString::new("hello");
+    /// s.as_mut_str().make_ascii_uppercase();
+    ///
+    /// assert_eq!(s.as_str(), "HELLO");
+    /// ```
+    #[inline]
+    pub fn as_mut_str(&mut self) -> &mut str {
+        let len = self.len();
+        unsafe { std::str::from_utf8_unchecked_mut(&mut self.repr.as_mut_slice()[..len]) }
+    }
+
     /// Returns a byte slice of the [`CompactString`]'s contents.
     ///
     /// # Examples
@@ -510,6 +530,13 @@ impl Deref for CompactString {
     }
 }
 
+impl DerefMut for CompactString {
+    #[inline]
+    fn deref_mut(&mut self) -> &mut str {
+        self.as_mut_str()
+    }
+}
+
 impl AsRef<str> for CompactString {
     #[inline]
     fn as_ref(&self) -> &str {
@@ -528,6 +555,13 @@ impl Borrow<str> for CompactString {
     #[inline]
     fn borrow(&self) -> &str {
         self.as_str()
+    }
+}
+
+impl BorrowMut<str> for CompactString {
+    #[inline]
+    fn borrow_mut(&mut self) -> &mut str {
+        self.as_mut_str()
     }
 }
 

@@ -160,9 +160,12 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         name: Checkout compact_str
-      - name: Update Rust Nightly
-        run: |
-          rustup update nightly
+      - uses: actions-rs/toolchain@v1
+        name: Install Rust
+        with:
+          profile: minimal
+          toolchain: nightly-2022-06-01
+          override: true
       # - uses: actions/cache@v3
       #   with:
       #     path: |

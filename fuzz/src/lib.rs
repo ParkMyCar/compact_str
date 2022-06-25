@@ -396,6 +396,7 @@ pub enum Action<'a> {
     ExtendStr(Vec<&'a str>),
     CheckSubslice(u8, u8),
     MakeUppercase,
+    ReplaceRange(u8, u8, &'a str),
 }
 
 impl Action<'_> {
@@ -474,6 +475,32 @@ impl Action<'_> {
             MakeUppercase => {
                 control.as_mut_str().make_ascii_uppercase();
                 compact.as_mut_str().make_ascii_uppercase();
+
+                assert_eq!(control, compact);
+                assert_eq!(control.len(), compact.len());
+            }
+            // replace a range in the string by a new string
+            ReplaceRange(start, end, replace_with) => {
+                // turn the arbitrary numbers (start, end) into character indices
+                let start = control
+                    .char_indices()
+                    .into_iter()
+                    .cycle()
+                    .nth(start as usize)
+                    .unwrap_or_default()
+                    .0;
+                let end = control
+                    .char_indices()
+                    .into_iter()
+                    .cycle()
+                    .nth(end as usize)
+                    .unwrap_or_default()
+                    .0;
+                let (start, end) = (start.min(end), start.max(end));
+
+                // then apply the replacement
+                control.replace_range(start..end, replace_with);
+                compact.replace_range(start..end, replace_with);
 
                 assert_eq!(control, compact);
                 assert_eq!(control.len(), compact.len());

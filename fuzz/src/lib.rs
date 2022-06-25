@@ -395,6 +395,7 @@ pub enum Action<'a> {
     ExtendChars(Vec<char>),
     ExtendStr(Vec<&'a str>),
     CheckSubslice(u8, u8),
+    MakeUppercase,
 }
 
 impl Action<'_> {
@@ -468,6 +469,14 @@ impl Action<'_> {
                 let compact_slice = &compact.as_bytes()[lower..upper];
 
                 assert_eq!(control_slice, compact_slice);
+            }
+            // get a mutable string slice and turn its ASCII characters uppercase
+            MakeUppercase => {
+                control.as_mut_str().make_ascii_uppercase();
+                compact.as_mut_str().make_ascii_uppercase();
+
+                assert_eq!(control, compact);
+                assert_eq!(control.len(), compact.len());
             }
         }
     }

@@ -5,6 +5,7 @@
 # Fuzzer
 **/artifacts
 **/fuzz*.log
+hfuzz_target/**
 
 # macOS
 **/.DS_Store

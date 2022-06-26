@@ -187,7 +187,7 @@ fn proptest_extend_chars_allocated_properly(
 }
 
 #[test]
-fn proptest_const_creation() {
+fn test_const_creation() {
     const EMPTY: CompactString = CompactString::new_inline("");
     const SHORT: CompactString = CompactString::new_inline("rust");
 

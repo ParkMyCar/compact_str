@@ -57,6 +57,35 @@ jobs:
           command: fuzz
           args: run --features=libfuzzer-sys --debug-assertions compact_str -- -max_total_time=${{ env.fuzz_time }}
 
+  honggfuzz_x86_64:
+    name: honggfuzz [x86_64]
+    runs-on: ubuntu-latest
+    env:
+      HFUZZ_BUILD_ARGS: "--features=honggfuzz"
+      HFUZZ_RUN_ARGS: "--run_time 120 --exit_upon_crash"
+      RUSTFLAGS: "-Znew-llvm-pass-manager=no"
+    steps:
+      - uses: actions/checkout@v2
+        name: Checkout compact_str
+      - uses: actions-rs/toolchain@v1
+        name: Install Rust
+        with:
+          toolchain: nightly
+          override: true
+      - name: Install Deps
+        run: sudo apt-get install --no-install-recommends binutils-dev libunwind8-dev
+      - uses: actions-rs/cargo@v1
+        name: Install honggfuzz
+        with:
+          command: install
+          toolchain: nightly
+          args: honggfuzz
+      - uses: actions-rs/cargo@v1
+        name: Fuzz!
+        with:
+          command: hfuzz
+          args: run honggfuzz
+
   afl_x86_64:
     name: AFL++ [x86_64]
     runs-on: ubuntu-latest

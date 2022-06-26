@@ -11,6 +11,7 @@ on:
 name: X-Plat
 
 env:
+  CARGO_TERM_COLOR: "always"
   # local default for proptest is 100
   PROPTEST_CASES: 1000
   RUSTFLAGS: "-D warnings"

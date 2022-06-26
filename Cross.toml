@@ -1,5 +1,6 @@
 [build.env]
 passthrough = [
+    "CARGO_TERM_COLOR",
     "PROPTEST_CASES",
     "RANDOMIZED_RUNS",
     "RUSTFLAGS",

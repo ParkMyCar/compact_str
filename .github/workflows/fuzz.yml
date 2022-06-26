@@ -13,6 +13,10 @@ on:
 
 name: Fuzz
 
+env:
+  CARGO_TERM_COLOR: "always"
+  RUSTFLAGS: "-D warnings"
+
 jobs:
   libFuzzer_x86_64:
     name: libFuzzer [x86_64]

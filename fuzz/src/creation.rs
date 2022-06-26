@@ -52,8 +52,8 @@ pub enum Creation<'a> {
     Concat(Vec<&'a str>),
     /// Create using [`CompactString::with_capacity`], note: the max size we create is 24MB
     WithCapacity(u32),
-    /// Create by `.collect()`-ing chars, note: the max string size we create is 24MB
-    CollectChar(char, u32),
+    /// Create by `.collect()`-ing chars
+    CollectChar(Vec<char>),
     /// Create by `.collect()`-ing a collection of Strings
     CollectString(Vec<String>),
     /// Create by `.collect()`-ing a collection of Box<str>
@@ -459,7 +459,7 @@ impl Creation<'_> {
                 Some((compact, std_str))
             }
             WithCapacity(val) => {
-                // pick some value between [0, 20MB]
+                // pick some value between [0, 24MB]
                 let ratio: f32 = (val as f32) / (u32::MAX as f32);
                 let num_bytes = ((super::TWENTY_FOUR_MB_AS_BYTES as f32) * ratio) as u32;
 
@@ -481,16 +481,9 @@ impl Creation<'_> {
 
                 Some((compact, std_str))
             }
-            CollectChar(c, val) => {
-                // make sure we don't generate strings longer than 24MB
-                let max_chars = super::TWENTY_FOUR_MB_AS_BYTES / c.len_utf8();
-
-                let ratio: f32 = (val as f32) / (u32::MAX as f32);
-                let num_chars = ((max_chars as f32) * ratio) as usize;
-
-                // generate our strings by repeating `c` `num_chars` times
-                let compact: CompactString = std::iter::repeat(c).take(num_chars).collect();
-                let std_str: String = std::iter::repeat(c).take(num_chars).collect();
+            CollectChar(chars) => {
+                let compact: CompactString = chars.clone().into_iter().collect();
+                let std_str: String = chars.into_iter().collect();
 
                 assert_eq!(compact, std_str);
                 assert_properly_allocated(&compact, &std_str);

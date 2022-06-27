@@ -386,8 +386,10 @@ fn test_plus_operator() {
 
     // String + &CompactString
     assert_eq!(String::from("a") + &CompactString::from("b"), "ab");
-    // String + &str
+    // String + &String
     assert_eq!(String::from("a") + &("b".to_string()), "ab");
+    // String + &str
+    assert_eq!(String::from("a") + &"b", "ab");
 }
 
 #[test]

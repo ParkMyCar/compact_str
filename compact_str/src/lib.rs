@@ -634,6 +634,39 @@ impl CompactString {
             }
         }
     }
+
+    /// Truncate the [`CompactString`] to a shorter length.
+    ///
+    /// If the length of the [`CompactString`] is less or equal to `new_len`, the call is a no-op.
+    ///
+    /// Calling this function does not change the capacity of the [`CompactString`].
+    ///
+    /// # Panics
+    ///
+    /// Panics if the new end of the string does not lie on a [`char`] boundary.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use compact_str::CompactString;
+    /// let mut s = CompactString::new("Hello, world!");
+    /// s.truncate(5);
+    /// assert_eq!(s, "Hello");
+    /// ```
+    pub fn truncate(&mut self, new_len: usize) {
+        let s = self.as_str();
+        if new_len >= s.len() {
+            return;
+        }
+
+        assert!(
+            s.is_char_boundary(new_len),
+            "new_len must lie on char boundary",
+        );
+        unsafe { self.set_len(new_len) };
+    }
 }
 
 impl Default for CompactString {

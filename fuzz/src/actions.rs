@@ -24,6 +24,8 @@ pub enum Action<'a> {
     ReplaceRange(u8, u8, &'a str),
     /// Reserve space in our string, no-ops if the `CompactString` would have a capacity > 24MB
     Reserve(u16),
+    /// Truncate a string to a new, shorter length
+    Truncate(u8),
 }
 
 impl Action<'_> {
@@ -138,6 +140,23 @@ impl Action<'_> {
 
                 assert_eq!(compact, control);
                 assert_eq!(compact.len(), control.len());
+            }
+            Truncate(new_len) => {
+                // turn the arbitrary number `new_len` into character indices
+                let new_len = control
+                    .char_indices()
+                    .into_iter()
+                    .cycle()
+                    .nth(new_len as usize)
+                    .unwrap_or_default()
+                    .0;
+
+                // then truncate the string
+                control.truncate(new_len);
+                compact.truncate(new_len);
+
+                assert_eq!(control, compact);
+                assert_eq!(control.len(), compact.len());
             }
         }
     }

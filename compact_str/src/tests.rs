@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::num;
 use std::str::FromStr;
 
@@ -354,12 +355,29 @@ fn test_fmt_write() {
 
 #[test]
 fn test_plus_operator() {
-    assert_eq!(CompactString::from("a") + CompactString::from("b"), "ab");
+    // + &CompactString
     assert_eq!(CompactString::from("a") + &CompactString::from("b"), "ab");
+    // + &str
     assert_eq!(CompactString::from("a") + "b", "ab");
+    // + &String
     assert_eq!(CompactString::from("a") + &String::from("b"), "ab");
-    assert_eq!(CompactString::from("a") + String::from("b"), "ab");
-    assert_eq!(String::from("a") + CompactString::from("b"), "ab");
+    // + &Box<str>
+    let box_str = String::from("b").into_boxed_str();
+    assert_eq!(CompactString::from("a") + &box_str, "ab");
+    // + &Cow<'a, str>
+    let cow = Cow::from("b");
+    assert_eq!(CompactString::from("a") + &cow, "ab");
+
+    // Implementing `Add<T> for String` can break adding &String or other types to String, so we
+    // explicitly don't do this. See https://github.com/rust-lang/rust/issues/77143 for more details.
+    // Below we assert adding types to String still compiles
+
+    // String + &CompactString
+    assert_eq!(String::from("a") + &CompactString::from("b"), "ab");
+    // String + &String
+    assert_eq!(String::from("a") + &("b".to_string()), "ab");
+    // String + &str
+    assert_eq!(String::from("a") + &"b", "ab");
 }
 
 #[test]

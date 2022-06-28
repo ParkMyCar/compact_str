@@ -706,50 +706,10 @@ impl fmt::Write for CompactString {
     }
 }
 
-impl Add<Self> for CompactString {
-    type Output = Self;
-    fn add(mut self, rhs: Self) -> Self::Output {
-        self.push_str(&rhs);
-        self
-    }
-}
-
-impl Add<&Self> for CompactString {
-    type Output = Self;
-    fn add(mut self, rhs: &Self) -> Self::Output {
-        self.push_str(rhs);
-        self
-    }
-}
-
 impl Add<&str> for CompactString {
     type Output = Self;
     fn add(mut self, rhs: &str) -> Self::Output {
         self.push_str(rhs);
-        self
-    }
-}
-
-impl Add<&String> for CompactString {
-    type Output = Self;
-    fn add(mut self, rhs: &String) -> Self::Output {
-        self.push_str(rhs);
-        self
-    }
-}
-
-impl Add<String> for CompactString {
-    type Output = Self;
-    fn add(mut self, rhs: String) -> Self::Output {
-        self.push_str(&rhs);
-        self
-    }
-}
-
-impl Add<CompactString> for String {
-    type Output = Self;
-    fn add(mut self, rhs: CompactString) -> Self::Output {
-        self.push_str(&rhs);
         self
     }
 }

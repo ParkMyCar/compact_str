@@ -187,6 +187,38 @@ fn proptest_extend_chars_allocated_properly(
     assert_allocated_properly(&compact);
 }
 
+#[proptest]
+#[cfg_attr(miri, ignore)]
+fn proptest_truncate(#[strategy(rand_unicode())] mut control: String, val: u8) {
+    let initial_len = control.len();
+    let mut compact = CompactString::new(&control);
+
+    // turn the arbitrary number `val` into character indices
+    let new_len = control
+        .char_indices()
+        .into_iter()
+        .cycle()
+        .nth(val as usize)
+        .unwrap_or_default()
+        .0;
+
+    // then truncate both strings string
+    control.truncate(new_len);
+    compact.truncate(new_len);
+
+    // assert they're equal
+    prop_assert_eq!(&control, &compact);
+    prop_assert_eq!(control.len(), compact.len());
+
+    // If we started as heap allocated, we should stay heap allocated. This prevents us from
+    // needing to deallocate the buffer on the heap
+    if initial_len > MAX_SIZE {
+        prop_assert!(compact.is_heap_allocated());
+    } else {
+        prop_assert!(!compact.is_heap_allocated());
+    }
+}
+
 #[test]
 fn test_const_creation() {
     const EMPTY: CompactString = CompactString::new_inline("");
@@ -880,4 +912,29 @@ fn test_into_string_empty_str() {
     assert_eq!(String::new().as_ptr(), new_str_addr);
     assert_eq!(str_len, new_str_len);
     assert_eq!(str_len, new_str_cap);
+}
+
+#[test]
+fn test_truncate_noops_if_new_len_greater_than_current() {
+    let mut short = CompactString::from("short");
+    let short_cap = short.capacity();
+    short.truncate(100);
+
+    assert_eq!(short.len(), 5);
+    assert_eq!(short.capacity(), short_cap);
+
+    let mut long = CompactString::from("i am a long string that will be allocated on the heap");
+    let long_cap = long.capacity();
+    long.truncate(500);
+
+    assert_eq!(long.len(), 53);
+    assert_eq!(long.capacity(), long_cap);
+}
+
+#[test]
+#[should_panic(expected = "new_len must lie on char boundary")]
+fn test_truncate_panics_on_non_char_boundary() {
+    let mut emojis = CompactString::from("😀😀😀😀");
+    assert!('😀'.len_utf8() > 1);
+    emojis.truncate(1);
 }

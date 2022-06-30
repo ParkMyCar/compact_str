@@ -667,6 +667,18 @@ impl CompactString {
         );
         unsafe { self.set_len(new_len) };
     }
+
+    /// Converts a [`CompactString`] to a raw pointer.
+    #[inline]
+    pub fn as_ptr(&mut self) -> *const u8 {
+        self.repr.as_slice().as_ptr()
+    }
+
+    /// Converts a mutable [`CompactString`] to a raw pointer.
+    #[inline]
+    pub fn as_mut_ptr(&mut self) -> *mut u8 {
+        unsafe { self.repr.as_mut_slice().as_mut_ptr() }
+    }
 }
 
 impl Default for CompactString {

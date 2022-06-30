@@ -12,7 +12,10 @@ keywords = ["string", "compact", "small", "memory", "mutable"]
 categories = ["encoding", "parsing", "memory-management", "text-processing"]
 
 [dependencies]
+arbitrary = { version = "1", optional = true, default-features = false }
 bytes = { version = "1", optional = true }
+proptest = { version = "1", optional = true, default-features = false }
+quickcheck = { version = "1", optional = true, default-features = false }
 serde = { version = "1", optional = true }
 
 castaway = "0.2.1"
@@ -21,5 +24,6 @@ ryu = "1"
 
 [dev-dependencies]
 proptest = { version = "1", default-features = false, features = ["std"] }
+quickcheck_macros = "1"
 rayon = "1"
 test-strategy = "0.2"

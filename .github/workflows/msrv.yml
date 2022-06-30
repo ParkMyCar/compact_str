@@ -15,7 +15,7 @@ env:
   RUSTFLAGS: "-D warnings"
 
 jobs:
-  test:
+  msrv:
     name: cargo test msrv..
     runs-on: ubuntu-latest
     steps:
@@ -49,4 +49,32 @@ jobs:
       - name: cargo test msrv..
         run: |
           cd compact_str
-          cargo hack test --feature-powerset --optional-deps --version-range 1.57..
+          cargo hack test --all-features --version-range 1.57..
+
+  feature_powerset:
+    name: cargo check feature-powerset
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+      - name: Cargo Build Cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-stable-cargo-hack
+          restore-keys: |
+            ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-stable
+      - name: install cargo hack
+        run: cargo install cargo-hack --force
+      - name: cargo test msrv..
+        run: |
+          cd compact_str
+          cargo hack check --feature-powerset --optional-deps

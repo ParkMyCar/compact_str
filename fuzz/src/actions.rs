@@ -107,20 +107,8 @@ impl Action<'_> {
             }
             ReplaceRange(start, end, replace_with) => {
                 // turn the arbitrary numbers (start, end) into character indices
-                let start = control
-                    .char_indices()
-                    .into_iter()
-                    .cycle()
-                    .nth(start as usize)
-                    .unwrap_or_default()
-                    .0;
-                let end = control
-                    .char_indices()
-                    .into_iter()
-                    .cycle()
-                    .nth(end as usize)
-                    .unwrap_or_default()
-                    .0;
+                let start = to_index(control, start);
+                let end = to_index(control, end);
                 let (start, end) = (start.min(end), start.max(end));
 
                 // then apply the replacement
@@ -147,13 +135,7 @@ impl Action<'_> {
             }
             Truncate(new_len) => {
                 // turn the arbitrary number `new_len` into character indices
-                let new_len = control
-                    .char_indices()
-                    .into_iter()
-                    .cycle()
-                    .nth(new_len as usize)
-                    .unwrap_or_default()
-                    .0;
+                let new_len = to_index(control, new_len);
 
                 // then truncate the string
                 control.truncate(new_len);
@@ -164,13 +146,7 @@ impl Action<'_> {
             }
             InsertStr(idx, s) => {
                 // turn the arbitrary number `new_len` into character indices
-                let idx = control
-                    .char_indices()
-                    .into_iter()
-                    .cycle()
-                    .nth(idx as usize)
-                    .unwrap_or_default()
-                    .0;
+                let idx = to_index(control, idx);
 
                 // then truncate the string
                 control.insert_str(idx, s);
@@ -181,13 +157,7 @@ impl Action<'_> {
             }
             Insert(idx, ch) => {
                 // turn the arbitrary number `new_len` into character indices
-                let idx = control
-                    .char_indices()
-                    .into_iter()
-                    .cycle()
-                    .nth(idx as usize)
-                    .unwrap_or_default()
-                    .0;
+                let idx = to_index(control, idx);
 
                 // then truncate the string
                 control.insert(idx, ch);
@@ -198,4 +168,14 @@ impl Action<'_> {
             }
         }
     }
+}
+
+fn to_index(s: &str, idx: u8) -> usize {
+    s.char_indices()
+        .into_iter()
+        .cycle()
+        .map(|(idx, _)| idx)
+        .chain([s.len()])
+        .nth(idx as usize)
+        .unwrap_or_default()
 }

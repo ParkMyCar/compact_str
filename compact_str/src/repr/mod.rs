@@ -161,7 +161,10 @@ impl Repr {
     #[inline]
     pub fn reserve(&mut self, additional: usize) {
         // We want at least enough capacity to store length + additional
-        let new_capacity = self.len() + additional;
+        let new_capacity = self
+            .len()
+            .checked_add(additional)
+            .expect("resulting capacity does not fit into usize");
 
         // We already have at least `additional` capacity, so we don't need to do anything
         if self.capacity() >= new_capacity {

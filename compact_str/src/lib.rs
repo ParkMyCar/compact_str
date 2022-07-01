@@ -667,6 +667,72 @@ impl CompactString {
         );
         unsafe { self.set_len(new_len) };
     }
+
+    /// Converts a [`CompactString`] to a raw pointer.
+    #[inline]
+    pub fn as_ptr(&mut self) -> *const u8 {
+        self.repr.as_slice().as_ptr()
+    }
+
+    /// Converts a mutable [`CompactString`] to a raw pointer.
+    #[inline]
+    pub fn as_mut_ptr(&mut self) -> *mut u8 {
+        unsafe { self.repr.as_mut_slice().as_mut_ptr() }
+    }
+
+    /// Insert string character at an index.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use compact_str::CompactString;
+    /// let mut s = CompactString::new("Hello!");
+    /// s.insert_str(5, ", world");
+    /// assert_eq!(s, "Hello, world!");
+    /// ```
+    pub fn insert_str(&mut self, idx: usize, string: &str) {
+        assert!(self.is_char_boundary(idx), "idx must lie on char boundary");
+
+        let new_len = self.len() + string.len();
+        self.reserve(string.len());
+
+        // SAFETY: We just checked that we may split self at idx.
+        //         We set the length only after reserving the memory.
+        //         We fill the gap with valid UTF-8 data.
+        unsafe {
+            // first move the tail to the new back
+            let data = self.as_mut_ptr();
+            std::ptr::copy(
+                data.add(idx),
+                data.add(idx + string.len()),
+                new_len - idx - string.len(),
+            );
+
+            // then insert the new bytes
+            std::ptr::copy_nonoverlapping(string.as_ptr(), data.add(idx), string.len());
+
+            // and lastly resize the string
+            self.set_len(new_len);
+        }
+    }
+
+    /// Insert a character at an index.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use compact_str::CompactString;
+    /// let mut s = CompactString::new("Hello world!");
+    /// s.insert(5, ',');
+    /// assert_eq!(s, "Hello, world!");
+    /// ```
+    pub fn insert(&mut self, idx: usize, ch: char) {
+        self.insert_str(idx, ch.encode_utf8(&mut [0; 4]));
+    }
 }
 
 impl Default for CompactString {

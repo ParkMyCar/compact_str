@@ -938,3 +938,82 @@ fn test_truncate_panics_on_non_char_boundary() {
     assert!('😀'.len_utf8() > 1);
     emojis.truncate(1);
 }
+
+#[test]
+fn test_insert() {
+    // insert into empty string
+    let mut one_byte = CompactString::from("");
+    one_byte.insert(0, '.');
+    assert_eq!(one_byte, ".");
+
+    let mut two_bytes = CompactString::from("");
+    two_bytes.insert(0, 'Ü');
+    assert_eq!(two_bytes, "Ü");
+
+    let mut three_bytes = CompactString::from("");
+    three_bytes.insert(0, '€');
+    assert_eq!(three_bytes, "€");
+
+    let mut four_bytes = CompactString::from("");
+    four_bytes.insert(0, '😀');
+    assert_eq!(four_bytes, "😀");
+
+    // insert at the front of string
+    let mut one_byte = CompactString::from("😀");
+    one_byte.insert(0, '.');
+    assert_eq!(one_byte, ".😀");
+
+    let mut two_bytes = CompactString::from("😀");
+    two_bytes.insert(0, 'Ü');
+    assert_eq!(two_bytes, "Ü😀");
+
+    let mut three_bytes = CompactString::from("😀");
+    three_bytes.insert(0, '€');
+    assert_eq!(three_bytes, "€😀");
+
+    let mut four_bytes = CompactString::from("😀");
+    four_bytes.insert(0, '😀');
+    assert_eq!(four_bytes, "😀😀");
+
+    // insert at the end of string
+    let mut one_byte = CompactString::from("😀");
+    one_byte.insert(4, '.');
+    assert_eq!(one_byte, "😀.");
+
+    let mut two_bytes = CompactString::from("😀");
+    two_bytes.insert(4, 'Ü');
+    assert_eq!(two_bytes, "😀Ü");
+
+    let mut three_bytes = CompactString::from("😀");
+    three_bytes.insert(4, '€');
+    assert_eq!(three_bytes, "😀€");
+
+    let mut four_bytes = CompactString::from("😀");
+    four_bytes.insert(4, '😀');
+    assert_eq!(four_bytes, "😀😀");
+
+    // insert in the middle of string
+    let mut one_byte = CompactString::from("😀😀");
+    one_byte.insert(4, '.');
+    assert_eq!(one_byte, "😀.😀");
+
+    let mut two_bytes = CompactString::from("😀😀");
+    two_bytes.insert(4, 'Ü');
+    assert_eq!(two_bytes, "😀Ü😀");
+
+    let mut three_bytes = CompactString::from("😀😀");
+    three_bytes.insert(4, '€');
+    assert_eq!(three_bytes, "😀€😀");
+
+    let mut four_bytes = CompactString::from("😀😀");
+    four_bytes.insert(4, '😀');
+    assert_eq!(four_bytes, "😀😀😀");
+
+    // edge case: new length is 24 bytes
+    let mut s = CompactString::from("\u{ffff}\u{ffff}\u{ffff}\u{ffff}\u{ffff}\u{ffff}\u{ffff}");
+    s.insert(21, '\u{ffff}');
+    assert_eq!(
+        s,
+        "\u{ffff}\u{ffff}\u{ffff}\u{ffff}\u{ffff}\u{ffff}\u{ffff}\u{ffff}",
+    );
+}

@@ -30,6 +30,8 @@ pub enum Action<'a> {
     InsertStr(u8, &'a str),
     /// Insert a character at an index
     Insert(u8, char),
+    /// Reduce the length to zero
+    Clear,
 }
 
 impl Action<'_> {
@@ -162,6 +164,13 @@ impl Action<'_> {
                 // then truncate the string
                 control.insert(idx, ch);
                 compact.insert(idx, ch);
+
+                assert_eq!(control, compact);
+                assert_eq!(control.len(), compact.len());
+            }
+            Clear => {
+                control.clear();
+                compact.clear();
 
                 assert_eq!(control, compact);
                 assert_eq!(control.len(), compact.len());

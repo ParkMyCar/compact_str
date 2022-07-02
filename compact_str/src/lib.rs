@@ -733,6 +733,20 @@ impl CompactString {
     pub fn insert(&mut self, idx: usize, ch: char) {
         self.insert_str(idx, ch.encode_utf8(&mut [0; 4]));
     }
+
+    /// Reduces the length of the [`CompactString`] to zero.
+    ///
+    /// Calling this function does not change the capacity of the [`CompactString`].
+    ///
+    /// ```
+    /// # use compact_str::CompactString;
+    /// let mut s = CompactString::new("Hello, world!");
+    /// s.clear();
+    /// assert_eq!(s, "");
+    /// ```
+    pub fn clear(&mut self) {
+        unsafe { self.set_len(0) };
+    }
 }
 
 impl Default for CompactString {

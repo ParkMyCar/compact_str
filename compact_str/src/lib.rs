@@ -740,9 +740,13 @@ impl CompactString {
     ///
     /// ```
     /// # use compact_str::CompactString;
-    /// let mut s = CompactString::new("Hello, world!");
+    /// let mut s = CompactString::new("Rust is the most loved language on Stackoverflow!");
+    /// assert_eq!(s.capacity(), 49);
+    ///
     /// s.clear();
+    ///
     /// assert_eq!(s, "");
+    /// assert_eq!(s.capacity(), 49);
     /// ```
     pub fn clear(&mut self) {
         unsafe { self.set_len(0) };

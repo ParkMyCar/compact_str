@@ -37,6 +37,7 @@ use core::str::{
 };
 use std::borrow::Cow;
 use std::ffi::OsStr;
+use std::iter::FusedIterator;
 
 mod asserts;
 mod features;
@@ -755,6 +756,41 @@ impl CompactString {
     pub fn clear(&mut self) {
         unsafe { self.set_len(0) };
     }
+
+    /// Remove a range from the [`CompactString`], and return it as an iterator.
+    ///
+    /// Calling this function does not change the capacity of the [`CompactString`].
+    ///
+    /// # Panics
+    ///
+    /// Panics if the start or end of the range does not lie on a [`char`] boundary.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use compact_str::CompactString;
+    /// let mut s = CompactString::new("Hello, world!");
+    ///
+    /// let mut d = s.drain(5..12);
+    /// assert_eq!(d.next(), Some(','));   // iterate over the extracted data
+    /// assert_eq!(d.as_str(), " world"); // or get the whole data as &str
+    ///
+    /// // The iterator keeps a reference to `s`, so you have to drop() the iterator,
+    /// // before you can access `s` again.
+    /// drop(d);
+    /// assert_eq!(s, "Hello!");
+    /// ```
+    pub fn drain(&mut self, range: impl RangeBounds<usize>) -> Drain<'_> {
+        let (start, end) = self.ensure_range(range);
+        Drain {
+            compact_string: self as *mut Self,
+            start,
+            end,
+            chars: self[start..end].chars(),
+        }
+    }
 }
 
 impl Default for CompactString {
@@ -1007,5 +1043,91 @@ impl Add<&str> for CompactString {
         self
     }
 }
+
+/// An iterator over the exacted data by [`CompactString::drain()`].
+#[must_use = "iterators are lazy and do nothing unless consumed"]
+pub struct Drain<'a> {
+    compact_string: *mut CompactString,
+    start: usize,
+    end: usize,
+    chars: std::str::Chars<'a>,
+}
+
+// SAFETY: Drain keeps the lifetime of the CompactString it belongs to.
+unsafe impl Send for Drain<'_> {}
+unsafe impl Sync for Drain<'_> {}
+
+impl fmt::Debug for Drain<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_tuple("Drain").field(&self.as_str()).finish()
+    }
+}
+
+impl fmt::Display for Drain<'_> {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl Drop for Drain<'_> {
+    #[inline]
+    fn drop(&mut self) {
+        // SAFETY: Drain keeps a mutable reference to compact_string, so one one else can access
+        //         the CompactString, but this function right now. CompactString::drain() ensured
+        //         that the new extracted range does not split a UTF-8 character.
+        unsafe { (*self.compact_string).replace_range_shrink(self.start, self.end, "") };
+    }
+}
+
+impl Drain<'_> {
+    /// The remaining, unconsumed characters of the extracted substring.
+    #[inline]
+    pub fn as_str(&self) -> &str {
+        self.chars.as_str()
+    }
+}
+
+impl Deref for Drain<'_> {
+    type Target = str;
+
+    #[inline]
+    fn deref(&self) -> &Self::Target {
+        self.as_str()
+    }
+}
+
+impl Iterator for Drain<'_> {
+    type Item = char;
+
+    #[inline]
+    fn next(&mut self) -> Option<char> {
+        self.chars.next()
+    }
+
+    #[inline]
+    fn count(self) -> usize {
+        // <Chars as Iterator>::count() is specialized, and cloning is trivial.
+        self.chars.clone().count()
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.chars.size_hint()
+    }
+
+    #[inline]
+    fn last(mut self) -> Option<char> {
+        self.chars.next_back()
+    }
+}
+
+impl DoubleEndedIterator for Drain<'_> {
+    #[inline]
+    fn next_back(&mut self) -> Option<char> {
+        self.chars.next_back()
+    }
+}
+
+impl FusedIterator for Drain<'_> {}
 
 crate::asserts::assert_size_eq!(CompactString, String);

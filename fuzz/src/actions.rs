@@ -32,6 +32,8 @@ pub enum Action<'a> {
     Insert(u8, char),
     /// Reduce the length to zero
     Clear,
+    /// Split the string at a given position
+    SplitOff(u8),
 }
 
 impl Action<'_> {
@@ -171,6 +173,16 @@ impl Action<'_> {
             Clear => {
                 control.clear();
                 compact.clear();
+
+                assert_eq!(control, compact);
+                assert_eq!(control.len(), compact.len());
+            }
+            SplitOff(at) => {
+                let at = to_index(control, at);
+
+                let compact_capacity = compact.capacity();
+                assert_eq!(compact.split_off(at), control.split_off(at));
+                assert_eq!(compact.capacity(), compact_capacity);
 
                 assert_eq!(control, compact);
                 assert_eq!(control.len(), compact.len());

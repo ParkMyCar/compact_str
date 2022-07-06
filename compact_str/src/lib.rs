@@ -438,9 +438,8 @@ impl CompactString {
     ///
     /// assert_eq!("foobar", s);
     /// ```
-    #[inline]
     pub fn push(&mut self, ch: char) {
-        self.repr.push(ch)
+        self.push_str(ch.encode_utf8(&mut [0; 4]));
     }
 
     /// Removes the last character from the [`CompactString`] and returns it.

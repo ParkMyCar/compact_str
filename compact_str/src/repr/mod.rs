@@ -202,23 +202,6 @@ impl Repr {
     }
 
     #[inline]
-    pub fn push(&mut self, ch: char) {
-        let len = self.len();
-        let char_len = ch.len_utf8();
-
-        // Reserve at least enough space for our char, possibly causing a heap allocation
-        self.reserve(char_len);
-
-        // Get a mutable reference to the underlying memory buffer
-        let slice = unsafe { self.as_mut_slice() };
-
-        // Write our character into the underlying buffer
-        ch.encode_utf8(&mut slice[len..]);
-        // Incrament our length
-        unsafe { self.set_len(len + char_len) };
-    }
-
-    #[inline]
     pub fn pop(&mut self) -> Option<char> {
         let ch = self.as_str().chars().rev().next()?;
 
@@ -649,16 +632,6 @@ mod tests {
     }
 
     #[test]
-    fn test_push() {
-        let example = "hello world";
-        let mut repr = Repr::new(example);
-        repr.push('!');
-
-        assert_eq!(repr.as_str(), "hello world!");
-        assert_eq!(repr.len(), 12);
-    }
-
-    #[test]
     fn test_pop() {
         let example = "hello";
         let mut repr = Repr::new(example);
@@ -791,7 +764,7 @@ mod tests {
         assert_eq!(repr.capacity(), 11);
         assert!(repr.is_heap_allocated());
 
-        repr.push('!');
+        repr.push_str("!");
 
         // Once we push a character we'll need to resize, it's at this point we'll inline the string
         // since we need to drop the original buffer anyways
@@ -812,7 +785,7 @@ mod tests {
         assert_eq!(repr.capacity(), 11);
         assert!(repr.is_heap_allocated());
 
-        repr.push('!');
+        repr.push_str("!");
 
         // Once we push a character we'll need to resize, it's at this point we'll inline the string
         // since we need to drop the original buffer anyways

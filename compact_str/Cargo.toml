@@ -28,3 +28,7 @@ proptest = { version = "1", default-features = false, features = ["std"] }
 quickcheck_macros = "1"
 rayon = "1"
 test-strategy = "0.2"
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

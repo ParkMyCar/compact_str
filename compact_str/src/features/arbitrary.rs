@@ -8,6 +8,7 @@ use arbitrary::{
 
 use crate::CompactString;
 
+#[cfg_attr(docsrs, doc(cfg(feature = "arbitrary")))]
 impl<'a> Arbitrary<'a> for CompactString {
     fn arbitrary(u: &mut Unstructured<'a>) -> Result<Self> {
         <&str as Arbitrary>::arbitrary(u).map(CompactString::new)

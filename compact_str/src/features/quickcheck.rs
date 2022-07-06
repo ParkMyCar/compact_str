@@ -7,6 +7,7 @@ use quickcheck::{
 
 use crate::CompactString;
 
+#[cfg_attr(docsrs, doc(cfg(feature = "quickcheck")))]
 impl Arbitrary for CompactString {
     fn arbitrary(g: &mut Gen) -> CompactString {
         let max = g.size();

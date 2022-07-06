@@ -400,7 +400,7 @@ impl BoxString {
     ///
     /// Returns the new capacity as `Ok(…)` if the string was reallocated.
     /// Or the old capacity as `Err(…)` if the string could not be reallocated.
-    fn realloc(&mut self, new_capacity: usize) -> Result<usize, ()> {
+    pub fn realloc(&mut self, new_capacity: usize) -> Result<usize, ()> {
         // can't reallocate a BoxString to a size less than the current length
         if new_capacity < self.len {
             return Err(());

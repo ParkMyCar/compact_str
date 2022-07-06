@@ -17,6 +17,8 @@ const MAX_SIZE: usize = 24;
 #[cfg(target_pointer_width = "32")]
 const MAX_SIZE: usize = 12;
 
+const SIXTEEN_MB: usize = 16 * 1024 * 1024;
+
 /// generates random unicode strings, upto 80 chars long
 pub fn rand_unicode() -> impl Strategy<Value = String> {
     proptest::collection::vec(proptest::char::any(), 0..80).prop_map(|v| v.into_iter().collect())
@@ -850,7 +852,6 @@ fn test_into_string_large_string_with_excess_capacity() {
 
 #[test]
 fn test_into_string_where_32_bit_capacity_is_on_heap() {
-    const SIXTEEN_MB: usize = 16 * 1024 * 1024;
     let buf = vec![b'a'; SIXTEEN_MB - 1];
     // SAFETY: `buf` is filled with ASCII `a`s.
     // This primarily speeds up miri, as we don't need to check every byte
@@ -1173,4 +1174,49 @@ fn test_from_utf16() {
             compile_error!("unsupported pointer width!");
         }
     }
+}
+
+#[test]
+fn test_reserve_shrink_roundtrip() {
+    const TEXT: &str = "Hello.";
+
+    let mut s = CompactString::new(TEXT);
+    assert!(!s.is_heap_allocated());
+    assert_eq!(s.capacity(), MAX_SIZE);
+    assert_eq!(s, TEXT);
+
+    s.reserve(128);
+    assert!(s.is_heap_allocated());
+    assert!(s.capacity() >= 128 + TEXT.len());
+    assert_eq!(s, TEXT);
+
+    s.shrink_to(64);
+    assert!(s.is_heap_allocated());
+    assert!(s.capacity() >= 64);
+    assert_eq!(s, TEXT);
+
+    s.shrink_to_fit();
+    assert!(!s.is_heap_allocated());
+    assert_eq!(s.capacity(), MAX_SIZE);
+    assert_eq!(s, TEXT);
+
+    s.reserve(SIXTEEN_MB);
+    assert!(s.is_heap_allocated());
+    assert!(s.capacity() >= SIXTEEN_MB + TEXT.len());
+    assert_eq!(s, TEXT);
+
+    s.shrink_to(64);
+    assert!(s.is_heap_allocated());
+    assert!(s.capacity() >= 64);
+    assert_eq!(s, TEXT);
+
+    s.reserve(SIXTEEN_MB);
+    assert!(s.is_heap_allocated());
+    assert!(s.capacity() >= SIXTEEN_MB + TEXT.len());
+    assert_eq!(s, TEXT);
+
+    s.shrink_to_fit();
+    assert!(!s.is_heap_allocated());
+    assert_eq!(s.capacity(), MAX_SIZE);
+    assert_eq!(s, TEXT);
 }

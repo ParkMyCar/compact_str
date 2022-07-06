@@ -38,6 +38,8 @@ pub enum Action<'a> {
     Drain(u8, u8),
     /// Remove a `char`
     Remove(u8),
+    /// First reserve additional memory, then shrink it
+    ShrinkTo(u16, u16),
 }
 
 impl Action<'_> {
@@ -219,6 +221,26 @@ impl Action<'_> {
                 }
 
                 assert_eq!(control.remove(idx), compact.remove(idx));
+                assert_eq!(control, compact);
+                assert_eq!(control.len(), compact.len());
+            }
+            ShrinkTo(a, b) => {
+                let a = (a % 5000) as usize;
+                let b = (b % 5000) as usize;
+                let (reserve, shrink) = (a.max(b), a.min(b));
+
+                control.reserve(reserve);
+                compact.reserve(reserve);
+                assert_eq!(control, compact);
+                assert_eq!(control.len(), compact.len());
+
+                control.shrink_to(shrink);
+                compact.shrink_to(shrink);
+                assert_eq!(control, compact);
+                assert_eq!(control.len(), compact.len());
+
+                control.shrink_to_fit();
+                compact.shrink_to_fit();
                 assert_eq!(control, compact);
                 assert_eq!(control.len(), compact.len());
             }

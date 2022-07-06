@@ -84,7 +84,7 @@ pub mod inline_capacity {
         buffer: StrBuffer,
     }
 
-    fn layout(capacity: usize) -> alloc::Layout {
+    pub(crate) fn layout(capacity: usize) -> alloc::Layout {
         let buffer_layout = alloc::Layout::array::<u8>(capacity).expect("valid capacity");
         alloc::Layout::new::<BoxStringInnerInlineCapacity>()
             .extend(buffer_layout)

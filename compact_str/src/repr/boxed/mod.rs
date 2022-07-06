@@ -1,16 +1,19 @@
 use core::iter::Extend;
 use core::mem::ManuallyDrop;
+use core::ptr::NonNull;
 use core::{
     fmt,
     ptr,
     slice,
     str,
 };
+use std::alloc::realloc;
 
 mod capacity;
-use capacity::Capacity;
-
 mod inner;
+
+use capacity::Capacity;
+use inner::inline_capacity::layout;
 
 const MIN_SIZE: usize = core::mem::size_of::<usize>() / 2;
 
@@ -406,6 +409,32 @@ impl BoxString {
                 inner::heap_capacity::dealloc(self.ptr, cap)
             }
         }
+    }
+
+    /// Tries to reallocate the buffer, and sets the new capacity on success.
+    ///
+    /// Returns the new capacity as `Ok(…)` if the string was reallocated.
+    /// Or the old capacity as `Err(…)` if the string could not be reallocated.
+    pub unsafe fn realloc(&mut self, new_capacity: usize) -> Result<usize, usize> {
+        let old_capacity = self.capacity();
+        if old_capacity == new_capacity {
+            return Ok(old_capacity);
+        }
+        let cap = match Capacity::new(new_capacity) {
+            Ok(cap) => cap,
+            Err(_) => return Err(old_capacity),
+        };
+
+        let old_layout = layout(old_capacity);
+        let new_size = layout(new_capacity).size();
+        let ptr = match NonNull::new(realloc(self.ptr.as_ptr(), old_layout, new_size)) {
+            Some(ptr) => ptr,
+            None => return Err(old_capacity),
+        };
+
+        self.ptr = ptr;
+        self.cap = cap;
+        Ok(new_capacity)
     }
 }
 

@@ -37,6 +37,7 @@ use core::str::{
 };
 use std::borrow::Cow;
 use std::ffi::OsStr;
+use std::iter::FusedIterator;
 
 mod asserts;
 mod features;
@@ -515,6 +516,45 @@ impl CompactString {
         self.repr.is_heap_allocated()
     }
 
+    /// Ensure that the given range is inside the set data, and that no codepoints are split.
+    ///
+    /// Returns the range `start..end` as a tuple.
+    #[inline]
+    fn ensure_range(&self, range: impl RangeBounds<usize>) -> (usize, usize) {
+        #[cold]
+        #[inline(never)]
+        fn illegal_range() -> ! {
+            panic!("illegal range");
+        }
+
+        let start = match range.start_bound() {
+            Bound::Included(&n) => n,
+            Bound::Excluded(&n) => match n.checked_add(1) {
+                Some(n) => n,
+                None => illegal_range(),
+            },
+            Bound::Unbounded => 0,
+        };
+        let end = match range.end_bound() {
+            Bound::Included(&n) => match n.checked_add(1) {
+                Some(n) => n,
+                None => illegal_range(),
+            },
+            Bound::Excluded(&n) => n,
+            Bound::Unbounded => self.len(),
+        };
+        if end < start {
+            illegal_range();
+        }
+
+        let s = self.as_str();
+        if !s.is_char_boundary(start) || !s.is_char_boundary(end) {
+            illegal_range();
+        }
+
+        (start, end)
+    }
+
     /// Removes the specified range in the [`CompactString`],
     /// and replaces it with the given string.
     /// The given string doesn't need to be the same length as the range.
@@ -541,98 +581,63 @@ impl CompactString {
     /// s.replace_range(5.., "! Is it me you're looking for?");
     /// assert_eq!(s, "Hello! Is it me you're looking for?");
     /// ```
+    #[inline]
     pub fn replace_range(&mut self, range: impl RangeBounds<usize>, replace_with: &str) {
-        #[cold]
-        #[inline(never)]
-        fn illegal_range() -> ! {
-            panic!("illegal range");
-        }
-
-        let data = self.as_mut_str();
-        let total_len = data.len();
-
-        let start = match range.start_bound() {
-            Bound::Included(&n) => n,
-            Bound::Excluded(&n) => match n.checked_add(1) {
-                Some(n) => n,
-                None => illegal_range(),
-            },
-            Bound::Unbounded => 0,
-        };
-        let end = match range.end_bound() {
-            Bound::Included(&n) => match n.checked_add(1) {
-                Some(n) => n,
-                None => illegal_range(),
-            },
-            Bound::Excluded(&n) => n,
-            Bound::Unbounded => total_len,
-        };
-
-        let dest_len = match end.checked_sub(start) {
-            Some(n) => n,
-            None => illegal_range(),
-        };
-
-        if !data.is_char_boundary(start) || !data.is_char_boundary(end) {
-            illegal_range();
-        }
-
+        let (start, end) = self.ensure_range(range);
+        let dest_len = end - start;
         match dest_len.cmp(&replace_with.len()) {
-            Ordering::Equal => unsafe {
-                // replace into the same size
-                core::ptr::copy_nonoverlapping(
-                    replace_with.as_ptr(),
-                    data.as_mut_ptr().add(start),
-                    dest_len,
-                );
-            },
-            Ordering::Greater => {
-                // self.len() gets smaller
-                let new_len = total_len - (dest_len - replace_with.len());
-                let amount = total_len - end;
-                let data = data.as_mut_ptr();
-                unsafe {
-                    // first insert the replacement string, overwriting the current content
-                    core::ptr::copy_nonoverlapping(
-                        replace_with.as_ptr(),
-                        data.add(start),
-                        replace_with.len(),
-                    );
-                    // then move the tail of the CompactString forward to its new place,
-                    // filling the gap
-                    core::ptr::copy(
-                        data.add(total_len - amount),
-                        data.add(new_len - amount),
-                        amount,
-                    );
-
-                    self.set_len(new_len);
-                }
-            }
-            Ordering::Less => {
-                // self.len() gets bigger
-                self.reserve(replace_with.len() - dest_len);
-                let new_len = total_len + (replace_with.len() - dest_len);
-                let amount = total_len - end;
-                unsafe {
-                    // first grow the string, so MIRI knows that the full range is usable
-                    self.set_len(new_len);
-                    let data = self.as_mut_ptr();
-                    // then move the tail of the CompactString back to its new place
-                    core::ptr::copy(
-                        data.add(total_len - amount),
-                        data.add(new_len - amount),
-                        amount,
-                    );
-                    // and lastly insert the replacement string
-                    core::ptr::copy_nonoverlapping(
-                        replace_with.as_ptr(),
-                        data.add(start),
-                        replace_with.len(),
-                    );
-                }
-            }
+            Ordering::Equal => unsafe { self.replace_range_same_size(start, end, replace_with) },
+            Ordering::Greater => unsafe { self.replace_range_shrink(start, end, replace_with) },
+            Ordering::Less => unsafe { self.replace_range_grow(start, end, replace_with) },
         }
+    }
+
+    /// Replace into the same size.
+    unsafe fn replace_range_same_size(&mut self, start: usize, end: usize, replace_with: &str) {
+        core::ptr::copy_nonoverlapping(
+            replace_with.as_ptr(),
+            self.as_mut_ptr().add(start),
+            end - start,
+        );
+    }
+
+    /// Replace, so self.len() gets smaller.
+    unsafe fn replace_range_shrink(&mut self, start: usize, end: usize, replace_with: &str) {
+        let total_len = self.len();
+        let dest_len = end - start;
+        let new_len = total_len - (dest_len - replace_with.len());
+        let amount = total_len - end;
+        let data = self.as_mut_ptr();
+        // first insert the replacement string, overwriting the current content
+        core::ptr::copy_nonoverlapping(replace_with.as_ptr(), data.add(start), replace_with.len());
+        // then move the tail of the CompactString forward to its new place, filling the gap
+        core::ptr::copy(
+            data.add(total_len - amount),
+            data.add(new_len - amount),
+            amount,
+        );
+        // and lastly we set the new length
+        self.set_len(new_len);
+    }
+
+    /// Replace, so self.len() gets bigger.
+    unsafe fn replace_range_grow(&mut self, start: usize, end: usize, replace_with: &str) {
+        let dest_len = end - start;
+        self.reserve(replace_with.len() - dest_len);
+        let total_len = self.len();
+        let new_len = total_len + (replace_with.len() - dest_len);
+        let amount = total_len - end;
+        // first grow the string, so MIRI knows that the full range is usable
+        self.set_len(new_len);
+        let data = self.as_mut_ptr();
+        // then move the tail of the CompactString back to its new place
+        core::ptr::copy(
+            data.add(total_len - amount),
+            data.add(new_len - amount),
+            amount,
+        );
+        // and lastly insert the replacement string
+        core::ptr::copy_nonoverlapping(replace_with.as_ptr(), data.add(start), replace_with.len());
     }
 
     /// Truncate the [`CompactString`] to a shorter length.
@@ -773,6 +778,33 @@ impl CompactString {
         // SAFETY: the previous line `self[at...]` would have panicked if `at` was invalid
         unsafe { self.set_len(at) };
         result
+    }
+
+    /// Remove a range from the [`CompactString`], and return it as an iterator.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the start or end of the range does not lie on a [`char`] boundary.
+    ///
+    /// # Examples
+    ///
+    /// let mut d = s.drain(5..12);
+    /// assert_eq!(d.next(), Some(','));   // iterate over the extracted data
+    /// assert_eq!(d.as_str(), " world"); // or get the whole data as &str
+    ///
+    /// // The iterator keeps a reference to `s`, so you have to drop() the iterator,
+    /// // before you can access `s` again.
+    /// drop(d);
+    /// assert_eq!(s, "Hello!");
+    /// ```
+    pub fn drain(&mut self, range: impl RangeBounds<usize>) -> Drain<'_> {
+        let (start, end) = self.ensure_range(range);
+        Drain {
+            compact_string: self as *mut Self,
+            start,
+            end,
+            chars: self[start..end].chars(),
+        }
     }
 }
 
@@ -1026,5 +1058,91 @@ impl Add<&str> for CompactString {
         self
     }
 }
+
+/// An iterator over the exacted data by [`CompactString::drain()`].
+#[must_use = "iterators are lazy and do nothing unless consumed"]
+pub struct Drain<'a> {
+    compact_string: *mut CompactString,
+    start: usize,
+    end: usize,
+    chars: std::str::Chars<'a>,
+}
+
+// SAFETY: Drain keeps the lifetime of the CompactString it belongs to.
+unsafe impl Send for Drain<'_> {}
+unsafe impl Sync for Drain<'_> {}
+
+impl fmt::Debug for Drain<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_tuple("Drain").field(&self.as_str()).finish()
+    }
+}
+
+impl fmt::Display for Drain<'_> {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl Drop for Drain<'_> {
+    #[inline]
+    fn drop(&mut self) {
+        // SAFETY: Drain keeps a mutable reference to compact_string, so one one else can access
+        //         the CompactString, but this function right now. CompactString::drain() ensured
+        //         that the new extracted range does not split a UTF-8 character.
+        unsafe { (*self.compact_string).replace_range_shrink(self.start, self.end, "") };
+    }
+}
+
+impl Drain<'_> {
+    /// The remaining, unconsumed characters of the extracted substring.
+    #[inline]
+    pub fn as_str(&self) -> &str {
+        self.chars.as_str()
+    }
+}
+
+impl Deref for Drain<'_> {
+    type Target = str;
+
+    #[inline]
+    fn deref(&self) -> &Self::Target {
+        self.as_str()
+    }
+}
+
+impl Iterator for Drain<'_> {
+    type Item = char;
+
+    #[inline]
+    fn next(&mut self) -> Option<char> {
+        self.chars.next()
+    }
+
+    #[inline]
+    fn count(self) -> usize {
+        // <Chars as Iterator>::count() is specialized, and cloning is trivial.
+        self.chars.clone().count()
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.chars.size_hint()
+    }
+
+    #[inline]
+    fn last(mut self) -> Option<char> {
+        self.chars.next_back()
+    }
+}
+
+impl DoubleEndedIterator for Drain<'_> {
+    #[inline]
+    fn next_back(&mut self) -> Option<char> {
+        self.chars.next_back()
+    }
+}
+
+impl FusedIterator for Drain<'_> {}
 
 crate::asserts::assert_size_eq!(CompactString, String);

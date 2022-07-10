@@ -34,6 +34,8 @@ pub enum Action<'a> {
     Clear,
     /// Split the string at a given position
     SplitOff(u8),
+    /// Extract a range
+    Drain(u8, u8),
 }
 
 impl Action<'_> {
@@ -186,6 +188,21 @@ impl Action<'_> {
 
                 assert_eq!(control, compact);
                 assert_eq!(control.len(), compact.len());
+            }
+            Drain(start, end) => {
+                let start = to_index(control, start);
+                let end = to_index(control, end);
+                let (start, end) = (start.min(end), start.max(end));
+
+                let compact_capacity = compact.capacity();
+                let control_drain = control.drain(start..end);
+                let compact_drain = compact.drain(start..end);
+
+                assert_eq!(control_drain.as_str(), compact_drain.as_str());
+                drop(control_drain);
+                drop(compact_drain);
+                assert_eq!(control.as_str(), compact.as_str());
+                assert_eq!(compact.capacity(), compact_capacity);
             }
         }
     }

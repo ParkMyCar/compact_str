@@ -782,11 +782,19 @@ impl CompactString {
 
     /// Remove a range from the [`CompactString`], and return it as an iterator.
     ///
+    /// Calling this function does not change the capacity of the [`CompactString`].
+    ///
     /// # Panics
     ///
     /// Panics if the start or end of the range does not lie on a [`char`] boundary.
     ///
     /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use compact_str::CompactString;
+    /// let mut s = CompactString::new("Hello, world!");
     ///
     /// let mut d = s.drain(5..12);
     /// assert_eq!(d.next(), Some(','));   // iterate over the extracted data

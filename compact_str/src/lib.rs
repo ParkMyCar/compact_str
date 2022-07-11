@@ -757,6 +757,29 @@ impl CompactString {
         unsafe { self.set_len(0) };
     }
 
+    /// Split the [`CompactString`] into at the given byte index.
+    ///
+    /// Calling this function does not change the capacity of the [`CompactString`].
+    ///
+    /// # Panics
+    ///
+    /// Panics if `at` does not lie on a [`char`] boundary.
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use compact_str::CompactString;
+    /// let mut s = CompactString::new("Hello, world!");
+    /// assert_eq!(s.split_off(5), ", world!");
+    /// assert_eq!(s, "Hello");
+    /// ```
+    pub fn split_off(&mut self, at: usize) -> Self {
+        let result = self[at..].into();
+        // SAFETY: the previous line `self[at...]` would have panicked if `at` was invalid
+        unsafe { self.set_len(at) };
+        result
+    }
+
     /// Remove a range from the [`CompactString`], and return it as an iterator.
     ///
     /// Calling this function does not change the capacity of the [`CompactString`].

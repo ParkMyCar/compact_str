@@ -164,7 +164,7 @@ jobs:
         name: Install Rust
         with:
           profile: minimal
-          toolchain: nightly-2022-06-01
+          toolchain: nightly-2022-07-01
           override: true
       - name: Install cargo-afl
         run: |

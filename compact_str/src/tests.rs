@@ -425,6 +425,13 @@ fn test_plus_operator() {
 }
 
 #[test]
+fn test_plus_equals_operator() {
+    let mut m = CompactString::from("a");
+    m += "b";
+    assert_eq!(m, "ab");
+}
+
+#[test]
 fn test_u8_to_compact_string() {
     let vals = [u8::MIN, 1, 42, u8::MAX - 2, u8::MAX - 1, u8::MAX];
 

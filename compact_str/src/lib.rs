@@ -26,6 +26,7 @@ use core::hash::{
 use core::iter::FromIterator;
 use core::ops::{
     Add,
+    AddAssign,
     Bound,
     Deref,
     DerefMut,
@@ -1064,6 +1065,12 @@ impl Add<&str> for CompactString {
     fn add(mut self, rhs: &str) -> Self::Output {
         self.push_str(rhs);
         self
+    }
+}
+
+impl AddAssign<&str> for CompactString {
+    fn add_assign(&mut self, rhs: &str) {
+        self.push_str(rhs);
     }
 }
 

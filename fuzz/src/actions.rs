@@ -36,6 +36,8 @@ pub enum Action<'a> {
     SplitOff(u8),
     /// Extract a range
     Drain(u8, u8),
+    /// First reserve additional memory, then shink it
+    ShrinkTo(u16, u16),
 }
 
 impl Action<'_> {
@@ -203,6 +205,26 @@ impl Action<'_> {
                 drop(compact_drain);
                 assert_eq!(control.as_str(), compact.as_str());
                 assert_eq!(compact.capacity(), compact_capacity);
+            }
+            ShrinkTo(a, b) => {
+                let a = (a % 5000) as usize;
+                let b = (b % 5000) as usize;
+                let (reserve, shrink) = (a.max(b), a.min(b));
+
+                control.reserve(reserve);
+                compact.reserve(reserve);
+                assert_eq!(control, compact);
+                assert_eq!(control.len(), compact.len());
+
+                control.shrink_to(shrink);
+                compact.shrink_to(shrink);
+                assert_eq!(control, compact);
+                assert_eq!(control.len(), compact.len());
+
+                control.shrink_to_fit();
+                compact.shrink_to_fit();
+                assert_eq!(control, compact);
+                assert_eq!(control.len(), compact.len());
             }
         }
     }

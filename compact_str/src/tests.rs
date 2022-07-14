@@ -1024,3 +1024,33 @@ fn test_insert() {
         "\u{ffff}\u{ffff}\u{ffff}\u{ffff}\u{ffff}\u{ffff}\u{ffff}\u{ffff}",
     );
 }
+
+#[test]
+fn test_shrink_to_fit() {
+    // Miri would find any layout errors in this test.
+    const TEST: &str =
+        "1234😀1234😀1234😀1234😀1234😀1234😀1234😀1234😀1234😀1234😀1234😀1234😀1234😀";
+
+    let mut compact = CompactString::from(TEST);
+    let mut control = String::from(TEST);
+    loop {
+        let c = compact.pop();
+        let d = control.pop();
+        assert_eq!(c, d);
+        if c.is_none() {
+            break;
+        }
+
+        compact.shrink_to_fit();
+        control.shrink_to_fit();
+
+        assert_eq!(compact.capacity(), compact.len().max(MAX_SIZE));
+        assert_eq!(compact, control);
+
+        if c == Some('😀') {
+            // will need to grow
+            compact.push('.');
+            control.push('.');
+        }
+    }
+}

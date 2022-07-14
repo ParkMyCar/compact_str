@@ -56,7 +56,7 @@ jobs:
     name: cargo doc
     runs-on: ubuntu-latest
     env:
-      RUSTDOCFLAGS: "-D warnings"
+      RUSTDOCFLAGS: "-D warnings --cfg docsrs"
     steps:
       - uses: actions/checkout@v2
         name: Checkout compact_str
@@ -64,7 +64,8 @@ jobs:
         name: Install Rust
         with:
           profile: minimal
-          toolchain: stable
+          # docs.rs uses a nightly toolchain
+          toolchain: nightly
           override: true
       - uses: actions-rs/cargo@v1
         name: Run rustdoc

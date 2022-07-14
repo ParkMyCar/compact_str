@@ -14,6 +14,7 @@ categories = ["encoding", "parsing", "memory-management", "text-processing"]
 [dependencies]
 arbitrary = { version = "1", optional = true, default-features = false }
 bytes = { version = "1", optional = true }
+markup = { version = "0.13", optional = true, default-features = false }
 proptest = { version = "1", optional = true, default-features = false }
 quickcheck = { version = "1", optional = true, default-features = false }
 serde = { version = "1", optional = true }
@@ -27,3 +28,7 @@ proptest = { version = "1", default-features = false, features = ["std"] }
 quickcheck_macros = "1"
 rayon = "1"
 test-strategy = "0.2"
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

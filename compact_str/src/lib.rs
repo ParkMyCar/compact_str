@@ -1,17 +1,5 @@
-//! [`CompactString`] is a compact string type that stores itself on the stack if possible,
-//! otherwise known as a "small string optimization".
-//!
-//! ### Memory Layout
-//! Normally strings are stored on the heap, since they're dynamically sized. In Rust a [`String`]
-//! consists of three things:
-//! 1. A `usize` denoting the length of the string
-//! 2. A pointer to a location on the heap where the string is stored
-//! 3. A `usize` denoting the capacity of the string
-//!
-//! On 64-bit architectures this results in 24 bytes being stored on the stack (12 bytes for 32-bit
-//! architectures). For small strings, e.g. <= 24 characters, instead of storing a pointer, length,
-//! and capacity on the stack, you store the string itself! This avoids the need to heap allocate
-//! which reduces the amount of memory used, and improves performance.
+#![doc = include_str!("../README.md")]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 use core::borrow::{
     Borrow,

@@ -35,6 +35,7 @@ impl CompactString {
     /// // The provided buffer is invalid, so trying to create a `CompactString` will fail
     /// assert!(CompactString::from_utf8_buf(&mut invalid).is_err());
     /// ```
+    #[cfg_attr(docsrs, doc(cfg(feature = "bytes")))]
     pub fn from_utf8_buf<B: Buf>(buf: &mut B) -> Result<Self, Utf8Error> {
         Repr::from_utf8_buf(buf).map(|repr| CompactString { repr })
     }
@@ -59,6 +60,7 @@ impl CompactString {
     ///
     /// assert_eq!(compact_str, word);
     /// ```
+    #[cfg_attr(docsrs, doc(cfg(feature = "bytes")))]
     pub unsafe fn from_utf8_buf_unchecked<B: Buf>(buf: &mut B) -> Self {
         let repr = Repr::from_utf8_buf_unchecked(buf);
         CompactString { repr }

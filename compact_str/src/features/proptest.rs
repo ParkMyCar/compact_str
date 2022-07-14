@@ -13,6 +13,7 @@ use proptest::string::StringParam;
 
 use crate::CompactString;
 
+#[cfg_attr(docsrs, doc(cfg(feature = "proptest")))]
 impl Arbitrary for CompactString {
     type Parameters = StringParam;
     type Strategy = MapInto<StrategyFor<String>, Self>;

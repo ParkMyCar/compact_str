@@ -61,12 +61,14 @@ fn compact_string<'de: 'a, 'a, D: Deserializer<'de>>(
     deserializer.deserialize_str(CompactStringVisitor)
 }
 
+#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl serde::Serialize for CompactString {
     fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         self.as_str().serialize(serializer)
     }
 }
 
+#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl<'de> serde::Deserialize<'de> for CompactString {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         compact_string(deserializer)

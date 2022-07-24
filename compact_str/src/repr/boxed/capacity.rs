@@ -2,8 +2,21 @@ use crate::repr::HEAP_MASK;
 
 // how many bytes a `usize` occupies
 const USIZE_SIZE: usize = core::mem::size_of::<usize>();
-// state that describes the capacity as being stored on the heap
-const CAPACITY_IS_ON_THE_HEAP: [u8; USIZE_SIZE] = [HEAP_MASK; USIZE_SIZE];
+
+/// Used to generate [`CAPACITY_IS_ON_THE_HEAP`]
+#[allow(non_snake_case)]
+const fn CAP_ON_HEAP_FLAG() -> [u8; USIZE_SIZE] {
+    // all bytes 255, with the last
+    let mut flag = [255; USIZE_SIZE];
+    flag[USIZE_SIZE - 1] = HEAP_MASK;
+    flag
+}
+
+/// State that describes the capacity as being stored on the heap.
+///
+/// All bytes `255`, with the last being [`HEAP_MASK`], using the same amount of bytes as `usize`
+/// Example (64-bit): `[255, 255, 255, 255, 255, 255, 255, 254]`
+const CAPACITY_IS_ON_THE_HEAP: [u8; USIZE_SIZE] = CAP_ON_HEAP_FLAG();
 
 // how many bytes we can use for capacity
 const SPACE_FOR_CAPACITY: usize = USIZE_SIZE - 1;
@@ -101,6 +114,8 @@ impl Capacity {
 
 #[cfg(test)]
 mod tests {
+    use rayon::prelude::*;
+
     use super::Capacity;
 
     #[test]
@@ -145,6 +160,26 @@ mod tests {
     fn test_usize_max_fails() {
         let og = usize::MAX;
         assert!(Capacity::new(og).is_err());
+    }
+
+    #[test]
+    fn test_all_valid_32bit_values() {
+        #[cfg(target_pointer_width = "32")]
+        assert_eq!(16_777_214, super::MAX_VALUE);
+
+        (0..=16_777_214)
+            .into_par_iter()
+            .for_each(|i| match Capacity::new(i) {
+                Ok(cap) => match cap.as_usize() {
+                    Ok(val) => assert_eq!(val, i, "value roundtriped to wrong value?"),
+                    Err(_) => panic!("value converted, but failed to roundtrip! val: {}", i),
+                },
+                Err(_) => panic!("failed to convert {}", i),
+            });
+
+        // one above the 32-bit max value
+        #[cfg(target_pointer_width = "32")]
+        assert!(Capacity::new(16_777_215).is_err());
     }
 }
 

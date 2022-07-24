@@ -33,6 +33,12 @@ doc = false
 required-features = ["afl"]
 
 [[bin]]
+name = "debug"
+path = "src/bin/debug.rs"
+test = false
+doc = false
+
+[[bin]]
 name = "honggfuzz"
 path = "src/bin/honggfuzz.rs"
 test = false

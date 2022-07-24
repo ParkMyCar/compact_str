@@ -6,6 +6,8 @@ use core::{
     slice,
     str,
 };
+use std::alloc;
+use std::ptr::NonNull;
 
 mod capacity;
 use capacity::Capacity;
@@ -13,6 +15,17 @@ use capacity::Capacity;
 mod inner;
 
 const MIN_SIZE: usize = core::mem::size_of::<usize>() / 2;
+
+/// [`BoxString`] grows at an amortized rates of 1.5x
+///
+/// Note: this is different than [`std::string::String`], which grows at a rate of 2x. It's debated
+/// which is better, for now we'll stick with a rate of 1.5x
+#[inline(always)]
+fn amortized_growth(cur_len: usize, additional: usize) -> usize {
+    let required = cur_len + additional;
+    let amortized = 3 * cur_len / 2;
+    core::cmp::max(amortized, required)
+}
 
 #[repr(C)]
 pub struct BoxString {
@@ -38,23 +51,16 @@ impl BoxString {
         // to be at least size_of::<usize>, so we know it'll be non-zero.
         let (cap, ptr) = unsafe { BoxString::alloc_ptr(capacity) };
 
+        let write_ptr = if !cap.is_heap() {
+            ptr.as_ptr()
+        } else {
+            unsafe { ptr.as_ptr().add(core::mem::size_of::<usize>()) }
+        };
+
         // SAFETY: We know both `src` and `dest` are valid for respectively reads and writes of
         // length `len` because `len` comes from `src`, and `dest` was allocated to be at least that
         // length. We also know they're non-overlapping because `dest` is newly allocated
-        #[cfg(target_pointer_width = "64")]
-        unsafe {
-            ptr.as_ptr().copy_from_nonoverlapping(text.as_ptr(), len)
-        };
-
-        #[cfg(not(target_pointer_width = "64"))]
-        {
-            let write_ptr = if cap.is_heap() {
-                unsafe { ptr.as_ptr().add(core::mem::size_of::<usize>()) }
-            } else {
-                ptr.as_ptr()
-            };
-            unsafe { write_ptr.copy_from_nonoverlapping(text.as_ptr(), len) };
-        }
+        unsafe { write_ptr.copy_from_nonoverlapping(text.as_ptr(), len) };
 
         BoxString { len, ptr, cap }
     }
@@ -78,31 +84,25 @@ impl BoxString {
 
     #[inline(always)]
     unsafe fn alloc_ptr(capacity: usize) -> (Capacity, ptr::NonNull<u8>) {
-        #[cfg(target_pointer_width = "64")]
-        let (cap, ptr) = {
-            debug_assert!(capacity <= capacity::MAX_VALUE);
-
-            let cap = Capacity::new_unchecked(capacity);
-            let ptr = inner::inline_capacity::alloc(capacity);
+        #[cold]
+        unsafe fn alloc_ptr_heap(capacity: usize, cap: Capacity) -> (Capacity, ptr::NonNull<u8>) {
+            let ptr = inner::heap_capacity::alloc(capacity);
+            // write our capacity onto the heap
+            core::ptr::copy_nonoverlapping(
+                capacity.to_le_bytes().as_ptr(),
+                ptr.as_ptr(),
+                core::mem::size_of::<usize>(),
+            );
             (cap, ptr)
-        };
+        }
 
-        #[cfg(not(target_pointer_width = "64"))]
         let (cap, ptr) = match Capacity::new(capacity) {
             Ok(cap) => {
+                debug_assert!(capacity <= capacity::MAX_VALUE);
                 let ptr = inner::inline_capacity::alloc(capacity);
                 (cap, ptr)
             }
-            Err(cap) => {
-                let ptr = inner::heap_capacity::alloc(capacity);
-                // write our capacity onto the heap
-                core::ptr::copy_nonoverlapping(
-                    capacity.to_le_bytes().as_ptr(),
-                    ptr.as_ptr(),
-                    core::mem::size_of::<usize>(),
-                );
-                (cap, ptr)
-            }
+            Err(cap) => alloc_ptr_heap(capacity, cap),
         };
 
         (cap, ptr)
@@ -111,10 +111,7 @@ impl BoxString {
     #[inline]
     pub fn with_additional(text: &str, additional: usize) -> Self {
         let len = text.len();
-
-        let required = len + additional;
-        let amortized = 3 * len / 2;
-        let new_capacity = core::cmp::max(amortized, required);
+        let new_capacity = amortized_growth(len, additional);
 
         // TODO: Handle overflows in the case of __very__ large Strings
         debug_assert!(new_capacity >= len);
@@ -153,6 +150,11 @@ impl BoxString {
 
     #[inline]
     pub fn into_string(self) -> String {
+        #[cold]
+        fn into_string_heap(this: BoxString) -> String {
+            String::from(this.as_str())
+        }
+
         match self.cap.as_usize() {
             Ok(cap) => {
                 // Ensure that we don't free the data we are transferring the buffer to `String`
@@ -166,7 +168,7 @@ impl BoxString {
                 // * `BoxString` only ever contains valid UTF-8.
                 unsafe { String::from_raw_parts(this.ptr.as_ptr(), this.len, cap) }
             }
-            Err(_) => String::from(self.as_str()),
+            Err(_) => into_string_heap(self),
         }
     }
 
@@ -200,11 +202,15 @@ impl BoxString {
             return;
         }
 
-        // We need to reserve additional space, so create a new BoxString with additional space
-        let new = BoxString::with_additional(self.as_str(), additional);
+        let new_capacity = amortized_growth(len, additional);
 
-        // Set our new BoxString as self
-        *self = new;
+        // try to realloc, creating a new BoxString on failure
+        if self.realloc(new_capacity).is_err() {
+            // We failed to realloc, so create a new BoxString
+            let new = BoxString::with_additional(self.as_str(), additional);
+            // Set our new BoxString as self
+            *self = new;
+        }
     }
 
     #[inline]
@@ -214,31 +220,26 @@ impl BoxString {
 
     #[inline]
     pub fn capacity(&self) -> usize {
-        #[cfg(target_pointer_width = "64")]
-        {
-            debug_assert!(self.cap.as_usize().is_ok());
-            unsafe { self.cap.as_usize_unchecked() }
+        #[cold]
+        fn capacity_heap(this: &BoxString) -> usize {
+            let mut usize_buf = [0u8; core::mem::size_of::<usize>()];
+            // copy bytes from the heap into our buffer
+            unsafe {
+                core::ptr::copy_nonoverlapping(
+                    this.ptr.as_ptr() as *const u8,
+                    usize_buf.as_mut_ptr(),
+                    core::mem::size_of::<usize>(),
+                );
+            };
+            // interpret those bytes as a usize
+            usize::from_le_bytes(usize_buf)
         }
-        #[cfg(not(target_pointer_width = "64"))]
-        {
-            match self.cap.as_usize() {
-                // capacity is on the stack, just return it!
-                Ok(cap) => cap,
-                // capacity is on the heap, we need to read it back
-                Err(_) => {
-                    let mut usize_buf = [0u8; core::mem::size_of::<usize>()];
-                    // copy bytes from the heap into our buffer
-                    unsafe {
-                        core::ptr::copy_nonoverlapping(
-                            self.ptr.as_ptr() as *const u8,
-                            usize_buf.as_mut_ptr(),
-                            core::mem::size_of::<usize>(),
-                        );
-                    };
-                    // interpret those bytes as a usize
-                    usize::from_le_bytes(usize_buf)
-                }
-            }
+
+        match self.cap.as_usize() {
+            // capacity is on the stack, just return it!
+            Ok(cap) => cap,
+            // capacity is on the heap, we need to read it back
+            Err(_) => capacity_heap(self),
         }
     }
 
@@ -311,101 +312,154 @@ impl BoxString {
 
     #[inline]
     fn as_buffer(&self) -> &[u8] {
-        #[cfg(target_pointer_width = "64")]
-        {
-            debug_assert!(self.cap.as_usize().is_ok());
+        #[cold]
+        fn as_buffer_heap(this: &BoxString) -> &[u8] {
+            // read our first few bytes to get our capacity
+            let mut usize_buf = [0u8; core::mem::size_of::<usize>()];
+            unsafe {
+                core::ptr::copy_nonoverlapping(
+                    this.ptr.as_ptr() as *const u8,
+                    usize_buf.as_mut_ptr(),
+                    core::mem::size_of::<usize>(),
+                );
+            };
+            let cap = usize::from_le_bytes(usize_buf);
 
+            // read `cap` bytes from our buffer, starting at an offset
+            let buf_start = unsafe { this.ptr.as_ptr().add(core::mem::size_of::<usize>()) };
             // SAFETY: Since we have an instance of `BoxStringInner` so we know the buffer is still
             // valid. Also since we're on a 64-bit arch, it's practically impossible for our
             // capacity to be stored on the heap
-            unsafe { slice::from_raw_parts(self.ptr.as_ptr(), self.cap.as_usize_unchecked()) }
+            unsafe { slice::from_raw_parts(buf_start, cap) }
         }
-        #[cfg(not(target_pointer_width = "64"))]
-        {
-            match self.cap.as_usize() {
-                // capacity is on the stack, so read the entire buffer!
-                Ok(cap) => unsafe { slice::from_raw_parts(self.ptr.as_ptr(), cap) },
-                // capacity is on the heap, we need to read the capacity, and then read the buffer
-                // starting from an offset
-                Err(_) => {
-                    // read our first few bytes to get our capacity
-                    let mut usize_buf = [0u8; core::mem::size_of::<usize>()];
-                    unsafe {
-                        core::ptr::copy_nonoverlapping(
-                            self.ptr.as_ptr() as *const u8,
-                            usize_buf.as_mut_ptr(),
-                            core::mem::size_of::<usize>(),
-                        );
-                    };
-                    let cap = usize::from_le_bytes(usize_buf);
 
-                    // read `cap` bytes from our buffer, starting at an offset
-                    let buf_start = unsafe { self.ptr.as_ptr().add(core::mem::size_of::<usize>()) };
-                    unsafe { slice::from_raw_parts(buf_start, cap) }
-                }
-            }
+        match self.cap.as_usize() {
+            // capacity is on the stack, so read the entire buffer!
+            Ok(cap) => unsafe { slice::from_raw_parts(self.ptr.as_ptr(), cap) },
+            // capacity is on the heap, we need to read the capacity, and then read the buffer
+            // starting from an offset
+            Err(_) => as_buffer_heap(self),
         }
     }
 
     #[inline]
     unsafe fn as_mut_buffer(&mut self) -> &mut [u8] {
-        #[cfg(target_pointer_width = "64")]
-        {
-            debug_assert!(self.cap.as_usize().is_ok());
+        #[cold]
+        unsafe fn as_mut_buffer_heap(this: &mut BoxString) -> &mut [u8] {
+            // read our first few bytes to get our capacity
+            let mut usize_buf = [0u8; core::mem::size_of::<usize>()];
+            core::ptr::copy_nonoverlapping(
+                this.ptr.as_ptr() as *const u8,
+                usize_buf.as_mut_ptr(),
+                core::mem::size_of::<usize>(),
+            );
+            let cap = usize::from_le_bytes(usize_buf);
 
+            // read `cap` bytes from our buffer, starting at an offset
+            let buf_start = this.ptr.as_ptr().add(core::mem::size_of::<usize>());
             // SAFETY: Since we have an instance of `BoxStringInner` so we know the buffer is still
             // valid. Also since we're on a 64-bit arch, it's practically impossible for our
             // capacity to be stored on the heap
-            slice::from_raw_parts_mut(self.ptr.as_ptr(), self.cap.as_usize_unchecked())
+            slice::from_raw_parts_mut(buf_start, cap)
         }
-        #[cfg(not(target_pointer_width = "64"))]
-        {
-            match self.cap.as_usize() {
-                // capacity is on the stack, so read the entire buffer!
-                Ok(cap) => slice::from_raw_parts_mut(self.ptr.as_ptr(), cap),
-                // capacity is on the heap, we need to read the capacity, and then read the buffer
-                // starting from an offset
-                Err(_) => {
-                    // read our first few bytes to get our capacity
-                    let mut usize_buf = [0u8; core::mem::size_of::<usize>()];
-                    core::ptr::copy_nonoverlapping(
-                        self.ptr.as_ptr() as *const u8,
-                        usize_buf.as_mut_ptr(),
-                        core::mem::size_of::<usize>(),
-                    );
-                    let cap = usize::from_le_bytes(usize_buf);
 
-                    // read `cap` bytes from our buffer, starting at an offset
-                    let buf_start = self.ptr.as_ptr().add(core::mem::size_of::<usize>());
-                    slice::from_raw_parts_mut(buf_start, cap)
-                }
-            }
+        match self.cap.as_usize() {
+            // capacity is on the stack, so read the entire buffer!
+            Ok(cap) => slice::from_raw_parts_mut(self.ptr.as_ptr(), cap),
+            // capacity is on the heap, we need to read the capacity, and then read the buffer
+            // starting from an offset
+            Err(_) => as_mut_buffer_heap(self),
         }
     }
 
     #[inline(never)]
     unsafe fn drop_inner(&mut self) {
-        #[cfg(target_pointer_width = "64")]
-        {
-            inner::inline_capacity::dealloc(self.ptr, self.capacity())
+        #[cold]
+        unsafe fn drop_heap(this: &mut BoxString) {
+            // read our first few bytes to get our capacity
+            let mut usize_buf = [0u8; core::mem::size_of::<usize>()];
+            core::ptr::copy_nonoverlapping(
+                this.ptr.as_ptr() as *const u8,
+                usize_buf.as_mut_ptr(),
+                core::mem::size_of::<usize>(),
+            );
+            let cap = usize::from_le_bytes(usize_buf);
+
+            inner::heap_capacity::dealloc(this.ptr, cap)
         }
 
-        #[cfg(not(target_pointer_width = "64"))]
         match self.cap.as_usize() {
             Ok(cap) => inner::inline_capacity::dealloc(self.ptr, cap),
-            Err(_) => {
-                // read our first few bytes to get our capacity
-                let mut usize_buf = [0u8; core::mem::size_of::<usize>()];
-                core::ptr::copy_nonoverlapping(
-                    self.ptr.as_ptr() as *const u8,
-                    usize_buf.as_mut_ptr(),
-                    core::mem::size_of::<usize>(),
-                );
-                let cap = usize::from_le_bytes(usize_buf);
-
-                inner::heap_capacity::dealloc(self.ptr, cap)
-            }
+            Err(_) => drop_heap(self),
         }
+    }
+
+    /// Tries to reallocate the buffer, and sets the new capacity on success.
+    ///
+    /// Returns the new capacity as `Ok(…)` if the string was reallocated.
+    /// Or the old capacity as `Err(…)` if the string could not be reallocated.
+    fn realloc(&mut self, new_capacity: usize) -> Result<usize, ()> {
+        // can't reallocate a BoxString to a size less than the current length
+        if new_capacity < self.len {
+            return Err(());
+        }
+
+        let cur_cap = self.cap.as_usize();
+        let new_cap = Capacity::new(new_capacity);
+
+        let (new_cap, new_ptr) = match (cur_cap, new_cap) {
+            // current capacity is the same as new, no realloc needed!
+            (Ok(cur), Ok(_)) if cur == new_capacity => {
+                return Ok(new_capacity);
+            }
+            // both current and new capacity can be stored inline
+            (Ok(cur), Ok(new_cap)) => {
+                let cur_layout = inner::inline_capacity::layout(cur);
+                let new_size = inner::inline_capacity::layout(new_capacity).size();
+
+                // attempt to reallocate, returning an error if we failed
+                match NonNull::new(unsafe {
+                    alloc::realloc(self.ptr.as_ptr(), cur_layout, new_size)
+                }) {
+                    Some(ptr) => (new_cap, ptr),
+                    None => return Err(()),
+                }
+            }
+            // capacity is currently on the heap, and needs to stay on the heap
+            (Err(_), Err(new_cap)) => {
+                let cur_layout = inner::heap_capacity::layout(self.capacity());
+                let new_size = inner::heap_capacity::layout(new_capacity).size();
+
+                // attempt to reallocate, returning an error if we failed
+                let ptr = match NonNull::new(unsafe {
+                    alloc::realloc(self.ptr.as_ptr(), cur_layout, new_size)
+                }) {
+                    Some(ptr) => ptr,
+                    None => return Err(()),
+                };
+
+                // our allocation succeeded! we need to write the new cap to the heap
+                unsafe {
+                    core::ptr::copy_nonoverlapping(
+                        new_capacity.to_le_bytes().as_ptr(),
+                        ptr.as_ptr(),
+                        core::mem::size_of::<usize>(),
+                    )
+                };
+
+                (new_cap, ptr)
+            }
+            // capacity is currently inline or on the heap, but needs to move, can't realloc!
+            (Ok(_), Err(_)) | (Err(_), Ok(_)) => {
+                return Err(());
+            }
+        };
+
+        // set our new pointer and new capacity
+        self.ptr = new_ptr;
+        self.cap = new_cap;
+
+        Ok(new_capacity)
     }
 }
 
@@ -646,23 +700,29 @@ mod tests {
         // assert the string is still correct
         assert_eq!(&format!("{}!", string), box_string.as_str());
 
-        // on 32-bit archs the capacity will be stored on the heap
-        #[cfg(target_pointer_width = "32")]
-        assert!(box_string.cap.as_usize().is_err());
-        // on 64-bit archs it's still inlined
-        #[cfg(not(target_pointer_width = "32"))]
-        assert!(box_string.cap.as_usize().is_ok());
+        cfg_if::cfg_if! {
+            if #[cfg(target_pointer_width = "64")] {
+                // on 64-bit archs it's still inlined
+                assert!(box_string.cap.as_usize().is_ok());
+            } else {
+                // on 32-bit archs the capacity will be stored on the heap
+                assert!(box_string.cap.as_usize().is_err());
+            }
+        }
 
         // push a string
         box_string.push_str("hello!");
 
-        // on 32-bit archs the capacity will still be stored on the heap, since the capacity hasn't
-        // changed
-        #[cfg(target_pointer_width = "32")]
-        assert!(box_string.cap.as_usize().is_err());
-        // on 64-bit archs it's still inlined
-        #[cfg(not(target_pointer_width = "32"))]
-        assert!(box_string.cap.as_usize().is_ok());
+        cfg_if::cfg_if! {
+            if #[cfg(target_pointer_width = "64")] {
+                // on 64-bit archs it's still inlined
+                assert!(box_string.cap.as_usize().is_ok());
+            } else {
+                // on 32-bit archs the capacity will still be stored on the heap, since the capacity
+                // hasn't changed
+                assert!(box_string.cap.as_usize().is_err());
+            }
+        }
 
         // assert the string is still correct
         assert_eq!(&format!("{}!hello!", string), box_string.as_str());
@@ -679,12 +739,15 @@ mod tests {
 
         let mut box_string = BoxString::new(&string);
 
-        // on 32-bit archs the capacity will be stored on the heap
-        #[cfg(target_pointer_width = "32")]
-        assert!(box_string.cap.as_usize().is_err());
-        // on 64-bit archs it's still inlined
-        #[cfg(not(target_pointer_width = "32"))]
-        assert_eq!(box_string.cap.as_usize(), Ok(SIXTEEN_MB - 1));
+        cfg_if::cfg_if! {
+            if #[cfg(target_pointer_width = "64")] {
+                // on 64-bit archs it's still inlined
+                assert_eq!(box_string.cap.as_usize(), Ok(SIXTEEN_MB - 1));
+            } else {
+                // on 32-bit archs the capacity will be stored on the heap
+                assert!(box_string.cap.as_usize().is_err());
+            }
+        }
 
         // assert the strings are equal
         assert_eq!(&string, box_string.as_str());
@@ -694,26 +757,98 @@ mod tests {
         // assert the string is still correct
         assert_eq!(&format!("{}!", string), box_string.as_str());
 
-        // on 32-bit archs the capacity will be stored on the heap
-        #[cfg(target_pointer_width = "32")]
-        assert!(box_string.cap.as_usize().is_err());
-        // on 64-bit archs it's still inlined
-        #[cfg(not(target_pointer_width = "32"))]
-        assert!(box_string.cap.as_usize().is_ok());
+        cfg_if::cfg_if! {
+            if #[cfg(target_pointer_width = "64")] {
+                // on 64-bit archs it's still inlined
+                assert!(box_string.cap.as_usize().is_ok());
+            } else {
+                // on 32-bit archs the capacity will be stored on the heap
+                assert!(box_string.cap.as_usize().is_err());
+            }
+        }
 
         // push a string
         box_string.push_str("hello!");
 
-        // on 32-bit archs the capacity will still be stored on the heap, since the capacity hasn't
-        // changed
-        #[cfg(target_pointer_width = "32")]
-        assert!(box_string.cap.as_usize().is_err());
-        // on 64-bit archs it's still inlined
-        #[cfg(not(target_pointer_width = "32"))]
-        assert!(box_string.cap.as_usize().is_ok());
+        cfg_if::cfg_if! {
+            if #[cfg(target_pointer_width = "64")] {
+                // on 64-bit archs it's still inlined
+                assert!(box_string.cap.as_usize().is_ok());
+            } else {
+                // on 32-bit archs the capacity will still be stored on the heap, since the capacity
+                // hasn't changed
+                assert!(box_string.cap.as_usize().is_err());
+            }
+        }
 
         // assert the string is still correct
         assert_eq!(&format!("{}!hello!", string), box_string.as_str());
+    }
+
+    #[test]
+    fn test_realloc_inline_cap_to_inline_cap() {
+        let mut box_string = BoxString::from("hello");
+        // relloc to value < capacity::MAX_VALUE
+        let result = box_string.realloc(128);
+
+        assert_eq!(result.unwrap(), 128);
+        assert_eq!(box_string.as_str(), "hello");
+    }
+
+    #[test]
+    fn test_realloc_inline_cap_to_heap_cap() {
+        let mut box_string = BoxString::from("hello");
+        // relloc to a value > capacity::MAX_VALUE
+        let result = box_string.realloc(SIXTEEN_MB + 128);
+
+        cfg_if::cfg_if! {
+            if #[cfg(target_pointer_width = "64")] {
+                // realloc should succeed since on 64-bit platforms
+                assert_eq!(result.unwrap(), SIXTEEN_MB + 128);
+            } else {
+                // realloc should fail since we need to go from inline capacity -> heap
+                assert!(result.is_err());
+            }
+        }
+
+        assert_eq!(box_string.as_str(), "hello");
+    }
+
+    #[test]
+    fn test_realloc_heap_cap_to_heap_cap() {
+        let mut box_string = BoxString::with_capacity(SIXTEEN_MB + 128);
+        box_string.push_str("hello");
+        assert_eq!(box_string.as_str(), "hello");
+        assert_eq!(box_string.capacity(), SIXTEEN_MB + 128);
+
+        // relloc to a value > capacity::MAX_VALUE
+        let result = box_string.realloc(SIXTEEN_MB + 256);
+
+        assert_eq!(result.unwrap(), SIXTEEN_MB + 256);
+        assert_eq!(box_string.as_str(), "hello");
+    }
+
+    #[test]
+    fn test_realloc_heap_cap_to_inline_cap() {
+        let mut box_string = BoxString::with_capacity(SIXTEEN_MB + 128);
+        box_string.push_str("hello");
+        assert_eq!(box_string.as_str(), "hello");
+        assert_eq!(box_string.capacity(), SIXTEEN_MB + 128);
+
+        // relloc to a value < capacity::MAX_VALUE
+        let result = box_string.realloc(128);
+
+        cfg_if::cfg_if! {
+            if #[cfg(target_pointer_width = "64")] {
+                // realloc should succeed since on 64-bit platforms
+                assert_eq!(result.unwrap(), 128);
+            } else {
+                // realloc should fail since we need to go from inline capacity -> heap
+                assert!(result.is_err());
+            }
+        }
+
+        assert_eq!(box_string.as_str(), "hello");
     }
 
     #[proptest]

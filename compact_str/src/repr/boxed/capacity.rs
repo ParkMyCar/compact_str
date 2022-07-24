@@ -163,6 +163,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_all_valid_32bit_values() {
         #[cfg(target_pointer_width = "32")]
         assert_eq!(16_777_214, super::MAX_VALUE);

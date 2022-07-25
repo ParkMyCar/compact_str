@@ -20,6 +20,8 @@ const MIN_SIZE: usize = core::mem::size_of::<usize>() / 2;
 ///
 /// Note: this is different than [`std::string::String`], which grows at a rate of 2x. It's debated
 /// which is better, for now we'll stick with a rate of 1.5x
+/// 
+/// TODO: Handle overflows in the case of __very__ large Strings
 #[inline(always)]
 fn amortized_growth(cur_len: usize, additional: usize) -> usize {
     let required = cur_len + additional;
@@ -704,9 +706,11 @@ mod tests {
             if #[cfg(target_pointer_width = "64")] {
                 // on 64-bit archs it's still inlined
                 assert!(box_string.cap.as_usize().is_ok());
-            } else {
+            } else if #[cfg(target_pointer_width = "32")] {
                 // on 32-bit archs the capacity will be stored on the heap
                 assert!(box_string.cap.as_usize().is_err());
+            } else {
+                compile_error!("Unsupported target_pointer_width");
             }
         }
 
@@ -717,10 +721,12 @@ mod tests {
             if #[cfg(target_pointer_width = "64")] {
                 // on 64-bit archs it's still inlined
                 assert!(box_string.cap.as_usize().is_ok());
-            } else {
+            } else if #[cfg(target_pointer_width = "32")] {
                 // on 32-bit archs the capacity will still be stored on the heap, since the capacity
                 // hasn't changed
                 assert!(box_string.cap.as_usize().is_err());
+            } else {
+                compile_error!("Unsupported target_pointer_width");
             }
         }
 
@@ -743,9 +749,11 @@ mod tests {
             if #[cfg(target_pointer_width = "64")] {
                 // on 64-bit archs it's still inlined
                 assert_eq!(box_string.cap.as_usize(), Ok(SIXTEEN_MB - 1));
-            } else {
+            } else if #[cfg(target_pointer_width = "32")] {
                 // on 32-bit archs the capacity will be stored on the heap
                 assert!(box_string.cap.as_usize().is_err());
+            } else {
+                compile_error!("Unsupported target_pointer_width");
             }
         }
 
@@ -761,9 +769,11 @@ mod tests {
             if #[cfg(target_pointer_width = "64")] {
                 // on 64-bit archs it's still inlined
                 assert!(box_string.cap.as_usize().is_ok());
-            } else {
+            } else if #[cfg(target_pointer_width = "32")] {
                 // on 32-bit archs the capacity will be stored on the heap
                 assert!(box_string.cap.as_usize().is_err());
+            } else {
+                compile_error!("Unsupported target_pointer_width");
             }
         }
 
@@ -774,10 +784,12 @@ mod tests {
             if #[cfg(target_pointer_width = "64")] {
                 // on 64-bit archs it's still inlined
                 assert!(box_string.cap.as_usize().is_ok());
-            } else {
+            } else if #[cfg(target_pointer_width = "32")] {
                 // on 32-bit archs the capacity will still be stored on the heap, since the capacity
                 // hasn't changed
                 assert!(box_string.cap.as_usize().is_err());
+            } else {
+                compile_error!("Unsupported target_pointer_width");
             }
         }
 
@@ -805,9 +817,11 @@ mod tests {
             if #[cfg(target_pointer_width = "64")] {
                 // realloc should succeed since on 64-bit platforms
                 assert_eq!(result.unwrap(), SIXTEEN_MB + 128);
-            } else {
+            } else if #[cfg(target_pointer_width = "32")] {
                 // realloc should fail since we need to go from inline capacity -> heap
                 assert!(result.is_err());
+            } else {
+                compile_error!("Unsupported target_pointer_width");
             }
         }
 
@@ -842,9 +856,11 @@ mod tests {
             if #[cfg(target_pointer_width = "64")] {
                 // realloc should succeed since on 64-bit platforms
                 assert_eq!(result.unwrap(), 128);
-            } else {
+            } else if #[cfg(target_pointer_width = "32")] {
                 // realloc should fail since we need to go from inline capacity -> heap
                 assert!(result.is_err());
+            } else {
+                compile_error!("Unsupported target_pointer_width");
             }
         }
 

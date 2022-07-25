@@ -713,3 +713,35 @@ fn test_to_compact_string() {
         format_compact!("0{}67890123456789{}", "12345", 999999)
     );
 }
+
+#[test]
+fn test_with_capacity_16711422() {
+    // Fuzzing with AFL on a 32-bit ARM arch found this bug!
+    //
+    // We have our own heap implemenation called BoxString, which optionally stores the capacity
+    // on the heap, which is really only relevant for 32-bit architectures. The discriminant it used
+    // to determine if capacity was on the heap, was when the last `usize` number of bytes were all
+    // equal to our internal HEAP_MASK, which at the time was `255`. At the time this worked and was
+    // correct.
+    //
+    // When we released support to make the size of CompactString == Option<CompactString>, we
+    // changed the HEAP_MASK to `254`, which unintentionally made our discriminant for determining
+    // if our capacity was on the heap, all `254`s, yet our "max inline capacity value" was still
+    // based on the discriminant being all `255`s.
+    //
+    // When creating a BoxString with capacity 16711422, we'd correctly decide we could store the
+    // capacity inline, but this would create a capacity with an underlying value of
+    // [254, 254, 254, HEAP_MASK]. Once the HEAP_MASK changed to 254, this capacity was now the same
+    // as the discriminant to determine if the capacity was on the heap, so we'd incorrectly
+    // identify the capacity as being on the heap, when it was really inline.
+
+    assert_eq!(16711422_u32.to_le_bytes(), [254, 254, 254, 0]);
+
+    let compact = CompactString::with_capacity(16711422);
+    let std_str = String::with_capacity(16711422);
+
+    assert!(compact.is_heap_allocated());
+    assert_eq!(compact.capacity(), std_str.capacity());
+    assert_eq!(compact, "");
+    assert_eq!(compact, std_str);
+}

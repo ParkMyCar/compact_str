@@ -7,9 +7,8 @@ on:
       - 'compact_str/**'
       - 'fuzz/**'
       - '.github/workflows/fuzz.yml'
-    paths-ignore:
-      - 'CHANGELOG.md'
-      - '**/README.md'
+      - '!CHANGELOG.md'
+      - '!**/README.md'
   workflow_dispatch:
   schedule:
     - cron: '0 01,13 * * *'

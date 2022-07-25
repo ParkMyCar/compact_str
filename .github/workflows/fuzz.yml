@@ -112,7 +112,7 @@ jobs:
     env:
       HFUZZ_BUILD_ARGS: "--features=honggfuzz"
       HFUZZ_RUN_ARGS: "--run_time 120 --exit_upon_crash"
-      RUSTFLAGS: "-Znew-llvm-pass-manager=no -Zsanitizer=address"
+      RUSTFLAGS: "-Znew-llvm-pass-manager=no"
     steps:
       - uses: actions/checkout@v2
         name: Checkout compact_str

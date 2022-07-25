@@ -126,7 +126,7 @@ jobs:
       - name: Debug rustc host
         run: rustc -v -V
       - name: Install Deps
-        run: sudo apt-get install --no-install-recommends binutils-dev libunwind8-dev gcc-multilib
+        run: sudo apt-get install --no-install-recommends binutils-dev binutils-i686-linux-gnu libunwind8-dev gcc-multilib
       - uses: actions-rs/cargo@v1
         name: Install honggfuzz
         with:

@@ -122,7 +122,7 @@ jobs:
           target: i686-unknown-linux-gnu
           toolchain: nightly
       - name: Set i686 as default
-        run: rustup default i686-unknown-linux-gnu
+        run: rustup default nightly-i686-unknown-linux-gnu
       - name: Debug rustc host
         run: rustc -v -V
       - name: Install Deps

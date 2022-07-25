@@ -177,56 +177,57 @@ jobs:
         with:
           update_existing: true
 
-  afl_armv7:
-    name: AFL++ [ARMv7]
-    runs-on: [self-hosted, linux, ARM]
-    steps:
-      - uses: actions/checkout@v2
-        name: Checkout compact_str
-      - uses: actions-rs/toolchain@v1
-        name: Install Rust
-        with:
-          profile: minimal
-          toolchain: nightly-2022-07-01
-          override: true
-      - name: Install cargo-afl
-        run: |
-          cargo +nightly install afl --force
-      - name: AFL++ Build
-        run: |
-          cd fuzz
-          cargo +nightly afl build --bin afl --release --features=afl
-      - name: Set Fuzz Time
-        run: |
-          if [[ "${{github.event_name}}" == "push" || "${{github.event_name}}" == "pull_request" ]]; then
-            echo "fuzz_time=120" >> $GITHUB_ENV
-          else
-            echo "fuzz_time=1800" >> $GITHUB_ENV
-          fi
-          echo "${{ env.fuzz_time }}"
-      - name: Fuzz!
-        run: |
-          cd fuzz
-          mkdir afl/out
-          cargo +nightly afl fuzz -i afl/in -o afl/out -D -V ${{ env.fuzz_time }} ../target/release/afl
-      - name: Check for Crashes
-        run: |
-          if [ "$(ls -1q ./fuzz/afl/out/default/crashes/ | wc -l)" -ne 0 ]; then exit 1; fi
-      # AFL generates filenames with ":", which upload-artifact fails on, so we need to "detox" them
-      - name: Sanitize Crash Filenames (if present)
-        if: failure()
-        run: |
-          detox -r -v ./fuzz/afl/out/default/crashes/
-      - name: Upload Crashes (if present)
-        if: failure()
-        uses: actions/upload-artifact@v2
-        with:
-          name: Upload Crashes
-          path: ./fuzz/afl/out/default/crashes/
-      - name: File Issue (if failure found)
-        if: failure()
-        uses: JasonEtco/create-an-issue@v2.6
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          update_existing: true
+  # DISABLED(parkmycar) for the time being
+  # afl_armv7:
+  #   name: AFL++ [ARMv7]
+  #   runs-on: [self-hosted, linux, ARM]
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #       name: Checkout compact_str
+  #     - uses: actions-rs/toolchain@v1
+  #       name: Install Rust
+  #       with:
+  #         profile: minimal
+  #         toolchain: nightly-2022-07-01
+  #         override: true
+  #     - name: Install cargo-afl
+  #       run: |
+  #         cargo +nightly install afl --force
+  #     - name: AFL++ Build
+  #       run: |
+  #         cd fuzz
+  #         cargo +nightly afl build --bin afl --release --features=afl
+  #     - name: Set Fuzz Time
+  #       run: |
+  #         if [[ "${{github.event_name}}" == "push" || "${{github.event_name}}" == "pull_request" ]]; then
+  #           echo "fuzz_time=120" >> $GITHUB_ENV
+  #         else
+  #           echo "fuzz_time=1800" >> $GITHUB_ENV
+  #         fi
+  #         echo "${{ env.fuzz_time }}"
+  #     - name: Fuzz!
+  #       run: |
+  #         cd fuzz
+  #         mkdir afl/out
+  #         cargo +nightly afl fuzz -i afl/in -o afl/out -D -V ${{ env.fuzz_time }} ../target/release/afl
+  #     - name: Check for Crashes
+  #       run: |
+  #         if [ "$(ls -1q ./fuzz/afl/out/default/crashes/ | wc -l)" -ne 0 ]; then exit 1; fi
+  #     # AFL generates filenames with ":", which upload-artifact fails on, so we need to "detox" them
+  #     - name: Sanitize Crash Filenames (if present)
+  #       if: failure()
+  #       run: |
+  #         detox -r -v ./fuzz/afl/out/default/crashes/
+  #     - name: Upload Crashes (if present)
+  #       if: failure()
+  #       uses: actions/upload-artifact@v2
+  #       with:
+  #         name: Upload Crashes
+  #         path: ./fuzz/afl/out/default/crashes/
+  #     - name: File Issue (if failure found)
+  #       if: failure()
+  #       uses: JasonEtco/create-an-issue@v2.6
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         update_existing: true

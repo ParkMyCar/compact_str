@@ -86,23 +86,24 @@ jobs:
           command: miri
           args: test --all-features --manifest-path=compact_str/Cargo.toml
 
-  linux_arm7:
-    name: Linux ARMv7
-    runs-on: [self-hosted, linux, ARM]
-    steps:
-      - uses: actions/checkout@v2
-        name: Checkout Repo
-      - uses: actions-rs/toolchain@v1
-        name: Install Rust
-        with:
-          profile: minimal
-          toolchain: nightly
-          override: true
-      - uses: actions-rs/cargo@v1
-        name: cargo test
-        with:
-          command: test
-          args: --release --all-features --manifest-path=compact_str/Cargo.toml
+  # DISABLED(parkmycar) for the time being
+  # linux_arm7:
+  #   name: Linux ARMv7
+  #   runs-on: [self-hosted, linux, ARM]
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #       name: Checkout Repo
+  #     - uses: actions-rs/toolchain@v1
+  #       name: Install Rust
+  #       with:
+  #         profile: minimal
+  #         toolchain: nightly
+  #         override: true
+  #     - uses: actions-rs/cargo@v1
+  #       name: cargo test
+  #       with:
+  #         command: test
+  #         args: --release --all-features --manifest-path=compact_str/Cargo.toml
 
   linux_32bit:
     name: Linux 32-bit

@@ -283,7 +283,7 @@ impl CompactString {
 
         let buf = buf.as_ref();
         let mut ret = CompactString::with_capacity(buf.len());
-        for c in core::char::decode_utf16(buf.into_iter().copied()) {
+        for c in core::char::decode_utf16(buf.iter().copied()) {
             if let Ok(c) = c {
                 ret.push(c);
             } else {

@@ -26,6 +26,11 @@ pub fn rand_bytes() -> impl Strategy<Value = Vec<u8>> {
     proptest::collection::vec(any::<u8>(), 0..80)
 }
 
+/// generates a random collection of `u16`s, upto 80 elements long
+pub fn rand_u16s() -> impl Strategy<Value = Vec<u16>> {
+    proptest::collection::vec(any::<u16>(), 0..80)
+}
+
 /// [`proptest::strategy::Strategy`] that generates [`String`]s with up to `len` bytes
 pub fn rand_unicode_with_max_len(len: usize) -> impl Strategy<Value = String> {
     proptest::collection::vec(proptest::char::any(), 0..len).prop_map(move |chars| {
@@ -216,6 +221,31 @@ fn proptest_truncate(#[strategy(rand_unicode())] mut control: String, val: u8) {
         prop_assert!(compact.is_heap_allocated());
     } else {
         prop_assert!(!compact.is_heap_allocated());
+    }
+}
+
+#[proptest]
+#[cfg_attr(miri, ignore)]
+fn proptest_from_utf16_roundtrips(#[strategy(rand_unicode())] control: String) {
+    let utf16_buf: Vec<u16> = control.encode_utf16().collect();
+    let compact = CompactString::from_utf16(&utf16_buf).unwrap();
+
+    assert_eq!(compact, control);
+}
+
+#[proptest]
+#[cfg_attr(miri, ignore)]
+fn proptest_from_utf16_random(#[strategy(rand_u16s())] buf: Vec<u16>) {
+    let compact = CompactString::from_utf16(&buf);
+    let std_str = String::from_utf16(&buf);
+
+    match (compact, std_str) {
+        (Ok(c), Ok(s)) => assert_eq!(c, s),
+        (Err(_), Err(_)) => (),
+        (c_res, s_res) => panic!(
+            "CompactString and String decode UTF-16 differently? {:?} {:?}",
+            c_res, s_res
+        ),
     }
 }
 
@@ -1055,4 +1085,23 @@ fn test_with_capacity_16711422() {
     assert_eq!(compact.capacity(), std_str.capacity());
     assert_eq!(compact, "");
     assert_eq!(compact, std_str);
+}
+
+#[test]
+fn test_from_utf16() {
+    let control = String::from("🦄 hello world! 🎮 ");
+    let utf16_buf: Vec<u16> = control.encode_utf16().collect();
+    let compact = CompactString::from_utf16(&utf16_buf).unwrap();
+
+    assert_eq!(compact, control);
+
+    cfg_if::cfg_if! {
+        if #[cfg(target_pointer_width = "64")] {
+            assert!(!compact.is_heap_allocated());
+        } else if #[cfg(target_pointer_width = "32")] {
+            assert!(compact.is_heap_allocated());
+        } else {
+            compile_error!("unsupported pointer width!");
+        }
+    }
 }

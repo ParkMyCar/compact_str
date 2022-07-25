@@ -134,7 +134,6 @@ jobs:
         with:
           command: hfuzz
           args: run honggfuzz
-          use-cross: true
       - name: File Issue (if failure found)
         if: failure()
         uses: JasonEtco/create-an-issue@v2.6

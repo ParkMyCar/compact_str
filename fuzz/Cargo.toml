@@ -11,7 +11,6 @@ cargo-fuzz = true
 [dependencies]
 arbitrary = { version = "1.1.1", features = ["derive"] }
 bytes = "1"
-cfg-if = "1"
 compact_str = { path = "../compact_str", features = ["bytes"] }
 
 # Fuzz with both AFL++ and libFuzzer

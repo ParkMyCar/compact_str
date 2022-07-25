@@ -121,7 +121,10 @@ jobs:
         with:
           target: i686-unknown-linux-gnu
           toolchain: nightly
-          override: true
+      - name: Set i686 as default
+        run: rustup default i686-unknown-linux-gnu
+      - name: Debug rustc host
+        run: rustc -v -V
       - name: Install Deps
         run: sudo apt-get install --no-install-recommends binutils-dev libunwind8-dev
       - uses: actions-rs/cargo@v1

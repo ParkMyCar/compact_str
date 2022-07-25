@@ -1,7 +1,6 @@
 const UNKNOWN: usize = 0;
 pub type StrBuffer = [u8; UNKNOWN];
 
-#[cfg(not(target_pointer_width = "64"))]
 pub mod heap_capacity {
     use core::ptr;
     use std::alloc;
@@ -37,7 +36,7 @@ pub mod heap_capacity {
         buffer: StrBuffer,
     }
 
-    fn layout(capacity: usize) -> alloc::Layout {
+    pub fn layout(capacity: usize) -> alloc::Layout {
         let buffer_layout = alloc::Layout::array::<u8>(capacity).expect("valid capacity");
         alloc::Layout::new::<BoxStringInnerHeapCapacity>()
             .extend(buffer_layout)
@@ -84,7 +83,7 @@ pub mod inline_capacity {
         buffer: StrBuffer,
     }
 
-    fn layout(capacity: usize) -> alloc::Layout {
+    pub fn layout(capacity: usize) -> alloc::Layout {
         let buffer_layout = alloc::Layout::array::<u8>(capacity).expect("valid capacity");
         alloc::Layout::new::<BoxStringInnerInlineCapacity>()
             .extend(buffer_layout)

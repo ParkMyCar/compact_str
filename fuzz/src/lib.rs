@@ -35,13 +35,6 @@ pub struct Scenario<'a> {
 impl<'a> Scenario<'a> {
     /// Run the provided scenario, asserting for correct behavior
     pub fn run(self) {
-        #[cfg(target_pointer_width = "64")]
-        let pointer_width = 64;
-        #[cfg(target_pointer_width = "32")]
-        let pointer_width = 32;
-
-        println!("Target pointer width: {}", pointer_width);
-
         // Given random creation method, if we can create a string
         if let Some((compact, mut control)) = self.creation.create() {
             // assert we never misinterpret a valid CompactString as None when transmuted to

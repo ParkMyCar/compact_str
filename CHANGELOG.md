@@ -1,6 +1,38 @@
 # Upcoming
+* impl `AddAssign` (`+=`) for `CompactString`
+    * Implemented in [`add AddAssign operator`](https://github.com/ParkMyCar/compact_str/pull/159)
+* Implement [`markup::Render`](https://docs.rs/markup/latest/markup/trait.Render.html) trait
+    * Implemented in [`#157 Implement markup::Render trait and document features`](https://github.com/ParkMyCar/compact_str/pull/157)
+* Add `split_off()` method
+    * Implemented in [`#154 Implement split_off()`](https://github.com/ParkMyCar/compact_str/pull/154)
+* Add `drain()` method
+    * Implemented in [`#153 Implement drain()`](https://github.com/ParkMyCar/compact_str/pull/153)
+* Add `clear()` method
+    * Implemented in [`#149 Implement clear()`](https://github.com/ParkMyCar/compact_str/pull/149)
+* Add `insert()` and `insert_str()` methods
+    * Implemented in [`#148 Implement insert() and insert_str()`](https://github.com/ParkMyCar/compact_str/pull/148)
+* Implement the `Arbitrary` trait from [`arbitrary`](https://docs.rs/arbitrary/latest/arbitrary/), [`proptest`](https://docs.rs/proptest/latest/proptest/), and [`quickcheck`](https://docs.rs/quickcheck/latest/quickcheck/)
+    * Implemented in [`146 feat: Implemented the Arbitrary trait from various crate`](https://github.com/ParkMyCar/compact_str/pull/146)
+* Add `truncate()` method
+    * Implemented in [`#132 Implement truncate()`](https://github.com/ParkMyCar/compact_str/pull/132)
+* Add `replace_range()` method
+    * Implemented in [`#125 Implement replace_range()`](https://github.com/ParkMyCar/compact_str/pull/125)
+* Add `as_mut_str()` method
+    * Implemented in [`#124 Add as_mut_str() method`](https://github.com/ParkMyCar/compact_str/pull/124)
 * Implemented `From<CompactString>` for `String`
     * Implemented in [`#118 feat: add impl From<CompactString> for String`](https://github.com/ParkMyCar/compact_str/pull/118)
+
+# 0.5.2
+### July 24, 2022
+* Fix error when creating `CompactString` with capacity `16711422` on 32-bit archiectures
+    * Implemented in [`#161 fix: Test case discovered by AFL`](https://github.com/ParkMyCar/compact_str/pull/161) 
+    * Backported in [`#167 backport(v0.5): Test case discovered by AFL`](https://github.com/ParkMyCar/compact_str/pull/167)
+
+# 0.5.1
+### June 27, 2022
+* Fix error when importing `compact_str` by change the existing Add<...> impls
+    * Implemented in [`#103 fix/feat: Change the existing Add<...> impls`](https://github.com/ParkMyCar/compact_str/pull/103)
+    * Backported
 
 # 0.5.0
 ### June 18, 2022
@@ -22,6 +54,12 @@
     * Implemented in [`#102 Impl AsRef<OsStr> for CompactString`](https://github.com/ParkMyCar/compact_str/pull/102)
 * Add `format_compact!` macro
     * Implemented in [`#101 Add macro_rules format_compact!`](https://github.com/ParkMyCar/compact_str/pull/101)
+
+# 0.4.1
+### June 27, 2022
+* Fix error when importing `compact_str` by change the existing Add<...> impls
+    * Implemented in [`#103 fix/feat: Change the existing Add<...> impls`](https://github.com/ParkMyCar/compact_str/pull/103)
+    * Backported
 
 # 0.4.0
 ### May 27, 2022

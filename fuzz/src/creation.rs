@@ -22,6 +22,8 @@ use crate::MAX_INLINE_LENGTH;
 pub enum Creation<'a> {
     /// Create using [`CompactString::from_utf8`]
     Bytes(&'a [u8]),
+    /// Create using [`CompactString::from_utf16`]
+    BytesUtf16(Vec<u16>),
     /// Create using [`CompactString::from_utf8_buf`]
     Buf(&'a [u8]),
     /// Create using [`CompactString::from_utf8_buf_unchecked`]
@@ -32,6 +34,8 @@ pub enum Creation<'a> {
     IterString(Vec<String>),
     /// Create using [`CompactString::new`]
     Word(String),
+    /// Encode the provided `String` as UTF-16, and the create using [`CompactString::from_utf16`]
+    WordUtf16(String),
     /// Create using [`CompactString::from_utf8_buf`] when the buffer is non-contiguous
     NonContiguousBuf(&'a [u8]),
     /// Create using `From<&str>`, which copies the data from the string slice
@@ -158,6 +162,16 @@ impl Creation<'_> {
 
                 Some((compact, word))
             }
+            WordUtf16(word) => {
+                let utf16_buf: Vec<u16> = word.encode_utf16().collect();
+                let compact =
+                    CompactString::from_utf16(utf16_buf).expect("UTF-16 failed to roundtrip!");
+
+                assert_eq!(compact, word);
+                assert_properly_allocated(&compact, &word);
+
+                Some((compact, word))
+            }
             FromStr(s) => {
                 let compact = CompactString::from(s);
                 let std_str = s.to_string();
@@ -269,6 +283,23 @@ impl Creation<'_> {
                         None
                     }
                     _ => panic!("CompactString and core::str read UTF-8 differently?"),
+                }
+            }
+            BytesUtf16(data) => {
+                let compact = CompactString::from_utf16(&data);
+                let std_str = String::from_utf16(&data);
+
+                match (compact, std_str) {
+                    // valid UTF-16
+                    (Ok(c), Ok(s)) => {
+                        assert_eq!(c, s);
+                        assert_properly_allocated(&c, &s);
+
+                        Some((c, s))
+                    }
+                    // non-valid UTF-16
+                    (Err(_), Err(_)) => None,
+                    _ => panic!("CompactString and String read UTF-16 differently?"),
                 }
             }
             Buf(data) => {

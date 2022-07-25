@@ -253,6 +253,46 @@ impl CompactString {
         Ok(CompactString { repr })
     }
 
+    /// Decode a [`UTF-16`](https://en.wikipedia.org/wiki/UTF-16) slice of bytes into a
+    /// [`CompactString`], returning an [`Err`] if the slice contains any invalid data.
+    ///
+    /// # Examples
+    /// ### Valid UTF-16
+    /// ```
+    /// # use compact_str::CompactString;
+    /// let buf: &[u16] = &[0xD834, 0xDD1E, 0x006d, 0x0075, 0x0073, 0x0069, 0x0063];
+    /// let compact = CompactString::from_utf16(buf).unwrap();
+    ///
+    /// assert_eq!(compact, "𝄞music");
+    /// ```
+    ///
+    /// ### Invalid UTF-16
+    /// ```
+    /// # use compact_str::CompactString;
+    /// let buf: &[u16] = &[0xD834, 0xDD1E, 0x006d, 0x0075, 0xD800, 0x0069, 0x0063];
+    /// let res = CompactString::from_utf16(buf);
+    ///
+    /// assert!(res.is_err());
+    /// ```
+    #[inline]
+    pub fn from_utf16<B: AsRef<[u16]>>(buf: B) -> Result<Self, Utf16Error> {
+        // Note: we don't use collect::<Result<_, _>>() because that fails to pre-allocate a buffer,
+        // even though the size of our iterator, `buf`, is known ahead of time.
+        //
+        // rustlang issue #48994 is tracking the fix
+
+        let buf = buf.as_ref();
+        let mut ret = CompactString::with_capacity(buf.len());
+        for c in core::char::decode_utf16(buf.iter().copied()) {
+            if let Ok(c) = c {
+                ret.push(c);
+            } else {
+                return Err(Utf16Error(()));
+            }
+        }
+        Ok(ret)
+    }
+
     /// Returns the length of the [`CompactString`] in `bytes`, not [`char`]s or graphemes.
     ///
     /// When using `UTF-8` encoding (which all strings in Rust do) a single character will be 1 to 4
@@ -1058,6 +1098,32 @@ impl Add<&str> for CompactString {
 impl AddAssign<&str> for CompactString {
     fn add_assign(&mut self, rhs: &str) {
         self.push_str(rhs);
+    }
+}
+
+/// A possible error value when converting a [`CompactString`] from a UTF-16 byte slice.
+///
+/// This type is the error type for the [`from_utf16`] method on [`CompactString`].
+///
+/// [`from_utf16`]: CompactString::from_utf16
+/// # Examples
+///
+/// Basic usage:
+///
+/// ```
+/// # use compact_str::CompactString;
+/// // 𝄞mu<invalid>ic
+/// let v = &[0xD834, 0xDD1E, 0x006d, 0x0075,
+///           0xD800, 0x0069, 0x0063];
+///
+/// assert!(CompactString::from_utf16(v).is_err());
+/// ```
+#[derive(Copy, Clone, Debug)]
+pub struct Utf16Error(());
+
+impl fmt::Display for Utf16Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt("invalid utf-16: lone surrogate found", f)
     }
 }
 

@@ -1,4 +1,6 @@
 # Upcoming
+* Add `from_utf16()` method
+    * Implemented in [`#170 feat: Implement CompactString::from_utf16`](https://github.com/ParkMyCar/compact_str/pull/170)
 * impl `AddAssign` (`+=`) for `CompactString`
     * Implemented in [`add AddAssign operator`](https://github.com/ParkMyCar/compact_str/pull/159)
 * Implement [`markup::Render`](https://docs.rs/markup/latest/markup/trait.Render.html) trait
@@ -25,7 +27,7 @@
 # 0.5.2
 ### July 24, 2022
 * Fix error when creating `CompactString` with capacity `16711422` on 32-bit archiectures
-    * Implemented in [`#161 fix: Test case discovered by AFL`](https://github.com/ParkMyCar/compact_str/pull/161) 
+    * Implemented in [`#161 fix: Test case discovered by AFL`](https://github.com/ParkMyCar/compact_str/pull/161)
     * Backported in [`#167 backport(v0.5): Test case discovered by AFL`](https://github.com/ParkMyCar/compact_str/pull/167)
 
 # 0.5.1

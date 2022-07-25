@@ -123,6 +123,8 @@ jobs:
           toolchain: nightly
       - name: Set i686 as default
         run: rustup default nightly-i686-unknown-linux-gnu
+      - name: Install llvm-tools
+        run: rustup component add llvm-tools-preview
       - name: Debug rustc host
         run: rustc -v -V
       - name: Install Deps

@@ -126,7 +126,7 @@ jobs:
       - name: Debug rustc host
         run: rustc -v -V
       - name: Install Deps
-        run: sudo apt-get install --no-install-recommends binutils-dev binutils-i686-linux-gnu libunwind8-dev gcc-multilib clang clang:i386
+        run: sudo apt-get install --no-install-recommends binutils-dev binutils-i686-linux-gnu libunwind8-dev gcc-multilib clang
       - name: Install honggfuzz
         run: cargo install honggfuzz
       - uses: actions-rs/cargo@v1

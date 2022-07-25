@@ -6,6 +6,8 @@ on:
     paths:
       - 'compact_str/**'
       - '.github/workflows/cross_platform.yml'
+      - '!CHANGELOG.md'
+      - '!**/README.md'
   workflow_dispatch:
 
 name: X-Plat

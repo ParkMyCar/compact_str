@@ -4,9 +4,11 @@ on:
       - main
   pull_request:
     paths:
-        - 'compact_str/**'
-        - 'fuzz/**'
-        - '.github/workflows/fuzz.yml'
+      - 'compact_str/**'
+      - 'fuzz/**'
+      - '.github/workflows/fuzz.yml'
+      - '!CHANGELOG.md'
+      - '!**/README.md'
   workflow_dispatch:
   schedule:
     - cron: '0 01,13 * * *'

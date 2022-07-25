@@ -295,7 +295,7 @@ impl Creation<'_> {
                         assert_eq!(c, s);
                         assert_properly_allocated(&c, &s);
 
-                        Some((c, s.to_string()))
+                        Some((c, s))
                     }
                     // non-valid UTF-16
                     (Err(_), Err(_)) => None,

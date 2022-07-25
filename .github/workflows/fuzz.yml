@@ -76,7 +76,7 @@ jobs:
     env:
       HFUZZ_BUILD_ARGS: "--features=honggfuzz"
       HFUZZ_RUN_ARGS: "--run_time 120 --exit_upon_crash"
-      RUSTFLAGS: "-Znew-llvm-pass-manager=no"
+      RUSTFLAGS: "-Znew-llvm-pass-manager=no -Zsanitizer=address"
     steps:
       - uses: actions/checkout@v2
         name: Checkout compact_str
@@ -98,6 +98,42 @@ jobs:
         with:
           command: hfuzz
           args: run honggfuzz
+      - name: File Issue (if failure found)
+        if: failure()
+        uses: JasonEtco/create-an-issue@v2.6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          update_existing: true
+
+  honggfuzz_i686:
+    name: honggfuzz [i686]
+    runs-on: ubuntu-latest
+    env:
+      HFUZZ_BUILD_ARGS: "--features=honggfuzz"
+      HFUZZ_RUN_ARGS: "--run_time 120 --exit_upon_crash"
+      RUSTFLAGS: "-Znew-llvm-pass-manager=no -Zsanitizer=address"
+    steps:
+      - uses: actions/checkout@v2
+        name: Checkout compact_str
+      - uses: actions-rs/toolchain@v1
+        name: Install Rust
+        with:
+          toolchain: nightly
+          override: true
+      - name: Install Deps
+        run: sudo apt-get install --no-install-recommends binutils-dev libunwind8-dev
+      - uses: actions-rs/cargo@v1
+        name: Install honggfuzz
+        with:
+          command: install
+          toolchain: nightly
+          args: honggfuzz
+      - uses: actions-rs/cargo@v1
+        name: Fuzz!
+        with:
+          command: hfuzz
+          args: run honggfuzz --target i686-unknown-linux-gnu
       - name: File Issue (if failure found)
         if: failure()
         uses: JasonEtco/create-an-issue@v2.6

@@ -507,6 +507,72 @@ impl CompactString {
         self.repr.push_str(s)
     }
 
+    /// Removes a [`char`] from this [`CompactString`] at a byte position and returns it.
+    ///
+    /// This is an *O*(*n*) operation, as it requires copying every element in the
+    /// buffer.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `idx` is larger than or equal to the [`CompactString`]'s length,
+    /// or if it does not lie on a [`char`] boundary.
+    ///
+    /// # Examples
+    ///
+    /// ### Basic usage:
+    ///
+    /// ```
+    /// # use compact_str::CompactString;
+    /// let mut c = CompactString::from("hello world");
+    ///
+    /// assert_eq!(c.remove(0), 'h');
+    /// assert_eq!(c, "ello world");
+    ///
+    /// assert_eq!(c.remove(5), 'w');
+    /// assert_eq!(c, "ello orld");
+    /// ```
+    ///
+    /// ### Past total length:
+    ///
+    /// ```should_panic
+    /// # use compact_str::CompactString;
+    /// let mut c = CompactString::from("hello there!");
+    /// c.remove(100);
+    /// ```
+    ///
+    /// ### Not on char boundary:
+    ///
+    /// ```should_panic
+    /// # use compact_str::CompactString;
+    /// let mut c = CompactString::from("🦄");
+    /// c.remove(1);
+    /// ```
+    #[inline]
+    pub fn remove(&mut self, idx: usize) -> char {
+        let len = self.len();
+        let substr = &mut self.as_mut_str()[idx..];
+
+        // get the char we want to remove
+        let ch = substr
+            .chars()
+            .next()
+            .expect("cannot remove a char from the end of a string");
+        let ch_len = ch.len_utf8();
+
+        // shift everything back one character
+        let num_bytes = substr.len() - ch_len;
+        let ptr = substr.as_mut_ptr();
+
+        // SAFETY: Both src and dest are valid for reads of `num_bytes` amount of bytes,
+        // and are properly aligned
+        unsafe {
+            core::ptr::copy(ptr.add(ch_len) as *const u8, ptr, num_bytes);
+            self.set_len(len - ch_len);
+        }
+
+        ch
+    }
+
     /// Forces the length of the [`CompactString`] to `new_len`.
     ///
     /// This is a low-level operation that maintains none of the normal invariants for

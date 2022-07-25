@@ -36,6 +36,8 @@ pub enum Action<'a> {
     SplitOff(u8),
     /// Extract a range
     Drain(u8, u8),
+    /// Remove a `char`
+    Remove(u8),
 }
 
 impl Action<'_> {
@@ -203,6 +205,19 @@ impl Action<'_> {
                 drop(compact_drain);
                 assert_eq!(control.as_str(), compact.as_str());
                 assert_eq!(compact.capacity(), compact_capacity);
+            }
+            Remove(val) => {
+                let idx = to_index(control, val);
+
+                // if the strings are empty, we can't remove anything
+                if control.is_empty() && compact.is_empty() {
+                    assert_eq!(idx, 0);
+                    return;
+                }
+
+                assert_eq!(control.remove(idx), compact.remove(idx));
+                assert_eq!(control, compact);
+                assert_eq!(control.len(), compact.len());
             }
         }
     }

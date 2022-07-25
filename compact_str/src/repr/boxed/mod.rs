@@ -20,7 +20,7 @@ const MIN_SIZE: usize = core::mem::size_of::<usize>() / 2;
 ///
 /// Note: this is different than [`std::string::String`], which grows at a rate of 2x. It's debated
 /// which is better, for now we'll stick with a rate of 1.5x
-/// 
+///
 /// TODO: Handle overflows in the case of __very__ large Strings
 #[inline(always)]
 fn amortized_growth(cur_len: usize, additional: usize) -> usize {

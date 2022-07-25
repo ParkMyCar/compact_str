@@ -6,6 +6,9 @@ on:
     paths:
       - 'compact_str/**'
       - '.github/workflows/msrv.yml'
+    paths-ignore:
+      - 'CHANGELOG.md'
+      - '**/README.md'
   workflow_dispatch:
 
 name: MSRV

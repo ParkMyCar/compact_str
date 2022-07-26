@@ -2,6 +2,7 @@ use std::borrow::Cow;
 use std::num;
 use std::str::FromStr;
 
+use proptest::collection::SizeRange;
 use proptest::prelude::*;
 use proptest::strategy::Strategy;
 use test_strategy::proptest;
@@ -43,6 +44,11 @@ pub fn rand_unicode_with_max_len(len: usize) -> impl Strategy<Value = String> {
             })
             .collect::<String>()
     })
+}
+
+/// [`proptest::strategy::Strategy`] that generates [`String`]s with up to `len` bytes
+pub fn rand_unicode_with_range(range: impl Into<SizeRange>) -> impl Strategy<Value = String> {
+    proptest::collection::vec(proptest::char::any(), range).prop_map(|v| v.into_iter().collect())
 }
 
 /// generates groups upto 40 strings long of random unicode strings, upto 80 chars long
@@ -246,6 +252,36 @@ fn proptest_from_utf16_random(#[strategy(rand_u16s())] buf: Vec<u16>) {
             "CompactString and String decode UTF-16 differently? {:?} {:?}",
             c_res, s_res
         ),
+    }
+}
+
+#[proptest]
+#[cfg_attr(miri, ignore)]
+fn proptest_remove(#[strategy(rand_unicode_with_range(1..80))] mut control: String, val: u8) {
+    let initial_len = control.len();
+    let mut compact = CompactString::new(&control);
+
+    let idx = control
+        .char_indices()
+        .into_iter()
+        .cycle()
+        .nth(val as usize)
+        .unwrap_or_default()
+        .0;
+
+    let control_char = control.remove(idx);
+    let compact_char = compact.remove(idx);
+
+    prop_assert_eq!(control_char, compact_char);
+    prop_assert_eq!(control_char, compact_char);
+    prop_assert_eq!(control.len(), compact.len());
+
+    // If we started as heap allocated, we should stay heap allocated. This prevents us from
+    // needing to deallocate the buffer on the heap
+    if initial_len > MAX_SIZE {
+        prop_assert!(compact.is_heap_allocated());
+    } else {
+        prop_assert!(!compact.is_heap_allocated());
     }
 }
 
@@ -1053,6 +1089,39 @@ fn test_insert() {
         s,
         "\u{ffff}\u{ffff}\u{ffff}\u{ffff}\u{ffff}\u{ffff}\u{ffff}\u{ffff}",
     );
+}
+
+#[test]
+fn test_remove() {
+    let mut control = String::from("🦄🦀hello🎶world🇺🇸");
+    let mut compact = CompactString::from(&control);
+
+    assert_eq!(control.remove(0), compact.remove(0));
+    assert_eq!(control, compact);
+    assert_eq!(compact, "🦀hello🎶world🇺🇸");
+
+    let music_idx = control
+        .char_indices()
+        .find(|(_idx, c)| *c == '🎶')
+        .map(|(idx, _c)| idx)
+        .unwrap();
+    assert_eq!(control.remove(music_idx), compact.remove(music_idx));
+    assert_eq!(control, compact);
+    assert_eq!(compact, "🦀helloworld🇺🇸");
+}
+
+#[test]
+#[should_panic(expected = "cannot remove a char from the end of a string")]
+fn test_remove_empty_string() {
+    let mut compact = CompactString::new("");
+    compact.remove(0);
+}
+
+#[test]
+#[should_panic(expected = "cannot remove a char from the end of a string")]
+fn test_remove_str_len() {
+    let mut compact = CompactString::new("hello world");
+    compact.remove(compact.len());
 }
 
 #[test]

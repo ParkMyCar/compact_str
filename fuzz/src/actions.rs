@@ -209,6 +209,9 @@ impl Action<'_> {
             Remove(val) => {
                 let idx = to_index(control, val);
 
+                // idx needs to be < our str length, cycle it back to the beginning if they're equal
+                let idx = if idx == control.len() { 0 } else { idx };
+
                 // if the strings are empty, we can't remove anything
                 if control.is_empty() && compact.is_empty() {
                     assert_eq!(idx, 0);
@@ -226,9 +229,30 @@ impl Action<'_> {
 fn to_index(s: &str, idx: u8) -> usize {
     s.char_indices()
         .into_iter()
-        .cycle()
         .map(|(idx, _)| idx)
         .chain([s.len()])
+        .cycle()
         .nth(idx as usize)
         .unwrap_or_default()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::to_index;
+
+    #[test]
+    fn test_to_index() {
+        let s = "hello world";
+
+        let idx = to_index(&s, 5);
+        assert_eq!(idx, 5);
+
+        // it should be possible to get str len as an index
+        let idx = to_index(&s, s.len() as u8);
+        assert_eq!(idx, s.len());
+
+        // providing an index greater than the str length, cycles back to the beginning
+        let idx = to_index(&s, (s.len() + 1) as u8);
+        assert_eq!(idx, 0);
+    }
 }

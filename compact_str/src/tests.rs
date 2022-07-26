@@ -1111,6 +1111,20 @@ fn test_remove() {
 }
 
 #[test]
+#[should_panic(expected = "cannot remove a char from the end of a string")]
+fn test_remove_empty_string() {
+    let mut compact = CompactString::new("");
+    compact.remove(0);
+}
+
+#[test]
+#[should_panic(expected = "cannot remove a char from the end of a string")]
+fn test_remove_str_len() {
+    let mut compact = CompactString::new("hello world");
+    compact.remove(compact.len());
+}
+
+#[test]
 fn test_with_capacity_16711422() {
     // Fuzzing with AFL on a 32-bit ARM arch found this bug!
     //

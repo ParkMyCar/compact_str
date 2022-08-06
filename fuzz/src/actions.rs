@@ -40,6 +40,8 @@ pub enum Action<'a> {
     Remove(u8),
     /// First reserve additional memory, then shrink it
     ShrinkTo(u16, u16),
+    /// Remove every nth characte, and every character over a specific code point
+    Retain(u8, char),
 }
 
 impl Action<'_> {
@@ -241,6 +243,29 @@ impl Action<'_> {
 
                 control.shrink_to_fit();
                 compact.shrink_to_fit();
+
+                assert_eq!(control, compact);
+                assert_eq!(control.len(), compact.len());
+            }
+            Retain(nth, codepoint) => {
+                let nth = nth % 8;
+
+                let new_predicate = || {
+                    let mut index = 0;
+                    move |c: char| {
+                        if index == nth || c > codepoint {
+                            index = 0;
+                            false
+                        } else {
+                            index += 1;
+                            true
+                        }
+                    }
+                };
+
+                control.retain(new_predicate());
+                compact.retain(new_predicate());
+
                 assert_eq!(control, compact);
                 assert_eq!(control.len(), compact.len());
             }

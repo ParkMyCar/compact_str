@@ -975,6 +975,48 @@ impl CompactString {
     pub fn shrink_to_fit(&mut self) {
         self.repr.shrink_to(0);
     }
+
+    /// Retains only the characters specified by the predicate.
+    ///
+    /// The method iterates over the characters in the string and calls the `predicate`.
+    ///
+    /// If the `predicate` returns `false`, then the character gets removed.
+    /// If the `predicate` returns `true`, then the character is kept.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use compact_str::CompactString;
+    /// let mut s = CompactString::from("äb𝄞d€");
+    ///
+    /// let keep = [false, true, true, false, true];
+    /// let mut iter = keep.iter();
+    /// s.retain(|_| *iter.next().unwrap());
+    ///
+    /// assert_eq!(s, "b𝄞€");
+    /// ```
+    pub fn retain(&mut self, mut predicate: impl FnMut(char) -> bool) {
+        // We iterate over the string, and copy character by character.
+
+        let s = self.as_mut_str();
+        let mut dest_idx = 0;
+        let mut src_idx = 0;
+        while let Some(ch) = s[src_idx..].chars().next() {
+            let ch_len = ch.len_utf8();
+            if predicate(ch) {
+                // SAFETY: We know that both indices are valid, and that we don't split a char.
+                unsafe {
+                    let p = s.as_mut_ptr();
+                    core::ptr::copy(p.add(src_idx), p.add(dest_idx), ch_len);
+                }
+                dest_idx += ch_len;
+            }
+            src_idx += ch_len;
+        }
+
+        // SAFETY: We know that the index is a valid position to break the string.
+        unsafe { self.set_len(dest_idx) };
+    }
 }
 
 impl Default for CompactString {

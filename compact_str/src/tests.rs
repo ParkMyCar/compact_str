@@ -287,6 +287,40 @@ fn proptest_remove(#[strategy(rand_unicode_with_range(1..80))] mut control: Stri
     }
 }
 
+#[proptest]
+#[cfg_attr(miri, ignore)]
+fn proptest_from_utf8_unchecked(#[strategy(rand_bytes())] bytes: Vec<u8>) {
+    let compact = unsafe { CompactString::from_utf8_unchecked(&bytes) };
+    let std_str = unsafe { String::from_utf8_unchecked(bytes.clone()) };
+
+    // we might not make valid strings, but we should be able to read the underlying bytes
+    assert_eq!(compact.as_bytes(), std_str.as_bytes());
+    assert_eq!(compact.as_bytes(), bytes);
+
+    // make sure the length is correct
+    assert_eq!(compact.len(), bytes.len());
+
+    // check if we were valid UTF-8, if so, assert the data written into the CompactString is
+    // correct
+    let data_is_valid = std::str::from_utf8(&bytes);
+    let compact_is_valid = std::str::from_utf8(compact.as_bytes());
+    let std_str_is_valid = std::str::from_utf8(std_str.as_bytes());
+
+    match (data_is_valid, compact_is_valid, std_str_is_valid) {
+        (Ok(d), Ok(c), Ok(s)) => {
+            // if we get &str's back, make sure they're all equal
+            assert_eq!(d, c);
+            assert_eq!(c, s);
+        }
+        (Err(d), Err(c), Err(s)) => {
+            // if we get errors back, the errors should be the same
+            assert_eq!(d, c);
+            assert_eq!(c, s);
+        }
+        _ => panic!("data, CompactString, and String disagreed?"),
+    }
+}
+
 #[test]
 fn test_const_creation() {
     const EMPTY: CompactString = CompactString::new_inline("");
@@ -1219,4 +1253,39 @@ fn test_reserve_shrink_roundtrip() {
     assert!(!s.is_heap_allocated());
     assert_eq!(s.capacity(), MAX_SIZE);
     assert_eq!(s, TEXT);
+}
+
+#[test]
+fn test_from_utf8_unchecked_sanity() {
+    let text = "hello 🌎, you are nice";
+    let compact = unsafe { CompactString::from_utf8_unchecked(text) };
+
+    assert_eq!(compact, text);
+}
+
+#[test]
+fn test_from_utf8_unchecked_long() {
+    let bytes = [255; 2048];
+    let compact = unsafe { CompactString::from_utf8_unchecked(bytes) };
+
+    assert_eq!(compact.len(), 2048);
+    assert_eq!(compact.as_bytes(), bytes);
+}
+
+#[test]
+fn test_from_utf8_unchecked_short() {
+    let bytes = [255; 10];
+    let compact = unsafe { CompactString::from_utf8_unchecked(bytes) };
+
+    assert_eq!(compact.len(), 10);
+    assert_eq!(compact.as_bytes(), bytes);
+}
+
+#[test]
+fn test_from_utf8_unchecked_empty() {
+    let bytes = [255; 0];
+    let compact = unsafe { CompactString::from_utf8_unchecked(bytes) };
+
+    assert_eq!(compact.len(), 0);
+    assert_eq!(compact.as_bytes(), bytes);
 }

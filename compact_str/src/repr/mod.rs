@@ -112,6 +112,40 @@ impl Repr {
     }
 
     #[inline]
+    pub unsafe fn from_utf8_unchecked<B: AsRef<[u8]>>(buf: B) -> Self {
+        let bytes = buf.as_ref();
+        let bytes_len = bytes.len();
+
+        // Create a Repr with enough capacity for the entire buffer
+        let mut repr = Repr::with_capacity(bytes_len);
+
+        // There's an edge case where the final byte of this buffer == `HEAP_MASK`, which is
+        // invalid UTF-8, but would result in us creating an inline variant, that identifies as
+        // a heap variant. If a user ever tried to reference the data at all, we'd incorrectly
+        // try and read data from an invalid memory address, causing undefined behavior.
+        if bytes_len == MAX_SIZE {
+            let last_byte = bytes[bytes_len - 1];
+            // If we hit the edge case, reserve additional space to make the repr becomes heap
+            // allocated, which prevents us from writing this last byte inline
+            if last_byte >= 0b11000000 {
+                repr.reserve(MAX_SIZE + 1);
+            }
+        }
+
+        // SAFETY: The caller is responsible for making sure the provided buffer is UTF-8. This
+        // invariant is documented in the public API
+        let slice = repr.as_mut_slice();
+        // write the chunk into the Repr
+        slice[..bytes_len].copy_from_slice(bytes);
+
+        // Set the length of the Repr
+        // SAFETY: We just wrote the entire `buf` into the Repr
+        repr.set_len(bytes_len);
+
+        repr
+    }
+
+    #[inline]
     pub fn from_string(s: String) -> Self {
         if s.capacity() == 0 {
             EMPTY
@@ -557,6 +591,7 @@ crate::asserts::assert_size!(Repr, 12);
 mod tests {
     use super::{
         Repr,
+        HEAP_MASK,
         MAX_SIZE,
     };
 
@@ -809,5 +844,16 @@ mod tests {
         assert_eq!(repr.capacity(), MAX_SIZE);
         assert!(!repr.is_heap_allocated());
         assert_eq!(repr.as_str(), "hello world!");
+    }
+
+    #[test]
+    fn test_from_utf8_unchecked_heap_mask() {
+        let bytes = [HEAP_MASK; MAX_SIZE];
+
+        // this isn't a valid string, but we should be able to read back the underlying buffer
+        let repr = unsafe { Repr::from_utf8_unchecked(bytes) };
+
+        assert_eq!(repr.len(), MAX_SIZE);
+        assert_eq!(repr.as_slice(), bytes);
     }
 }

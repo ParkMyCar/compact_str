@@ -908,6 +908,73 @@ impl CompactString {
             chars: self[start..end].chars(),
         }
     }
+
+    /// Shrinks the capacity of this [`CompactString`] with a lower bound.
+    ///
+    /// The resulting capactity is never less than the size of 3×[`usize`],
+    /// i.e. the capacity than can be inlined.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use compact_str::CompactString;
+    /// let mut s = CompactString::with_capacity(100);
+    /// assert_eq!(s.capacity(), 100);
+    ///
+    /// // if the capacity was already bigger than the argument, the call is a no-op
+    /// s.shrink_to(100);
+    /// assert_eq!(s.capacity(), 100);
+    ///
+    /// s.shrink_to(50);
+    /// assert_eq!(s.capacity(), 50);
+    ///
+    /// // if the string can be inlined, it is
+    /// s.shrink_to(10);
+    /// assert_eq!(s.capacity(), 3 * std::mem::size_of::<usize>());
+    /// ```
+    #[inline]
+    pub fn shrink_to(&mut self, min_capacity: usize) {
+        self.repr.shrink_to(min_capacity);
+    }
+
+    /// Shrinks the capacity of this [`CompactString`] to match its length.
+    ///
+    /// The resulting capactity is never less than the size of 3×[`usize`],
+    /// i.e. the capacity than can be inlined.
+    ///
+    /// This method is effectively the same as calling [`string.shrink_to(0)`].
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use compact_str::CompactString;
+    /// let mut s = CompactString::from("This is a string with more than 24 characters.");
+    ///
+    /// s.reserve(100);
+    /// assert!(s.capacity() >= 100);
+    ///
+    ///  s.shrink_to_fit();
+    /// assert_eq!(s.len(), s.capacity());
+    /// ```
+    ///
+    /// ```
+    /// # use compact_str::CompactString;
+    /// let mut s = CompactString::from("short string");
+    ///
+    /// s.reserve(100);
+    /// assert!(s.capacity() >= 100);
+    ///
+    /// s.shrink_to_fit();
+    /// assert_eq!(s.capacity(), 3 * std::mem::size_of::<usize>());
+    /// ```
+    #[inline]
+    pub fn shrink_to_fit(&mut self) {
+        self.repr.shrink_to(0);
+    }
 }
 
 impl Default for CompactString {

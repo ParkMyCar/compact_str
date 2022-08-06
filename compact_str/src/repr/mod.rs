@@ -7,12 +7,11 @@ use std::str::Utf8Error;
 #[cfg(feature = "bytes")]
 mod bytes;
 
-mod iter;
-
 mod boxed;
 mod discriminant;
 mod heap;
 mod inline;
+mod iter;
 mod nonmax;
 mod num;
 mod traits;
@@ -316,6 +315,24 @@ impl Repr {
     fn into_union(self) -> ReprUnion {
         // SAFETY: An `ReprUnion` and `Repr` have the same size
         unsafe { std::mem::transmute(self) }
+    }
+
+    pub(crate) fn shrink_to(&mut self, min_capacity: usize) {
+        let heap = match self.cast_mut() {
+            MutStrongRepr::Inline(_) => return,
+            MutStrongRepr::Heap(heap) => heap,
+        };
+
+        let old_capacity = heap.string.capacity();
+        let new_capacity = heap.string.len().max(min_capacity);
+        if new_capacity <= MAX_SIZE {
+            // String can be inlined.
+            *self = Repr::from_inline(InlineString::new(heap.string.as_str()));
+        } else if new_capacity < old_capacity {
+            // String can be shrunk.
+            // We can ignore the result. The string keeps its old capacity, but that's okay.
+            let _ = heap.string.realloc(new_capacity);
+        }
     }
 }
 

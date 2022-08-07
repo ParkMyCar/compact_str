@@ -253,6 +253,40 @@ impl CompactString {
         Ok(CompactString { repr })
     }
 
+    /// Converts a vector of bytes to a [`CompactString`] without checking that the string contains
+    /// valid UTF-8.
+    ///
+    /// See the safe version, [`CompactString::from_utf8`], for more details.
+    ///
+    /// # Safety
+    ///
+    /// This function is unsafe because it does not check that the bytes passed to it are valid
+    /// UTF-8. If this constraint is violated, it may cause memory unsafety issues with future users
+    /// of the [`CompactString`], as the rest of the standard library assumes that
+    /// [`CompactString`]s are valid UTF-8.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use compact_str::CompactString;
+    /// // some bytes, in a vector
+    /// let sparkle_heart = vec![240, 159, 146, 150];
+    ///
+    /// let sparkle_heart = unsafe {
+    ///     CompactString::from_utf8_unchecked(sparkle_heart)
+    /// };
+    ///
+    /// assert_eq!("💖", sparkle_heart);
+    /// ```
+    #[inline]
+    #[must_use]
+    pub unsafe fn from_utf8_unchecked<B: AsRef<[u8]>>(buf: B) -> Self {
+        let repr = Repr::from_utf8_unchecked(buf);
+        CompactString { repr }
+    }
+
     /// Decode a [`UTF-16`](https://en.wikipedia.org/wiki/UTF-16) slice of bytes into a
     /// [`CompactString`], returning an [`Err`] if the slice contains any invalid data.
     ///

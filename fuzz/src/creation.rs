@@ -22,6 +22,8 @@ use crate::MAX_INLINE_LENGTH;
 pub enum Creation<'a> {
     /// Create using [`CompactString::from_utf8`]
     Bytes(&'a [u8]),
+    /// Create using [`CompactString::from_utf8_unchecked`]
+    BytesUnchecked(&'a [u8]),
     /// Create using [`CompactString::from_utf16`]
     BytesUtf16(Vec<u16>),
     /// Create using [`CompactString::from_utf8_buf`]
@@ -283,6 +285,44 @@ impl Creation<'_> {
                         None
                     }
                     _ => panic!("CompactString and core::str read UTF-8 differently?"),
+                }
+            }
+            BytesUnchecked(data) => {
+                // The data provided might not be valid UTF-8. We mainly want to make sure we don't
+                // panic, and the data is written correctly. Before returning either of these types
+                // we'll make sure they contain valid data
+                let compact = unsafe { CompactString::from_utf8_unchecked(data) };
+                let std_str = unsafe { String::from_utf8_unchecked(data.to_vec()) };
+
+                // make sure our data didn't somehow get longer
+                assert_eq!(data.len(), compact.len());
+                assert_eq!(compact.len(), std_str.len());
+
+                // make sure the data written is the same
+                assert_eq!(compact.as_bytes(), std_str.as_bytes());
+
+                let data_is_valid = std::str::from_utf8(data);
+                let compact_is_valid = std::str::from_utf8(compact.as_bytes());
+                let std_str_is_valid = std::str::from_utf8(std_str.as_bytes());
+
+                match (data_is_valid, compact_is_valid, std_str_is_valid) {
+                    (Ok(d), Ok(c), Ok(s)) => {
+                        // if we get &str's back, make sure they're all equal
+                        assert_eq!(d, c);
+                        assert_eq!(c, s);
+
+                        // we have valid UTF-8 data! we can return a pair
+                        Some((compact, std_str))
+                    }
+                    (Err(d), Err(c), Err(s)) => {
+                        // if we get errors back, the errors should be the same
+                        assert_eq!(d, c);
+                        assert_eq!(c, s);
+
+                        // we don't have valid UTF-8 data, so we can't return anything
+                        None
+                    }
+                    _ => panic!("data, CompactString, and String disagreed?"),
                 }
             }
             BytesUtf16(data) => {

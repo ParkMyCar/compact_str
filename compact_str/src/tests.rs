@@ -8,6 +8,7 @@ use proptest::strategy::Strategy;
 use test_strategy::proptest;
 
 use crate::{
+    format_compact,
     CompactString,
     ToCompactString,
 };
@@ -772,19 +773,6 @@ fn test_bool_to_compact_string() {
     assert_eq!("false", c);
     assert_eq!(c, s);
     assert!(!c.is_heap_allocated());
-}
-
-macro_rules! format_compact {
-    ( $fmt:expr $(, $args:tt)* ) => {
-        ToCompactString::to_compact_string(
-            &core::format_args!(
-                $fmt,
-                $(
-                    $args,
-                )*
-            )
-        )
-    };
 }
 
 macro_rules! assert_int_MAX_to_compact_string {

@@ -26,9 +26,9 @@
 /// `ToCompactString::to_compact_string` never returns an error itself.
 #[macro_export]
 macro_rules! format_compact {
-    ($($arg:tt)*) => {{
-        $crate::ToCompactString::to_compact_string(&format_args!($($arg)*))
-    }}
+    ($($arg:tt)*) => {
+        $crate::ToCompactString::to_compact_string(&$crate::core::format_args!($($arg)*))
+    }
 }
 
 #[cfg(test)]

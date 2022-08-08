@@ -51,6 +51,16 @@ jobs:
         name: Run clippy
         with:
           command: clippy
+      - uses: actions-rs/cargo@v1
+        name: Run clippy (warnings)
+        with:
+          command: clippy
+          args: -- -D warnings
+      - uses: actions-rs/cargo@v1
+        name: Run clippy (pedantic)
+        with:
+          command: clippy
+          args: -- -D clippy::pedantic
 
   doc:
     name: cargo doc

@@ -49,7 +49,7 @@ impl Repr {
                 let last_byte = chunk[chunk_len - 1];
                 // If we hit the edge case, reserve additional space to make the repr becomes heap
                 // allocated, which prevents us from writing this last byte inline
-                if last_byte >= 0b11000000 {
+                if last_byte >= 0b1100_0000 {
                     repr.reserve(MAX_SIZE + 1);
                 }
             }
@@ -166,8 +166,8 @@ mod test {
         let mut queue = std::collections::VecDeque::with_capacity(data.len());
 
         // create a non-contiguous slice of memory in queue
-        front.into_iter().copied().for_each(|x| queue.push_back(x));
-        back.into_iter().copied().for_each(|x| queue.push_front(x));
+        front.iter().copied().for_each(|x| queue.push_back(x));
+        back.iter().copied().for_each(|x| queue.push_front(x));
 
         // make sure it's non-contiguous
         let (a, b) = queue.as_slices();

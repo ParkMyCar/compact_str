@@ -47,7 +47,7 @@ pub const MAX_VALUE: usize = (1 << SPACE_FOR_CAPACITY * 8) - 2;
 /// string larger than 16 megabytes probably isn't that uncommon.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Capacity {
-    _buf: [u8; USIZE_SIZE],
+    buf: [u8; USIZE_SIZE],
 }
 
 impl Capacity {
@@ -57,26 +57,26 @@ impl Capacity {
             // if we need the last byte to encode this capacity then we need to put the capacity on
             // the heap. return an Error so `BoxString` can do the right thing
             Err(Capacity {
-                _buf: CAPACITY_IS_ON_THE_HEAP,
+                buf: CAPACITY_IS_ON_THE_HEAP,
             })
         } else {
             let mut bytes = capacity.to_le_bytes();
             // otherwise, we can store this capacity inline! Set the last byte to be our `HEAP_MASK`
             // for our discriminant, using the leading bytes to store the actual value
             bytes[core::mem::size_of::<usize>() - 1] = HEAP_MASK;
-            Ok(Capacity { _buf: bytes })
+            Ok(Capacity { buf: bytes })
         }
     }
 
     #[inline]
-    pub fn as_usize(&self) -> Result<usize, ()> {
-        if self._buf == CAPACITY_IS_ON_THE_HEAP {
+    pub fn as_usize(self) -> Result<usize, ()> {
+        if self.buf == CAPACITY_IS_ON_THE_HEAP {
             Err(())
         } else {
             let mut usize_buf = [0u8; USIZE_SIZE];
             unsafe {
                 core::ptr::copy_nonoverlapping(
-                    self._buf.as_ptr(),
+                    self.buf.as_ptr(),
                     usize_buf.as_mut_ptr(),
                     SPACE_FOR_CAPACITY,
                 );
@@ -86,8 +86,8 @@ impl Capacity {
     }
 
     #[inline(always)]
-    pub fn is_heap(&self) -> bool {
-        self._buf == CAPACITY_IS_ON_THE_HEAP
+    pub fn is_heap(self) -> bool {
+        self.buf == CAPACITY_IS_ON_THE_HEAP
     }
 }
 
@@ -112,7 +112,7 @@ mod tests {
         let max_value = 2usize.pow(available_bytes * 8) - 2;
 
         #[cfg(target_pointer_width = "64")]
-        assert_eq!(max_value, 72057594037927934);
+        assert_eq!(max_value, 72_057_594_037_927_934);
         #[cfg(target_pointer_width = "32")]
         assert_eq!(max_value, 16777214);
 
@@ -128,7 +128,7 @@ mod tests {
         let first_invalid = 2usize.pow(available_bytes * 8) - 1;
 
         #[cfg(target_pointer_width = "64")]
-        assert_eq!(first_invalid, 72057594037927935);
+        assert_eq!(first_invalid, 72_057_594_037_927_935);
         #[cfg(target_pointer_width = "32")]
         assert_eq!(first_invalid, 16777215);
 

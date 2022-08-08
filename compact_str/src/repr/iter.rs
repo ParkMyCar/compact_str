@@ -66,8 +66,7 @@ fn from_as_ref_str_iterator<S, I>(mut iter: I) -> Repr
 where
     S: AsRef<str>,
     I: Iterator<Item = S>,
-    String: core::iter::Extend<S>,
-    String: FromIterator<S>,
+    String: core::iter::Extend<S> + FromIterator<S>,
 {
     // Note: We don't check the lower bound here like we do in the character iterator because it's
     // possible for the iterator to be full of empty strings! In which case checking the lower bound

@@ -1,3 +1,5 @@
+#![allow(clippy::inline_always)]
+
 use core::fmt::{
     self,
     Write,

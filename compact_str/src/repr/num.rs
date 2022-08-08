@@ -142,7 +142,7 @@ impl IntoRepr for i128 {
     }
 }
 
-/// Defines the implementation of [`IntoRepr`] for NonZero integer types
+/// Defines the implementation of [`IntoRepr`] for `NonZero` integer types
 macro_rules! impl_NonZero_IntoRepr {
     ($t:path) => {
         impl IntoRepr for $t {
@@ -214,6 +214,7 @@ trait NumChars {
 
 impl NumChars for u8 {
     #[inline(always)]
+    #[allow(clippy::unreadable_literal)]
     fn num_chars(val: u8) -> usize {
         match val {
             u8::MIN..=9 => 1,
@@ -225,6 +226,7 @@ impl NumChars for u8 {
 
 impl NumChars for i8 {
     #[inline(always)]
+    #[allow(clippy::unreadable_literal, clippy::match_same_arms)]
     fn num_chars(val: i8) -> usize {
         match val {
             i8::MIN..=-100 => 4,
@@ -239,6 +241,7 @@ impl NumChars for i8 {
 
 impl NumChars for u16 {
     #[inline(always)]
+    #[allow(clippy::unreadable_literal)]
     fn num_chars(val: u16) -> usize {
         match val {
             u16::MIN..=9 => 1,
@@ -252,6 +255,7 @@ impl NumChars for u16 {
 
 impl NumChars for i16 {
     #[inline(always)]
+    #[allow(clippy::unreadable_literal, clippy::match_same_arms)]
     fn num_chars(val: i16) -> usize {
         match val {
             i16::MIN..=-10000 => 6,
@@ -270,6 +274,7 @@ impl NumChars for i16 {
 
 impl NumChars for u32 {
     #[inline(always)]
+    #[allow(clippy::unreadable_literal)]
     fn num_chars(val: u32) -> usize {
         match val {
             u32::MIN..=9 => 1,
@@ -288,6 +293,7 @@ impl NumChars for u32 {
 
 impl NumChars for i32 {
     #[inline(always)]
+    #[allow(clippy::unreadable_literal, clippy::match_same_arms)]
     fn num_chars(val: i32) -> usize {
         match val {
             i32::MIN..=-1000000000 => 11,
@@ -316,6 +322,7 @@ impl NumChars for i32 {
 
 impl NumChars for u64 {
     #[inline(always)]
+    #[allow(clippy::unreadable_literal)]
     fn num_chars(val: u64) -> usize {
         match val {
             u64::MIN..=9 => 1,
@@ -344,6 +351,7 @@ impl NumChars for u64 {
 
 impl NumChars for i64 {
     #[inline(always)]
+    #[allow(clippy::unreadable_literal, clippy::match_same_arms)]
     fn num_chars(val: i64) -> usize {
         match val {
             i64::MIN..=-1000000000000000000 => 20,

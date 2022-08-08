@@ -10,6 +10,10 @@ use crate::{
 impl CompactString {
     /// Converts a buffer of bytes to a [`CompactString`]
     ///
+    /// # Errors
+    ///
+    /// If the argument is not a valid UTF-8 slice, then a [`Utf8Error`] is returned.
+    ///
     /// # Examples
     /// ### Basic usage
     /// ```

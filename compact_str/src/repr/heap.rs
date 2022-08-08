@@ -60,7 +60,7 @@ impl HeapString {
 
     #[inline]
     pub unsafe fn set_len(&mut self, length: usize) {
-        self.string.set_len(length)
+        self.string.set_len(length);
     }
 }
 

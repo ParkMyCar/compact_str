@@ -1,3 +1,5 @@
+#![allow(clippy::inline_always)]
+
 use std::borrow::Cow;
 use std::fmt;
 use std::iter::Extend;
@@ -31,7 +33,7 @@ const PADDING_SIZE: usize = MAX_SIZE - std::mem::size_of::<u8>();
 const EMPTY: Repr = Repr::from_inline(InlineString::new_const(""));
 
 /// Used as a discriminant to identify different variants
-pub const HEAP_MASK: u8 = 0b11111110;
+pub const HEAP_MASK: u8 = 0b1111_1110;
 
 /// This is the "compiler facing" representation for the struct that underpins `CompactString`. The
 /// odd layout enables the compiler to represent an `Option<CompactString>` in the same amount of
@@ -127,7 +129,7 @@ impl Repr {
             let last_byte = bytes[bytes_len - 1];
             // If we hit the edge case, reserve additional space to make the repr becomes heap
             // allocated, which prevents us from writing this last byte inline
-            if last_byte >= 0b11000000 {
+            if last_byte >= 0b1100_0000 {
                 repr.reserve(MAX_SIZE + 1);
             }
         }
@@ -209,7 +211,7 @@ impl Repr {
             // than MAX_SIZE, if that `CompactString` was created From a String or
             // Box<str>.
             let inline = InlineString::new(self.as_str());
-            *self = Repr::from_inline(inline)
+            *self = Repr::from_inline(inline);
         } else {
             // Create a `HeapString` with `text.len() + additional` capacity
             let heap = HeapString::with_additional(self.as_str(), additional);
@@ -265,7 +267,7 @@ impl Repr {
 
     #[inline]
     pub unsafe fn set_len(&mut self, length: usize) {
-        self.cast_mut().set_len(length)
+        self.cast_mut().set_len(length);
     }
 
     #[inline]
@@ -336,13 +338,13 @@ impl Repr {
     #[inline(always)]
     fn as_union(&self) -> &ReprUnion {
         // SAFETY: An `ReprUnion` and `Repr` have the same size
-        unsafe { &*(self as *const _ as *const _) }
+        unsafe { &*(self as *const Self).cast() }
     }
 
     #[inline(always)]
     fn as_union_mut(&mut self) -> &mut ReprUnion {
         // SAFETY: An `ReprUnion` and `Repr` have the same size
-        unsafe { &mut *(self as *mut _ as *mut _) }
+        unsafe { &mut *(self as *mut Self).cast() }
     }
 
     #[inline(always)]
@@ -382,12 +384,6 @@ impl Clone for Repr {
 impl Drop for Repr {
     #[inline]
     fn drop(&mut self) {
-        // By "outlining" the actual Drop code and only calling it if we're a heap variant, it
-        // allows dropping an inline variant to be as cheap as possible.
-        if self.is_heap_allocated() {
-            outlined_drop(self)
-        }
-
         #[inline(never)]
         fn outlined_drop(this: &mut Repr) {
             match this.discriminant() {
@@ -398,6 +394,12 @@ impl Drop for Repr {
                 // No-op, the value is on the stack and doesn't need to be explicitly dropped
                 Discriminant::Inline => {}
             }
+        }
+
+        // By "outlining" the actual Drop code and only calling it if we're a heap variant, it
+        // allows dropping an inline variant to be as cheap as possible.
+        if self.is_heap_allocated() {
+            outlined_drop(self);
         }
     }
 }

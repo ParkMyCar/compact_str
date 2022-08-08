@@ -53,10 +53,10 @@ impl BoxString {
         // to be at least size_of::<usize>, so we know it'll be non-zero.
         let (cap, ptr) = unsafe { BoxString::alloc_ptr(capacity) };
 
-        let write_ptr = if !cap.is_heap() {
-            ptr.as_ptr()
-        } else {
+        let write_ptr = if cap.is_heap() {
             unsafe { ptr.as_ptr().add(core::mem::size_of::<usize>()) }
+        } else {
+            ptr.as_ptr()
         };
 
         // SAFETY: We know both `src` and `dest` are valid for respectively reads and writes of
@@ -64,7 +64,7 @@ impl BoxString {
         // length. We also know they're non-overlapping because `dest` is newly allocated
         unsafe { write_ptr.copy_from_nonoverlapping(text.as_ptr(), len) };
 
-        BoxString { len, ptr, cap }
+        BoxString { ptr, len, cap }
     }
 
     #[inline]
@@ -81,7 +81,7 @@ impl BoxString {
         // to be at least size_of::<usize>, so we know it'll be non-zero.
         let (cap, ptr) = unsafe { BoxString::alloc_ptr(capacity) };
 
-        BoxString { len, ptr, cap }
+        BoxString { ptr, len, cap }
     }
 
     #[inline(always)]
@@ -144,7 +144,7 @@ impl BoxString {
 
                 let ptr = ptr::NonNull::new(raw_ptr).expect("string with capacity has null ptr?");
                 // create a new BoxString with our parts!
-                BoxString { len, ptr, cap }
+                BoxString { ptr, len, cap }
             }
             Err(_) => BoxString::new(s.as_str()),
         }
@@ -154,7 +154,9 @@ impl BoxString {
     pub fn into_string(self) -> String {
         #[cold]
         fn into_string_heap(this: BoxString) -> String {
-            String::from(this.as_str())
+            let result = String::from(this.as_str());
+            drop(this);
+            result
         }
 
         match self.cap.as_usize() {
@@ -186,7 +188,7 @@ impl BoxString {
 
                 let ptr = ptr::NonNull::new(raw_ptr).expect("string with capacity has null ptr?");
                 // create a new BoxString with our parts!
-                BoxString { len, ptr, cap }
+                BoxString { ptr, len, cap }
             }
             Err(_) => BoxString::new(&b),
         }
@@ -387,7 +389,7 @@ impl BoxString {
             );
             let cap = usize::from_le_bytes(usize_buf);
 
-            inner::heap_capacity::dealloc(this.ptr, cap)
+            inner::heap_capacity::dealloc(this.ptr, cap);
         }
 
         match self.cap.as_usize() {
@@ -446,8 +448,8 @@ impl BoxString {
                         new_capacity.to_le_bytes().as_ptr(),
                         ptr.as_ptr(),
                         core::mem::size_of::<usize>(),
-                    )
-                };
+                    );
+                }
 
                 (new_cap, ptr)
             }

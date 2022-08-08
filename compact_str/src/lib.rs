@@ -1,5 +1,6 @@
 #![doc = include_str!("../README.md")]
 #![cfg_attr(docsrs, feature(doc_cfg))]
+#![allow(clippy::module_name_repetitions)]
 
 #[doc(hidden)]
 pub use core;
@@ -163,6 +164,7 @@ impl CompactString {
     /// const LONG: CompactString = CompactString::new_inline("this is a long string that can't be stored on the stack");
     /// ```
     #[inline]
+    #[must_use]
     pub const fn new_inline(text: &str) -> Self {
         CompactString {
             repr: Repr::new_inline(text),
@@ -216,6 +218,7 @@ impl CompactString {
     /// assert!(empty.is_heap_allocated());
     /// ```
     #[inline]
+    #[must_use]
     pub fn with_capacity(capacity: usize) -> Self {
         CompactString {
             repr: Repr::with_capacity(capacity),
@@ -230,6 +233,10 @@ impl CompactString {
     ///
     /// Note: If you want to create a [`CompactString`] from a non-contiguous collection of bytes,
     /// enable the `bytes` feature of this crate, and see `CompactString::from_utf8_buf`
+    ///
+    /// # Errors
+    ///
+    /// If the argument is not a valid UTF-8 slice, then a [`Utf8Error`] is returned.
     ///
     /// # Examples
     /// ### Valid UTF-8
@@ -292,6 +299,10 @@ impl CompactString {
     /// Decode a [`UTF-16`](https://en.wikipedia.org/wiki/UTF-16) slice of bytes into a
     /// [`CompactString`], returning an [`Err`] if the slice contains any invalid data.
     ///
+    /// # Errors
+    ///
+    /// If the argument is not a valid UTF-16 slice, then a [`Utf16Error`] is returned.
+    ///
     /// # Examples
     /// ### Valid UTF-16
     /// ```
@@ -345,6 +356,7 @@ impl CompactString {
     /// assert_eq!(emoji.len(), 4);
     /// ```
     #[inline]
+    #[must_use]
     pub fn len(&self) -> usize {
         self.repr.len()
     }
@@ -362,6 +374,7 @@ impl CompactString {
     /// assert!(!msg.is_empty());
     /// ```
     #[inline]
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
@@ -388,6 +401,7 @@ impl CompactString {
     /// assert_eq!(compact.capacity(), 128);
     /// ```
     #[inline]
+    #[must_use]
     pub fn capacity(&self) -> usize {
         self.repr.capacity()
     }
@@ -417,7 +431,7 @@ impl CompactString {
     /// ```
     #[inline]
     pub fn reserve(&mut self, additional: usize) {
-        self.repr.reserve(additional)
+        self.repr.reserve(additional);
     }
 
     /// Returns a string slice containing the entire [`CompactString`].
@@ -430,6 +444,7 @@ impl CompactString {
     /// assert_eq!(s.as_str(), "hello");
     /// ```
     #[inline]
+    #[must_use]
     pub fn as_str(&self) -> &str {
         self.repr.as_str()
     }
@@ -460,6 +475,7 @@ impl CompactString {
     /// assert_eq!(&[104, 101, 108, 108, 111], s.as_bytes());
     /// ```
     #[inline]
+    #[must_use]
     pub fn as_bytes(&self) -> &[u8] {
         &self.repr.as_slice()[..self.len()]
     }
@@ -540,7 +556,7 @@ impl CompactString {
     /// ```
     #[inline]
     pub fn push_str(&mut self, s: &str) {
-        self.repr.push_str(s)
+        self.repr.push_str(s);
     }
 
     /// Removes a [`char`] from this [`CompactString`] at a byte position and returns it.
@@ -620,7 +636,7 @@ impl CompactString {
     /// * The elements at `old_len..new_len` must be initialized
     #[inline]
     pub unsafe fn set_len(&mut self, new_len: usize) {
-        self.repr.set_len(new_len)
+        self.repr.set_len(new_len);
     }
 
     /// Returns whether or not the [`CompactString`] is heap allocated.
@@ -642,6 +658,7 @@ impl CompactString {
     /// assert!(msg.is_heap_allocated());
     /// ```
     #[inline]
+    #[must_use]
     pub fn is_heap_allocated(&self) -> bool {
         self.repr.is_heap_allocated()
     }
@@ -817,6 +834,10 @@ impl CompactString {
 
     /// Insert string character at an index.
     ///
+    /// # Panics
+    ///
+    /// Panics if `idx` does not lie on a [char boundary](str::is_char_boundary).
+    ///
     /// # Examples
     ///
     /// Basic usage:
@@ -903,6 +924,7 @@ impl CompactString {
     /// assert_eq!(s.split_off(5), ", world!");
     /// assert_eq!(s, "Hello");
     /// ```
+    #[allow(clippy::return_self_not_must_use)]
     pub fn split_off(&mut self, at: usize) -> Self {
         let result = self[at..].into();
         // SAFETY: the previous line `self[at...]` would have panicked if `at` was invalid
@@ -1091,6 +1113,7 @@ impl CompactString {
     ///     CompactString::from(String::from_utf8_lossy(broken)),
     /// );
     /// ```
+    #[must_use]
     pub fn from_utf8_lossy(v: &[u8]) -> Self {
         fn next_char<'a>(
             iter: &mut <&[u8] as IntoIterator>::IntoIter,
@@ -1269,7 +1292,7 @@ impl PartialOrd for CompactString {
 
 impl Hash for CompactString {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.as_str().hash(state)
+        self.as_str().hash(state);
     }
 }
 
@@ -1370,25 +1393,25 @@ impl FromIterator<String> for CompactString {
 
 impl Extend<char> for CompactString {
     fn extend<T: IntoIterator<Item = char>>(&mut self, iter: T) {
-        self.repr.extend(iter)
+        self.repr.extend(iter);
     }
 }
 
 impl<'a> Extend<&'a char> for CompactString {
     fn extend<T: IntoIterator<Item = &'a char>>(&mut self, iter: T) {
-        self.repr.extend(iter)
+        self.repr.extend(iter);
     }
 }
 
 impl<'a> Extend<&'a str> for CompactString {
     fn extend<T: IntoIterator<Item = &'a str>>(&mut self, iter: T) {
-        self.repr.extend(iter)
+        self.repr.extend(iter);
     }
 }
 
 impl Extend<Box<str>> for CompactString {
     fn extend<T: IntoIterator<Item = Box<str>>>(&mut self, iter: T) {
-        self.repr.extend(iter)
+        self.repr.extend(iter);
     }
 }
 
@@ -1400,7 +1423,7 @@ impl<'a> Extend<Cow<'a, str>> for CompactString {
 
 impl Extend<String> for CompactString {
     fn extend<T: IntoIterator<Item = String>>(&mut self, iter: T) {
-        self.repr.extend(iter)
+        self.repr.extend(iter);
     }
 }
 
@@ -1500,6 +1523,7 @@ impl Drop for Drain<'_> {
 impl Drain<'_> {
     /// The remaining, unconsumed characters of the extracted substring.
     #[inline]
+    #[must_use]
     pub fn as_str(&self) -> &str {
         self.chars.as_str()
     }

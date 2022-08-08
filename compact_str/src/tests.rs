@@ -85,7 +85,7 @@ fn proptest_strings_allocated_properly(#[strategy(rand_unicode())] word: String)
 #[proptest]
 #[cfg_attr(miri, ignore)]
 fn proptest_char_iterator_roundtrips(#[strategy(rand_unicode())] word: String) {
-    let compact: CompactString = word.clone().chars().collect();
+    let compact: CompactString = word.chars().collect();
     prop_assert_eq!(&word, &compact)
 }
 
@@ -187,6 +187,7 @@ fn proptest_arbitrary_compact_string_converts_to_string(#[strategy(rand_unicode(
 
 #[proptest]
 #[cfg_attr(miri, ignore)]
+#[allow(clippy::string_extend_chars)]
 fn proptest_extend_chars_allocated_properly(
     #[strategy(rand_unicode())] start: String,
     #[strategy(rand_unicode())] extend: String,
@@ -194,7 +195,7 @@ fn proptest_extend_chars_allocated_properly(
     let mut compact = CompactString::new(&start);
     compact.extend(extend.chars());
 
-    let mut control = start.clone();
+    let mut control = start;
     control.extend(extend.chars());
 
     prop_assert_eq!(&compact, &control);
@@ -350,7 +351,7 @@ fn test_short_ascii() {
         let compact = CompactString::new(s);
         assert_eq!(compact, s);
         assert_eq!(s, compact);
-        assert_eq!(compact.is_heap_allocated(), false);
+        assert!(!compact.is_heap_allocated());
     }
 }
 
@@ -485,6 +486,7 @@ fn test_compact_str_is_send_and_sync() {
 }
 
 #[test]
+#[allow(clippy::write_literal)]
 fn test_fmt_write() {
     use core::fmt::Write;
 
@@ -501,6 +503,7 @@ fn test_fmt_write() {
 }
 
 #[test]
+#[allow(clippy::unnecessary_to_owned)]
 fn test_plus_operator() {
     // + &CompactString
     assert_eq!(CompactString::from("a") + &CompactString::from("b"), "ab");
@@ -524,7 +527,7 @@ fn test_plus_operator() {
     // String + &String
     assert_eq!(String::from("a") + &("b".to_string()), "ab");
     // String + &str
-    assert_eq!(String::from("a") + &"b", "ab");
+    assert_eq!(String::from("a") + "b", "ab");
 }
 
 #[test]
@@ -617,7 +620,7 @@ fn test_u32_to_compact_string() {
         1,
         42,
         999,
-        123456789,
+        123_456_789,
         u32::MAX - 2,
         u32::MAX - 1,
         u32::MAX,
@@ -638,13 +641,13 @@ fn test_i32_to_compact_string() {
         i32::MIN,
         i32::MIN + 2,
         i32::MIN + 1,
-        -12345678,
+        -12_345_678,
         -42,
         -1,
         0,
         1,
         999,
-        123456789,
+        123_456_789,
         i32::MAX - 2,
         i32::MAX - 1,
         i32::MAX,
@@ -665,8 +668,8 @@ fn test_u64_to_compact_string() {
         u64::MIN,
         1,
         999,
-        123456789,
-        98765432123456,
+        123_456_789,
+        98_765_432_123_456,
         u64::MAX - 2,
         u64::MAX - 1,
         u64::MAX,
@@ -690,12 +693,12 @@ fn test_i64_to_compact_string() {
         i64::MIN,
         i64::MIN + 1,
         i64::MIN + 2,
-        -22222222,
+        -22_222_222,
         -42,
         0,
         1,
         999,
-        123456789,
+        123_456_789,
         i64::MAX - 2,
         i64::MAX - 1,
         i64::MAX,
@@ -719,7 +722,7 @@ fn test_u128_to_compact_string() {
         u128::MIN,
         1,
         999,
-        123456789,
+        123_456_789,
         u128::MAX - 2,
         u128::MAX - 1,
         u128::MAX,
@@ -739,12 +742,12 @@ fn test_i128_to_compact_string() {
         i128::MIN,
         i128::MIN + 1,
         i128::MIN + 2,
-        -22222222,
+        -22_222_222,
         -42,
         0,
         1,
         999,
-        123456789,
+        123_456_789,
         i128::MAX - 2,
         i128::MAX - 1,
         i128::MAX,
@@ -818,10 +821,10 @@ fn test_to_compact_string() {
     #[cfg(not(all(target_arch = "powerpc64", target_pointer_width = "64")))]
     {
         assert_eq!(
-            (&*3.2_f32.to_string(), &*288888.290028_f64.to_string()),
+            (&*3.2_f32.to_string(), &*288_888.290_028_f64.to_string()),
             (
                 &*3.2_f32.to_compact_string(),
-                &*288888.290028_f64.to_compact_string()
+                &*288_888.290_028_f64.to_compact_string()
             )
         );
 
@@ -849,7 +852,7 @@ fn test_to_compact_string() {
     // Test string longer than repr::MAX_SIZE
     assert_eq!(
         "01234567890123456789999999",
-        format_compact!("0{}67890123456789{}", "12345", 999999)
+        format_compact!("0{}67890123456789{}", "12345", 999_999)
     );
 }
 
@@ -1168,10 +1171,10 @@ fn test_with_capacity_16711422() {
     // as the discriminant to determine if the capacity was on the heap, so we'd incorrectly
     // identify the capacity as being on the heap, when it was really inline.
 
-    assert_eq!(16711422_u32.to_le_bytes(), [254, 254, 254, 0]);
+    assert_eq!(16_711_422_u32.to_le_bytes(), [254, 254, 254, 0]);
 
-    let compact = CompactString::with_capacity(16711422);
-    let std_str = String::with_capacity(16711422);
+    let compact = CompactString::with_capacity(16_711_422);
+    let std_str = String::with_capacity(16_711_422);
 
     assert!(compact.is_heap_allocated());
     assert_eq!(compact.capacity(), std_str.capacity());

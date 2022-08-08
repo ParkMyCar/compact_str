@@ -1,6 +1,6 @@
 use super::MAX_SIZE;
 
-const LENGTH_MASK: u8 = 0b11000000;
+const LENGTH_MASK: u8 = 0b1100_0000;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -10,6 +10,7 @@ pub struct InlineString {
 
 impl InlineString {
     #[inline]
+    #[allow(clippy::cast_possible_truncation)]
     pub fn new(text: &str) -> Self {
         debug_assert!(text.len() <= MAX_SIZE);
 
@@ -30,10 +31,12 @@ impl InlineString {
     }
 
     #[inline]
+    #[allow(clippy::cast_possible_truncation)]
     pub const fn new_const(text: &str) -> Self {
-        if text.len() > MAX_SIZE {
-            panic!("Provided string has a length greater than our MAX_SIZE");
-        }
+        assert!(
+            text.len() <= MAX_SIZE,
+            "Provided string has a length greater than our MAX_SIZE",
+        );
 
         let len = text.len();
         let mut buffer = [0u8; MAX_SIZE];
@@ -53,6 +56,7 @@ impl InlineString {
 
     /// Creates an [`InlineString`] from raw parts without checking that it's valid UTF-8
     #[inline]
+    #[allow(clippy::cast_possible_truncation)]
     pub const unsafe fn from_parts(len: usize, mut buffer: [u8; MAX_SIZE]) -> Self {
         if len != MAX_SIZE {
             buffer[MAX_SIZE - 1] = len as u8 | LENGTH_MASK;
@@ -67,7 +71,8 @@ impl InlineString {
     }
 
     #[inline]
-    pub const fn capacity(&self) -> usize {
+    pub const fn capacity(self) -> usize {
+        let _ = self;
         MAX_SIZE
     }
 
@@ -96,6 +101,7 @@ impl InlineString {
     }
 
     #[inline]
+    #[allow(clippy::cast_possible_truncation)]
     pub unsafe fn set_len(&mut self, length: usize) {
         debug_assert!(length <= MAX_SIZE);
 
@@ -161,9 +167,8 @@ mod tests {
                 }
 
                 // check ranges for last byte
-                match buf[c.len_utf8() - 1] {
-                    x @ 192..=255 => panic!("last byte within 192..=255, {}", x),
-                    _ => (),
+                if let x @ 192..=255 = buf[c.len_utf8() - 1] {
+                    panic!("last byte within 192..=255, {}", x)
                 }
             }
         })

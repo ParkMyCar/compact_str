@@ -1,3 +1,9 @@
+#![allow(clippy::cast_possible_truncation)]
+#![allow(clippy::cast_precision_loss)]
+#![allow(clippy::cast_sign_loss)]
+#![allow(clippy::many_single_char_names)]
+#![allow(clippy::too_many_lines)]
+
 //! This is a fuzzing harness we use to test the [`compact_str`] crate, there are three components
 //! of this harness:
 //!
@@ -34,6 +40,10 @@ pub struct Scenario<'a> {
 
 impl<'a> Scenario<'a> {
     /// Run the provided scenario, asserting for correct behavior
+    ///
+    /// # Panics
+    ///
+    /// If some check failed.
     pub fn run(self) {
         // Given random creation method, if we can create a string
         if let Some((compact, mut control)) = self.creation.create() {
@@ -77,7 +87,7 @@ impl<'a> Scenario<'a> {
     }
 }
 
-/// Asserts the provided CompactString is allocated properly either on the stack or on the heap,
+/// Asserts the provided `CompactString` is allocated properly either on the stack or on the heap,
 /// using a "control" `&str` for a reference length.
 fn assert_properly_allocated(compact: &CompactString, control: &str) {
     assert_eq!(compact.len(), control.len());

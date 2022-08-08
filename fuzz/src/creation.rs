@@ -153,10 +153,8 @@ pub enum CowStrArg<'a> {
 
 impl Creation<'_> {
     pub fn create(self) -> Option<(CompactString, String)> {
-        use Creation::*;
-
         match self {
-            Word(word) => {
+            Creation::Word(word) => {
                 let compact = CompactString::new(&word);
 
                 assert_eq!(compact, word);
@@ -164,7 +162,7 @@ impl Creation<'_> {
 
                 Some((compact, word))
             }
-            WordUtf16(word) => {
+            Creation::WordUtf16(word) => {
                 let utf16_buf: Vec<u16> = word.encode_utf16().collect();
                 let compact =
                     CompactString::from_utf16(utf16_buf).expect("UTF-16 failed to roundtrip!");
@@ -174,7 +172,7 @@ impl Creation<'_> {
 
                 Some((compact, word))
             }
-            FromStr(s) => {
+            Creation::FromStr(s) => {
                 let compact = CompactString::from(s);
                 let std_str = s.to_string();
 
@@ -183,7 +181,7 @@ impl Creation<'_> {
 
                 Some((compact, std_str))
             }
-            FromStrTrait(s) => {
+            Creation::FromStrTrait(s) => {
                 let compact = CompactString::from_str(s).expect("FromStr was fallible!");
                 let std_str = s.to_string();
 
@@ -192,7 +190,7 @@ impl Creation<'_> {
 
                 Some((compact, std_str))
             }
-            FromString(s) => {
+            Creation::FromString(s) => {
                 let compact = CompactString::from(s.clone());
 
                 assert_eq!(compact, s);
@@ -207,7 +205,7 @@ impl Creation<'_> {
 
                 Some((compact, s))
             }
-            FromBoxStr(b) => {
+            Creation::FromBoxStr(b) => {
                 let compact = CompactString::from(b.clone());
 
                 assert_eq!(compact, b);
@@ -215,15 +213,15 @@ impl Creation<'_> {
                 // Note: converting From<Box<str>> will always be heap allocated because we use the
                 // underlying buffer from the source String
                 if b.len() == 0 {
-                    assert!(!compact.is_heap_allocated())
+                    assert!(!compact.is_heap_allocated());
                 } else {
-                    assert!(compact.is_heap_allocated())
+                    assert!(compact.is_heap_allocated());
                 }
 
                 let string = String::from(b);
                 Some((compact, string))
             }
-            FromCowStr(cow_arg) => {
+            Creation::FromCowStr(cow_arg) => {
                 let (cow, std_str) = match cow_arg {
                     CowStrArg::Borrowed(borrow) => {
                         let cow = Cow::Borrowed(borrow);
@@ -248,7 +246,7 @@ impl Creation<'_> {
 
                 Some((compact, std_str))
             }
-            IterChar(chars) => {
+            Creation::IterChar(chars) => {
                 let compact: CompactString = chars.iter().collect();
                 let std_str: String = chars.iter().collect();
 
@@ -257,7 +255,7 @@ impl Creation<'_> {
 
                 Some((compact, std_str))
             }
-            IterString(strings) => {
+            Creation::IterString(strings) => {
                 let compact: CompactString =
                     strings.iter().map::<&str, _>(|s| s.as_ref()).collect();
                 let std_str: String = strings.iter().map::<&str, _>(|s| s.as_ref()).collect();
@@ -267,7 +265,7 @@ impl Creation<'_> {
 
                 Some((compact, std_str))
             }
-            Bytes(data) => {
+            Creation::Bytes(data) => {
                 let compact = CompactString::from_utf8(data);
                 let std_str = std::str::from_utf8(data);
 
@@ -287,7 +285,7 @@ impl Creation<'_> {
                     _ => panic!("CompactString and core::str read UTF-8 differently?"),
                 }
             }
-            BytesUnchecked(data) => {
+            Creation::BytesUnchecked(data) => {
                 // The data provided might not be valid UTF-8. We mainly want to make sure we don't
                 // panic, and the data is written correctly. Before returning either of these types
                 // we'll make sure they contain valid data
@@ -325,7 +323,7 @@ impl Creation<'_> {
                     _ => panic!("data, CompactString, and String disagreed?"),
                 }
             }
-            BytesUtf16(data) => {
+            Creation::BytesUtf16(data) => {
                 let compact = CompactString::from_utf16(&data);
                 let std_str = String::from_utf16(&data);
 
@@ -342,7 +340,7 @@ impl Creation<'_> {
                     _ => panic!("CompactString and String read UTF-16 differently?"),
                 }
             }
-            Buf(data) => {
+            Creation::Buf(data) => {
                 let mut buffer = Cursor::new(data);
 
                 let compact = CompactString::from_utf8_buf(&mut buffer);
@@ -364,7 +362,7 @@ impl Creation<'_> {
                     _ => panic!("CompactString and core::str read UTF-8 differently?"),
                 }
             }
-            BufUnchecked(data) => {
+            Creation::BufUnchecked(data) => {
                 let mut buffer = Cursor::new(data);
 
                 // The data provided might not be valid UTF-8. We mainly want to make sure we don't
@@ -404,7 +402,7 @@ impl Creation<'_> {
                     _ => panic!("data, CompactString, and String disagreed?"),
                 }
             }
-            NonContiguousBuf(data) => {
+            Creation::NonContiguousBuf(data) => {
                 let mut queue = if data.len() > 3 {
                     // if our data is long, make it non-contiguous
                     let (front, back) = data.split_at(data.len() / 2 + 1);
@@ -444,7 +442,7 @@ impl Creation<'_> {
                     _ => panic!("CompactString and core::str read UTF-8 differently?"),
                 }
             }
-            ToCompactString(arg) => {
+            Creation::ToCompactString(arg) => {
                 let (compact, word) = match arg {
                     ToCompactStringArg::Num(num_type) => match num_type {
                         NumType::U8(val) => (val.to_compact_string(), val.to_string()),
@@ -467,9 +465,9 @@ impl Creation<'_> {
                             let roundtrip = compact.parse::<f32>().unwrap();
 
                             if val.is_nan() {
-                                assert!(roundtrip.is_nan())
+                                assert!(roundtrip.is_nan());
                             } else {
-                                assert_eq!(val, roundtrip);
+                                assert!(f32::near(val, roundtrip));
                             }
 
                             return None;
@@ -479,9 +477,9 @@ impl Creation<'_> {
                             let roundtrip = compact.parse::<f64>().unwrap();
 
                             if val.is_nan() {
-                                assert!(roundtrip.is_nan())
+                                assert!(roundtrip.is_nan());
                             } else {
-                                assert_eq!(val, roundtrip);
+                                assert!(f64::near(val, roundtrip));
                             }
 
                             return None;
@@ -511,7 +509,7 @@ impl Creation<'_> {
 
                 Some((compact, word))
             }
-            Join(collection, seperator) => {
+            Creation::Join(collection, seperator) => {
                 let compact: CompactString = collection.join_compact(seperator);
                 let std_str: String = collection.join(seperator);
 
@@ -520,7 +518,7 @@ impl Creation<'_> {
 
                 Some((compact, std_str))
             }
-            Concat(collection) => {
+            Creation::Concat(collection) => {
                 let compact: CompactString = collection.concat_compact();
                 let std_str: String = collection.concat();
 
@@ -529,7 +527,7 @@ impl Creation<'_> {
 
                 Some((compact, std_str))
             }
-            WithCapacity(val) => {
+            Creation::WithCapacity(val) => {
                 // pick some value between [0, 24MB]
                 let ratio: f32 = (val as f32) / (u32::MAX as f32);
                 let num_bytes = ((super::TWENTY_FOUR_MB_AS_BYTES as f32) * ratio) as u32;
@@ -552,7 +550,7 @@ impl Creation<'_> {
 
                 Some((compact, std_str))
             }
-            CollectChar(chars) => {
+            Creation::CollectChar(chars) => {
                 let compact: CompactString = chars.clone().into_iter().collect();
                 let std_str: String = chars.into_iter().collect();
 
@@ -561,7 +559,7 @@ impl Creation<'_> {
 
                 Some((compact, std_str))
             }
-            CollectString(strings) => {
+            Creation::CollectString(strings) => {
                 let compact: CompactString = strings.clone().into_iter().collect();
                 let std_str: String = strings.into_iter().collect();
 
@@ -570,7 +568,7 @@ impl Creation<'_> {
 
                 Some((compact, std_str))
             }
-            CollectBoxStr(strings) => {
+            Creation::CollectBoxStr(strings) => {
                 let compact: CompactString = strings.clone().into_iter().collect();
                 let std_str: String = strings.into_iter().collect();
 
@@ -579,7 +577,7 @@ impl Creation<'_> {
 
                 Some((compact, std_str))
             }
-            Default => {
+            Creation::Default => {
                 let compact = CompactString::default();
                 let std_str = String::default();
 
@@ -589,5 +587,21 @@ impl Creation<'_> {
                 Some((compact, std_str))
             }
         }
+    }
+}
+
+trait Float {
+    fn near(a: Self, b: Self) -> bool;
+}
+
+impl Float for f32 {
+    fn near(a: f32, b: f32) -> bool {
+        ((a - b).abs() / a.max(b).min(f32::MAX)) <= f32::EPSILON
+    }
+}
+
+impl Float for f64 {
+    fn near(a: f64, b: f64) -> bool {
+        ((a - b).abs() / a.max(b).min(f64::MAX)) <= f64::EPSILON
     }
 }

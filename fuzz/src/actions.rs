@@ -48,17 +48,15 @@ pub enum Action<'a> {
 
 impl Action<'_> {
     pub fn perform(self, control: &mut String, compact: &mut CompactString) {
-        use Action::*;
-
         match self {
-            Push(c) => {
+            Action::Push(c) => {
                 control.push(c);
                 compact.push(c);
 
                 assert_eq!(control, compact);
                 assert_eq!(control.len(), compact.len());
             }
-            Pop(count) => {
+            Action::Pop(count) => {
                 (0..count).for_each(|_| {
                     let a = control.pop();
                     let b = compact.pop();
@@ -68,33 +66,33 @@ impl Action<'_> {
                 assert_eq!(control.len(), compact.len());
                 assert_eq!(control.is_empty(), compact.is_empty());
             }
-            PushStr(s) => {
+            Action::PushStr(s) => {
                 control.push_str(s);
                 compact.push_str(s);
 
                 assert_eq!(control, compact);
                 assert_eq!(control.len(), compact.len());
             }
-            ExtendChars(chs) => {
+            Action::ExtendChars(chs) => {
                 control.extend(chs.iter());
                 compact.extend(chs.iter());
 
                 assert_eq!(control, compact);
                 assert_eq!(control.len(), compact.len());
             }
-            ExtendStr(strs) => {
+            Action::ExtendStr(strs) => {
                 control.extend(strs.iter().copied());
                 compact.extend(strs.iter().copied());
 
                 assert_eq!(control, compact);
                 assert_eq!(control.len(), compact.len());
             }
-            CheckSubslice(a, b) => {
+            Action::CheckSubslice(a, b) => {
                 assert_eq!(control.len(), compact.len());
 
                 // scale a, b to be [0, 1]
-                let c = a as f32 / (u8::MAX as f32);
-                let d = b as f32 / (u8::MAX as f32);
+                let c = f32::from(a) / f32::from(u8::MAX);
+                let d = f32::from(b) / f32::from(u8::MAX);
 
                 // scale c, b to be [0, compact.len()]
                 let e = (c * compact.len() as f32) as usize;
@@ -112,14 +110,14 @@ impl Action<'_> {
 
                 assert_eq!(control_slice, compact_slice);
             }
-            MakeUppercase => {
+            Action::MakeUppercase => {
                 control.as_mut_str().make_ascii_uppercase();
                 compact.as_mut_str().make_ascii_uppercase();
 
                 assert_eq!(control, compact);
                 assert_eq!(control.len(), compact.len());
             }
-            ReplaceRange(start, end, replace_with) => {
+            Action::ReplaceRange(start, end, replace_with) => {
                 // turn the arbitrary numbers (start, end) into character indices
                 let start = to_index(control, start);
                 let end = to_index(control, end);
@@ -132,7 +130,7 @@ impl Action<'_> {
                 assert_eq!(control, compact);
                 assert_eq!(control.len(), compact.len());
             }
-            Reserve(num_bytes) => {
+            Action::Reserve(num_bytes) => {
                 // if this would make us larger then 24MB, then no-op
                 if (compact.capacity() + num_bytes as usize) > super::TWENTY_FOUR_MB_AS_BYTES {
                     return;
@@ -147,7 +145,7 @@ impl Action<'_> {
                 assert_eq!(compact, control);
                 assert_eq!(compact.len(), control.len());
             }
-            Truncate(new_len) => {
+            Action::Truncate(new_len) => {
                 // turn the arbitrary number `new_len` into character indices
                 let new_len = to_index(control, new_len);
 
@@ -158,7 +156,7 @@ impl Action<'_> {
                 assert_eq!(control, compact);
                 assert_eq!(control.len(), compact.len());
             }
-            InsertStr(idx, s) => {
+            Action::InsertStr(idx, s) => {
                 // turn the arbitrary number `new_len` into character indices
                 let idx = to_index(control, idx);
 
@@ -169,7 +167,7 @@ impl Action<'_> {
                 assert_eq!(control, compact);
                 assert_eq!(control.len(), compact.len());
             }
-            Insert(idx, ch) => {
+            Action::Insert(idx, ch) => {
                 // turn the arbitrary number `new_len` into character indices
                 let idx = to_index(control, idx);
 
@@ -180,14 +178,14 @@ impl Action<'_> {
                 assert_eq!(control, compact);
                 assert_eq!(control.len(), compact.len());
             }
-            Clear => {
+            Action::Clear => {
                 control.clear();
                 compact.clear();
 
                 assert_eq!(control, compact);
                 assert_eq!(control.len(), compact.len());
             }
-            SplitOff(at) => {
+            Action::SplitOff(at) => {
                 let at = to_index(control, at);
 
                 let compact_capacity = compact.capacity();
@@ -197,7 +195,7 @@ impl Action<'_> {
                 assert_eq!(control, compact);
                 assert_eq!(control.len(), compact.len());
             }
-            Drain(start, end) => {
+            Action::Drain(start, end) => {
                 let start = to_index(control, start);
                 let end = to_index(control, end);
                 let (start, end) = (start.min(end), start.max(end));
@@ -212,7 +210,7 @@ impl Action<'_> {
                 assert_eq!(control.as_str(), compact.as_str());
                 assert_eq!(compact.capacity(), compact_capacity);
             }
-            Remove(val) => {
+            Action::Remove(val) => {
                 let idx = to_index(control, val);
 
                 // idx needs to be < our str length, cycle it back to the beginning if they're equal
@@ -228,7 +226,7 @@ impl Action<'_> {
                 assert_eq!(control, compact);
                 assert_eq!(control.len(), compact.len());
             }
-            ShrinkTo(a, b) => {
+            Action::ShrinkTo(a, b) => {
                 let a = (a % 5000) as usize;
                 let b = (b % 5000) as usize;
                 let (reserve, shrink) = (a.max(b), a.min(b));
@@ -249,7 +247,7 @@ impl Action<'_> {
                 assert_eq!(control, compact);
                 assert_eq!(control.len(), compact.len());
             }
-            Retain(nth, codepoint) => {
+            Action::Retain(nth, codepoint) => {
                 let nth = nth % 8;
 
                 let new_predicate = || {
@@ -271,7 +269,7 @@ impl Action<'_> {
                 assert_eq!(control, compact);
                 assert_eq!(control.len(), compact.len());
             }
-            FromUtf8Lossy(bytes) => {
+            Action::FromUtf8Lossy(bytes) => {
                 let compact = CompactString::from_utf8_lossy(bytes);
                 let control = String::from_utf8_lossy(bytes);
 

@@ -272,8 +272,8 @@ impl Action<'_> {
                 assert_eq!(control.len(), compact.len());
             }
             FromUtf8Lossy(bytes) => {
-                let compact = CompactString::from_utf8_lossy(&bytes);
-                let control = String::from_utf8_lossy(&bytes);
+                let compact = CompactString::from_utf8_lossy(bytes);
+                let control = String::from_utf8_lossy(bytes);
 
                 assert_eq!(compact, control);
                 assert_eq!(compact.len(), control.len());
@@ -300,15 +300,15 @@ mod tests {
     fn test_to_index() {
         let s = "hello world";
 
-        let idx = to_index(&s, 5);
+        let idx = to_index(s, 5);
         assert_eq!(idx, 5);
 
         // it should be possible to get str len as an index
-        let idx = to_index(&s, s.len() as u8);
+        let idx = to_index(s, s.len() as u8);
         assert_eq!(idx, s.len());
 
         // providing an index greater than the str length, cycles back to the beginning
-        let idx = to_index(&s, (s.len() + 1) as u8);
+        let idx = to_index(s, (s.len() + 1) as u8);
         assert_eq!(idx, 0);
     }
 }

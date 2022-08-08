@@ -1051,6 +1051,129 @@ impl CompactString {
         // SAFETY: We know that the index is a valid position to break the string.
         unsafe { self.set_len(dest_idx) };
     }
+
+    /// Decode a bytes slice as UTF-8 string, replacing any illegal codepoints
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use compact_str::CompactString;
+    /// let chess_knight = b"\xf0\x9f\xa8\x84";
+    ///
+    /// assert_eq!(
+    ///     "🨄",
+    ///     CompactString::from_utf8_lossy(chess_knight),
+    /// );
+    ///
+    /// // For valid UTF-8 slices, this is the same as:
+    /// assert_eq!(
+    ///     "🨄",
+    ///     CompactString::new(std::str::from_utf8(chess_knight).unwrap()),
+    /// );
+    /// ```
+    ///
+    /// Incorrect bytes:
+    ///
+    /// ```
+    /// # use compact_str::CompactString;
+    /// let broken = b"\xf0\x9f\xc8\x84";
+    ///
+    /// assert_eq!(
+    ///     "�Ȅ",
+    ///     CompactString::from_utf8_lossy(broken),
+    /// );
+    ///
+    /// // For invalid UTF-8 slices, this is an optimized implemented for:
+    /// assert_eq!(
+    ///     "�Ȅ",
+    ///     CompactString::from(String::from_utf8_lossy(broken)),
+    /// );
+    /// ```
+    pub fn from_utf8_lossy(v: &[u8]) -> Self {
+        fn next_char<'a>(
+            iter: &mut <&[u8] as IntoIterator>::IntoIter,
+            buf: &'a mut [u8; 4],
+        ) -> Option<&'a [u8]> {
+            const REPLACEMENT: &[u8] = "\u{FFFD}".as_bytes();
+
+            macro_rules! ensure_range {
+                ($idx:literal, $range:pat) => {{
+                    let mut i = iter.clone();
+                    match i.next() {
+                        Some(&c) if matches!(c, $range) => {
+                            buf[$idx] = c;
+                            *iter = i;
+                        }
+                        _ => return Some(REPLACEMENT),
+                    }
+                }};
+            }
+
+            macro_rules! ensure_cont {
+                ($idx:literal) => {{
+                    ensure_range!($idx, 0x80..=0xBF);
+                }};
+            }
+
+            let c = *iter.next()?;
+            buf[0] = c;
+
+            match c {
+                0x00..=0x7F => {
+                    // simple ASCII: push as is
+                    Some(&buf[..1])
+                }
+                0xC2..=0xDF => {
+                    // two bytes
+                    ensure_cont!(1);
+                    Some(&buf[..2])
+                }
+                0xE0..=0xEF => {
+                    // three bytes
+                    match c {
+                        // 0x80..=0x9F encodes surrogate half
+                        0xE0 => ensure_range!(1, 0xA0..=0xBF),
+                        // 0xA0..=0xBF encodes surrogate half
+                        0xED => ensure_range!(1, 0x80..=0x9F),
+                        // all UTF-8 continuation bytes are valid
+                        _ => ensure_cont!(1),
+                    }
+                    ensure_cont!(2);
+                    Some(&buf[..3])
+                }
+                0xF0..=0xF4 => {
+                    // four bytes
+                    match c {
+                        // 0x80..=0x8F encodes overlong three byte codepoint
+                        0xF0 => ensure_range!(1, 0x90..=0xBF),
+                        // 0x90..=0xBF encodes codepoint > U+10FFFF
+                        0xF4 => ensure_range!(1, 0x80..=0x8F),
+                        // all UTF-8 continuation bytes are valid
+                        _ => ensure_cont!(1),
+                    }
+                    ensure_cont!(2);
+                    ensure_cont!(3);
+                    Some(&buf[..4])
+                }
+                | 0x80..=0xBF // unicode continuation, invalid
+                | 0xC0..=0xC1 // overlong one byte character
+                | 0xF5..=0xF7 // four bytes that encode > U+10FFFF
+                | 0xF8..=0xFB // five bytes, invalid
+                | 0xFC..=0xFD // six bytes, invalid
+                | 0xFE..=0xFF => Some(REPLACEMENT), // always invalid
+            }
+        }
+
+        let mut buf = [0; 4];
+        let mut result = Self::with_capacity(v.len());
+        let mut iter = v.iter();
+        while let Some(s) = next_char(&mut iter, &mut buf) {
+            // SAFETY: next_char() only returns valid string
+            let s = unsafe { std::str::from_utf8_unchecked(s) };
+            result.push_str(s);
+        }
+        result
+    }
 }
 
 impl Default for CompactString {

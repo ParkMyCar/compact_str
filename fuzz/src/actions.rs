@@ -40,8 +40,10 @@ pub enum Action<'a> {
     Remove(u8),
     /// First reserve additional memory, then shrink it
     ShrinkTo(u16, u16),
-    /// Remove every nth characte, and every character over a specific code point
+    /// Remove every nth character, and every character over a specific code point
     Retain(u8, char),
+    /// Interpret random bytes as UTF-8 characters
+    FromUtf8Lossy(&'a [u8]),
 }
 
 impl Action<'_> {
@@ -268,6 +270,13 @@ impl Action<'_> {
 
                 assert_eq!(control, compact);
                 assert_eq!(control.len(), compact.len());
+            }
+            FromUtf8Lossy(bytes) => {
+                let compact = CompactString::from_utf8_lossy(&bytes);
+                let control = String::from_utf8_lossy(&bytes);
+
+                assert_eq!(compact, control);
+                assert_eq!(compact.len(), control.len());
             }
         }
     }

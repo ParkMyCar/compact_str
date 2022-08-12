@@ -1,6 +1,8 @@
 #![doc = include_str!("../README.md")]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
+#[doc(hidden)]
+pub use core;
 use core::borrow::{
     Borrow,
     BorrowMut,

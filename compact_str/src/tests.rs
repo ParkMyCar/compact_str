@@ -1277,3 +1277,13 @@ fn test_from_utf8_unchecked_empty() {
     assert_eq!(compact.len(), 0);
     assert_eq!(compact.as_bytes(), bytes);
 }
+
+#[proptest]
+#[cfg_attr(miri, ignore)]
+fn proptest_from_utf8_lossy(#[strategy(rand_bytes())] bytes: Vec<u8>) {
+    let compact = CompactString::from_utf8_lossy(&bytes);
+    let control = String::from_utf8_lossy(&bytes);
+
+    assert_eq!(compact, control);
+    assert_eq!(compact.len(), control.len());
+}

@@ -86,7 +86,7 @@ impl<T: fmt::Display> ToCompactString for T {
             &f64 as s => s.into_repr(),
             &bool as s => s.into_repr(),
             &char as s => s.into_repr(),
-            &String as s => Repr::new(&*s),
+            &String as s => Repr::new(s),
             &CompactString as s => Repr::new(s),
             &num::NonZeroU8 as s => s.into_repr(),
             &num::NonZeroI8 as s => s.into_repr(),

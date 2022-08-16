@@ -1,10 +1,32 @@
 # Upcoming
-* Add `from_utf16()` method
-    * Implemented in [`#170 feat: Implement CompactString::from_utf16`](https://github.com/ParkMyCar/compact_str/pull/170)
-* impl `AddAssign` (`+=`) for `CompactString`
-    * Implemented in [`add AddAssign operator`](https://github.com/ParkMyCar/compact_str/pull/159)
+* Add `from_utf16be()` and `from_utf16le()` methods
+    * Implemented in [`Implement from_utf16le, from_utf16be, from_utf16ne`](https://github.com/ParkMyCar/compact_str/pull/207)
+* Improve performance when counting number of bytes to write into a `CompactString`
+    * Implemented in [`Don't format char to determine it's UTF-8 length`](https://github.com/ParkMyCar/compact_str/pull/197)
+* Improve macro hygiene for `format_compact!` macro
+    * Implemented in [`Macro hygiene: use re-exported format_args!()`](https://github.com/ParkMyCar/compact_str/pull/196)
+* Improve performance when a `CompactString` is allocated on the heap
+    * Implemented in [`#160 perf: Implement realloc for BoxString`](https://github.com/ParkMyCar/compact_str/pull/160)
 * Implement [`markup::Render`](https://docs.rs/markup/latest/markup/trait.Render.html) trait
     * Implemented in [`#157 Implement markup::Render trait and document features`](https://github.com/ParkMyCar/compact_str/pull/157)
+* Implement the `Arbitrary` trait from [`arbitrary`](https://docs.rs/arbitrary/latest/arbitrary/), [`proptest`](https://docs.rs/proptest/latest/proptest/), and [`quickcheck`](https://docs.rs/quickcheck/latest/quickcheck/)
+    * Implemented in [`146 feat: Implemented the Arbitrary trait from various crate`](https://github.com/ParkMyCar/compact_str/pull/146)
+* impl `From<CompactString>` for `String`
+    * Implemented in [`#118 feat: add impl From<CompactString> for String`](https://github.com/ParkMyCar/compact_str/pull/118)
+* impl `AddAssign` (`+=`) for `CompactString`
+    * Implemented in [`add AddAssign operator`](https://github.com/ParkMyCar/compact_str/pull/159)
+
+##### `std::String` API Parity Milestone
+* Add `from_utf8_lossy()` method
+    * Implemented in [`Implement from_utf8_lossy()`](https://github.com/ParkMyCar/compact_str/pull/198)
+* Add `from_utf8_unchecked()` method
+    * Implemented in [`feat: from_utf8_unchecked()`](https://github.com/ParkMyCar/compact_str/pull/194)
+* Add `retain()` method
+    * Implemented in [`Implement retain()`](https://github.com/ParkMyCar/compact_str/pull/193)
+* Add `remove()` method
+    * Implemented in [`feat: Implement CompactString::remove()`](https://github.com/ParkMyCar/compact_str/pull/191)
+* Add `from_utf16()` method
+    * Implemented in [`#170 feat: Implement CompactString::from_utf16`](https://github.com/ParkMyCar/compact_str/pull/170)
 * Add `split_off()` method
     * Implemented in [`#154 Implement split_off()`](https://github.com/ParkMyCar/compact_str/pull/154)
 * Add `drain()` method
@@ -13,16 +35,12 @@
     * Implemented in [`#149 Implement clear()`](https://github.com/ParkMyCar/compact_str/pull/149)
 * Add `insert()` and `insert_str()` methods
     * Implemented in [`#148 Implement insert() and insert_str()`](https://github.com/ParkMyCar/compact_str/pull/148)
-* Implement the `Arbitrary` trait from [`arbitrary`](https://docs.rs/arbitrary/latest/arbitrary/), [`proptest`](https://docs.rs/proptest/latest/proptest/), and [`quickcheck`](https://docs.rs/quickcheck/latest/quickcheck/)
-    * Implemented in [`146 feat: Implemented the Arbitrary trait from various crate`](https://github.com/ParkMyCar/compact_str/pull/146)
 * Add `truncate()` method
     * Implemented in [`#132 Implement truncate()`](https://github.com/ParkMyCar/compact_str/pull/132)
 * Add `replace_range()` method
     * Implemented in [`#125 Implement replace_range()`](https://github.com/ParkMyCar/compact_str/pull/125)
 * Add `as_mut_str()` method
     * Implemented in [`#124 Add as_mut_str() method`](https://github.com/ParkMyCar/compact_str/pull/124)
-* Implemented `From<CompactString>` for `String`
-    * Implemented in [`#118 feat: add impl From<CompactString> for String`](https://github.com/ParkMyCar/compact_str/pull/118)
 
 # 0.5.2
 ### July 24, 2022

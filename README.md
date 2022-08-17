@@ -75,6 +75,7 @@ This crate exposes one macro `format_compact!` that can be used to create `Compa
 * `arbitrary`, which implements the [`arbitrary::Arbitrary`](https://docs.rs/arbitrary/1/arbitrary/trait.Arbitrary.html) trait for fuzzing
 * `proptest`, which implements the [`proptest::arbitrary::Arbitrary`](https://docs.rs/proptest/1/proptest/arbitrary/trait.Arbitrary.html) trait for fuzzing
 * `quickcheck`, which implements the [`quickcheck::Arbitrary`](https://docs.rs/quickcheck/1/quickcheck/trait.Arbitrary.html) trait for fuzzing
+* `rkyv`, which implements [`rkyv::Archive`](https://docs.rs/rkyv/0.7/rkyv/trait.Archive.html), [`rkyv::Serialize`](https://docs.rs/rkyv/0.7/rkyv/trait.Serialize.html) and [`rkyv::Deserialize`](https://docs.rs/rkyv/0.7/rkyv/trait.Deserialize.html) for fast zero-copy serialization, interchangable with serialized Strings
 
 ### How it works
 Note: this explanation assumes a 64-bit architecture, for 32-bit architectures generally divide any number by 2.

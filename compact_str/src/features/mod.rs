@@ -10,5 +10,7 @@ mod markup;
 mod proptest;
 #[cfg(feature = "quickcheck")]
 mod quickcheck;
+#[cfg(feature = "rkyv")]
+mod rkyv;
 #[cfg(feature = "serde")]
 mod serde;

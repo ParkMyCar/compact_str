@@ -60,26 +60,55 @@ impl PartialOrd<CompactString> for ArchivedString {
 }
 
 #[cfg(test)]
-#[cfg_attr(miri, ignore)] // https://github.com/rust-lang/unsafe-code-guidelines/issues/134
-#[test]
-fn test() {
-    const VALUE: &str = "Hello, 🌍!";
+mod tests {
+    use rkyv::Deserialize;
+    use test_strategy::proptest;
 
-    let bytes_compact = rkyv::to_bytes::<_, 32>(&CompactString::from(VALUE)).unwrap();
-    let bytes_control = rkyv::to_bytes::<_, 32>(&String::from(VALUE)).unwrap();
-    assert_eq!(&*bytes_compact, &*bytes_control);
+    use crate::CompactString;
 
-    let archived = unsafe { rkyv::archived_root::<CompactString>(&bytes_compact) };
-    let compact: CompactString = archived.deserialize(&mut rkyv::Infallible).unwrap();
-    let control: String = archived.deserialize(&mut rkyv::Infallible).unwrap();
-    assert_eq!(archived, VALUE);
-    assert_eq!(compact, VALUE);
-    assert_eq!(control, VALUE);
+    #[cfg_attr(miri, ignore)] // https://github.com/rust-lang/unsafe-code-guidelines/issues/134
+    #[test]
+    fn test_roundtrip() {
+        const VALUE: &str = "Hello, 🌍!";
 
-    let archived = unsafe { rkyv::archived_root::<String>(&bytes_compact) };
-    let compact: CompactString = archived.deserialize(&mut rkyv::Infallible).unwrap();
-    let control: String = archived.deserialize(&mut rkyv::Infallible).unwrap();
-    assert_eq!(archived, VALUE);
-    assert_eq!(compact, VALUE);
-    assert_eq!(control, VALUE);
+        let bytes_compact = rkyv::to_bytes::<_, 32>(&CompactString::from(VALUE)).unwrap();
+        let bytes_control = rkyv::to_bytes::<_, 32>(&String::from(VALUE)).unwrap();
+        assert_eq!(&*bytes_compact, &*bytes_control);
+
+        let archived = unsafe { rkyv::archived_root::<CompactString>(&bytes_compact) };
+        let compact: CompactString = archived.deserialize(&mut rkyv::Infallible).unwrap();
+        let control: String = archived.deserialize(&mut rkyv::Infallible).unwrap();
+        assert_eq!(archived, VALUE);
+        assert_eq!(compact, VALUE);
+        assert_eq!(control, VALUE);
+
+        let archived = unsafe { rkyv::archived_root::<String>(&bytes_compact) };
+        let compact: CompactString = archived.deserialize(&mut rkyv::Infallible).unwrap();
+        let control: String = archived.deserialize(&mut rkyv::Infallible).unwrap();
+        assert_eq!(archived, VALUE);
+        assert_eq!(compact, VALUE);
+        assert_eq!(control, VALUE);
+    }
+
+    #[cfg_attr(miri, ignore)]
+    #[proptest]
+    fn proptest_roundtrip(s: String) {
+        let bytes_compact = rkyv::to_bytes::<_, 32>(&CompactString::from(&s)).unwrap();
+        let bytes_control = rkyv::to_bytes::<_, 32>(&s).unwrap();
+        assert_eq!(&*bytes_compact, &*bytes_control);
+
+        let archived = unsafe { rkyv::archived_root::<CompactString>(&bytes_compact) };
+        let compact: CompactString = archived.deserialize(&mut rkyv::Infallible).unwrap();
+        let control: String = archived.deserialize(&mut rkyv::Infallible).unwrap();
+        assert_eq!(archived, &s);
+        assert_eq!(compact, s);
+        assert_eq!(control, s);
+
+        let archived = unsafe { rkyv::archived_root::<String>(&bytes_compact) };
+        let compact: CompactString = archived.deserialize(&mut rkyv::Infallible).unwrap();
+        let control: String = archived.deserialize(&mut rkyv::Infallible).unwrap();
+        assert_eq!(archived, &s);
+        assert_eq!(compact, s);
+        assert_eq!(control, s);
+    }
 }

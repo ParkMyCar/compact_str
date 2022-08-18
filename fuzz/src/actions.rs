@@ -46,6 +46,8 @@ pub enum Action<'a> {
     FromUtf8Lossy(&'a [u8]),
     /// Interpret a random `&[u16]` slice as UTF-16 characters
     FromUtf16x(Vec<u16>),
+    /// Interpret a random `&[u16]` slice as UTF-16 characters, replace broken characters
+    FromUtf16xLossy(Vec<u16>),
 }
 
 impl Action<'_> {
@@ -332,6 +334,54 @@ impl Action<'_> {
                             assert_eq!(compact.len(), control.len());
                             assert_eq!(compact, control);
                         }
+                    }
+                }
+            }
+            FromUtf16xLossy(buf) => {
+                #[allow(clippy::type_complexity)]
+                const FUNCS: &[(
+                    fn(&[u8]) -> CompactString,
+                    fn(u16) -> u16,
+                    fn([u8; 2]) -> u16,
+                )] = &[
+                    (
+                        |v| CompactString::from_utf16le_lossy(v),
+                        u16::from_le,
+                        u16::from_le_bytes,
+                    ),
+                    (
+                        |v| CompactString::from_utf16be_lossy(v),
+                        u16::from_be,
+                        u16::from_be_bytes,
+                    ),
+                ];
+
+                for (new_compact_string, from_int, from_bytes) in FUNCS {
+                    let buf = &*buf;
+                    let bytes: &[u8] =
+                        unsafe { core::slice::from_raw_parts(buf.as_ptr().cast(), buf.len() * 2) };
+
+                    let compact = new_compact_string(bytes);
+                    let control = String::from_utf16_lossy(
+                        &buf.iter().copied().map(from_int).collect::<Vec<u16>>(),
+                    );
+                    assert_eq!(compact.len(), control.len());
+                    assert_eq!(compact, control);
+
+                    if bytes.len() >= 2 {
+                        // Test if `CompactString::from_utf16x_lossy()` works with misaligned
+                        // slices.
+
+                        let bytes: &[u8] = &bytes[1..bytes.len() - 1];
+                        let buf: Vec<u16> = bytes
+                            .chunks_exact(2)
+                            .map(|v| from_bytes([v[0], v[1]]))
+                            .collect();
+
+                        let compact = new_compact_string(bytes);
+                        let control = String::from_utf16_lossy(&buf);
+                        assert_eq!(compact.len(), control.len());
+                        assert_eq!(compact, control);
                     }
                 }
             }

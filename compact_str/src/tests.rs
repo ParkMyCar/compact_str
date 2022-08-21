@@ -261,6 +261,23 @@ fn proptest_from_utf16_random(#[strategy(rand_u16s())] buf: Vec<u16>) {
 
 #[proptest]
 #[cfg_attr(miri, ignore)]
+fn proptest_from_utf16_lossy_roundtrips(#[strategy(rand_unicode())] control: String) {
+    let utf16_buf: Vec<u16> = control.encode_utf16().collect();
+    let compact = CompactString::from_utf16_lossy(&utf16_buf);
+
+    assert_eq!(compact, control);
+}
+
+#[proptest]
+#[cfg_attr(miri, ignore)]
+fn proptest_from_utf16_lossy_random(#[strategy(rand_u16s())] buf: Vec<u16>) {
+    let control = String::from_utf16_lossy(&buf);
+    let compact = CompactString::from_utf16_lossy(&buf);
+    assert_eq!(compact, control);
+}
+
+#[proptest]
+#[cfg_attr(miri, ignore)]
 fn proptest_remove(#[strategy(rand_unicode_with_range(1..80))] mut control: String, val: u8) {
     let initial_len = control.len();
     let mut compact = CompactString::new(&control);

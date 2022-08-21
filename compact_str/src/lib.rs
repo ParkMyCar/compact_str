@@ -332,6 +332,36 @@ impl CompactString {
         Ok(ret)
     }
 
+    /// Decode a UTF-16–encoded slice `v` into a `CompactString`, replacing invalid data with
+    /// the replacement character (`U+FFFD`), �.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use compact_str::CompactString;
+    /// // 𝄞mus<invalid>ic<invalid>
+    /// let v = &[0xD834, 0xDD1E, 0x006d, 0x0075,
+    ///           0x0073, 0xDD1E, 0x0069, 0x0063,
+    ///           0xD834];
+    ///
+    /// assert_eq!(CompactString::from("𝄞mus\u{FFFD}ic\u{FFFD}"),
+    ///            CompactString::from_utf16_lossy(v));
+    /// ```
+    #[inline]
+    pub fn from_utf16_lossy<B: AsRef<[u16]>>(buf: B) -> Self {
+        let buf = buf.as_ref();
+        let mut ret = CompactString::with_capacity(buf.len());
+        for c in std::char::decode_utf16(buf.iter().copied()) {
+            match c {
+                Ok(c) => ret.push(c),
+                Err(_) => ret.push_str("�"),
+            }
+        }
+        ret
+    }
+
     /// Returns the length of the [`CompactString`] in `bytes`, not [`char`]s or graphemes.
     ///
     /// When using `UTF-8` encoding (which all strings in Rust do) a single character will be 1 to 4

@@ -1229,7 +1229,7 @@ impl CompactString {
         // SAFETY: `u8` and `u16` are `Copy`, so if the alignment fits, we can transmute a
         //         `[u8; 2*N]` to `[u16; N]`. `slice::align_to()` checks if the alignment is right.
         match unsafe { v.align_to::<u16>() } {
-            (&[], v, _) => {
+            (&[], v, &[]) => {
                 // Input is correcty aligned.
                 for c in std::char::decode_utf16(v.iter().copied().map(from_int)) {
                     result.push(c.map_err(|_| Utf16Error(()))?);
@@ -1265,7 +1265,7 @@ impl CompactString {
         // SAFETY: `u8` and `u16` are `Copy`, so if the alignment fits, we can transmute a
         //         `[u8; 2*N]` to `[u16; N]`. `slice::align_to()` checks if the alignment is right.
         match unsafe { v.align_to::<u16>() } {
-            (&[], v, _) => {
+            (&[], v, &[]) => {
                 // Input is correcty aligned.
                 for c in std::char::decode_utf16(v.iter().copied().map(from_int)) {
                     match c {

@@ -1,6 +1,14 @@
 # Upcoming
+
+# 0.6.0
+### August 21, 2022
+* Add `from_utf16_lossy()`, `from_utf16be_lossy()`, and `from_utf16le_lossy()`
+    * Implemented in [`feat: implement from_utf16_lossy API`](https://github.com/ParkMyCar/compact_str/pull/211)
+    * Implemented in [`Implement from_utf16ne_lossy and from_utf16be_lossy`](https://github.com/ParkMyCar/compact_str/pull/210)
 * Add `from_utf16be()` and `from_utf16le()` methods
     * Implemented in [`Implement from_utf16le, from_utf16be, from_utf16ne`](https://github.com/ParkMyCar/compact_str/pull/207)
+* Implement `rkyv::Archive`, `rkyv::Deserialize`, and `rkyv::Serialize` for `CompactString`
+    * Implemented in [`Add rkyv serialization`](https://github.com/ParkMyCar/compact_str/pull/208)
 * Improve performance when counting number of bytes to write into a `CompactString`
     * Implemented in [`Don't format char to determine it's UTF-8 length`](https://github.com/ParkMyCar/compact_str/pull/197)
 * Improve macro hygiene for `format_compact!` macro

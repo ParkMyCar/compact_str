@@ -26,6 +26,8 @@ pub enum Creation<'a> {
     BytesUnchecked(&'a [u8]),
     /// Create using [`CompactString::from_utf16`]
     BytesUtf16(Vec<u16>),
+    /// Create using [`CompactString::from_utf16_lossy`]
+    BytesUtf16Lossy(Vec<u16>),
     /// Create using [`CompactString::from_utf8_buf`]
     Buf(&'a [u8]),
     /// Create using [`CompactString::from_utf8_buf_unchecked`]
@@ -341,6 +343,13 @@ impl Creation<'_> {
                     (Err(_), Err(_)) => None,
                     _ => panic!("CompactString and String read UTF-16 differently?"),
                 }
+            }
+            BytesUtf16Lossy(data) => {
+                let compact = CompactString::from_utf16_lossy(&data);
+                let std_str = String::from_utf16_lossy(&data);
+
+                assert_eq!(compact, std_str);
+                Some((compact, std_str))
             }
             Buf(data) => {
                 let mut buffer = Cursor::new(data);

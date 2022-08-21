@@ -1191,10 +1191,10 @@ impl CompactString {
         }
 
         // Note: we don't use collect::<Result<_, _>>() because that fails to pre-allocate a buffer,
-        // even though the size of our iterator, `buf`, is known ahead of time.
+        // even though the size of our iterator, `v`, is known ahead of time.
         //
         // rustlang issue #48994 is tracking the fix
-        let mut result = CompactString::with_capacity(v.len());
+        let mut result = CompactString::with_capacity(v.len() / 2);
 
         // SAFETY: `u8` and `u16` are `Copy`, so if the alignment fits, we can transmute a
         //         `[u8; 2*N]` to `[u16; N]`. `slice::align_to()` checks if the alignment is right.
@@ -1216,6 +1216,51 @@ impl CompactString {
         }
 
         Ok(result)
+    }
+
+    fn from_utf16x_lossy(
+        v: &[u8],
+        from_int: impl Fn(u16) -> u16,
+        from_bytes: impl Fn([u8; 2]) -> u16,
+    ) -> Self {
+        // Notice: We write the string "�" instead of the character '�', so the character does not
+        //         have to be formatted before it can be appended.
+
+        let (trailing_extra_byte, v) = match v.len() % 2 != 0 {
+            true => (true, &v[..v.len() - 1]),
+            false => (false, v),
+        };
+        let mut result = CompactString::with_capacity(v.len() / 2);
+
+        // SAFETY: `u8` and `u16` are `Copy`, so if the alignment fits, we can transmute a
+        //         `[u8; 2*N]` to `[u16; N]`. `slice::align_to()` checks if the alignment is right.
+        match unsafe { v.align_to::<u16>() } {
+            (&[], v, _) => {
+                // Input is correcty aligned.
+                for c in std::char::decode_utf16(v.iter().copied().map(from_int)) {
+                    match c {
+                        Ok(c) => result.push(c),
+                        Err(_) => result.push_str("�"),
+                    }
+                }
+            }
+            _ => {
+                // Input's alignment is off.
+                // SAFETY: we can always reinterpret a `[u8; 2*N]` slice as `[[u8; 2]; N]`
+                let v = unsafe { slice::from_raw_parts(v.as_ptr().cast(), v.len() / 2) };
+                for c in std::char::decode_utf16(v.iter().copied().map(from_bytes)) {
+                    match c {
+                        Ok(c) => result.push(c),
+                        Err(_) => result.push_str("�"),
+                    }
+                }
+            }
+        }
+
+        if trailing_extra_byte {
+            result.push_str("�");
+        }
+        result
     }
 
     /// Decode a slice of bytes as UTF-16 encoded string, in little endian.
@@ -1256,6 +1301,46 @@ impl CompactString {
     #[inline]
     pub fn from_utf16be(v: impl AsRef<[u8]>) -> Result<Self, Utf16Error> {
         CompactString::from_utf16x(v.as_ref(), u16::from_be, u16::from_be_bytes)
+    }
+
+    /// Lossy decode a slice of bytes as UTF-16 encoded string, in little endian.
+    ///
+    /// In this context "lossy" means that any broken characters in the input are replaced by the
+    /// \<REPLACEMENT CHARACTER\> `'�'`. Please notice that, unlike UTF-8, UTF-16 is not self
+    /// synchronizing. I.e. if a byte in the input is dropped, all following data is broken.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use compact_str::CompactString;
+    /// // A "random" bit was flipped in the 4th byte:
+    /// const DANCING_MEN: &[u8] = b"\x3d\xd8\x6f\xfc\x0d\x20\x42\x26\x0f\xfe";
+    /// let dancing_men = CompactString::from_utf16le_lossy(DANCING_MEN);
+    /// assert_eq!(dancing_men, "�\u{fc6f}\u{200d}♂️");
+    /// ```
+    #[inline]
+    pub fn from_utf16le_lossy(v: impl AsRef<[u8]>) -> Self {
+        CompactString::from_utf16x_lossy(v.as_ref(), u16::from_le, u16::from_le_bytes)
+    }
+
+    /// Lossy decode a slice of bytes as UTF-16 encoded string, in big endian.
+    ///
+    /// In this context "lossy" means that any broken characters in the input are replaced by the
+    /// \<REPLACEMENT CHARACTER\> `'�'`. Please notice that, unlike UTF-8, UTF-16 is not self
+    /// synchronizing. I.e. if a byte in the input is dropped, all following data is broken.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use compact_str::CompactString;
+    /// // A "random" bit was flipped in the 9th byte:
+    /// const DANCING_WOMEN: &[u8] = b"\xd8\x3d\xdc\x6f\x20\x0d\x26\x40\xde\x0f";
+    /// let dancing_women = CompactString::from_utf16be_lossy(DANCING_WOMEN);
+    /// assert_eq!(dancing_women, "👯\u{200d}♀�");
+    /// ```
+    #[inline]
+    pub fn from_utf16be_lossy(v: impl AsRef<[u8]>) -> Self {
+        CompactString::from_utf16x_lossy(v.as_ref(), u16::from_be, u16::from_be_bytes)
     }
 }
 

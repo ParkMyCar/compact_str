@@ -42,6 +42,8 @@ pub enum Action<'a> {
     ShrinkTo(u16, u16),
     /// Remove every nth character, and every character over a specific code point
     Retain(u8, char),
+    /// Clones each string, and drops the originals
+    CloneAndDrop,
 }
 
 impl Action<'_> {
@@ -268,6 +270,15 @@ impl Action<'_> {
 
                 assert_eq!(control, compact);
                 assert_eq!(control.len(), compact.len());
+            }
+            CloneAndDrop => {
+                let control_clone = control.clone();
+                let og = std::mem::replace(control, control_clone);
+                drop(og);
+
+                let compact_clone = compact.clone();
+                let og = std::mem::replace(compact, compact_clone);
+                drop(og);
             }
         }
     }

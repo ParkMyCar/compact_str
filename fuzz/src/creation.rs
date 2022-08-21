@@ -24,10 +24,20 @@ pub enum Creation<'a> {
     Bytes(&'a [u8]),
     /// Create using [`CompactString::from_utf8_unchecked`]
     BytesUnchecked(&'a [u8]),
+    /// Create using [`CompactString::from_utf8_lossy`]
+    BytesLossy(&'a [u8]),
     /// Create using [`CompactString::from_utf16`]
     BytesUtf16(Vec<u16>),
     /// Create using [`CompactString::from_utf16_lossy`]
     BytesUtf16Lossy(Vec<u16>),
+    /// Create using [`CompactString::from_utf16be_lossy`]
+    BytesUtf16BELossy(Vec<u16>),
+    /// Create using [`CompactString::from_utf16le_lossy`]
+    BytesUtf16LELossy(Vec<u16>),
+    /// Interpret random bytes as UTF-16 BE, then create using [`CompactString::from_utf16be`]
+    BytesUtf16BE(&'a [u8]),
+    /// Interpret random bytes as UTF-16 LE, then create using [`CompactString::from_utf16le`]
+    BytesUtf16LE(&'a [u8]),
     /// Create using [`CompactString::from_utf8_buf`]
     Buf(&'a [u8]),
     /// Create using [`CompactString::from_utf8_buf_unchecked`]
@@ -40,6 +50,12 @@ pub enum Creation<'a> {
     Word(String),
     /// Encode the provided `String` as UTF-16, and the create using [`CompactString::from_utf16`]
     WordUtf16(String),
+    /// Encode the provided `String` as UTF-16, tranform the values to big-endian, then create with
+    /// [`CompactString::from_utf16be`]
+    WordUtf16BE(String),
+    /// Encode the provided `String` as UTF-16, tranform the values to little-endian, then create
+    /// with [`CompactString::from_utf16le`]
+    WordUtf16LE(String),
     /// Create using [`CompactString::from_utf8_buf`] when the buffer is non-contiguous
     NonContiguousBuf(&'a [u8]),
     /// Create using `From<&str>`, which copies the data from the string slice
@@ -173,6 +189,34 @@ impl Creation<'_> {
 
                 assert_eq!(compact, word);
                 assert_properly_allocated(&compact, &word);
+
+                Some((compact, word))
+            }
+            WordUtf16BE(word) => {
+                let utf16be_buf: Vec<u8> = word
+                    .encode_utf16()
+                    .flat_map(|val| val.to_be_bytes())
+                    .collect();
+
+                let compact = CompactString::from_utf16be(utf16be_buf)
+                    .expect("failed to roundtrip UTF-16 BE");
+
+                assert_eq!(compact, word);
+                assert_eq!(compact.len(), word.len());
+
+                Some((compact, word))
+            }
+            WordUtf16LE(word) => {
+                let utf16be_buf: Vec<u8> = word
+                    .encode_utf16()
+                    .flat_map(|val| val.to_le_bytes())
+                    .collect();
+
+                let compact = CompactString::from_utf16le(utf16be_buf)
+                    .expect("failed to roundtrip UTF-16 BE");
+
+                assert_eq!(compact, word);
+                assert_eq!(compact.len(), word.len());
 
                 Some((compact, word))
             }
@@ -327,6 +371,15 @@ impl Creation<'_> {
                     _ => panic!("data, CompactString, and String disagreed?"),
                 }
             }
+            BytesLossy(data) => {
+                let compact = CompactString::from_utf8_lossy(data);
+                let control = String::from_utf8_lossy(data);
+
+                assert_eq!(compact, control);
+                assert_eq!(compact.len(), control.len());
+
+                Some((compact, control.to_string()))
+            }
             BytesUtf16(data) => {
                 let compact = CompactString::from_utf16(&data);
                 let std_str = String::from_utf16(&data);
@@ -350,6 +403,96 @@ impl Creation<'_> {
 
                 assert_eq!(compact, std_str);
                 Some((compact, std_str))
+            }
+            BytesUtf16BELossy(data) => {
+                let control = String::from_utf16_lossy(&data);
+
+                let utf16be_buf: Vec<u8> = data.into_iter().flat_map(|v| v.to_be_bytes()).collect();
+                let compact = CompactString::from_utf16be_lossy(utf16be_buf);
+
+                assert_eq!(compact, control);
+                assert_eq!(compact.len(), control.len());
+
+                Some((compact, control))
+            }
+            BytesUtf16LELossy(data) => {
+                let control = String::from_utf16_lossy(&data);
+
+                let utf16le_buf: Vec<u8> = data.into_iter().flat_map(|v| v.to_le_bytes()).collect();
+                let compact = CompactString::from_utf16le_lossy(utf16le_buf);
+
+                assert_eq!(compact, control);
+                assert_eq!(compact.len(), control.len());
+
+                Some((compact, control))
+            }
+            BytesUtf16BE(data) => {
+                if data.len() % 2 != 0 {
+                    // can't make u16's out of odd number of bytes
+                    assert!(CompactString::from_utf16be(data).is_err());
+                    return None;
+                }
+
+                // interpret the bytes as native-endian u16's
+                let utf16: Vec<u16> = data
+                    .chunks_exact(2)
+                    .map(|s| u16::from_ne_bytes([s[0], s[1]]))
+                    .collect();
+                // create a String from u16's
+                let control = String::from_utf16(&utf16);
+
+                // re-interpret the u16's as big-endian
+                let utf16be: Vec<u8> = utf16.into_iter().flat_map(|u| u.to_be_bytes()).collect();
+                // create a CompactString from big-endian u16's
+                let compact = CompactString::from_utf16be(utf16be);
+
+                match (compact, control) {
+                    (Ok(c), Ok(s)) => {
+                        assert_eq!(c, s);
+                        assert_eq!(c.len(), s.len());
+
+                        Some((c, s))
+                    }
+                    (Err(_), Err(_)) => {
+                        // Don't have valid UTF-16, so we can't return anything
+                        None
+                    }
+                    _ => panic!("String and CompactString returned different results!"),
+                }
+            }
+            BytesUtf16LE(data) => {
+                if data.len() % 2 != 0 {
+                    // can't make u16's out of odd number of bytes
+                    assert!(CompactString::from_utf16le(data).is_err());
+                    return None;
+                }
+
+                // interpret the bytes as native-endian u16's
+                let utf16: Vec<u16> = data
+                    .chunks_exact(2)
+                    .map(|s| u16::from_ne_bytes([s[0], s[1]]))
+                    .collect();
+                // create a String from u16's
+                let control = String::from_utf16(&utf16);
+
+                // re-interpret the u16's as little-endian
+                let utf16le: Vec<u8> = utf16.into_iter().flat_map(|u| u.to_le_bytes()).collect();
+                // create a CompactString from little-endian u16's
+                let compact = CompactString::from_utf16le(utf16le);
+
+                match (compact, control) {
+                    (Ok(c), Ok(s)) => {
+                        assert_eq!(c, s);
+                        assert_eq!(c.len(), s.len());
+
+                        Some((c, s))
+                    }
+                    (Err(_), Err(_)) => {
+                        // Don't have valid UTF-16, so we can't return anything
+                        None
+                    }
+                    _ => panic!("String and CompactString returned different results!"),
+                }
             }
             Buf(data) => {
                 let mut buffer = Cursor::new(data);

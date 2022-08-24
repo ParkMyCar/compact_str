@@ -41,11 +41,14 @@ impl InlineString {
         // set the length
         buffer[MAX_SIZE - 1] = len as u8 | LENGTH_MASK;
 
-        // Note: for loops aren't allowed in `const fn`, hence the while
-        let mut i = 0;
-        while i < len {
-            buffer[i] = text.as_bytes()[i];
-            i += 1;
+        // Note: for loops aren't allowed in `const fn`, hence the while.
+        // Note: Iterating forward results in badly optimized code, because the compiler tries to
+        //       unroll the loop.
+        let text = text.as_bytes();
+        let mut i = len;
+        while i > 0 {
+            buffer[i - 1] = text[i - 1];
+            i -= 1;
         }
 
         InlineString { buffer }

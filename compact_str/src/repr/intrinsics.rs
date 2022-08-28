@@ -1,12 +1,11 @@
 use cfg_if::cfg_if;
 
-/// Checks if `discriminant` equals [`super::HEAP_MASK`], if so, moves `pointer_src` to 
+/// Checks if `discriminant` equals [`super::HEAP_MASK`], if so, moves `pointer_src` to
 /// `pointer_dst`, and `length_src` to `length_dst`.
-/// 
+///
 /// # Special Intrinsics
 /// * `aarch64`, uses the `csel` instruction
 /// * `x86` and `x86_64`, uses the `cmovz`
-/// 
 #[inline(always)]
 pub fn cmov_ptr_len(
     discriminant: u8,
@@ -73,7 +72,7 @@ mod tests {
 
         let a_usize = 22_usize;
         let mut b_usize = 100_usize;
-        
+
         let ptr_dst = &mut b_ptr;
         let len_dst = &mut b_usize;
 
@@ -96,7 +95,7 @@ mod tests {
 
         let a_usize = 22_usize;
         let mut b_usize = 100_usize;
-        
+
         let ptr_dst = &mut b_ptr;
         let len_dst = &mut b_usize;
 

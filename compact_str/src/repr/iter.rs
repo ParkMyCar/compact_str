@@ -1,6 +1,7 @@
 //! Implementations of the [`FromIterator`] trait to make building `CompactString`s more ergonomic
 
 use core::iter::FromIterator;
+use std::borrow::Cow;
 
 use super::{
     HeapString,
@@ -8,6 +9,7 @@ use super::{
     Repr,
     MAX_SIZE,
 };
+use crate::CompactString;
 
 impl FromIterator<char> for Repr {
     fn from_iter<T: IntoIterator<Item = char>>(iter: T) -> Self {
@@ -121,6 +123,18 @@ impl FromIterator<Box<str>> for Repr {
 
 impl FromIterator<String> for Repr {
     fn from_iter<T: IntoIterator<Item = String>>(iter: T) -> Self {
+        from_as_ref_str_iterator(iter.into_iter())
+    }
+}
+
+impl FromIterator<CompactString> for Repr {
+    fn from_iter<T: IntoIterator<Item = CompactString>>(iter: T) -> Self {
+        from_as_ref_str_iterator(iter.into_iter())
+    }
+}
+
+impl<'a> FromIterator<Cow<'a, str>> for Repr {
+    fn from_iter<T: IntoIterator<Item = Cow<'a, str>>>(iter: T) -> Self {
         from_as_ref_str_iterator(iter.into_iter())
     }
 }

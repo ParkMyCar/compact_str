@@ -1409,3 +1409,57 @@ fn test_from_utf16x_lossy() {
         "👯\u{200d}♀�",
     );
 }
+
+#[test]
+fn test_collect() {
+    const VALUES: &[&str] = &["foo", "bar", "baz"];
+
+    assert_eq!(
+        VALUES
+            .iter()
+            .copied()
+            .map(Cow::Borrowed)
+            .collect::<CompactString>(),
+        "foobarbaz",
+    );
+    assert_eq!(
+        VALUES
+            .iter()
+            .copied()
+            .map(|s| Cow::Owned(s.into()))
+            .collect::<CompactString>(),
+        "foobarbaz",
+    );
+    assert_eq!(
+        VALUES
+            .iter()
+            .copied()
+            .map(Box::<str>::from)
+            .collect::<CompactString>(),
+        "foobarbaz",
+    );
+    assert_eq!(
+        VALUES
+            .iter()
+            .copied()
+            .map(CompactString::from)
+            .collect::<String>(),
+        "foobarbaz",
+    );
+    assert_eq!(
+        VALUES
+            .iter()
+            .copied()
+            .map(CompactString::from)
+            .collect::<Cow<'_, str>>(),
+        "foobarbaz",
+    );
+    assert_eq!(
+        VALUES
+            .iter()
+            .copied()
+            .flat_map(|s| s.chars())
+            .collect::<Cow<'_, str>>(),
+        "foobarbaz",
+    );
+}

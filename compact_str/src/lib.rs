@@ -1372,6 +1372,20 @@ impl CompactString {
     pub fn from_utf16be_lossy(v: impl AsRef<[u8]>) -> Self {
         CompactString::from_utf16x_lossy(v.as_ref(), u16::from_be, u16::from_be_bytes)
     }
+
+    /// Convert the [`CompactString`] into a [`String`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use compact_str::CompactString;
+    /// let s = CompactString::new("Hello world");
+    /// let s = s.into_string();
+    /// assert_eq!(s, "Hello world");
+    /// ```
+    pub fn into_string(self) -> String {
+        self.repr.into_string()
+    }
 }
 
 impl Default for CompactString {
@@ -1505,8 +1519,9 @@ impl From<Box<str>> for CompactString {
 }
 
 impl From<CompactString> for String {
+    #[inline]
     fn from(s: CompactString) -> Self {
-        s.repr.into_string()
+        s.into_string()
     }
 }
 
@@ -1557,10 +1572,44 @@ impl FromIterator<Box<str>> for CompactString {
     }
 }
 
+impl<'a> FromIterator<Cow<'a, str>> for CompactString {
+    fn from_iter<T: IntoIterator<Item = Cow<'a, str>>>(iter: T) -> Self {
+        let repr = iter.into_iter().collect();
+        CompactString { repr }
+    }
+}
+
 impl FromIterator<String> for CompactString {
     fn from_iter<T: IntoIterator<Item = String>>(iter: T) -> Self {
         let repr = iter.into_iter().collect();
         CompactString { repr }
+    }
+}
+
+impl FromIterator<CompactString> for CompactString {
+    fn from_iter<T: IntoIterator<Item = CompactString>>(iter: T) -> Self {
+        let repr = iter.into_iter().collect();
+        CompactString { repr }
+    }
+}
+
+impl FromIterator<CompactString> for String {
+    fn from_iter<T: IntoIterator<Item = CompactString>>(iter: T) -> Self {
+        let mut iterator = iter.into_iter();
+        match iterator.next() {
+            None => String::new(),
+            Some(buf) => {
+                let mut buf = buf.into_string();
+                buf.extend(iterator);
+                buf
+            }
+        }
+    }
+}
+
+impl FromIterator<CompactString> for Cow<'_, str> {
+    fn from_iter<T: IntoIterator<Item = CompactString>>(iter: T) -> Self {
+        String::from_iter(iter).into()
     }
 }
 
@@ -1597,6 +1646,28 @@ impl<'a> Extend<Cow<'a, str>> for CompactString {
 impl Extend<String> for CompactString {
     fn extend<T: IntoIterator<Item = String>>(&mut self, iter: T) {
         self.repr.extend(iter)
+    }
+}
+
+impl Extend<CompactString> for String {
+    fn extend<T: IntoIterator<Item = CompactString>>(&mut self, iter: T) {
+        for s in iter {
+            self.push_str(&s);
+        }
+    }
+}
+
+impl Extend<CompactString> for CompactString {
+    fn extend<T: IntoIterator<Item = CompactString>>(&mut self, iter: T) {
+        for s in iter {
+            self.push_str(&s);
+        }
+    }
+}
+
+impl<'a> Extend<CompactString> for Cow<'a, str> {
+    fn extend<T: IntoIterator<Item = CompactString>>(&mut self, iter: T) {
+        self.to_mut().extend(iter);
     }
 }
 

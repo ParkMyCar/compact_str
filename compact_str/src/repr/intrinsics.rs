@@ -37,8 +37,8 @@ pub fn cmov_ptr_len(
             unsafe {
                 core::arch::asm! {
                     "cmp {d}, 254",
-                    "cmovz {pd}, {ps}",
-                    "cmovz {ld}, {ls}",
+                    "cmovnz {pd}, {ps}",
+                    "cmovnz {ld}, {ls}",
                     d = in(reg) discriminant,
                     pd = inlateout(reg) *pointer_dst,
                     ps = in(reg) pointer_src,

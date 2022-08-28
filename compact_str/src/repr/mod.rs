@@ -228,6 +228,15 @@ impl Repr {
 
     #[inline]
     pub fn as_slice(&self) -> &[u8] {
+        // the last byte stores our discriminant and stack length
+        cfg_if::cfg_if! {
+            if #[cfg(target_pointer_width = "64")] {
+                let last_byte = self.5 as u8;
+            } else {
+                let last_byte = self.4 as u8;
+            }
+        };
+
         // initially has the value of the heap pointer, conditionally becomes the stack pointer
         let mut pointer = self.0 as *const u8;
         let stack_pointer = self as *const Self as *const u8;
@@ -236,22 +245,14 @@ impl Repr {
         // initially has the value of the heap length, conditionally beomces the stack length
         let mut length = self.1;
         let stack_length = core::cmp::min(
-            ((self.5 as u8).wrapping_sub(inline::LENGTH_MASK)) as usize,
+            (last_byte.wrapping_sub(inline::LENGTH_MASK)) as usize,
             MAX_SIZE,
         );
         let length_ref = &mut length;
 
-        cfg_if::cfg_if! {
-            if #[cfg(target_pointer_width = "64")] {
-                let discriminant = self.5 as u8;
-            } else {
-                let discriminant = self.4 as u8;
-            }
-        };
-
         // TODO: Fix this for strings > 16MB on 32-bit arches
         intrinsics::cmov_ptr_len(
-            discriminant,
+            last_byte,
             stack_pointer,
             pointer_ref,
             stack_length,

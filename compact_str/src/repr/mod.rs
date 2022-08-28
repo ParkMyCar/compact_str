@@ -240,6 +240,9 @@ impl Repr {
         // initially has the value of the heap pointer, conditionally becomes the stack pointer
         let mut pointer = self.0 as *const u8;
         let stack_pointer = self as *const Self as *const u8;
+
+        println!("before, heap {:X?}, stack {:X?}", pointer, stack_pointer);
+
         let pointer_ref = &mut pointer;
 
         // initially has the value of the heap length, conditionally beomces the stack length
@@ -248,6 +251,9 @@ impl Repr {
             (last_byte.wrapping_sub(inline::LENGTH_MASK)) as usize,
             MAX_SIZE,
         );
+
+        println!("before, length heap {:?}, stack {:?}", length, stack_length);
+
         let length_ref = &mut length;
 
         // TODO: Fix this for strings > 16MB on 32-bit arches
@@ -258,6 +264,9 @@ impl Repr {
             stack_length,
             length_ref,
         );
+
+        println!("after, heap {:X?}, stack {:X?}", pointer, stack_pointer);
+        println!("after, length heap {:?}, stack {:?}", length, stack_length);
 
         unsafe { core::slice::from_raw_parts(pointer, length) }
     }

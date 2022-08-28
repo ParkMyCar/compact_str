@@ -11,6 +11,7 @@ mod boxed;
 mod discriminant;
 mod heap;
 mod inline;
+mod intrinsics;
 mod iter;
 mod nonmax;
 mod num;
@@ -221,12 +222,43 @@ impl Repr {
 
     #[inline]
     pub fn as_str(&self) -> &str {
-        self.cast().into_str()
+        let slice = self.as_slice();
+        unsafe { core::str::from_utf8_unchecked(slice) }
     }
 
     #[inline]
     pub fn as_slice(&self) -> &[u8] {
-        self.cast().into_slice()
+        // initially has the value of the heap pointer, conditionally becomes the stack pointer
+        let mut pointer = self.0 as *const u8;
+        let stack_pointer = self as *const Self as *const u8;
+        let pointer_ref = &mut pointer;
+
+        // initially has the value of the heap length, conditionally beomces the stack length
+        let mut length = self.1;
+        let stack_length = core::cmp::min(
+            ((self.5 as u8).wrapping_sub(inline::LENGTH_MASK)) as usize,
+            MAX_SIZE,
+        );
+        let length_ref = &mut length;
+
+        cfg_if::cfg_if! {
+            if #[cfg(target_pointer_width = "64")] {
+                let discriminant = self.5 as u8;
+            } else {
+                let discriminant = self.4 as u8;
+            }
+        };
+
+        // TODO: Fix this for strings > 16MB on 32-bit arches
+        intrinsics::cmov_ptr_len(
+            discriminant,
+            stack_pointer,
+            pointer_ref,
+            stack_length,
+            length_ref,
+        );
+
+        unsafe { core::slice::from_raw_parts(pointer, length) }
     }
 
     #[inline]
@@ -530,22 +562,6 @@ impl<'a> StrongRepr<'a> {
         match self {
             Self::Inline(inline) => inline.capacity(),
             Self::Heap(heap) => heap.string.capacity(),
-        }
-    }
-
-    #[inline]
-    pub fn into_str(self) -> &'a str {
-        match self {
-            Self::Inline(inline) => inline.as_str(),
-            Self::Heap(heap) => heap.string.as_str(),
-        }
-    }
-
-    #[inline]
-    pub fn into_slice(self) -> &'a [u8] {
-        match self {
-            Self::Inline(inline) => inline.as_slice(),
-            Self::Heap(heap) => heap.string.as_slice(),
         }
     }
 }

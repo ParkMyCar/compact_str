@@ -1,6 +1,6 @@
 use super::MAX_SIZE;
 
-const LENGTH_MASK: u8 = 0b11000000;
+pub const LENGTH_MASK: u8 = 0b11000000;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]

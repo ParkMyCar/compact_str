@@ -32,7 +32,7 @@ pub fn cmov_ptr_len(
                     options(pure, nomem, nostack),
                 };
             }
-        } else if #[cfg(all(any(target_arch = "x86", target_arch = "x86_64"), not(miri)))] {
+        } /*else if #[cfg(all(any(target_arch = "x86", target_arch = "x86_64"), not(miri)))] {
             unsafe {
                 core::arch::asm! {
                     "cmp {d}, 254",
@@ -46,7 +46,7 @@ pub fn cmov_ptr_len(
                     options(pure, nomem, nostack),
                 };
             }
-        } else {
+        } */else {
             if discriminant != 254 {
                 *pointer_dst = pointer_src;
                 *length_dst = length_src;

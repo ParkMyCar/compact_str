@@ -49,9 +49,11 @@ jobs:
       - name: install cargo hack
         run: cargo install cargo-hack --force
       - name: cargo test msrv..
+        # note: we exclude `arbitrary` from here since the MSRV of >= 1.1.14 is 1.63. Instead of
+        # pinning to a specific version of of `arbitrary`, we'll let user's deps decide the version
         run: |
           cd compact_str
-          cargo hack test --all-features --version-range 1.57..
+          cargo hack test --features bytes,markup,proptest,quickcheck,rkyv,serde --version-range 1.57..
 
   feature_powerset:
     name: cargo check feature-powerset

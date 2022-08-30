@@ -341,7 +341,7 @@ impl Repr {
     }
 
     #[inline(always)]
-    fn as_union_mut(&mut self) -> &mut ReprUnion {
+    pub fn as_union_mut(&mut self) -> &mut ReprUnion {
         // SAFETY: An `ReprUnion` and `Repr` have the same size
         unsafe { &mut *(self as *mut _ as *mut _) }
     }

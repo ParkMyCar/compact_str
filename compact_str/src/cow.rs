@@ -41,68 +41,128 @@ unsafe impl Send for CompactCow<'_> {}
 unsafe impl Sync for CompactCow<'_> {}
 
 impl<'a> CompactCow<'a> {
+    /// Construct a new [`CompactCow`] from a [`CompactString`].
+    ///
+    /// The new [`CompactCow`] has `'static` lifetime, and will become the owner of the supplied
+    /// string.
+    ///
+    /// This method works the same as Calling [`CompactCow::from(some_compact_string)`](From).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use compact_str::{CompactCow, CompactString};
+    /// let string = CompactString::from("Hey, world!");
+    /// let cow = CompactCow::from_compact(string);
+    /// assert_eq!("Hey, world!", cow);
+    /// ```
+    #[must_use]
+    #[inline]
+    pub const fn from_compact(value: CompactString) -> CompactCow<'static> {
+        // SAFETY: we own `value`, and the representation is compatible
+        unsafe { mem::transmute(value) }
+    }
+
+    /// Construct a new [`CompactCow`] from a [`String`].
+    ///
+    /// The new [`CompactCow`] has `'static` lifetime, and will become the owner of the supplied
+    /// string.
+    ///
+    /// This method works the same as Calling [`CompactCow::from(some_string)`](From).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use compact_str::{CompactCow, CompactString};
+    /// let string = CompactString::from("Hey, world!");
+    /// let cow = CompactCow::from_compact(string);
+    /// assert_eq!("Hey, world!", cow);
+    /// ```
+    #[must_use]
+    #[inline]
+    pub fn from_string(value: String) -> CompactCow<'static> {
+        CompactString::from(value).into()
+    }
+
+    /// Borrow an [`str`] for construct a new [`CompactCow`].
+    ///
+    /// The new [`CompactCow`] has the same lifetime as the argument.
+    /// If the string is short enough to be inlined, it is.
+    ///
+    /// This method works the same as Calling [`CompactCow::from(string_reference)`](From).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use compact_str::{CompactCow, CompactString};
+    /// let string = "Hey, world!";
+    /// let cow = CompactCow::from_str(string);
+    /// assert_eq!("Hey, world!", cow);
+    /// ```
+    #[must_use]
+    pub const fn from_str(value: &str) -> Self {
+        if value.len() <= MAX_SIZE {
+            Self::from_compact(CompactString::new_inline(value))
+        } else {
+            CompactCow {
+                data: value.as_ptr(),
+                len: value.len(),
+                #[cfg(target_pointer_width = "64")]
+                pad0: 0,
+                pad1: 0,
+                pad2: 0,
+                discriminant: BORROWED_FLAG,
+                phantom: PhantomData,
+            }
+        }
+    }
+
+    /// Returns `true` if the [`CompactCow`] borrows its data.
+    ///
+    /// This method works the same as [`!compact_cow.is_owned()`](CompactCow::is_owned).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use compact_str::CompactCow;
+    /// let cow = CompactCow::from("Hello, world! How are you today?");
+    /// assert!(cow.is_borrowed());
+    /// ```
+    #[must_use]
     #[inline]
     pub const fn is_borrowed(&self) -> bool {
         matches!(self.discriminant, BORROWED_FLAG)
     }
 
+    /// Returns `true` if the [`CompactCow`] owns its data.
+    ///
+    /// This method works the same as [`!compact_cow.is_borrowed()`](CompactCow::is_borrowed).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use compact_str::CompactCow;
+    /// let cow = CompactCow::from(String::from("Hello, world! How are you today?"));
+    /// assert!(cow.is_owned());
+    /// ```
+    #[must_use]
     #[inline]
     pub const fn is_owned(&self) -> bool {
         !self.is_borrowed()
     }
 
-    /// SAFETY: caller must ensure that `self.is_borrowed()`
-    #[inline]
-    unsafe fn uncheched_as_borrowed(&self) -> &'a str {
-        let slice = slice::from_raw_parts(self.data, self.len);
-        core::str::from_utf8_unchecked(slice)
-    }
-
-    /// SAFETY: caller must ensure that `self.is_owned()`
-    #[inline]
-    const unsafe fn unchecked_as_owned(&self) -> &CompactString {
-        &*(self as *const Self).cast()
-    }
-
-    /// SAFETY: caller must ensure that `self.is_owned()`
-    #[inline]
-    unsafe fn unchecked_as_mut_owned(&mut self) -> &mut CompactString {
-        &mut *(self as *mut Self).cast()
-    }
-
-    /// SAFETY: caller must ensure that `self.is_owned()`
-    #[inline]
-    const unsafe fn unchecked_owned_into_inner(self) -> CompactString {
-        mem::transmute(mem::ManuallyDrop::new(self))
-    }
-
-    fn ensure_owned(&mut self) {
-        if self.is_owned() {
-            return;
-        }
-
-        // SAFETY: we just that that `self.is_borrowed()`
-        let s = unsafe { self.uncheched_as_borrowed() };
-        let mut s = mem::ManuallyDrop::new(Repr::new(s));
-        // SAFETY: both representations are compatible
-        //         the old data was borrowed, so it does not need to be dropped
-        unsafe { ptr::swap((self as *mut Self).cast(), &mut s) };
-    }
-
-    #[inline]
-    pub fn to_mut(&mut self) -> &mut CompactString {
-        self.ensure_owned();
-        // SAFETY: we ensured that `self.is_owned()`
-        unsafe { self.unchecked_as_mut_owned() }
-    }
-
-    #[inline]
-    pub fn into_owned(mut self) -> CompactString {
-        self.ensure_owned();
-        // SAFETY: we ensured that `self.is_owned()`
-        unsafe { self.unchecked_owned_into_inner() }
-    }
-
+    /// Retrieve a reference to the contained [`str`] data.
+    ///
+    /// This method works the same as [`&*compact_cow`](ops::Deref).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use compact_str::CompactCow;
+    /// let cow = CompactCow::from("Hello, world! How are you today?");
+    /// assert_eq!(cow.as_str(), "Hello, world! How are you today?");
+    /// ```
+    #[must_use]
     pub fn as_str(&self) -> &str {
         match self.discriminant {
             BORROWED_FLAG => {
@@ -126,7 +186,85 @@ impl<'a> CompactCow<'a> {
         }
     }
 
-    pub fn as_borrowed(&self) -> Option<&'a str> {
+    /// Retrieve a mutable reference to the contained [`str`] data.
+    ///
+    /// This method works the same as [`&mut *compact_cow`](ops::DerefMut),
+    /// and is slightly faster than calling `compact_cow.to_mut().as_mut_str()`.
+    ///
+    /// If the data was borrowed before calling this method, it gets copied to be owned.
+    ///
+    /// # See also
+    ///
+    /// * [`CompactCow::to_mut()`]
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use compact_str::CompactCow;
+    /// let mut cow = CompactCow::from("Hello, world! How are you today?");
+    /// cow.as_mut_str().make_ascii_uppercase();
+    /// assert_eq!(cow, "HELLO, WORLD! HOW ARE YOU TODAY?");
+    /// ```
+    #[must_use]
+    pub fn as_mut_str(&mut self) -> &mut str {
+        let (len, slice) = loop {
+            match self.discriminant {
+                BORROWED_FLAG => {
+                    // SAFETY: we just checked that `self.is_borrowed()`
+                    unsafe { self.make_owned() };
+                    // Continue the loop. The data is owned now, so this case won't be hit again.
+                }
+                HEAP_FLAG => {
+                    // SAFETY: we just checked that `self.is_owned()`
+                    let compact = unsafe { self.unchecked_as_mut_owned() };
+                    // SAFETY: we just checked that the owned data is on the heap
+                    let heap = unsafe { &mut compact.repr.as_union_mut().heap };
+                    // SAFETY: we'll only return the first `len()` bytes
+                    break (heap.string.len(), unsafe { heap.string.as_mut_slice() });
+                }
+                _ => {
+                    // SAFETY: we just checked that `self.is_owned()`
+                    let compact = unsafe { self.unchecked_as_mut_owned() };
+                    // SAFETY: we just checked that the owned data is stored inline
+                    let inline = unsafe { &mut compact.repr.as_union_mut().inline };
+                    // SAFETY: we'll only return the first `len()` bytes
+                    break (inline.len(), unsafe { inline.as_mut_slice() });
+                }
+            }
+        };
+        // SAFETY: we owned data must be a valid string
+        unsafe { std::str::from_utf8_unchecked_mut(&mut slice[..len]) }
+    }
+
+    /// Make the data owned if needed, and return a mutable reference to it.
+    ///
+    /// # See also
+    ///
+    /// * [`CompactCow::as_mut_str()`]
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use compact_str::CompactCow;
+    /// let mut cow = CompactCow::from("Hello, world! How are you today?");
+    /// cow.to_mut().truncate(13);
+    /// assert_eq!(cow, "Hello, world!");
+    /// ```
+    // Maybe the user only wants to make the data owned, but doesn't care about the data itself.
+    #[allow(clippy::must_use_candidate)]
+    #[inline]
+    pub fn to_mut(&mut self) -> &mut CompactString {
+        self.ensure_owned();
+        // SAFETY: we ensured that `self.is_owned()`
+        unsafe { self.unchecked_as_mut_owned() }
+    }
+
+    /// Get a reference to the borrowed [`str`].
+    ///
+    /// Returns `None` is the data is not borrowed.
+    #[must_use]
+    #[inline]
+    pub fn get_borrowed(&self) -> Option<&'a str> {
         match self.is_borrowed() {
             true => {
                 // SAFETY: we just checked that `self.is_borrowed()`
@@ -136,7 +274,11 @@ impl<'a> CompactCow<'a> {
         }
     }
 
-    pub fn as_owned(&self) -> Option<&CompactString> {
+    /// Get a reference to the borrowed [`CompactCow`].
+    ///
+    /// Returns `None` is the data is not owned.
+    #[inline]
+    pub fn get_owned(&self) -> Option<&CompactString> {
         match self.is_owned() {
             true => {
                 // SAFETY: we just checked that `self.is_owned()`
@@ -146,7 +288,11 @@ impl<'a> CompactCow<'a> {
         }
     }
 
-    pub fn as_mut(&mut self) -> Option<&mut CompactString> {
+    /// Get a mutable reference to the borrowed [`CompactCow`].
+    ///
+    /// Returns `None` is the data is not owned.
+    #[inline]
+    pub fn get_mut(&mut self) -> Option<&mut CompactString> {
         match self.is_owned() {
             true => {
                 // SAFETY: we just checked that `self.is_owned()`
@@ -156,29 +302,19 @@ impl<'a> CompactCow<'a> {
         }
     }
 
+    /// Extract the owned [`str`] data as [`CompactString`].
+    ///
+    /// If the data was not owned before calling this method, it gets copied.
     #[inline]
-    pub const fn from_compact(value: CompactString) -> CompactCow<'static> {
-        // SAFETY: we own `value`, and the representation is compatible
-        unsafe { mem::transmute(mem::ManuallyDrop::new(value)) }
+    pub fn into_owned(mut self) -> CompactString {
+        self.ensure_owned();
+        // SAFETY: we ensured that `self.is_owned()`
+        unsafe { self.unchecked_owned_into_inner() }
     }
 
-    pub const fn from_str(value: &str) -> Self {
-        if value.len() <= MAX_SIZE {
-            Self::from_compact(CompactString::new_inline(value))
-        } else {
-            CompactCow {
-                data: value.as_ptr(),
-                len: value.len(),
-                #[cfg(target_pointer_width = "64")]
-                pad0: 0,
-                pad1: 0,
-                pad2: 0,
-                discriminant: BORROWED_FLAG,
-                phantom: PhantomData,
-            }
-        }
-    }
-
+    /// Extract the owned [`str`] data as [`String`].
+    ///
+    /// If the data was not owned before calling this method, it gets copied.
     pub fn into_string(self) -> String {
         match self.discriminant {
             BORROWED_FLAG => {
@@ -210,6 +346,47 @@ impl<'a> CompactCow<'a> {
                 result
             }
         }
+    }
+
+    /// SAFETY: caller must ensure that `self.is_owned()`
+    #[inline]
+    const unsafe fn unchecked_as_owned(&self) -> &CompactString {
+        &*(self as *const Self).cast()
+    }
+
+    /// SAFETY: caller must ensure that `self.is_owned()`
+    #[inline]
+    unsafe fn unchecked_as_mut_owned(&mut self) -> &mut CompactString {
+        &mut *(self as *mut Self).cast()
+    }
+
+    /// SAFETY: caller must ensure that `self.is_owned()`
+    #[inline]
+    const unsafe fn unchecked_owned_into_inner(self) -> CompactString {
+        mem::transmute(mem::ManuallyDrop::new(self))
+    }
+
+    /// SAFETY: caller must ensure that `self.is_borrowed()`
+    #[inline]
+    unsafe fn uncheched_as_borrowed(&self) -> &'a str {
+        let slice = slice::from_raw_parts(self.data, self.len);
+        core::str::from_utf8_unchecked(slice)
+    }
+
+    #[inline]
+    fn ensure_owned(&mut self) {
+        if self.is_borrowed() {
+            unsafe { self.make_owned() };
+        }
+    }
+
+    /// SAFETY: the caller has to ensure that `self.is_borrowed()`
+    unsafe fn make_owned(&mut self) {
+        let s = self.uncheched_as_borrowed();
+        let mut s = mem::ManuallyDrop::new(Repr::new(s));
+        // SAFETY: both representations are compatible
+        //         the old data was borrowed, so it does not need to be dropped
+        ptr::swap((self as *mut Self).cast(), &mut s);
     }
 }
 
@@ -302,39 +479,66 @@ impl fmt::Debug for CompactCow<'_> {
     }
 }
 
-mod impl_cmp {
+mod impl_cmp_for_compact_cow {
     use super::*;
 
-    impl cmp::PartialEq<&str> for CompactCow<'_> {
-        fn eq(&self, other: &&str) -> bool {
-            self.as_str() == *other
-        }
-    }
-
-    impl cmp::PartialEq for CompactCow<'_> {
-        fn eq(&self, other: &Self) -> bool {
-            self.as_str() == other.as_str()
+    impl<T: AsRef<str>> cmp::PartialEq<T> for CompactCow<'_> {
+        fn eq(&self, other: &T) -> bool {
+            self.as_str() == other.as_ref()
         }
     }
 
     impl cmp::Eq for CompactCow<'_> {}
 
-    impl cmp::PartialOrd<&str> for CompactCow<'_> {
-        fn partial_cmp(&self, other: &&str) -> Option<cmp::Ordering> {
-            Some(self.as_str().cmp(*other))
-        }
-    }
-
-    impl cmp::PartialOrd for CompactCow<'_> {
-        #[inline]
-        fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
-            Some(self.cmp(other))
+    impl<T: AsRef<str>> cmp::PartialOrd<T> for CompactCow<'_> {
+        fn partial_cmp(&self, other: &T) -> Option<cmp::Ordering> {
+            Some(self.as_str().cmp(other.as_ref()))
         }
     }
 
     impl cmp::Ord for CompactCow<'_> {
         fn cmp(&self, other: &Self) -> cmp::Ordering {
             self.as_str().cmp(other.as_str())
+        }
+    }
+}
+
+mod impl_cmp_from_compact_cow {
+    use super::*;
+
+    impl<'a> cmp::PartialEq<CompactCow<'a>> for &str {
+        fn eq(&self, other: &CompactCow<'a>) -> bool {
+            <str as PartialEq<str>>::eq(self, other)
+        }
+    }
+
+    impl<'a> cmp::PartialOrd<CompactCow<'a>> for &str {
+        fn partial_cmp(&self, other: &CompactCow<'a>) -> Option<cmp::Ordering> {
+            <str as PartialOrd<str>>::partial_cmp(self, other)
+        }
+    }
+
+    impl<'a> cmp::PartialEq<CompactCow<'a>> for String {
+        fn eq(&self, other: &CompactCow<'a>) -> bool {
+            <str as PartialEq<str>>::eq(self, other)
+        }
+    }
+
+    impl<'a> cmp::PartialOrd<CompactCow<'a>> for String {
+        fn partial_cmp(&self, other: &CompactCow<'a>) -> Option<cmp::Ordering> {
+            <str as PartialOrd<str>>::partial_cmp(self, other)
+        }
+    }
+
+    impl<'a> cmp::PartialEq<CompactCow<'a>> for borrow::Cow<'_, str> {
+        fn eq(&self, other: &CompactCow<'a>) -> bool {
+            <str as PartialEq<str>>::eq(self, other)
+        }
+    }
+
+    impl<'a> cmp::PartialOrd<CompactCow<'a>> for borrow::Cow<'_, str> {
+        fn partial_cmp(&self, other: &CompactCow<'a>) -> Option<cmp::Ordering> {
+            <str as PartialOrd<str>>::partial_cmp(self, other)
         }
     }
 }
@@ -385,7 +589,7 @@ mod impl_into_compact_cow {
     impl<'a> From<CompactString> for CompactCow<'a> {
         #[inline]
         fn from(value: CompactString) -> Self {
-            unsafe { mem::transmute(mem::ManuallyDrop::new(value)) }
+            Self::from_compact(value)
         }
     }
 
@@ -399,7 +603,7 @@ mod impl_into_compact_cow {
     impl<'a> From<String> for CompactCow<'a> {
         #[inline]
         fn from(value: String) -> Self {
-            CompactString::from(value).into()
+            Self::from_string(value)
         }
     }
 

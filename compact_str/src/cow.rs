@@ -867,7 +867,7 @@ mod impl_serde {
         let data = serde_json::from_str::<Test>(SHORT_JSON).unwrap().data;
         assert_eq!(data, SHORT_VALUE);
         assert!(data.is_owned());
-        assert!(!data.as_owned().unwrap().is_heap_allocated());
+        assert!(!data.get_owned().unwrap().is_heap_allocated());
 
         let data = serde_json::from_str::<Test>(LONG_JSON).unwrap().data;
         assert_eq!(data, LONG_VALUE);
@@ -878,13 +878,13 @@ mod impl_serde {
             .data;
         assert_eq!(data, ESCAPED_SHORT_VALUE);
         assert!(data.is_owned());
-        assert!(!data.as_owned().unwrap().is_heap_allocated());
+        assert!(!data.get_owned().unwrap().is_heap_allocated());
 
         let data = serde_json::from_str::<Test>(ESCAPED_LONG_JSON)
             .unwrap()
             .data;
         assert_eq!(data, ESCAPED_LONG_VALUE);
         assert!(data.is_owned());
-        assert!(data.as_owned().unwrap().is_heap_allocated());
+        assert!(data.get_owned().unwrap().is_heap_allocated());
     }
 }

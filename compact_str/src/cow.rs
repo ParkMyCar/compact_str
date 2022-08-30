@@ -350,8 +350,8 @@ impl<'a> CompactCow<'a> {
 
     /// SAFETY: caller must ensure that `self.is_owned()`
     #[inline]
-    const unsafe fn unchecked_as_owned(&self) -> &CompactString {
-        &*(self as *const Self).cast()
+    unsafe fn unchecked_as_owned(&self) -> &CompactString {
+        mem::transmute(self)
     }
 
     /// SAFETY: caller must ensure that `self.is_owned()`

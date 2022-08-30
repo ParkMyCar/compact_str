@@ -335,7 +335,7 @@ impl Repr {
     }
 
     #[inline(always)]
-    pub const fn as_union(&self) -> &ReprUnion {
+    pub fn as_union(&self) -> &ReprUnion {
         // SAFETY: An `ReprUnion` and `Repr` have the same size
         unsafe { &*(self as *const _ as *const _) }
     }

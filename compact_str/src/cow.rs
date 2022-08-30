@@ -73,9 +73,9 @@ impl<'a> CompactCow<'a> {
     /// # Examples
     ///
     /// ```
-    /// # use compact_str::{CompactCow, CompactString};
-    /// let string = CompactString::from("Hey, world!");
-    /// let cow = CompactCow::from_compact(string);
+    /// # use compact_str::CompactCow;
+    /// let string = String::from("Hey, world!");
+    /// let cow = CompactCow::from_string(string);
     /// assert_eq!("Hey, world!", cow);
     /// ```
     #[must_use]

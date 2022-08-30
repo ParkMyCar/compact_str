@@ -20,9 +20,10 @@ use discriminant::{
     Discriminant,
     DiscriminantMask,
 };
-use heap::HeapString;
+pub use heap::HeapString;
 use inline::InlineString;
-use nonmax::NonMaxU8;
+pub use iter::from_as_ref_str_iterator;
+pub use nonmax::NonMaxU8;
 pub use traits::IntoRepr;
 
 pub const MAX_SIZE: usize = std::mem::size_of::<String>();
@@ -55,10 +56,10 @@ pub struct Repr(
 );
 
 #[repr(C)]
-union ReprUnion {
-    mask: DiscriminantMask,
-    heap: ManuallyDrop<HeapString>,
-    inline: InlineString,
+pub union ReprUnion {
+    pub mask: DiscriminantMask,
+    pub heap: ManuallyDrop<HeapString>,
+    pub inline: InlineString,
 }
 
 unsafe impl Send for Repr {}
@@ -334,7 +335,7 @@ impl Repr {
     }
 
     #[inline(always)]
-    fn as_union(&self) -> &ReprUnion {
+    pub const fn as_union(&self) -> &ReprUnion {
         // SAFETY: An `ReprUnion` and `Repr` have the same size
         unsafe { &*(self as *const _ as *const _) }
     }
@@ -387,18 +388,18 @@ impl Drop for Repr {
         if self.is_heap_allocated() {
             outlined_drop(self)
         }
+    }
+}
 
-        #[inline(never)]
-        fn outlined_drop(this: &mut Repr) {
-            match this.discriminant() {
-                Discriminant::Heap => {
-                    // SAFETY: We checked the discriminant to make sure the union is `heap`
-                    unsafe { ManuallyDrop::drop(&mut this.as_union_mut().heap) };
-                }
-                // No-op, the value is on the stack and doesn't need to be explicitly dropped
-                Discriminant::Inline => {}
-            }
+#[inline(never)]
+pub fn outlined_drop(this: &mut Repr) {
+    match this.discriminant() {
+        Discriminant::Heap => {
+            // SAFETY: We checked the discriminant to make sure the union is `heap`
+            unsafe { ManuallyDrop::drop(&mut this.as_union_mut().heap) };
         }
+        // No-op, the value is on the stack and doesn't need to be explicitly dropped
+        Discriminant::Inline => {}
     }
 }
 

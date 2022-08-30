@@ -64,7 +64,7 @@ impl<'a> FromIterator<&'a char> for Repr {
     }
 }
 
-fn from_as_ref_str_iterator<S, I>(mut iter: I) -> Repr
+pub fn from_as_ref_str_iterator<S, I>(mut iter: I) -> Repr
 where
     S: AsRef<str>,
     I: Iterator<Item = S>,

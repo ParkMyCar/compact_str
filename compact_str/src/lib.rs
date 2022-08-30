@@ -47,6 +47,9 @@ pub use traits::{
     ToCompactString,
 };
 
+mod cow;
+pub use cow::CompactCow;
+
 #[cfg(test)]
 mod tests;
 

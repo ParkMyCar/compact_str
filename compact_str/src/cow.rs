@@ -76,7 +76,6 @@ impl<'a> CompactCow<'a> {
         mem::transmute(mem::ManuallyDrop::new(self))
     }
 
-    #[inline]
     fn ensure_owned(&mut self) {
         if self.is_owned() {
             return;
@@ -90,12 +89,14 @@ impl<'a> CompactCow<'a> {
         unsafe { ptr::swap((self as *mut Self).cast(), &mut s) };
     }
 
+    #[inline]
     pub fn to_mut(&mut self) -> &mut CompactString {
         self.ensure_owned();
         // SAFETY: we ensured that `self.is_owned()`
         unsafe { self.unchecked_as_mut_owned() }
     }
 
+    #[inline]
     pub fn into_owned(mut self) -> CompactString {
         self.ensure_owned();
         // SAFETY: we ensured that `self.is_owned()`
@@ -227,6 +228,7 @@ impl Clone for CompactCow<'_> {
 }
 
 impl Drop for CompactCow<'_> {
+    #[inline]
     fn drop(&mut self) {
         if self.discriminant == HEAP_FLAG {
             // SAFETY: we just checked that `self.is_owned()`

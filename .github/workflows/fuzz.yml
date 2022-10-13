@@ -62,13 +62,13 @@ jobs:
         with:
           command: fuzz
           args: run --features=libfuzzer-sys --debug-assertions compact_str -- -max_total_time=${{ env.fuzz_time }}
-      - name: File Issue (if failure found)
-        if: failure()
-        uses: JasonEtco/create-an-issue@v2.6
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          update_existing: true
+      # - name: File Issue (if failure found)
+      #   if: failure()
+      #   uses: JasonEtco/create-an-issue@v2.6
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     update_existing: true
 
   # TODO(parkmycar): Fails in CI with "error: failed to run LLVM passes: unknown pass name 'sancov'"
   # honggfuzz_x86_64:
@@ -170,13 +170,13 @@ jobs:
         with:
           name: Upload Crashes
           path: ./fuzz/afl/out/default/crashes/
-      - name: File Issue (if failure found)
-        if: failure()
-        uses: JasonEtco/create-an-issue@v2.6
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          update_existing: true
+      # - name: File Issue (if failure found)
+      #   if: failure()
+      #   uses: JasonEtco/create-an-issue@v2.6
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     update_existing: true
 
   # TODO(parkmycar): ARMv7 runner is no longer online
   # afl_armv7:

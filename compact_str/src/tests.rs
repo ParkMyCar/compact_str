@@ -997,7 +997,7 @@ fn test_into_string_small_str() {
 
 #[test]
 fn test_into_string_long_str() {
-    let data = "abcdefghijklmnopqrstuvwxyz";
+    let data = "this is a long string that will be on the heap";
     let str_addr = data.as_ptr();
     let str_len = data.len();
 

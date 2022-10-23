@@ -884,4 +884,4 @@ mod tests {
     }
 }
 
-crate::asserts::assert_size_eq!(BoxString, String);
+static_assertions::assert_eq_size!(BoxString, String);

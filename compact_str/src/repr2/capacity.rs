@@ -49,7 +49,7 @@ pub const MAX_VALUE: usize = 2usize.pow(SPACE_FOR_CAPACITY as u32 * 8) - 2;
 #[cfg_attr(target_pointer_width = "32", repr(align(4)))]
 pub struct Capacity([u8; USIZE_SIZE]);
 
-crate::asserts::assert_size_eq!(Capacity, usize);
+static_assertions::assert_eq_size!(Capacity, usize);
 static_assertions::assert_eq_align!(Capacity, usize);
 
 impl Capacity {

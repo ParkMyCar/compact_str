@@ -95,7 +95,7 @@ where
         }
 
         // write the current string into a slice of the unoccupied space
-        (&mut inline_buf.0[curr_len..][..bytes_len]).copy_from_slice(str_slice.as_bytes());
+        inline_buf.0[curr_len..][..bytes_len].copy_from_slice(str_slice.as_bytes());
         curr_len += bytes_len;
     }
 

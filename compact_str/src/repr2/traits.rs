@@ -44,6 +44,7 @@ impl IntoRepr for char {
 #[cfg(test)]
 mod tests {
     use quickcheck_macros::quickcheck;
+
     use super::IntoRepr;
 
     #[test]

@@ -33,7 +33,6 @@ use std::borrow::Cow;
 use std::ffi::OsStr;
 use std::iter::FusedIterator;
 
-mod asserts;
 mod features;
 mod macros;
 mod utility;
@@ -210,9 +209,9 @@ impl CompactString {
     /// // If you create a `CompactString` with a capacity greater than
     /// // `std::mem::size_of::<String>`, it will heap allocated. For heap
     /// // allocated strings we have a minimum capacity
-    /// 
-    /// const MIN_HEAP_CAPACITY: usize = std::mem::size_of::<usize>() * 4; 
-    /// 
+    ///
+    /// const MIN_HEAP_CAPACITY: usize = std::mem::size_of::<usize>() * 4;
+    ///
     /// let heap_size = std::mem::size_of::<String>() + 1;
     /// let empty = CompactString::with_capacity(heap_size);
     ///
@@ -1820,4 +1819,4 @@ impl DoubleEndedIterator for Drain<'_> {
 
 impl FusedIterator for Drain<'_> {}
 
-crate::asserts::assert_size_eq!(CompactString, String);
+static_assertions::assert_eq_size!(CompactString, String);

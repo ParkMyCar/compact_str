@@ -163,4 +163,4 @@ mod tests {
     }
 }
 
-crate::asserts::assert_size_eq!(Capacity, usize);
+static_assertions::assert_eq_size!(Capacity, usize);

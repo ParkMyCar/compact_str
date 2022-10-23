@@ -22,7 +22,7 @@ pub struct HeapBuffer {
     pub len: usize,
     pub cap: Capacity,
 }
-crate::asserts::assert_size_eq!(HeapBuffer, Repr);
+static_assertions::assert_eq_size!(HeapBuffer, Repr);
 
 impl HeapBuffer {
     /// Create a [`HeapBuffer`] with the provided text

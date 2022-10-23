@@ -580,7 +580,7 @@ enum StrongOwnedRepr {
     Heap(ManuallyDrop<HeapString>),
 }
 
-crate::asserts::assert_size_eq!(ReprUnion, Repr, Option<Repr>, String, Option<String>);
+static_assertions::assert_eq_size!(ReprUnion, Repr, Option<Repr>, String, Option<String>);
 
 #[cfg(target_pointer_width = "64")]
 crate::asserts::assert_size!(Repr, 24);

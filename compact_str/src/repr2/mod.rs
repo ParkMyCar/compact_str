@@ -20,7 +20,6 @@ use capacity::Capacity;
 use heap::HeapBuffer;
 use inline::InlineBuffer;
 use nonmax::NonMaxU8;
-
 pub use traits::IntoRepr;
 
 /// The max size of a string we can fit inline
@@ -104,8 +103,8 @@ impl Repr {
 
     /// Create a [`Repr`] from a slice of bytes that is UTF-8, without validating that it is indeed
     /// UTF-8
-    /// 
-    /// # SAFETY:
+    ///
+    /// # Safety
     /// * The caller must guarantee that `buf` is valid UTF-8
     #[inline]
     pub unsafe fn from_utf8_unchecked<B: AsRef<[u8]>>(buf: B) -> Self {
@@ -262,7 +261,11 @@ impl Repr {
             let ptr = ptr::NonNull::new(raw_ptr).expect("string with capacity has null ptr?");
 
             // create a new BoxString with our parts!
-            let heap = HeapBuffer { ptr, len: og_cap, cap };
+            let heap = HeapBuffer {
+                ptr,
+                len: og_cap,
+                cap,
+            };
 
             // SAFETY: `BoxString` and `Repr` are the same size
             unsafe { mem::transmute(heap) }
@@ -301,7 +304,7 @@ impl Repr {
             let heap_buffer = unsafe { &mut *(self as *mut _ as *mut HeapBuffer) };
 
             // Attempt to grow our capacity, allocating a new HeapBuffer on failure
-            if let Err(_) = heap_buffer.realloc(needed_capacity) {
+            if heap_buffer.realloc(needed_capacity).is_err() {
                 // Create a new HeapBuffer
                 let heap = HeapBuffer::with_additional(self.as_str(), additional);
                 // SAFETY: `HeapBuffer` and `Repr` are the same size
@@ -324,7 +327,12 @@ impl Repr {
             if new_capacity <= MAX_SIZE {
                 // // String can be inlined.
                 let mut inline = InlineBuffer::empty();
-                unsafe { inline.0.as_mut_ptr().copy_from_nonoverlapping(heap.ptr.as_ptr(), heap.len) };
+                unsafe {
+                    inline
+                        .0
+                        .as_mut_ptr()
+                        .copy_from_nonoverlapping(heap.ptr.as_ptr(), heap.len)
+                };
                 unsafe { inline.set_len(heap.len) }
                 *self = unsafe { mem::transmute(inline) };
             } else if new_capacity < old_capacity {
@@ -332,7 +340,7 @@ impl Repr {
                 // We can ignore the result. The string keeps its old capacity, but that's okay.
                 let _ = heap.realloc(new_capacity);
             }
-        }        
+        }
     }
 
     #[inline]
@@ -405,6 +413,7 @@ impl Repr {
     }
 
     /// Returns the length of the string that we're storing
+    #[allow(clippy::len_without_is_empty)] // is_empty exists on CompactString
     #[inline]
     pub fn len(&self) -> usize {
         // the last byte stores our discriminant and stack length
@@ -454,7 +463,7 @@ impl Repr {
 
     /// Return a mutable reference to the entirely underlying buffer
     ///
-    /// # SAFTEY:
+    /// # Safety
     /// * Callers must guarantee that any modifications made to the buffer are valid UTF-8
     pub unsafe fn as_mut_buf(&mut self) -> &mut [u8] {
         // the last byte stores our discriminant and stack length
@@ -478,7 +487,7 @@ impl Repr {
 
     /// Sets the length of the string that our underlying buffer contains
     ///
-    /// # SAFETY:
+    /// # Safety
     /// * `len` bytes in the buffer must be valid UTF-8
     /// * If the underlying buffer is stored inline, `len` must be <= MAX_SIZE
     pub unsafe fn set_len(&mut self, len: usize) {
@@ -554,7 +563,6 @@ impl Drop for Repr {
         }
     }
 }
-
 
 impl Extend<char> for Repr {
     #[inline]

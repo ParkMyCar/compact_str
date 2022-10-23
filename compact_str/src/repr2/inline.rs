@@ -9,7 +9,7 @@ use super::{
 /// A buffer stored on the stack whose size is equal to the stack size of `String`
 #[repr(transparent)]
 pub struct InlineBuffer(pub [u8; MAX_SIZE]);
-crate::asserts::assert_size_eq!(InlineBuffer, Repr);
+static_assertions::assert_eq_size!(InlineBuffer, Repr);
 
 impl InlineBuffer {
     /// Construct a new [`InlineString`]. A string that lives in a small buffer on the stack

@@ -2,7 +2,6 @@
 members = [
     "bench",
     "examples/bytes",
-    "examples/empty",
     "examples/macros",
     "examples/serde",
     "examples/traits",

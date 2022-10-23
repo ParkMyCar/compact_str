@@ -9,10 +9,17 @@ use std::num;
 use std::str::FromStr;
 
 use arbitrary::Arbitrary;
-use compact_str::{CompactString, CompactStringExt, ToCompactString};
+use compact_str::{
+    CompactString,
+    CompactStringExt,
+    ToCompactString,
+};
 
 use super::assert_properly_allocated;
-use crate::{MAX_INLINE_LENGTH, MIN_HEAP_CAPACITY};
+use crate::{
+    MAX_INLINE_LENGTH,
+    MIN_HEAP_CAPACITY,
+};
 
 #[derive(Arbitrary, Debug)]
 pub enum Creation<'a> {

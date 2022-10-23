@@ -1,9 +1,9 @@
+// use compact_str::repr::Repr;
+use compact_str::repr2::Repr as Repr2;
 use compact_str::{
     CompactString,
     ToCompactString,
 };
-// use compact_str::repr::Repr;
-use compact_str::repr2::Repr as Repr2;
 use criterion::{
     criterion_group,
     criterion_main,
@@ -114,11 +114,9 @@ fn bench_repr_creation(c: &mut Criterion) {
         //     |b, w| b.iter(|| Repr::new(w)),
         // );
 
-        group.bench_with_input(
-            BenchmarkId::new("Repr2", word.len()),
-            &word,
-            |b, w| b.iter(|| Repr2::new(w)),
-        );
+        group.bench_with_input(BenchmarkId::new("Repr2", word.len()), &word, |b, w| {
+            b.iter(|| Repr2::new(w))
+        });
 
         group.bench_with_input(
             BenchmarkId::new("std::String", word.len()),
@@ -145,11 +143,9 @@ fn bench_repr_access(c: &mut Criterion) {
         );
 
         let repr2 = Repr2::new(&word);
-        group.bench_with_input(
-            BenchmarkId::new("Repr2", repr2.len()),
-            &repr2,
-            |b, r| b.iter(|| r.as_str()),
-        );
+        group.bench_with_input(BenchmarkId::new("Repr2", repr2.len()), &repr2, |b, r| {
+            b.iter(|| r.as_str())
+        });
 
         let std_str = String::from(&word);
         group.bench_with_input(

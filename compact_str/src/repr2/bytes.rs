@@ -22,7 +22,7 @@ impl Repr {
 
     /// Converts a [`Buf`] of bytes to a [`Repr`], without checking for valid UTF-8
     ///
-    /// # SAFTEY:
+    /// # Safety
     /// * The provided buffer must be valid UTF-8
     pub unsafe fn from_utf8_buf_unchecked<B: Buf>(buf: &mut B) -> Self {
         let (repr, _bytes_written) = Self::collect_buf(buf);
@@ -31,7 +31,7 @@ impl Repr {
 
     /// Collects the bytes from a [`Buf`] into a [`Repr`]
     ///
-    /// # SAFTEY:
+    /// # Safety
     /// * The caller must guarantee that `buf` is valid UTF-8
     unsafe fn collect_buf<B: Buf>(buf: &mut B) -> (Self, usize) {
         // Get an empty Repr we can write into

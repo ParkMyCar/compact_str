@@ -37,7 +37,7 @@ impl CompactString {
     /// ```
     #[cfg_attr(docsrs, doc(cfg(feature = "bytes")))]
     pub fn from_utf8_buf<B: Buf>(buf: &mut B) -> Result<Self, Utf8Error> {
-        Repr::from_utf8_buf(buf).map(|repr| CompactString { repr })
+        Repr::from_utf8_buf(buf).map(|repr| CompactString(repr))
     }
 
     /// Converts a buffer of bytes to a [`CompactString`], without checking that the provided buffer
@@ -63,7 +63,7 @@ impl CompactString {
     #[cfg_attr(docsrs, doc(cfg(feature = "bytes")))]
     pub unsafe fn from_utf8_buf_unchecked<B: Buf>(buf: &mut B) -> Self {
         let repr = Repr::from_utf8_buf_unchecked(buf);
-        CompactString { repr }
+        CompactString(repr)
     }
 }
 

@@ -1425,6 +1425,13 @@ impl AsRef<OsStr> for CompactString {
     }
 }
 
+impl AsRef<[u8]> for CompactString {
+    #[inline]
+    fn as_ref(&self) -> &[u8] {
+        self.as_bytes()
+    }
+}
+
 impl Borrow<str> for CompactString {
     #[inline]
     fn borrow(&self) -> &str {

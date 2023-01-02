@@ -59,6 +59,7 @@ mod tests {
     }
 
     #[quickcheck]
+    #[cfg_attr(miri, ignore)]
     fn quickcheck_into_repr_char(val: char) {
         let repr = char::into_repr(val);
         assert_eq!(repr.as_str(), val.to_string());
@@ -90,6 +91,7 @@ mod tests {
     }
 
     #[quickcheck]
+    #[cfg_attr(miri, ignore)]
     fn quickcheck_into_repr_f64(val: f64) {
         let repr = f64::into_repr(val);
         let roundtrip = repr.as_str().parse::<f64>().unwrap();

@@ -187,9 +187,9 @@ impl Repr {
         let last_byte = self.last_byte();
 
         #[cold]
-        fn into_string_heap(mut this: HeapBuffer) -> String {
+        fn into_string_heap(this: HeapBuffer) -> String {
             // SAFETY: We know pointer is valid for `length` bytes
-            let slice = unsafe { core::slice::from_raw_parts(this.ptr.as_mut(), this.len) };
+            let slice = unsafe { core::slice::from_raw_parts(this.ptr.as_ptr(), this.len) };
             // SAFETY: A `Repr` contains valid UTF-8
             let s = unsafe { core::str::from_utf8_unchecked(slice) };
 
@@ -633,6 +633,7 @@ mod tests {
     }
 
     #[quickcheck]
+    #[cfg_attr(miri, ignore)]
     fn quickcheck_create(s: String) {
         let repr = Repr::new(&s);
         assert_eq!(repr.as_str(), s);
@@ -661,6 +662,7 @@ mod tests {
     }
 
     #[quickcheck]
+    #[cfg_attr(miri, ignore)]
     fn quickcheck_from_utf8(buf: Vec<u8>) {
         match (core::str::from_utf8(&buf), Repr::from_utf8(&buf)) {
             (Ok(s), Ok(r)) => {
@@ -682,6 +684,7 @@ mod tests {
     }
 
     #[quickcheck]
+    #[cfg_attr(miri, ignore)]
     fn quickcheck_from_string(s: String) {
         let r = Repr::from_string(s.clone());
         assert_eq!(r.len(), s.len());
@@ -700,6 +703,7 @@ mod tests {
     }
 
     #[quickcheck]
+    #[cfg_attr(miri, ignore)]
     fn quickcheck_into_string(control: String) {
         let r = Repr::new(&control);
         let s = r.into_string();
@@ -726,6 +730,7 @@ mod tests {
     }
 
     #[quickcheck]
+    #[cfg_attr(miri, ignore)]
     fn quickcheck_push_str(control: String, append: String) {
         let mut r = Repr::new(&control);
         let mut c = control;
@@ -801,6 +806,7 @@ mod tests {
     }
 
     #[quickcheck]
+    #[cfg_attr(miri, ignore)]
     fn quickcheck_clone(initial: String) {
         let r_a = Repr::new(&initial);
         let r_b = r_a.clone();

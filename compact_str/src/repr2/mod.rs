@@ -1,5 +1,8 @@
 use core::str::Utf8Error;
-use core::{mem, ptr};
+use core::{
+    mem,
+    ptr,
+};
 use std::borrow::Cow;
 
 #[cfg(feature = "bytes")]
@@ -614,7 +617,10 @@ mod tests {
     use quickcheck_macros::quickcheck;
     use test_case::test_case;
 
-    use super::{Repr, MAX_SIZE};
+    use super::{
+        Repr,
+        MAX_SIZE,
+    };
 
     const EIGHTEEN_MB: usize = 18 * 1024 * 1024;
     const EIGHTEEN_MB_STR: &'static str =

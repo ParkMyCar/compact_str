@@ -64,7 +64,7 @@ impl HeapBuffer {
     }
 
     /// Create a [`HeapBuffer`] with `text` that has _at least_ `additional` bytes of capacity
-    /// 
+    ///
     /// To prevent frequent re-allocations, this method will create a [`HeapBuffer`] with a capacity
     /// of `text.len() + additional` or `text.len() * 1.5`, whichever is greater
     #[inline]

@@ -1,8 +1,5 @@
 use core::str::Utf8Error;
-use core::{
-    mem,
-    ptr,
-};
+use core::{mem, ptr};
 use std::borrow::Cow;
 
 #[cfg(feature = "bytes")]
@@ -276,8 +273,8 @@ impl Repr {
     /// `additional` bytes this is a no-op
     #[inline]
     pub fn reserve(&mut self, additional: usize) {
-        let needed_capacity = self
-            .len()
+        let len = self.len();
+        let needed_capacity = len
             .checked_add(additional)
             .expect("Attempted to reserve more than 'usize' bytes");
 
@@ -303,8 +300,10 @@ impl Repr {
             // We're already heap allocated, but we need more capacity
             let heap_buffer = unsafe { &mut *(self as *mut _ as *mut HeapBuffer) };
 
+            // To reduce allocations, we amortize our growth
+            let amortized_capacity = heap::amortized_growth(len, additional);
             // Attempt to grow our capacity, allocating a new HeapBuffer on failure
-            if heap_buffer.realloc(needed_capacity).is_err() {
+            if heap_buffer.realloc(amortized_capacity).is_err() {
                 // Create a new HeapBuffer
                 let heap = HeapBuffer::with_additional(self.as_str(), additional);
                 // SAFETY: `HeapBuffer` and `Repr` are the same size
@@ -615,10 +614,7 @@ mod tests {
     use quickcheck_macros::quickcheck;
     use test_case::test_case;
 
-    use super::{
-        Repr,
-        MAX_SIZE,
-    };
+    use super::{Repr, MAX_SIZE};
 
     const EIGHTEEN_MB: usize = 18 * 1024 * 1024;
     const EIGHTEEN_MB_STR: &'static str =

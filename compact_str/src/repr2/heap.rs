@@ -16,6 +16,19 @@ const MIN_HEAP_SIZE: usize = MAX_SIZE + mem::size_of::<usize>();
 const UNKNOWN: usize = 0;
 pub type StrBuffer = [u8; UNKNOWN];
 
+/// [`HeapBuffer`] grows at an amortized rates of 1.5x
+///
+/// Note: this is different than [`std::string::String`], which grows at a rate of 2x. It's debated
+/// which is better, for now we'll stick with a rate of 1.5x
+///
+/// TODO: Handle overflows in the case of __very__ large Strings
+#[inline(always)]
+pub fn amortized_growth(cur_len: usize, additional: usize) -> usize {
+    let required = cur_len + additional;
+    let amortized = 3 * cur_len / 2;
+    core::cmp::max(amortized, required)
+}
+
 #[repr(C)]
 pub struct HeapBuffer {
     pub ptr: ptr::NonNull<u8>,
@@ -50,11 +63,15 @@ impl HeapBuffer {
         HeapBuffer { ptr, len, cap }
     }
 
-    /// Create a [`HeapBuffer`] with `text` that has `additional` bytes of capacity
+    /// Create a [`HeapBuffer`] with `text` that has _at least_ `additional` bytes of capacity
+    /// 
+    /// To prevent frequent re-allocations, this method will create a [`HeapBuffer`] with a capacity
+    /// of `text.len() + additional` or `text.len() * 1.5`, whichever is greater
     #[inline]
     pub fn with_additional(text: &str, additional: usize) -> Self {
         let len = text.len();
-        let (cap, ptr) = allocate_ptr(len + additional);
+        let new_capacity = amortized_growth(len, additional);
+        let (cap, ptr) = allocate_ptr(new_capacity);
 
         // copy our string into the buffer we just allocated
         //

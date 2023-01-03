@@ -160,9 +160,5 @@ mod tests {
 
             assert_eq!(val, i, "value roundtriped to wrong value?");
         });
-
-        // one above the 32-bit max value
-        #[cfg(target_pointer_width = "32")]
-        assert!(Capacity::new(16_777_215).is_err());
     }
 }

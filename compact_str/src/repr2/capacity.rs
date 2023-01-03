@@ -107,72 +107,62 @@ impl Capacity {
 
 #[cfg(test)]
 mod tests {
-    // use rayon::prelude::*;
+    use rayon::prelude::*;
 
-    // use super::Capacity;
+    use super::Capacity;
 
-    // #[test]
-    // fn test_zero_roundtrips() {
-    //     let og = 0;
-    //     let cap = Capacity::new(og).unwrap();
-    //     let after = cap.as_usize().unwrap();
+    #[test]
+    fn test_zero_roundtrips() {
+        let og = 0;
+        let cap = Capacity::new(og);
+        let after = unsafe { cap.as_usize() };
 
-    //     assert_eq!(og, after);
-    // }
+        assert_eq!(og, after);
+    }
 
-    // #[test]
-    // fn test_max_value() {
-    //     let available_bytes = (core::mem::size_of::<usize>() - 1) as u32;
-    //     let max_value = 2usize.pow(available_bytes * 8) - 2;
+    #[test]
+    fn test_max_value() {
+        let available_bytes = (core::mem::size_of::<usize>() - 1) as u32;
+        let max_value = 2usize.pow(available_bytes * 8) - 2;
 
-    //     #[cfg(target_pointer_width = "64")]
-    //     assert_eq!(max_value, 72057594037927934);
-    //     #[cfg(target_pointer_width = "32")]
-    //     assert_eq!(max_value, 16777214);
+        #[cfg(target_pointer_width = "64")]
+        assert_eq!(max_value, 72057594037927934);
+        #[cfg(target_pointer_width = "32")]
+        assert_eq!(max_value, 16777214);
 
-    //     let cap = Capacity::new(max_value).unwrap();
-    //     let after = cap.as_usize().unwrap();
+        let cap = Capacity::new(max_value);
+        let after = unsafe { cap.as_usize() };
 
-    //     assert_eq!(max_value, after);
-    // }
+        assert_eq!(max_value, after);
+    }
 
-    // #[test]
-    // fn test_first_invalid_value() {
-    //     let available_bytes = (core::mem::size_of::<usize>() - 1) as u32;
-    //     let first_invalid = 2usize.pow(available_bytes * 8) - 1;
+    #[cfg(target_pointer_width = "32")]
+    #[test]
 
-    //     #[cfg(target_pointer_width = "64")]
-    //     assert_eq!(first_invalid, 72057594037927935);
-    //     #[cfg(target_pointer_width = "32")]
-    //     assert_eq!(first_invalid, 16777215);
+    fn test_invalid_value() {
+        let invalid_val = usize::MAX;
+        let cap = Capacity::new(invalid_val);
+        let after = unsafe { cap.as_usize() };
 
-    //     assert!(Capacity::new(first_invalid).is_err());
-    // }
+        // anything greater than or equal to 16777215, should "resolve" to 16777215
+        assert_eq!(16777215, after);
+    }
 
-    // #[test]
-    // fn test_usize_max_fails() {
-    //     let og = usize::MAX;
-    //     assert!(Capacity::new(og).is_err());
-    // }
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_all_valid_32bit_values() {
+        #[cfg(target_pointer_width = "32")]
+        assert_eq!(16_777_214, super::MAX_VALUE);
 
-    // #[test]
-    // #[cfg_attr(miri, ignore)]
-    // fn test_all_valid_32bit_values() {
-    //     #[cfg(target_pointer_width = "32")]
-    //     assert_eq!(16_777_214, super::MAX_VALUE);
+        (0..=16_777_214).into_par_iter().for_each(|i| {
+            let cap = Capacity::new(i);
+            let val = unsafe { cap.as_usize() };
 
-    //     (0..=16_777_214)
-    //         .into_par_iter()
-    //         .for_each(|i| match Capacity::new(i) {
-    //             Ok(cap) => match cap.as_usize() {
-    //                 Ok(val) => assert_eq!(val, i, "value roundtriped to wrong value?"),
-    //                 Err(_) => panic!("value converted, but failed to roundtrip! val: {}", i),
-    //             },
-    //             Err(_) => panic!("failed to convert {}", i),
-    //         });
+            assert_eq!(val, i, "value roundtriped to wrong value?");
+        });
 
-    //     // one above the 32-bit max value
-    //     #[cfg(target_pointer_width = "32")]
-    //     assert!(Capacity::new(16_777_215).is_err());
-    // }
+        // one above the 32-bit max value
+        #[cfg(target_pointer_width = "32")]
+        assert!(Capacity::new(16_777_215).is_err());
+    }
 }

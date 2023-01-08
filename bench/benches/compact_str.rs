@@ -1,9 +1,9 @@
 // use compact_str::repr::Repr;
-use compact_str::repr2::Repr as Repr2;
 use compact_str::{
     CompactString,
     ToCompactString,
 };
+use compact_str_6::CompactString as CompactString6;
 use criterion::{
     criterion_group,
     criterion_main,
@@ -28,12 +28,6 @@ fn bench_new(c: &mut Criterion) {
         BenchmarkId::new("CompactString::new", "24 chars"),
         &"i am twenty four chars!!",
         |b, word| b.iter(|| CompactString::new(word)),
-    );
-
-    c.bench_with_input(
-        BenchmarkId::new("Repr::new", "59 chars"),
-        &"I am a very long string that will get allocated on the heap",
-        |b, &word| b.iter(|| Repr2::new(word)),
     );
 
     c.bench_with_input(
@@ -100,7 +94,7 @@ fn bench_to_compact_string(c: &mut Criterion) {
 }
 
 fn bench_repr_creation(c: &mut Criterion) {
-    let mut group = c.benchmark_group("Repr Creation");
+    let mut group = c.benchmark_group("Creation");
 
     let words: Vec<String> = vec![0, 11, 12, 22, 23, 24, 25, 50]
         .into_iter()
@@ -108,14 +102,12 @@ fn bench_repr_creation(c: &mut Criterion) {
         .collect();
 
     for word in words {
-        // group.bench_with_input(
-        //     BenchmarkId::new("Repr", word.len()),
-        //     &word,
-        //     |b, w| b.iter(|| Repr::new(w)),
-        // );
+        group.bench_with_input(BenchmarkId::new("CompactString6", word.len()), &word, |b, w| {
+            b.iter(|| CompactString6::new(w))
+        });
 
-        group.bench_with_input(BenchmarkId::new("Repr2", word.len()), &word, |b, w| {
-            b.iter(|| Repr2::new(w))
+        group.bench_with_input(BenchmarkId::new("CompactString", word.len()), &word, |b, w| {
+            b.iter(|| CompactString::new(w))
         });
 
         group.bench_with_input(
@@ -127,7 +119,7 @@ fn bench_repr_creation(c: &mut Criterion) {
 }
 
 fn bench_repr_access(c: &mut Criterion) {
-    let mut group = c.benchmark_group("Repr Access");
+    let mut group = c.benchmark_group("Access");
 
     let words: Vec<String> = vec![0, 11, 12, 23, 24, 50]
         .into_iter()
@@ -135,17 +127,19 @@ fn bench_repr_access(c: &mut Criterion) {
         .collect();
 
     for word in words {
+        let compact = CompactString6::new(&word);
+        group.bench_with_input(
+            BenchmarkId::new("CompactString6", compact.len()),
+            &compact,
+            |b, c| b.iter(|| c.as_str()),
+        );
+        
         let compact = CompactString::new(&word);
         group.bench_with_input(
             BenchmarkId::new("CompactString", compact.len()),
             &compact,
             |b, c| b.iter(|| c.as_str()),
         );
-
-        let repr2 = Repr2::new(&word);
-        group.bench_with_input(BenchmarkId::new("Repr2", repr2.len()), &repr2, |b, r| {
-            b.iter(|| r.as_str())
-        });
 
         let std_str = String::from(&word);
         group.bench_with_input(

@@ -20,13 +20,11 @@ pub type StrBuffer = [u8; UNKNOWN];
 ///
 /// Note: this is different than [`std::string::String`], which grows at a rate of 2x. It's debated
 /// which is better, for now we'll stick with a rate of 1.5x
-///
-/// TODO: Handle overflows in the case of __very__ large Strings
 #[inline(always)]
 pub fn amortized_growth(cur_len: usize, additional: usize) -> usize {
-    let required = cur_len + additional;
-    let amortized = 3 * cur_len / 2;
-    core::cmp::max(amortized, required)
+    let required = cur_len.saturating_add(additional);
+    let amortized = cur_len.saturating_mul(3).saturating_div(2);
+    amortized.max(required)
 }
 
 #[repr(C)]
@@ -269,7 +267,7 @@ impl Drop for HeapBuffer {
 #[inline]
 pub fn allocate_ptr(capacity: usize) -> (Capacity, ptr::NonNull<u8>) {
     // We allocate at least MIN_HEAP_SIZE bytes because we need to allocate at least one byte
-    let capacity = cmp::max(capacity, MIN_HEAP_SIZE);
+    let capacity = capacity.max(MIN_HEAP_SIZE);
     let cap = Capacity::new(capacity);
 
     // HeapBuffer doesn't support 0 sized allocations, we should always allocate at least

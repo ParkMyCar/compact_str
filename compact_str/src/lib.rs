@@ -252,8 +252,7 @@ impl CompactString {
     /// ```
     #[inline]
     pub fn from_utf8<B: AsRef<[u8]>>(buf: B) -> Result<Self, Utf8Error> {
-        let repr = Repr::from_utf8(buf)?;
-        Ok(CompactString(repr))
+        Repr::from_utf8(buf).map(CompactString)
     }
 
     /// Converts a vector of bytes to a [`CompactString`] without checking that the string contains

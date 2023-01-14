@@ -1,4 +1,4 @@
-use crate::repr2::HEAP_MASK;
+use crate::repr::HEAP_MASK;
 
 // how many bytes a `usize` occupies
 const USIZE_SIZE: usize = core::mem::size_of::<usize>();

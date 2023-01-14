@@ -40,8 +40,8 @@ mod utility;
 // pub mod repr;
 // use repr::Repr;
 
-pub mod repr2;
-use repr2::Repr;
+pub mod repr;
+use repr::Repr;
 
 mod traits;
 pub use traits::{

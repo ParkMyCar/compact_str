@@ -30,6 +30,9 @@ impl Repr {
     }
 
     /// Collects the bytes from a [`Buf`] into a [`Repr`]
+    ///
+    /// # Safety
+    /// * The caller must guarantee that `buf` is valid UTF-8
     unsafe fn collect_buf<B: Buf>(buf: &mut B) -> (Self, usize) {
         // Get an empty Repr we can write into
         let mut repr = super::EMPTY;
@@ -59,7 +62,7 @@ impl Repr {
 
             // SAFETY: The caller is responsible for making sure the provided buffer is UTF-8. This
             // invariant is documented in the public API
-            let slice = repr.as_mut_slice();
+            let slice = repr.as_mut_buf();
             // write the chunk into the Repr
             slice[bytes_written..bytes_written + chunk_len].copy_from_slice(chunk);
 
@@ -80,42 +83,32 @@ impl Repr {
 mod test {
     use std::io::Cursor;
 
+    use test_case::test_case;
+
     use super::Repr;
 
-    #[test]
-    fn test_smoke() {
-        let word = "hello world";
+    #[test_case(""; "empty")]
+    #[test_case("hello world"; "short")]
+    #[test_case("hello, this is a long string which should be heap allocated"; "long")]
+    fn test_from_utf8_buf(word: &'static str) {
         let mut buf = Cursor::new(word.as_bytes());
-
         let repr = Repr::from_utf8_buf(&mut buf).unwrap();
+
         assert_eq!(repr.as_str(), word);
+        assert_eq!(repr.len(), word.len());
     }
 
     #[test]
-    fn test_heap_allocated() {
-        let word = "hello, this is a long string which should be heap allocated";
-        let mut buf = Cursor::new(word.as_bytes());
-
-        let repr = Repr::from_utf8_buf(&mut buf).unwrap();
-        assert_eq!(repr.as_str(), word);
-    }
-
-    #[test]
-    fn test_empty() {
-        let mut buf: Cursor<&[u8]> = Cursor::new(&[]);
-
-        let repr = Repr::from_utf8_buf(&mut buf).unwrap();
-        assert_eq!(repr.len(), 0);
-        assert_eq!(repr.as_str(), "");
-    }
-
-    #[test]
-    fn test_packed() {
-        #[cfg(target_pointer_width = "64")]
-        let packed = "this string is 24 chars!";
-        #[cfg(target_pointer_width = "32")]
-        let packed = "i am 12 char";
-
+    fn test_from_utf8_packed() {
+        cfg_if::cfg_if! {
+            if #[cfg(target_pointer_width = "64")] {
+                let packed = "this string is 24 chars!";
+            } else if #[cfg(target_pointer_width = "32")] {
+                let packed = "i am 12 char";
+            } else {
+                compile_error!("unsupported architecture!")
+            }
+        }
         let mut buf = Cursor::new(packed.as_bytes());
 
         let repr = Repr::from_utf8_buf(&mut buf).unwrap();

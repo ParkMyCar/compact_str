@@ -9,7 +9,7 @@ use castaway::{
     LifetimeFree,
 };
 
-use super::repr2::{
+use super::repr::{
     IntoRepr,
     Repr,
 };

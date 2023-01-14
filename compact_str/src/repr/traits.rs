@@ -43,8 +43,7 @@ impl IntoRepr for char {
 
 #[cfg(test)]
 mod tests {
-    use proptest::prelude::*;
-    use test_strategy::proptest;
+    use quickcheck_macros::quickcheck;
 
     use super::IntoRepr;
 
@@ -59,11 +58,11 @@ mod tests {
         assert_eq!(repr.as_str(), f.to_string());
     }
 
-    #[proptest]
+    #[quickcheck]
     #[cfg_attr(miri, ignore)]
-    fn proptest_into_repr_char(val: char) {
+    fn quickcheck_into_repr_char(val: char) {
         let repr = char::into_repr(val);
-        prop_assert_eq!(repr.as_str(), val.to_string());
+        assert_eq!(repr.as_str(), val.to_string());
     }
 
     #[test]
@@ -91,16 +90,18 @@ mod tests {
         assert!(roundtrip.is_nan());
     }
 
-    #[proptest]
+    #[quickcheck]
     #[cfg_attr(miri, ignore)]
-    fn proptest_into_repr_f64(val: f64) {
+    fn quickcheck_into_repr_f64(val: f64) {
         let repr = f64::into_repr(val);
         let roundtrip = repr.as_str().parse::<f64>().unwrap();
 
         // Note: The formatting of floats by `ryu` sometimes differs from that of `std`, so instead
         // of asserting equality with `std` we just make sure the value roundtrips
 
-        prop_assert_eq!(val, roundtrip);
+        if val.is_nan() != roundtrip.is_nan() {
+            assert_eq!(val, roundtrip);
+        }
     }
 
     // `f32` formatting is broken on powerpc64le, not only in `ryu` but also `std`
@@ -133,8 +134,7 @@ mod tests {
         assert!(roundtrip.is_nan());
     }
 
-    #[proptest]
-    #[cfg_attr(miri, ignore)]
+    #[quickcheck]
     #[cfg_attr(all(target_arch = "powerpc64", target_pointer_width = "64"), ignore)]
     fn proptest_into_repr_f32(val: f32) {
         let repr = f32::into_repr(val);
@@ -143,6 +143,8 @@ mod tests {
         // Note: The formatting of floats by `ryu` sometimes differs from that of `std`, so instead
         // of asserting equality with `std` we just make sure the value roundtrips
 
-        prop_assert_eq!(val, roundtrip);
+        if val.is_nan() != roundtrip.is_nan() {
+            assert_eq!(val, roundtrip);
+        }
     }
 }

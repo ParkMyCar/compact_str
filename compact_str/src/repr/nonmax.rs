@@ -6,6 +6,7 @@
 #[allow(clippy::upper_case_acronyms)]
 #[allow(dead_code)]
 #[allow(non_camel_case_types)]
+#[derive(Copy, Clone, Debug)]
 #[repr(u8)]
 pub enum NonMaxU8 {
     V0 = 0,

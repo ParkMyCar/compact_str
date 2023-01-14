@@ -44,7 +44,7 @@ macro_rules! impl_IntoRepr {
                 // our string will end up being num_digits long
                 unsafe { repr.set_len(num_digits) };
                 // get mutable pointer to our buffer
-                let buf_ptr = unsafe { repr.as_mut_slice().as_mut_ptr() };
+                let buf_ptr = unsafe { repr.as_mut_buf().as_mut_ptr() };
 
                 let lut_ptr = DEC_DIGITS_LUT.as_ptr();
 

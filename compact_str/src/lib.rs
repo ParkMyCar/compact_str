@@ -37,10 +37,7 @@ mod features;
 mod macros;
 mod utility;
 
-// pub mod repr;
-// use repr::Repr;
-
-pub mod repr;
+mod repr;
 use repr::Repr;
 
 mod traits;

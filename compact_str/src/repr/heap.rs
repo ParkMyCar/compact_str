@@ -23,7 +23,7 @@ pub type StrBuffer = [u8; UNKNOWN];
 #[inline(always)]
 pub fn amortized_growth(cur_len: usize, additional: usize) -> usize {
     let required = cur_len.saturating_add(additional);
-    let amortized = cur_len.saturating_mul(3).saturating_div(2);
+    let amortized = cur_len.saturating_mul(3) / 2;
     amortized.max(required)
 }
 

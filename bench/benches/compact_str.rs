@@ -102,13 +102,17 @@ fn bench_repr_creation(c: &mut Criterion) {
         .collect();
 
     for word in words {
-        group.bench_with_input(BenchmarkId::new("CompactString6", word.len()), &word, |b, w| {
-            b.iter(|| CompactString6::new(w))
-        });
+        group.bench_with_input(
+            BenchmarkId::new("CompactString6", word.len()),
+            &word,
+            |b, w| b.iter(|| CompactString6::new(w)),
+        );
 
-        group.bench_with_input(BenchmarkId::new("CompactString", word.len()), &word, |b, w| {
-            b.iter(|| CompactString::new(w))
-        });
+        group.bench_with_input(
+            BenchmarkId::new("CompactString", word.len()),
+            &word,
+            |b, w| b.iter(|| CompactString::new(w)),
+        );
 
         group.bench_with_input(
             BenchmarkId::new("std::String", word.len()),
@@ -133,7 +137,7 @@ fn bench_repr_access(c: &mut Criterion) {
             &compact,
             |b, c| b.iter(|| c.as_str()),
         );
-        
+
         let compact = CompactString::new(&word);
         group.bench_with_input(
             BenchmarkId::new("CompactString", compact.len()),

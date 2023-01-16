@@ -1532,6 +1532,20 @@ impl From<CompactString> for String {
     }
 }
 
+impl From<CompactString> for Cow<'_, str> {
+    #[inline]
+    fn from(s: CompactString) -> Self {
+        Self::Owned(s.into_string())
+    }
+}
+
+impl<'a> From<&'a CompactString> for Cow<'a, str> {
+    #[inline]
+    fn from(s: &'a CompactString) -> Self {
+        Self::Borrowed(s)
+    }
+}
+
 impl FromStr for CompactString {
     type Err = core::convert::Infallible;
     fn from_str(s: &str) -> Result<CompactString, Self::Err> {

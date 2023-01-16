@@ -88,7 +88,7 @@ jobs:
 
   linux_arm7:
     name: Linux ARMv7
-    runs-on: [self-hosted, linux, ARM]
+    runs-on: [self-hosted, Linux, ARM]
     steps:
       - uses: actions/checkout@v2
         name: Checkout Repo

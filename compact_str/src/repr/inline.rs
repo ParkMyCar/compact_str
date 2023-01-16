@@ -94,3 +94,34 @@ impl InlineBuffer {
         InlineBuffer(self.0)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use rayon::prelude::*;
+
+    #[test]
+    #[ignore] // we run this in CI, but unless you're compiling in release, this takes a while
+    fn test_unused_utf8_bytes() {
+        // test to validate for all char the first and last bytes are never within a specified range
+        // note: according to the UTF-8 spec it shouldn't be, but we double check that here
+        (0..u32::MAX).into_par_iter().for_each(|i| {
+            if let Ok(c) = char::try_from(i) {
+                let mut buf = [0_u8; 4];
+                c.encode_utf8(&mut buf);
+
+                // check ranges for first byte
+                match buf[0] {
+                    x @ 128..=191 => panic!("first byte within 128..=191, {}", x),
+                    x @ 248..=255 => panic!("first byte within 248..=255, {}", x),
+                    _ => (),
+                }
+
+                // check ranges for last byte
+                match buf[c.len_utf8() - 1] {
+                    x @ 192..=255 => panic!("last byte within 192..=255, {}", x),
+                    _ => (),
+                }
+            }
+        })
+    }
+}

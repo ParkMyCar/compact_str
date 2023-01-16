@@ -152,7 +152,7 @@ impl Repr {
         #[cold]
         fn capacity_on_heap(s: String) -> Repr {
             let heap = HeapBuffer::new(s.as_str());
-            // SAFETY: `BoxString` and `Repr` are the same size
+            // SAFETY: `HeapBuffer` and `Repr` are the same size
             unsafe { mem::transmute(heap) }
         }
 
@@ -176,7 +176,7 @@ impl Repr {
             let ptr = ptr::NonNull::new(raw_ptr).expect("string with capacity has null ptr?");
             let heap = HeapBuffer { ptr, len, cap };
 
-            // SAFETY: `BoxString` and `Repr` are the same size
+            // SAFETY: `HeapBuffer` and `Repr` are the same size
             unsafe { mem::transmute(heap) }
         }
     }

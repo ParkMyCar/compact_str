@@ -33,7 +33,6 @@ use std::borrow::Cow;
 use std::ffi::OsStr;
 use std::iter::FusedIterator;
 
-mod asserts;
 mod features;
 mod macros;
 mod utility;
@@ -89,9 +88,8 @@ mod tests;
 /// assert_eq!(CompactString::new("houston"), String::from("houston"));
 /// ```
 #[derive(Clone)]
-pub struct CompactString {
-    repr: Repr,
-}
+#[repr(transparent)]
+pub struct CompactString(Repr);
 
 impl CompactString {
     /// Creates a new [`CompactString`] from any type that implements `AsRef<str>`.
@@ -146,9 +144,7 @@ impl CompactString {
     /// ```
     #[inline]
     pub fn new<T: AsRef<str>>(text: T) -> Self {
-        CompactString {
-            repr: Repr::new(text),
-        }
+        CompactString(Repr::new(text.as_ref()))
     }
 
     /// Creates a new inline [`CompactString`] at compile time.
@@ -167,9 +163,7 @@ impl CompactString {
     /// ```
     #[inline]
     pub const fn new_inline(text: &str) -> Self {
-        CompactString {
-            repr: Repr::new_inline(text),
-        }
+        CompactString(Repr::new_inline(text))
     }
 
     /// Creates a new empty [`CompactString`] with the capacity to fit at least `capacity` bytes.
@@ -210,19 +204,20 @@ impl CompactString {
     /// ```
     /// # use compact_str::CompactString;
     /// // If you create a `CompactString` with a capacity greater than
-    /// // `std::mem::size_of::<String>`, it will heap allocated
+    /// // `std::mem::size_of::<String>`, it will heap allocated. For heap
+    /// // allocated strings we have a minimum capacity
+    ///
+    /// const MIN_HEAP_CAPACITY: usize = std::mem::size_of::<usize>() * 4;
     ///
     /// let heap_size = std::mem::size_of::<String>() + 1;
     /// let empty = CompactString::with_capacity(heap_size);
     ///
-    /// assert_eq!(empty.capacity(), heap_size);
+    /// assert_eq!(empty.capacity(), MIN_HEAP_CAPACITY);
     /// assert!(empty.is_heap_allocated());
     /// ```
     #[inline]
     pub fn with_capacity(capacity: usize) -> Self {
-        CompactString {
-            repr: Repr::with_capacity(capacity),
-        }
+        CompactString(Repr::with_capacity(capacity))
     }
 
     /// Convert a slice of bytes into a [`CompactString`].
@@ -254,8 +249,7 @@ impl CompactString {
     /// ```
     #[inline]
     pub fn from_utf8<B: AsRef<[u8]>>(buf: B) -> Result<Self, Utf8Error> {
-        let repr = Repr::from_utf8(buf)?;
-        Ok(CompactString { repr })
+        Repr::from_utf8(buf).map(CompactString)
     }
 
     /// Converts a vector of bytes to a [`CompactString`] without checking that the string contains
@@ -288,8 +282,7 @@ impl CompactString {
     #[inline]
     #[must_use]
     pub unsafe fn from_utf8_unchecked<B: AsRef<[u8]>>(buf: B) -> Self {
-        let repr = Repr::from_utf8_unchecked(buf);
-        CompactString { repr }
+        CompactString(Repr::from_utf8_unchecked(buf))
     }
 
     /// Decode a [`UTF-16`](https://en.wikipedia.org/wiki/UTF-16) slice of bytes into a
@@ -379,7 +372,7 @@ impl CompactString {
     /// ```
     #[inline]
     pub fn len(&self) -> usize {
-        self.repr.len()
+        self.0.len()
     }
 
     /// Returns `true` if the [`CompactString`] has a length of 0, `false` otherwise
@@ -422,7 +415,7 @@ impl CompactString {
     /// ```
     #[inline]
     pub fn capacity(&self) -> usize {
-        self.repr.capacity()
+        self.0.capacity()
     }
 
     /// Ensures that this [`CompactString`]'s capacity is at least `additional` bytes longer than
@@ -450,7 +443,7 @@ impl CompactString {
     /// ```
     #[inline]
     pub fn reserve(&mut self, additional: usize) {
-        self.repr.reserve(additional)
+        self.0.reserve(additional)
     }
 
     /// Returns a string slice containing the entire [`CompactString`].
@@ -464,7 +457,7 @@ impl CompactString {
     /// ```
     #[inline]
     pub fn as_str(&self) -> &str {
-        self.repr.as_str()
+        self.0.as_str()
     }
 
     /// Returns a mutable string slice containing the entire [`CompactString`].
@@ -480,7 +473,7 @@ impl CompactString {
     #[inline]
     pub fn as_mut_str(&mut self) -> &mut str {
         let len = self.len();
-        unsafe { std::str::from_utf8_unchecked_mut(&mut self.repr.as_mut_slice()[..len]) }
+        unsafe { std::str::from_utf8_unchecked_mut(&mut self.0.as_mut_buf()[..len]) }
     }
 
     /// Returns a byte slice of the [`CompactString`]'s contents.
@@ -494,7 +487,7 @@ impl CompactString {
     /// ```
     #[inline]
     pub fn as_bytes(&self) -> &[u8] {
-        &self.repr.as_slice()[..self.len()]
+        &self.0.as_slice()[..self.len()]
     }
 
     // TODO: Implement a `try_as_mut_slice(...)` that will fail if it results in cloning?
@@ -521,7 +514,7 @@ impl CompactString {
     /// ```
     #[inline]
     pub unsafe fn as_mut_bytes(&mut self) -> &mut [u8] {
-        self.repr.as_mut_slice()
+        self.0.as_mut_buf()
     }
 
     /// Appends the given [`char`] to the end of this [`CompactString`].
@@ -557,7 +550,7 @@ impl CompactString {
     /// ```
     #[inline]
     pub fn pop(&mut self) -> Option<char> {
-        self.repr.pop()
+        self.0.pop()
     }
 
     /// Appends a given string slice onto the end of this [`CompactString`]
@@ -573,7 +566,7 @@ impl CompactString {
     /// ```
     #[inline]
     pub fn push_str(&mut self, s: &str) {
-        self.repr.push_str(s)
+        self.0.push_str(s)
     }
 
     /// Removes a [`char`] from this [`CompactString`] at a byte position and returns it.
@@ -653,7 +646,7 @@ impl CompactString {
     /// * The elements at `old_len..new_len` must be initialized
     #[inline]
     pub unsafe fn set_len(&mut self, new_len: usize) {
-        self.repr.set_len(new_len)
+        self.0.set_len(new_len)
     }
 
     /// Returns whether or not the [`CompactString`] is heap allocated.
@@ -676,7 +669,7 @@ impl CompactString {
     /// ```
     #[inline]
     pub fn is_heap_allocated(&self) -> bool {
-        self.repr.is_heap_allocated()
+        self.0.is_heap_allocated()
     }
 
     /// Ensure that the given range is inside the set data, and that no codepoints are split.
@@ -839,13 +832,13 @@ impl CompactString {
     /// Converts a [`CompactString`] to a raw pointer.
     #[inline]
     pub fn as_ptr(&mut self) -> *const u8 {
-        self.repr.as_slice().as_ptr()
+        self.0.as_slice().as_ptr()
     }
 
     /// Converts a mutable [`CompactString`] to a raw pointer.
     #[inline]
     pub fn as_mut_ptr(&mut self) -> *mut u8 {
-        unsafe { self.repr.as_mut_slice().as_mut_ptr() }
+        unsafe { self.0.as_mut_buf().as_mut_ptr() }
     }
 
     /// Insert string character at an index.
@@ -1005,7 +998,7 @@ impl CompactString {
     /// ```
     #[inline]
     pub fn shrink_to(&mut self, min_capacity: usize) {
-        self.repr.shrink_to(min_capacity);
+        self.0.shrink_to(min_capacity);
     }
 
     /// Shrinks the capacity of this [`CompactString`] to match its length.
@@ -1042,7 +1035,7 @@ impl CompactString {
     /// ```
     #[inline]
     pub fn shrink_to_fit(&mut self) {
-        self.repr.shrink_to(0);
+        self.0.shrink_to(0);
     }
 
     /// Retains only the characters specified by the predicate.
@@ -1384,7 +1377,7 @@ impl CompactString {
     /// assert_eq!(s, "Hello world");
     /// ```
     pub fn into_string(self) -> String {
-        self.repr.into_string()
+        self.0.into_string()
     }
 }
 
@@ -1492,14 +1485,15 @@ impl Hash for CompactString {
 
 impl<'a> From<&'a str> for CompactString {
     fn from(s: &'a str) -> Self {
-        CompactString::new(s)
+        let repr = Repr::new(s);
+        CompactString(repr)
     }
 }
 
 impl From<String> for CompactString {
     fn from(s: String) -> Self {
         let repr = Repr::from_string(s);
-        CompactString { repr }
+        CompactString(repr)
     }
 }
 
@@ -1521,7 +1515,7 @@ impl<'a> From<Cow<'a, str>> for CompactString {
 impl From<Box<str>> for CompactString {
     fn from(b: Box<str>) -> Self {
         let repr = Repr::from_box_str(b);
-        CompactString { repr }
+        CompactString(repr)
     }
 }
 
@@ -1568,49 +1562,49 @@ impl fmt::Display for CompactString {
 impl FromIterator<char> for CompactString {
     fn from_iter<T: IntoIterator<Item = char>>(iter: T) -> Self {
         let repr = iter.into_iter().collect();
-        CompactString { repr }
+        CompactString(repr)
     }
 }
 
 impl<'a> FromIterator<&'a char> for CompactString {
     fn from_iter<T: IntoIterator<Item = &'a char>>(iter: T) -> Self {
         let repr = iter.into_iter().collect();
-        CompactString { repr }
+        CompactString(repr)
     }
 }
 
 impl<'a> FromIterator<&'a str> for CompactString {
     fn from_iter<T: IntoIterator<Item = &'a str>>(iter: T) -> Self {
         let repr = iter.into_iter().collect();
-        CompactString { repr }
+        CompactString(repr)
     }
 }
 
 impl FromIterator<Box<str>> for CompactString {
     fn from_iter<T: IntoIterator<Item = Box<str>>>(iter: T) -> Self {
         let repr = iter.into_iter().collect();
-        CompactString { repr }
+        CompactString(repr)
     }
 }
 
 impl<'a> FromIterator<Cow<'a, str>> for CompactString {
     fn from_iter<T: IntoIterator<Item = Cow<'a, str>>>(iter: T) -> Self {
         let repr = iter.into_iter().collect();
-        CompactString { repr }
+        CompactString(repr)
     }
 }
 
 impl FromIterator<String> for CompactString {
     fn from_iter<T: IntoIterator<Item = String>>(iter: T) -> Self {
         let repr = iter.into_iter().collect();
-        CompactString { repr }
+        CompactString(repr)
     }
 }
 
 impl FromIterator<CompactString> for CompactString {
     fn from_iter<T: IntoIterator<Item = CompactString>>(iter: T) -> Self {
         let repr = iter.into_iter().collect();
-        CompactString { repr }
+        CompactString(repr)
     }
 }
 
@@ -1636,25 +1630,25 @@ impl FromIterator<CompactString> for Cow<'_, str> {
 
 impl Extend<char> for CompactString {
     fn extend<T: IntoIterator<Item = char>>(&mut self, iter: T) {
-        self.repr.extend(iter)
+        self.0.extend(iter)
     }
 }
 
 impl<'a> Extend<&'a char> for CompactString {
     fn extend<T: IntoIterator<Item = &'a char>>(&mut self, iter: T) {
-        self.repr.extend(iter)
+        self.0.extend(iter)
     }
 }
 
 impl<'a> Extend<&'a str> for CompactString {
     fn extend<T: IntoIterator<Item = &'a str>>(&mut self, iter: T) {
-        self.repr.extend(iter)
+        self.0.extend(iter)
     }
 }
 
 impl Extend<Box<str>> for CompactString {
     fn extend<T: IntoIterator<Item = Box<str>>>(&mut self, iter: T) {
-        self.repr.extend(iter)
+        self.0.extend(iter)
     }
 }
 
@@ -1666,7 +1660,7 @@ impl<'a> Extend<Cow<'a, str>> for CompactString {
 
 impl Extend<String> for CompactString {
     fn extend<T: IntoIterator<Item = String>>(&mut self, iter: T) {
-        self.repr.extend(iter)
+        self.0.extend(iter)
     }
 }
 
@@ -1835,4 +1829,4 @@ impl DoubleEndedIterator for Drain<'_> {
 
 impl FusedIterator for Drain<'_> {}
 
-crate::asserts::assert_size_eq!(CompactString, String);
+static_assertions::assert_eq_size!(CompactString, String);

@@ -1,32 +1,45 @@
-use super::MAX_SIZE;
+use core::ptr;
 
-const LENGTH_MASK: u8 = 0b11000000;
+use super::{
+    Repr,
+    LENGTH_MASK,
+    MAX_SIZE,
+};
 
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct InlineString {
-    buffer: [u8; MAX_SIZE],
-}
+/// A buffer stored on the stack whose size is equal to the stack size of `String`
+#[repr(transparent)]
+pub struct InlineBuffer(pub [u8; MAX_SIZE]);
+static_assertions::assert_eq_size!(InlineBuffer, Repr);
 
-impl InlineString {
+impl InlineBuffer {
+    /// Construct a new [`InlineString`]. A string that lives in a small buffer on the stack
+    ///
+    /// SAFETY:
+    /// * The caller must guarantee that the length of `text` is less than [`MAX_SIZE`]
     #[inline]
-    pub fn new(text: &str) -> Self {
+    pub unsafe fn new(text: &str) -> Self {
         debug_assert!(text.len() <= MAX_SIZE);
 
         let len = text.len();
         let mut buffer = [0u8; MAX_SIZE];
 
-        // set the length
+        // set the length in the last byte
         buffer[MAX_SIZE - 1] = len as u8 | LENGTH_MASK;
 
-        // copy the string
+        // copy the string into our buffer
         //
         // note: in the case where len == MAX_SIZE, we'll overwrite the len, but that's okay because
         // when reading the length we can detect that the last byte is part of UTF-8 and return a
         // length of MAX_SIZE
-        unsafe { std::ptr::copy_nonoverlapping(text.as_ptr(), buffer.as_mut_ptr(), len) };
+        //
+        // SAFETY:
+        // * src (`text`) is valid for `len` bytes because `len` comes from `text`
+        // * dst (`buffer`) is valid for `len` bytes because we assert src is less than MAX_SIZE
+        // * src and dst don't overlap because we created dst
+        //
+        ptr::copy_nonoverlapping(text.as_ptr(), buffer.as_mut_ptr(), len);
 
-        InlineString { buffer }
+        InlineBuffer(buffer)
     }
 
     #[inline]
@@ -51,100 +64,40 @@ impl InlineString {
             i -= 1;
         }
 
-        InlineString { buffer }
+        InlineBuffer(buffer)
     }
 
-    /// Creates an [`InlineString`] from raw parts without checking that it's valid UTF-8
-    #[inline]
-    pub const unsafe fn from_parts(len: usize, mut buffer: [u8; MAX_SIZE]) -> Self {
-        if len != MAX_SIZE {
-            buffer[MAX_SIZE - 1] = len as u8 | LENGTH_MASK;
-        }
-        InlineString { buffer }
-    }
-
+    /// Returns an empty [`InlineBuffer`]
     #[inline(always)]
-    pub fn len(&self) -> usize {
-        let last_byte = self.buffer[MAX_SIZE - 1];
-        core::cmp::min((last_byte.wrapping_sub(LENGTH_MASK)) as usize, MAX_SIZE)
+    pub const fn empty() -> Self {
+        Self::new_const("")
     }
 
-    #[inline]
-    pub const fn capacity(&self) -> usize {
-        MAX_SIZE
-    }
-
-    #[inline]
-    pub fn as_str(&self) -> &str {
-        // SAFETY: You can only safely construct an InlineString via a &str which also properly sets
-        // the length of the string
-        unsafe {
-            let slice = self.as_slice().get_unchecked(..self.len());
-            ::std::str::from_utf8_unchecked(slice)
-        }
-    }
-
-    #[inline]
-    pub fn as_slice(&self) -> &[u8] {
-        self.buffer.as_slice()
-    }
-
-    /// Provides a mutable reference to the underlying buffer
+    /// Set's the length of the content for this [`InlineBuffer`]
     ///
-    /// # Safety
-    /// * Please see `super::Repr` for all invariants
+    /// # SAFETY:
+    /// * The caller must guarantee that `len` bytes in the buffer are valid UTF-8
     #[inline]
-    pub unsafe fn as_mut_slice(&mut self) -> &mut [u8] {
-        self.buffer.as_mut_slice()
-    }
-
-    #[inline]
-    pub unsafe fn set_len(&mut self, length: usize) {
-        debug_assert!(length <= MAX_SIZE);
+    pub unsafe fn set_len(&mut self, len: usize) {
+        debug_assert!(len <= MAX_SIZE);
 
         // If `length` == MAX_SIZE, then we infer the length to be the capacity of the buffer. We
         // can infer this because the way we encode length doesn't overlap with any valid UTF-8
         // bytes
-        if length < MAX_SIZE {
-            self.buffer[MAX_SIZE - 1] = length as u8 | LENGTH_MASK;
+        if len < MAX_SIZE {
+            self.0[MAX_SIZE - 1] = len as u8 | LENGTH_MASK;
         }
+    }
+
+    #[inline(always)]
+    pub fn copy(&self) -> Self {
+        InlineBuffer(self.0)
     }
 }
 
-crate::asserts::assert_size_eq!(InlineString, String);
-
 #[cfg(test)]
 mod tests {
-    use std::convert::TryFrom;
-
-    use proptest::prelude::*;
     use rayon::prelude::*;
-    use test_strategy::proptest;
-
-    use super::{
-        InlineString,
-        MAX_SIZE,
-    };
-    use crate::tests::rand_unicode_with_max_len;
-
-    #[test]
-    fn test_sanity() {
-        let hello = "hello world!";
-        let inline = InlineString::new(hello);
-
-        assert_eq!(inline.as_str(), hello);
-        assert_eq!(inline.len(), hello.len());
-        assert_eq!(inline.capacity(), MAX_SIZE);
-    }
-
-    #[proptest]
-    #[cfg_attr(miri, ignore)]
-    fn proptest_roundtrip(#[strategy(rand_unicode_with_max_len(MAX_SIZE))] s: String) {
-        let inline = InlineString::new(&s);
-
-        prop_assert_eq!(inline.len(), s.len());
-        prop_assert_eq!(inline.as_str(), s);
-    }
 
     #[test]
     #[ignore] // we run this in CI, but unless you're compiling in release, this takes a while

@@ -102,15 +102,15 @@ impl<T: fmt::Display> ToCompactString for T {
             &num::NonZeroI128 as s => s.into_repr(),
             s => {
                 let num_bytes = count(s);
-                let mut repr = Repr::with_capacity(num_bytes);
+                let mut c = CompactString::with_capacity(num_bytes);
 
-                write!(&mut repr, "{}", s).expect("fmt::Display incorrectly implemented!");
+                write!(&mut c, "{}", s).expect("fmt::Display incorrectly implemented!");
 
-                repr
+                return c;
             }
         });
 
-        CompactString { repr }
+        CompactString(repr)
     }
 }
 

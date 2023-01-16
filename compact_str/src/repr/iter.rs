@@ -1,11 +1,10 @@
-//! Implementations of the [`FromIterator`] trait to make building `CompactString`s more ergonomic
+//! Implementations of the [`FromIterator`] trait to make building [`Repr`]s more ergonomic
 
 use core::iter::FromIterator;
 use std::borrow::Cow;
 
 use super::{
-    HeapString,
-    InlineString,
+    InlineBuffer,
     Repr,
     MAX_SIZE,
 };
@@ -18,13 +17,12 @@ impl FromIterator<char> for Repr {
         // If the size hint indicates we can't store this inline, then create a heap string
         let (size_hint, _) = iter.size_hint();
         if size_hint > MAX_SIZE {
-            let heap = HeapString::from_string(iter.collect());
-            return Repr::from_heap(heap);
+            return Repr::from_string(iter.collect());
         }
 
         // Otherwise, continuously pull chars from the iterator
         let mut curr_len = 0;
-        let mut inline_buf = [0u8; MAX_SIZE];
+        let mut inline_buf = InlineBuffer::new_const("");
         while let Some(c) = iter.next() {
             let char_len = c.len_utf8();
 
@@ -32,29 +30,27 @@ impl FromIterator<char> for Repr {
             // string
             if char_len + curr_len > MAX_SIZE {
                 let (min_remaining, _) = iter.size_hint();
-                let mut heap_buf = String::with_capacity(char_len + curr_len + min_remaining);
+                let mut string = String::with_capacity(char_len + curr_len + min_remaining);
 
                 // push existing characters onto the heap
                 // SAFETY: `inline_buf` has been filled with `char`s which are valid UTF-8
-                heap_buf
-                    .push_str(unsafe { core::str::from_utf8_unchecked(&inline_buf[..curr_len]) });
+                string
+                    .push_str(unsafe { core::str::from_utf8_unchecked(&inline_buf.0[..curr_len]) });
                 // push current char onto the heap
-                heap_buf.push(c);
+                string.push(c);
                 // extend heap with remaining characters
-                heap_buf.extend(iter);
+                string.extend(iter);
 
-                let heap = HeapString::from_string(heap_buf);
-                return Repr::from_heap(heap);
+                return Repr::from_string(string);
             }
 
             // write the current char into a slice of the unoccupied space
-            c.encode_utf8(&mut inline_buf[curr_len..]);
+            c.encode_utf8(&mut inline_buf.0[curr_len..]);
             curr_len += char_len;
         }
 
-        // SAFETY: We know `inline_buf` is valid UTF-8 because it consists entriely of `char`s
-        let inline = unsafe { InlineString::from_parts(curr_len, inline_buf) };
-        Repr::from_inline(inline)
+        unsafe { inline_buf.set_len(curr_len) }
+        unsafe { core::mem::transmute(inline_buf) }
     }
 }
 
@@ -77,7 +73,7 @@ where
 
     // Continuously pull strings from the iterator
     let mut curr_len = 0;
-    let mut inline_buf = [0u8; MAX_SIZE];
+    let mut inline_buf = InlineBuffer::new_const("");
     while let Some(s) = iter.next() {
         let str_slice = s.as_ref();
         let bytes_len = str_slice.len();
@@ -85,28 +81,26 @@ where
         // this new string is too large to fit into our inline buffer, so heap allocate the rest
         if bytes_len + curr_len > MAX_SIZE {
             let (min_remaining, _) = iter.size_hint();
-            let mut heap_buf = String::with_capacity(bytes_len + curr_len + min_remaining);
+            let mut string = String::with_capacity(bytes_len + curr_len + min_remaining);
 
             // push existing strings onto the heap
             // SAFETY: `inline_buf` has been filled with `&str`s which are valid UTF-8
-            heap_buf.push_str(unsafe { core::str::from_utf8_unchecked(&inline_buf[..curr_len]) });
+            string.push_str(unsafe { core::str::from_utf8_unchecked(&inline_buf.0[..curr_len]) });
             // push current string onto the heap
-            heap_buf.push_str(str_slice);
+            string.push_str(str_slice);
             // extend heap with remaining strings
-            heap_buf.extend(iter);
+            string.extend(iter);
 
-            let heap = HeapString::from_string(heap_buf);
-            return Repr::from_heap(heap);
+            return Repr::from_string(string);
         }
 
         // write the current string into a slice of the unoccupied space
-        inline_buf[curr_len..][..bytes_len].copy_from_slice(str_slice.as_bytes());
+        inline_buf.0[curr_len..][..bytes_len].copy_from_slice(str_slice.as_bytes());
         curr_len += bytes_len;
     }
 
-    // SAFETY: We know `inline_buf` is valid UTF-8 because it consists entriely of `&str`s
-    let inline = unsafe { InlineString::from_parts(curr_len, inline_buf) };
-    Repr::from_inline(inline)
+    unsafe { inline_buf.set_len(curr_len) }
+    unsafe { core::mem::transmute(inline_buf) }
 }
 
 impl<'a> FromIterator<&'a str> for Repr {

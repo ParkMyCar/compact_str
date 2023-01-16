@@ -70,43 +70,6 @@ jobs:
         with:
           update_existing: true
 
-  # TODO(parkmycar): Fails in CI with "error: failed to run LLVM passes: unknown pass name 'sancov'"
-  # honggfuzz_x86_64:
-  #   name: honggfuzz [x86_64]
-  #   runs-on: ubuntu-latest
-  #   env:
-  #     HFUZZ_BUILD_ARGS: "--features=honggfuzz"
-  #     HFUZZ_RUN_ARGS: "--run_time 120 --exit_upon_crash"
-  #     RUSTFLAGS: "-Znew-llvm-pass-manager=no"
-  #   steps:
-  #     - uses: actions/checkout@v2
-  #       name: Checkout compact_str
-  #     - uses: actions-rs/toolchain@v1
-  #       name: Install Rust
-  #       with:
-  #         toolchain: nightly
-  #         override: true
-  #     - name: Install Deps
-  #       run: sudo apt-get install --no-install-recommends binutils-dev libunwind8-dev
-  #     - uses: actions-rs/cargo@v1
-  #       name: Install honggfuzz
-  #       with:
-  #         command: install
-  #         toolchain: nightly
-  #         args: honggfuzz
-  #     - uses: actions-rs/cargo@v1
-  #       name: Fuzz!
-  #       with:
-  #         command: hfuzz
-  #         args: run honggfuzz
-  #     - name: File Issue (if failure found)
-  #       if: failure()
-  #       uses: JasonEtco/create-an-issue@v2.6
-  #       env:
-  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #       with:
-  #         update_existing: true
-
   afl_x86_64:
     name: AFL++ [x86_64]
     runs-on: ubuntu-latest
@@ -177,58 +140,3 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           update_existing: true
-
-  # TODO(parkmycar): ARMv7 runner is no longer online
-  # afl_armv7:
-  #   name: AFL++ [ARMv7]
-  #   runs-on: [self-hosted, linux, ARM]
-  #   steps:
-  #     - uses: actions/checkout@v2
-  #       name: Checkout compact_str
-  #     - uses: actions-rs/toolchain@v1
-  #       name: Install Rust
-  #       with:
-  #         profile: minimal
-  #         toolchain: nightly-2022-07-01
-  #         override: true
-  #     - name: Install cargo-afl
-  #       run: |
-  #         cargo +nightly install afl --force
-  #     - name: AFL++ Build
-  #       run: |
-  #         cd fuzz
-  #         cargo +nightly afl build --bin afl --release --features=afl
-  #     - name: Set Fuzz Time
-  #       run: |
-  #         if [[ "${{github.event_name}}" == "push" || "${{github.event_name}}" == "pull_request" ]]; then
-  #           echo "fuzz_time=120" >> $GITHUB_ENV
-  #         else
-  #           echo "fuzz_time=1800" >> $GITHUB_ENV
-  #         fi
-  #         echo "${{ env.fuzz_time }}"
-  #     - name: Fuzz!
-  #       run: |
-  #         cd fuzz
-  #         mkdir afl/out
-  #         cargo +nightly afl fuzz -i afl/in -o afl/out -D -V ${{ env.fuzz_time }} ../target/release/afl
-  #     - name: Check for Crashes
-  #       run: |
-  #         if [ "$(ls -1q ./fuzz/afl/out/default/crashes/ | wc -l)" -ne 0 ]; then exit 1; fi
-  #     # AFL generates filenames with ":", which upload-artifact fails on, so we need to "detox" them
-  #     - name: Sanitize Crash Filenames (if present)
-  #       if: failure()
-  #       run: |
-  #         detox -r -v ./fuzz/afl/out/default/crashes/
-  #     - name: Upload Crashes (if present)
-  #       if: failure()
-  #       uses: actions/upload-artifact@v2
-  #       with:
-  #         name: Upload Crashes
-  #         path: ./fuzz/afl/out/default/crashes/
-  #     - name: File Issue (if failure found)
-  #       if: failure()
-  #       uses: JasonEtco/create-an-issue@v2.6
-  #       env:
-  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #       with:
-  #         update_existing: true

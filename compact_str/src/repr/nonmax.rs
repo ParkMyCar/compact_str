@@ -6,6 +6,7 @@
 #[allow(clippy::upper_case_acronyms)]
 #[allow(dead_code)]
 #[allow(non_camel_case_types)]
+#[derive(Copy, Clone, Debug)]
 #[repr(u8)]
 pub enum NonMaxU8 {
     V0 = 0,
@@ -265,4 +266,4 @@ pub enum NonMaxU8 {
     V254 = 254,
 }
 
-crate::asserts::assert_size_eq!(NonMaxU8, Option<NonMaxU8>, u8);
+static_assertions::assert_eq_size!(NonMaxU8, Option<NonMaxU8>, u8);

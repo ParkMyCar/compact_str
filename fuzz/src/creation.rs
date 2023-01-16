@@ -16,7 +16,10 @@ use compact_str::{
 };
 
 use super::assert_properly_allocated;
-use crate::MAX_INLINE_LENGTH;
+use crate::{
+    MAX_INLINE_LENGTH,
+    MIN_HEAP_CAPACITY,
+};
 
 #[derive(Arbitrary, Debug)]
 pub enum Creation<'a> {
@@ -690,8 +693,12 @@ impl Creation<'_> {
                 let std_str = String::with_capacity(num_bytes as usize);
 
                 if compact.is_heap_allocated() {
-                    // if we're heap allocated, then we should have the same capacity
-                    assert_eq!(compact.capacity(), std_str.capacity());
+                    if std_str.capacity() <= MIN_HEAP_CAPACITY {
+                        assert_eq!(compact.capacity(), MIN_HEAP_CAPACITY);
+                    } else {
+                        // if we're heap allocated, then we should have the same capacity
+                        assert_eq!(compact.capacity(), std_str.capacity());
+                    }
                 } else {
                     // if we're inline then a CompactString will have capacity MAX_INLINE_LENGTH
                     assert!(num_bytes as usize <= super::MAX_INLINE_LENGTH);

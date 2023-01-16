@@ -37,20 +37,6 @@ pub fn rand_u16s() -> impl Strategy<Value = Vec<u16>> {
 }
 
 /// [`proptest::strategy::Strategy`] that generates [`String`]s with up to `len` bytes
-pub fn rand_unicode_with_max_len(len: usize) -> impl Strategy<Value = String> {
-    proptest::collection::vec(proptest::char::any(), 0..len).prop_map(move |chars| {
-        let mut len_utf8 = 0;
-        chars
-            .into_iter()
-            .take_while(|c| {
-                len_utf8 += c.len_utf8();
-                len_utf8 <= len
-            })
-            .collect::<String>()
-    })
-}
-
-/// [`proptest::strategy::Strategy`] that generates [`String`]s with up to `len` bytes
 pub fn rand_unicode_with_range(range: impl Into<SizeRange>) -> impl Strategy<Value = String> {
     proptest::collection::vec(proptest::char::any(), range).prop_map(|v| v.into_iter().collect())
 }
@@ -997,7 +983,7 @@ fn test_into_string_small_str() {
 
 #[test]
 fn test_into_string_long_str() {
-    let data = "abcdefghijklmnopqrstuvwxyz";
+    let data = "this is a long string that will be on the heap";
     let str_addr = data.as_ptr();
     let str_len = data.len();
 

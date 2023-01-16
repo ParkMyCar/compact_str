@@ -14,6 +14,7 @@ use arbitrary::Arbitrary;
 use compact_str::CompactString;
 
 const MAX_INLINE_LENGTH: usize = std::mem::size_of::<String>();
+const MIN_HEAP_CAPACITY: usize = std::mem::size_of::<usize>() * 4;
 const TWENTY_FOUR_MB_AS_BYTES: usize = 24 * 1024 * 1024;
 
 mod actions;

@@ -78,7 +78,7 @@ mod tests;
 /// }
 ///
 /// // CompactString impls AsRef<str> and Borrow<str>, so it can be used anywhere
-/// // that excepts a generic string
+/// // that expects a generic string
 /// if let Some(building) = map.get("nyc") {
 ///     wrapped_print(building);
 /// }

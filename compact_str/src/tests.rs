@@ -1449,3 +1449,12 @@ fn test_collect() {
         "foobarbaz",
     );
 }
+
+#[test]
+fn test_into_cow() {
+    let og = "aaa";
+    let compact = CompactString::new(og);
+    let cow: std::borrow::Cow<'_, str> = compact.into();
+
+    assert_eq!(og, cow);
+}

@@ -49,11 +49,17 @@ jobs:
       - name: install cargo hack
         run: cargo install cargo-hack --force
       - name: cargo test msrv..
-        # note: we exclude `arbitrary` from here since the MSRV of >= 1.1.14 is 1.63. Instead of
-        # pinning to a specific version of of `arbitrary`, we'll let user's deps decide the version
+        # note: we exclude both `arbitrary` and `proptest` from here because their MSRVs were both
+        # bumped on a minor version release:
+        #
+        # - abitrary >= 1.1.14 has an MSRV >= 1.63
+        # - proptest >= 1.1.0 has an MSRV >= 1.60
+        #
+        # Instead of pinning to a specific version of `arbitrary` or `proptest`, we'll let user's 
+        # deps decide the version since the API should still be semver compatible
         run: |
           cd compact_str
-          cargo hack test --features bytes,markup,proptest,quickcheck,rkyv,serde --version-range 1.57..
+          cargo hack test --features bytes,markup,quickcheck,rkyv,serde --version-range 1.57..
 
   feature_powerset:
     name: cargo check feature-powerset

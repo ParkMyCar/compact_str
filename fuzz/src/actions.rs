@@ -55,8 +55,15 @@ impl Action<'_> {
                 control.push(c);
                 compact.push(c);
 
+                let og_capacity = compact.capacity();
+
                 assert_eq!(control, compact);
                 assert_eq!(control.len(), compact.len());
+
+                // if we had to reallocate, then we may have inlined the string
+                if og_capacity != compact.capacity() {
+                    super::assert_properly_allocated(compact, control);
+                }
             }
             Pop(count) => {
                 (0..count).for_each(|_| {
@@ -72,22 +79,43 @@ impl Action<'_> {
                 control.push_str(s);
                 compact.push_str(s);
 
+                let og_capacity = compact.capacity();
+
                 assert_eq!(control, compact);
                 assert_eq!(control.len(), compact.len());
+
+                // if we had to reallocate, then we may have inlined the string
+                if og_capacity != compact.capacity() {
+                    super::assert_properly_allocated(compact, control);
+                }
             }
             ExtendChars(chs) => {
                 control.extend(chs.iter());
                 compact.extend(chs.iter());
 
+                let og_capacity = compact.capacity();
+
                 assert_eq!(control, compact);
                 assert_eq!(control.len(), compact.len());
+
+                // if we had to re-allocate, make sure we inlined the string, if possible
+                if og_capacity != compact.capacity() {
+                    super::assert_properly_allocated(compact, control);
+                }
             }
             ExtendStr(strs) => {
                 control.extend(strs.iter().copied());
                 compact.extend(strs.iter().copied());
 
+                let og_capacity = compact.capacity();
+
                 assert_eq!(control, compact);
                 assert_eq!(control.len(), compact.len());
+
+                // if we had to re-allocate, make sure we inlined the string, if possible
+                if og_capacity != compact.capacity() {
+                    super::assert_properly_allocated(compact, control);
+                }
             }
             CheckSubslice(a, b) => {
                 assert_eq!(control.len(), compact.len());
@@ -138,6 +166,8 @@ impl Action<'_> {
                     return;
                 }
 
+                let og_capacity = compact.capacity();
+
                 compact.reserve(num_bytes as usize);
                 control.reserve(num_bytes as usize);
 
@@ -146,6 +176,13 @@ impl Action<'_> {
 
                 assert_eq!(compact, control);
                 assert_eq!(compact.len(), control.len());
+
+                // if we had to re-allocate, make sure we inlined the string, if possible
+                if og_capacity != compact.capacity()
+                    && og_capacity + num_bytes as usize <= super::MAX_INLINE_LENGTH
+                {
+                    assert!(!compact.is_heap_allocated());
+                }
             }
             Truncate(new_len) => {
                 // turn the arbitrary number `new_len` into character indices
@@ -162,16 +199,30 @@ impl Action<'_> {
                 // turn the arbitrary number `new_len` into character indices
                 let idx = to_index(control, idx);
 
-                // then truncate the string
+                // track our original capacity, so we can make sure the string was inlined if we
+                // grew and the resulting string was short enough
+                let og_capacity = compact.capacity();
+
+                // then insert the string
                 control.insert_str(idx, s);
                 compact.insert_str(idx, s);
 
                 assert_eq!(control, compact);
                 assert_eq!(control.len(), compact.len());
+
+                // if our capacity changed, then make sure we took the opportunity to inline the
+                // string, if it was short enough
+                if og_capacity != compact.capacity() {
+                    super::assert_properly_allocated(compact, control);
+                }
             }
             Insert(idx, ch) => {
                 // turn the arbitrary number `new_len` into character indices
                 let idx = to_index(control, idx);
+
+                // track our original capacity, so we can make sure the string was inlined if we
+                // grew and the resulting string was short enough
+                let og_capacity = compact.capacity();
 
                 // then truncate the string
                 control.insert(idx, ch);
@@ -179,6 +230,12 @@ impl Action<'_> {
 
                 assert_eq!(control, compact);
                 assert_eq!(control.len(), compact.len());
+
+                // if our capacity changed, then make sure we took the opportunity to inline the
+                // string, if it was short enough
+                if og_capacity != compact.capacity() {
+                    super::assert_properly_allocated(compact, control);
+                }
             }
             Clear => {
                 control.clear();
@@ -248,6 +305,7 @@ impl Action<'_> {
 
                 assert_eq!(control, compact);
                 assert_eq!(control.len(), compact.len());
+                super::assert_properly_allocated(compact, control);
             }
             Retain(nth, codepoint) => {
                 let nth = nth % 8;

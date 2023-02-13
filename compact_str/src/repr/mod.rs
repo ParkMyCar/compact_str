@@ -534,8 +534,19 @@ impl Clone for Repr {
         #[cold]
         fn clone_heap(this: &Repr) -> Repr {
             let heap = unsafe { &*(this as *const _ as *const HeapBuffer) };
-            let new = heap.clone();
-            unsafe { mem::transmute(new) }
+
+            // If the contained string is small enough, we will inline it instead of allocating
+            if heap.capacity() <= MAX_SIZE {
+                // SAFETY: Checked to make sure the capacity is <= MAX_SIZE, which means the length
+                // of the string is also <= MAX_SIZE
+                let inline = unsafe { InlineBuffer::new(this.as_str()) };
+                // SAFETY: InlineBuffer and Repr have the same layout
+                unsafe { mem::transmute(inline) }
+            } else {
+                let new = heap.clone();
+                // SAFETY: HeapBuffer and Repr have the same layout
+                unsafe { mem::transmute(new) }
+            }
         }
 
         if last_byte == HEAP_MASK {

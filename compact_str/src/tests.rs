@@ -1458,3 +1458,23 @@ fn test_into_cow() {
 
     assert_eq!(og, cow);
 }
+
+#[test]
+fn test_from_string_inlines_on_push() {
+    let mut compact = CompactString::from("hello".to_string());
+    assert!(compact.is_heap_allocated());
+
+    compact.push_str(" world");
+    // when growing the CompactString we should inline it
+    assert!(!compact.is_heap_allocated());
+}
+
+#[test]
+fn test_from_string_inlines_on_clone() {
+    let a = CompactString::from("hello".to_string());
+    assert!(a.is_heap_allocated());
+
+    let b = a.clone();
+    // when cloning the CompactString we should inline it
+    assert!(!b.is_heap_allocated());
+}

@@ -12,6 +12,12 @@
 
 use arbitrary::Arbitrary;
 use compact_str::CompactString;
+use rand::rngs::SmallRng;
+use rand::SeedableRng;
+use rand_distr::{
+    Distribution,
+    SkewNormal,
+};
 
 const MAX_INLINE_LENGTH: usize = std::mem::size_of::<String>();
 const MIN_HEAP_CAPACITY: usize = std::mem::size_of::<usize>() * 4;
@@ -31,6 +37,7 @@ use creation::Creation;
 pub struct Scenario<'a> {
     pub creation: Creation<'a>,
     pub actions: Vec<Action<'a>>,
+    pub seed: u64,
 }
 
 impl<'a> Scenario<'a> {
@@ -42,9 +49,16 @@ impl<'a> Scenario<'a> {
             // Option<...>
             let mut compact = assert_not_option(compact);
 
+            // Only run up to a certain number of actions
+            //
+            // e.g. scenarios with 3,000 actions aren't much more "interesting" of those with 1,000
+            // but they take longer to run. So we opt for fewer actions to maximize total number of
+            // runs / Scenarios
+            let max_num_actions = generate_rand_max_num_actions(self.seed);
             // run some actions, asserting properties along the way
             self.actions
                 .into_iter()
+                .take(max_num_actions)
                 .for_each(|a| a.perform(&mut control, &mut compact));
 
             // make sure our strings are the same
@@ -107,4 +121,39 @@ fn assert_not_option(compact: CompactString) -> CompactString {
     assert_eq!(compact, maybe_compact.unwrap());
 
     compact
+}
+
+/// Using a Skewed Normal distribution, we generate a random number which indicates the maximum
+/// number of actions we'll run for a [`Scenario`]
+///
+/// Note: through testing we seem
+fn generate_rand_max_num_actions(seed: u64) -> usize {
+    let mut rng = SmallRng::seed_from_u64(seed);
+    let poi = SkewNormal::new(6.0, 6.0, 3.0).expect("invalid SkewNormal");
+    let smp = poi.sample(&mut rng);
+
+    let num_act = smp * 100f64;
+    let num_act = num_act as u64 % 5000;
+    num_act as usize
+}
+
+#[cfg(test)]
+mod test {
+    use super::generate_rand_max_num_actions;
+
+    #[test]
+    fn test_rand() {
+        let mut nums: Vec<_> = (0..10_000)
+            .map(|i| generate_rand_max_num_actions(i))
+            .collect();
+
+        let min = nums.iter().min().copied().unwrap();
+        let max = nums.iter().max().copied().unwrap();
+        let mean = nums.iter().sum::<usize>() / nums.len();
+
+        nums.sort();
+        let median = nums[(nums.len() / 2) - 1];
+
+        println!("{min} <> {mean} | {median} <> {max}");
+    }
 }

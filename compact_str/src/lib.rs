@@ -1379,6 +1379,85 @@ impl CompactString {
     pub fn into_string(self) -> String {
         self.0.into_string()
     }
+
+    /// Convert a [`String`] into a [`CompactString`] _without inlining_.
+    ///
+    /// Note: You probably don't need to use this method, instead you should use `From<String>`
+    /// which is implemented for [`CompactString`].
+    ///
+    /// This method exists incase your code is very sensitive to memory allocations. Normally when
+    /// converting a [`String`] to a [`CompactString`] we'll inline short strings onto the stack.
+    /// But this results in [`Drop`]-ing the original [`String`], which causes memory it owned on
+    /// the heap to be deallocated. Instead when using this method, we always reuse the buffer that
+    /// was previously owned by the [`String`], so no trips to the allocator are needed.
+    ///
+    /// # Examples
+    ///
+    /// ### Short Strings
+    /// ```
+    /// use compact_str::CompactString;
+    ///
+    /// let x = "hello world".to_string();
+    /// let c_inline = CompactString::from(x);
+    ///
+    /// // using From<String>, we create an inlined CompactString
+    /// assert!(!c_inline.is_heap_allocated());
+    ///
+    /// let y = "hello world".to_string();
+    /// let c_heap = CompactString::from_string_buffer(y);
+    ///
+    /// // using CompactString::from_string_buffer, we'll re-use the String's underlying buffer
+    /// assert!(c_heap.is_heap_allocated());
+    /// ```
+    ///
+    /// ### Longer Strings
+    /// ```
+    /// use compact_str::CompactString;
+    ///
+    /// let x = "longer string that will be on the heap".to_string();
+    /// let c1 = CompactString::from(x);
+    ///
+    /// let y = "longer string that will be on the heap".to_string();
+    /// let c2 = CompactString::from_string_buffer(y);
+    ///
+    /// // for longer strings, we re-use the underlying String's buffer in both cases
+    /// assert!(c1.is_heap_allocated());
+    /// assert!(c2.is_heap_allocated());
+    /// ```
+    ///
+    /// ### `Clone`-ing
+    /// ```
+    /// use compact_str::CompactString;
+    ///
+    /// let x = "hello world".to_string();
+    /// let c_heap = CompactString::from_string_buffer(x);
+    /// assert!(c_heap.is_heap_allocated());
+    ///
+    /// // when cloning, if a string is heap allocated but short, we'll inline the cloned version
+    /// let c_inline = c_heap.clone();
+    /// assert!(!c_inline.is_heap_allocated());
+    /// ```
+    ///
+    /// ### Buffer Re-use
+    /// ```
+    /// use compact_str::CompactString;
+    ///
+    /// let og = "hello world".to_string();
+    /// let og_addr = og.as_ptr();
+    ///
+    /// let c = CompactString::from_string_buffer(og);
+    /// let ex = String::from(c);
+    /// let ex_addr = ex.as_ptr();
+    ///
+    /// // When converting to/from String and CompactString, we re-use the same underlying allocated
+    /// // memory/buffer
+    /// assert_eq!(og_addr, ex_addr);
+    /// ```
+    #[inline]
+    pub fn from_string_buffer(s: String) -> Self {
+        let repr = Repr::from_string(s, false);
+        CompactString(repr)
+    }
 }
 
 impl Default for CompactString {
@@ -1492,7 +1571,7 @@ impl<'a> From<&'a str> for CompactString {
 
 impl From<String> for CompactString {
     fn from(s: String) -> Self {
-        let repr = Repr::from_string(s);
+        let repr = Repr::from_string(s, true);
         CompactString(repr)
     }
 }
@@ -1507,6 +1586,7 @@ impl<'a> From<Cow<'a, str>> for CompactString {
     fn from(cow: Cow<'a, str>) -> Self {
         match cow {
             Cow::Borrowed(s) => s.into(),
+            // we separate these two so we can re-use the underlying buffer in the owned case
             Cow::Owned(s) => s.into(),
         }
     }
@@ -1514,7 +1594,7 @@ impl<'a> From<Cow<'a, str>> for CompactString {
 
 impl From<Box<str>> for CompactString {
     fn from(b: Box<str>) -> Self {
-        let repr = Repr::from_box_str(b);
+        let repr = Repr::from_box_str(b, true);
         CompactString(repr)
     }
 }

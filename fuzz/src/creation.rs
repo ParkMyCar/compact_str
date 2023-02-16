@@ -65,11 +65,13 @@ pub enum Creation<'a> {
     FromStr(&'a str),
     /// Create using `FromStr` trait
     FromStrTrait(&'a str),
-    /// Create using `From<String>`, which consumes the `String` for `O(1)` runtime
+    /// Create using `From<String>`, which consumes the `String` and eagerly inlines
     FromString(String),
-    /// Create using `From<Box<str>>`, which consumes the `Box<str>` for `O(1)` runtime
+    /// Create using [`CompactString::from_string_buffer`], which consumes the `String` in `O(1)`
+    FromStringBuffer(String),
+    /// Create using `From<Box<str>>`, which consumes the `Box<str>` and eagerly inlines
     FromBoxStr(Box<str>),
-    /// Create using `From<Cow<'a, str>>`, which possibly consumes an owned string in `O(1)`
+    /// Create using `From<Cow<'a, str>>`, which consumes an owned string and eagerly inlines
     FromCowStr(CowStrArg<'a>),
     /// Create from a type that implements [`ToCompactString`]
     ToCompactString(ToCompactStringArg),
@@ -244,10 +246,19 @@ impl Creation<'_> {
             FromString(s) => {
                 let compact = CompactString::from(s.clone());
 
+                // Note: converting From<String> will be eagerly inlined
+                assert_eq!(compact, s);
+                assert_properly_allocated(&compact, &s);
+
+                Some((compact, s))
+            }
+            FromStringBuffer(s) => {
+                let compact = CompactString::from_string_buffer(s.clone());
+
                 assert_eq!(compact, s);
 
-                // Note: converting From<String> will always be heap allocated because we use the
-                // underlying buffer from the source String
+                // Note: converting with from_string_buffer will always be heap allocated because we
+                // use the underlying buffer from the source String
                 if s.capacity() == 0 {
                     assert!(!compact.is_heap_allocated());
                 } else {
@@ -258,18 +269,12 @@ impl Creation<'_> {
             }
             FromBoxStr(b) => {
                 let compact = CompactString::from(b.clone());
-
                 assert_eq!(compact, b);
 
-                // Note: converting From<Box<str>> will always be heap allocated because we use the
-                // underlying buffer from the source String
-                if b.len() == 0 {
-                    assert!(!compact.is_heap_allocated())
-                } else {
-                    assert!(compact.is_heap_allocated())
-                }
-
+                // Note: converting From<Box<str>> will be eagerly inlined
                 let string = String::from(b);
+                assert_properly_allocated(&compact, &string);
+
                 Some((compact, string))
             }
             FromCowStr(cow_arg) => {
@@ -291,9 +296,7 @@ impl Creation<'_> {
                 let compact = CompactString::from(cow);
                 assert_eq!(compact, std_str);
 
-                // Note: we don't assert properly allocated here because we might do an O(1)
-                // conversion from String, if the Cow is owned, and thus could end up with a small
-                // string on the heap
+                assert_properly_allocated(&compact, &std_str);
 
                 Some((compact, std_str))
             }

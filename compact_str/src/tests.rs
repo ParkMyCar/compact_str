@@ -909,57 +909,114 @@ fn test_into_string_where_32_bit_capacity_is_on_heap() {
 fn test_into_string_small_string_with_excess_capacity() {
     let mut string = String::with_capacity(128);
     string.push_str("abcdef");
-    let str_addr = string.as_ptr();
+    let str_len = string.len();
+
+    let compact = CompactString::from(string);
+
+    // we should eagerly inline the string
+    assert!(!compact.is_heap_allocated());
+    assert_eq!(compact.len(), str_len);
+    assert_eq!(compact.capacity(), MAX_SIZE);
+}
+
+#[test]
+fn test_from_string_buffer_small_string_with_excess_capacity() {
+    let mut string = String::with_capacity(128);
+    string.push_str("abcedfg");
+
+    let str_ptr = string.as_ptr();
     let str_len = string.len();
     let str_cap = string.capacity();
 
-    let compact = CompactString::from(string);
-    let new_string = String::from(compact);
-    let new_str_addr = new_string.as_ptr();
-    let new_str_len = new_string.len();
-    let new_str_cap = new_string.capacity();
+    // using from_string_buffer should always re-use the underlying buffer
+    let mut compact = CompactString::from_string_buffer(string);
+    assert!(compact.is_heap_allocated());
 
-    // If small boxed strings are eagerly compacted, the address and capacity assertions won't hold.
-    // Compaction is not eager, so these should hold.
-    assert_eq!(str_addr, new_str_addr);
-    assert_eq!(str_len, new_str_len);
-    assert_eq!(str_cap, new_str_cap);
+    let cpt_ptr = compact.as_ptr();
+    let cpt_len = compact.len();
+    let cpt_cap = compact.capacity();
+
+    assert_eq!(str_ptr, cpt_ptr);
+    assert_eq!(str_len, cpt_len);
+    assert_eq!(str_cap, cpt_cap);
 }
 
 #[test]
 fn test_into_string_small_string_with_no_excess_capacity() {
     let string = String::from("abcdef");
-    let str_addr = string.as_ptr();
+    let str_len = string.len();
+
+    let compact = CompactString::from(string);
+
+    // we should eagerly inline the string
+    assert!(!compact.is_heap_allocated());
+    assert_eq!(compact.len(), str_len);
+    assert_eq!(compact.capacity(), MAX_SIZE);
+}
+
+#[test]
+fn test_from_string_buffer_small_string_with_no_excess_capacity() {
+    let string = String::from("abcdefg");
+
+    let str_ptr = string.as_ptr();
+    let str_len = string.len();
+    let str_cap = string.capacity();
+
+    // using from_string_buffer should always re-use the underlying buffer
+    let mut compact = CompactString::from_string_buffer(string);
+    assert!(compact.is_heap_allocated());
+
+    let cpt_ptr = compact.as_ptr();
+    let cpt_len = compact.len();
+    let cpt_cap = compact.capacity();
+
+    assert_eq!(str_ptr, cpt_ptr);
+    assert_eq!(str_len, cpt_len);
+    assert_eq!(str_cap, cpt_cap);
+}
+
+#[test]
+fn test_roundtrip_from_string_empty_string() {
+    let string = String::new();
+
+    let str_ptr = string.as_ptr();
     let str_len = string.len();
     let str_cap = string.capacity();
 
     let compact = CompactString::from(string);
+    // we should always inline empty strings
+    assert!(!compact.is_heap_allocated());
+
     let new_string = String::from(compact);
-    let new_str_addr = new_string.as_ptr();
+
+    let new_str_ptr = new_string.as_ptr();
     let new_str_len = new_string.len();
     let new_str_cap = new_string.capacity();
 
-    // If small boxed strings are eagerly compacted, the address assertion won't hold.
-    // Compaction is not eager, so these should hold.
-    assert_eq!(str_addr, new_str_addr);
+    assert_eq!(str_ptr, new_str_ptr);
     assert_eq!(str_len, new_str_len);
     assert_eq!(str_cap, new_str_cap);
 }
 
 #[test]
-fn test_into_string_empty_string() {
+fn test_roundtrip_from_string_buffer_empty_string() {
     let string = String::new();
-    let str_addr = string.as_ptr();
+
+    let str_ptr = string.as_ptr();
     let str_len = string.len();
     let str_cap = string.capacity();
 
-    let compact = CompactString::from(string);
+    let compact = CompactString::from_string_buffer(string);
+    // we should always inline empty strings
+    assert!(!compact.is_heap_allocated());
+
     let new_string = String::from(compact);
-    let new_str_addr = new_string.as_ptr();
+
+    let new_str_ptr = new_string.as_ptr();
     let new_str_len = new_string.len();
     let new_str_cap = new_string.capacity();
 
-    assert_eq!(str_addr, new_str_addr);
+    assert_eq!(str_ptr, new_str_ptr);
     assert_eq!(str_len, new_str_len);
     assert_eq!(str_cap, new_str_cap);
 }
@@ -1460,8 +1517,8 @@ fn test_into_cow() {
 }
 
 #[test]
-fn test_from_string_inlines_on_push() {
-    let mut compact = CompactString::from("hello".to_string());
+fn test_from_string_buffer_inlines_on_push() {
+    let mut compact = CompactString::from_string_buffer("hello".to_string());
     assert!(compact.is_heap_allocated());
 
     compact.push_str(" world");
@@ -1470,8 +1527,8 @@ fn test_from_string_inlines_on_push() {
 }
 
 #[test]
-fn test_from_string_inlines_on_clone() {
-    let a = CompactString::from("hello".to_string());
+fn test_from_string_buffer_inlines_on_clone() {
+    let a = CompactString::from_string_buffer("hello".to_string());
     assert!(a.is_heap_allocated());
 
     let b = a.clone();

@@ -8,6 +8,8 @@ use std::borrow::Cow;
 #[cfg(feature = "bytes")]
 mod bytes;
 
+mod smallvec;
+
 mod capacity;
 mod heap;
 mod inline;

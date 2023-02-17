@@ -912,8 +912,9 @@ fn test_into_string_small_string_with_excess_capacity() {
     let str_len = string.len();
 
     let compact = CompactString::from(string);
-
-    // we should eagerly inline the string
+    // we should inline this string, which would truncate capacity
+    //
+    // note: String truncates capacity on Clone, so truncating here seems reasonable
     assert!(!compact.is_heap_allocated());
     assert_eq!(compact.len(), str_len);
     assert_eq!(compact.capacity(), MAX_SIZE);

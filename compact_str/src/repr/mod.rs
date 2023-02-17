@@ -166,11 +166,11 @@ impl Repr {
             // We only hit this case if the provided String is > 16MB and we're on a 32-bit arch. We
             // expect it to be unlikely, thus we hint that to the compiler
             capacity_on_heap(s)
-        } else if s.is_empty() {
+        } else if og_cap == 0 {
             // We don't expect converting from an empty String often, so we make this code path cold
             empty()
         } else if should_inline && s.len() <= MAX_SIZE {
-            // SAFETY: Checked to make sure the length of s will fit inline
+            // SAFETY: Checked to make sure the string would fit inline
             let inline = unsafe { InlineBuffer::new(s.as_str()) };
             // SAFETY: `InlineBuffer` and `Repr` are the same size
             unsafe { mem::transmute(inline) }
@@ -234,52 +234,6 @@ impl Repr {
             let s = unsafe { core::str::from_utf8_unchecked(slice) };
 
             String::from(s)
-        }
-    }
-
-    #[inline]
-    pub fn from_box_str(s: Box<str>, should_inline: bool) -> Self {
-        let og_cap = s.len();
-        let cap = Capacity::new(og_cap);
-
-        #[cold]
-        fn capacity_on_heap(s: Box<str>) -> Repr {
-            let heap = HeapBuffer::new(&s);
-            // SAFETY: `BoxString` and `Repr` are the same size
-            unsafe { mem::transmute(heap) }
-        }
-
-        #[cold]
-        fn empty() -> Repr {
-            EMPTY
-        }
-
-        if cap.is_heap() {
-            // We only hit this case if the provided String is > 16MB and we're on a 32-bit arch. We
-            // expect it to be unlikely, thus we hint that to the compiler
-            capacity_on_heap(s)
-        } else if og_cap == 0 {
-            // We don't expect converting from an empty String often, so we make this code path cold
-            empty()
-        } else if should_inline && og_cap <= MAX_SIZE {
-            // SAFETY: Checked to make sure the length of s will fit inline
-            let inline = unsafe { InlineBuffer::new(&s) };
-            // SAFETY: `InlineBuffer` and `Repr` are the same size
-            unsafe { mem::transmute(inline) }
-        } else {
-            // Don't drop the box here
-            let raw_ptr = Box::into_raw(s).cast::<u8>();
-            let ptr = ptr::NonNull::new(raw_ptr).expect("string with capacity has null ptr?");
-
-            // create a new BoxString with our parts!
-            let heap = HeapBuffer {
-                ptr,
-                len: og_cap,
-                cap,
-            };
-
-            // SAFETY: `BoxString` and `Repr` are the same size
-            unsafe { mem::transmute(heap) }
         }
     }
 
@@ -700,22 +654,35 @@ mod tests {
 
     #[test_case(String::new(), true; "empty should inline")]
     #[test_case(String::new(), false; "empty not inline")]
+    #[test_case(String::with_capacity(10), true ; "empty with small capacity inline")]
+    #[test_case(String::with_capacity(10), false ; "empty with small capacity not inline")]
+    #[test_case(String::with_capacity(128), true ; "empty with large capacity inline")]
+    #[test_case(String::with_capacity(128), false ; "empty with large capacity not inline")]
     #[test_case(String::from("nyc 🗽"), true; "short should inline")]
     #[test_case(String::from("nyc 🗽"), false ; "short not inline")]
     #[test_case(String::from("this is a really long string, which is intended"), true; "long")]
     #[test_case(String::from("this is a really long string, which is intended"), false; "long not inline")]
+    #[test_case(EIGHTEEN_MB_STR.to_string(), true ; "huge should inline")]
+    #[test_case(EIGHTEEN_MB_STR.to_string(), false ; "huge not inline")]
     fn test_from_string(s: String, try_to_inline: bool) {
-        let r = Repr::from_string(s.clone(), try_to_inline);
+        // note: when cloning a String it truncates capacity, which is why we measure these values
+        // before cloning the string
+        let s_len = s.len();
+        let s_cap = s.capacity();
+        let s_str = s.clone();
 
-        assert_eq!(r.len(), s.len());
-        assert_eq!(r.as_str(), s.as_str());
+        let r = Repr::from_string(s, try_to_inline);
 
-        if s.is_empty() {
+        assert_eq!(r.len(), s_len);
+        assert_eq!(r.as_str(), s_str.as_str());
+
+        if s_cap == 0 {
             // we should always inline the string, if the length of the source string is 0
             assert!(!r.is_heap_allocated());
-        } else if s.len() <= MAX_SIZE {
-            // we should inline the string, if we were asked to
-            assert_eq!(!r.is_heap_allocated(), try_to_inline);
+        } else if try_to_inline && s_len <= MAX_SIZE {
+            // we should inline the string, if we were asked to, and the length of the string would
+            // fit inline, meaning we would truncate capacity
+            assert!(!r.is_heap_allocated());
         } else {
             assert!(r.is_heap_allocated());
         }
@@ -729,10 +696,10 @@ mod tests {
         assert_eq!(r.len(), s.len());
         assert_eq!(r.as_str(), s.as_str());
 
-        if s.is_empty() {
+        if s.capacity() == 0 {
             // we should always inline the string, if the length of the source string is 0
             assert!(!r.is_heap_allocated());
-        } else if s.len() <= MAX_SIZE {
+        } else if s.capacity() <= MAX_SIZE {
             // we should inline the string, if we were asked to
             assert_eq!(!r.is_heap_allocated(), try_to_inline);
         } else {
@@ -867,43 +834,5 @@ mod tests {
         assert_eq!(r_a.len(), r_b.len());
         assert_eq!(r_a.capacity(), r_b.capacity());
         assert_eq!(r_a.is_heap_allocated(), r_b.is_heap_allocated());
-    }
-
-    #[test_case("", true ; "empty should inline")]
-    #[test_case("", false ; "empty not inline")]
-    #[test_case("q", true ; "single should inline")]
-    #[test_case("q", false ; "single not inline")]
-    #[test_case("abc", true ; "short inline")]
-    #[test_case("abc", false ; "short not inline")]
-    #[test_case("this is (another) long string that will be heap allocated", true ; "long should inline")]
-    #[test_case("this is (another) long string that will be heap allocated", false ; "long not inline")]
-    #[test_case(EIGHTEEN_MB_STR, true ; "huge should inline")]
-    #[test_case(EIGHTEEN_MB_STR, false ; "huge not inline")]
-    fn test_from_box_str(initial: &'static str, try_to_inline: bool) {
-        let box_str = String::from(initial).into_boxed_str();
-
-        let r = Repr::from_box_str(box_str, try_to_inline);
-
-        assert_eq!(r.as_str(), initial);
-        assert_eq!(r.len(), initial.len());
-
-        // when converting from a Box<str> we optionally inline the string, if it would fit
-        if initial.is_empty() {
-            // we should always inline the string, if the length of the source string is 0
-            assert!(!r.is_heap_allocated());
-            assert_eq!(r.capacity(), MAX_SIZE);
-        } else if initial.len() <= MAX_SIZE {
-            // we should inline the string, if we were asked to
-            assert_eq!(!r.is_heap_allocated(), try_to_inline);
-            let expected_capacity = if try_to_inline {
-                MAX_SIZE
-            } else {
-                initial.len()
-            };
-            assert_eq!(r.capacity(), expected_capacity);
-        } else {
-            assert!(r.is_heap_allocated());
-            assert_eq!(r.capacity(), initial.len());
-        }
     }
 }

@@ -76,6 +76,7 @@ impl InlineBuffer {
     /// Consumes the [`InlineBuffer`] returning the entire underlying array and the length of the
     /// string that it contains
     #[inline]
+    #[cfg(feature = "smallvec")]
     pub fn into_array(self) -> ([u8; MAX_SIZE], usize) {
         let mut buffer = self.0;
 
@@ -121,54 +122,7 @@ impl InlineBuffer {
 
 #[cfg(test)]
 mod tests {
-    use quickcheck_macros::quickcheck;
     use rayon::prelude::*;
-
-    use super::{
-        InlineBuffer,
-        MAX_SIZE,
-    };
-
-    #[test]
-    fn test_into_array() {
-        let s = "hello world!";
-
-        let inline = unsafe { InlineBuffer::new(s) };
-        let (array, length) = inline.into_array();
-
-        assert_eq!(s.len(), length);
-
-        // all bytes after the length should be 0
-        assert!(array[length..].iter().all(|b| *b == 0));
-
-        // taking a string slice should give back the same string as the original
-        let ex_s = unsafe { std::str::from_utf8_unchecked(&array[..length]) };
-        assert_eq!(s, ex_s);
-    }
-
-    #[quickcheck]
-    #[cfg_attr(miri, ignore)]
-    fn quickcheck_into_array(s: String) {
-        let mut total_length = 0;
-        let s: String = s
-            .chars()
-            .take_while(|c| {
-                total_length += c.len_utf8();
-                total_length < MAX_SIZE
-            })
-            .collect();
-
-        let inline = unsafe { InlineBuffer::new(&s) };
-        let (array, length) = inline.into_array();
-        assert_eq!(s.len(), length);
-
-        // all bytes after the length should be 0
-        assert!(array[length..].iter().all(|b| *b == 0));
-
-        // taking a string slice should give back the same string as the original
-        let ex_s = unsafe { std::str::from_utf8_unchecked(&array[..length]) };
-        assert_eq!(s, ex_s);
-    }
 
     #[test]
     #[ignore] // we run this in CI, but unless you're compiling in release, this takes a while
@@ -194,5 +148,56 @@ mod tests {
                 }
             }
         })
+    }
+
+    #[cfg(feature = "smallvec")]
+    mod smallvec {
+        use quickcheck_macros::quickcheck;
+
+        use crate::repr::{
+            InlineBuffer,
+            MAX_SIZE,
+        };
+
+        #[test]
+        fn test_into_array() {
+            let s = "hello world!";
+
+            let inline = unsafe { InlineBuffer::new(s) };
+            let (array, length) = inline.into_array();
+
+            assert_eq!(s.len(), length);
+
+            // all bytes after the length should be 0
+            assert!(array[length..].iter().all(|b| *b == 0));
+
+            // taking a string slice should give back the same string as the original
+            let ex_s = unsafe { std::str::from_utf8_unchecked(&array[..length]) };
+            assert_eq!(s, ex_s);
+        }
+
+        #[quickcheck]
+        #[cfg_attr(miri, ignore)]
+        fn quickcheck_into_array(s: String) {
+            let mut total_length = 0;
+            let s: String = s
+                .chars()
+                .take_while(|c| {
+                    total_length += c.len_utf8();
+                    total_length < MAX_SIZE
+                })
+                .collect();
+
+            let inline = unsafe { InlineBuffer::new(&s) };
+            let (array, length) = inline.into_array();
+            assert_eq!(s.len(), length);
+
+            // all bytes after the length should be 0
+            assert!(array[length..].iter().all(|b| *b == 0));
+
+            // taking a string slice should give back the same string as the original
+            let ex_s = unsafe { std::str::from_utf8_unchecked(&array[..length]) };
+            assert_eq!(s, ex_s);
+        }
     }
 }

@@ -21,6 +21,7 @@ impl CompactString {
     ///
     /// assert_eq!(&[104, 101, 108, 108, 111][..], &bytes[..]);
     /// ```
+    #[cfg_attr(docsrs, doc(cfg(feature = "smallvec")))]
     pub fn into_bytes(self) -> SmallVec<[u8; MAX_SIZE]> {
         self.0.into_bytes()
     }

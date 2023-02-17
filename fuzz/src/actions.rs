@@ -337,7 +337,7 @@ impl Action<'_> {
                 let compact_clone = compact.clone();
                 // when cloning, even if the original CompactString was heap allocated, we should
                 // inline the new one, if possible
-                if compact.capacity() <= super::MAX_INLINE_LENGTH {
+                if compact.len() <= super::MAX_INLINE_LENGTH {
                     assert!(!compact_clone.is_heap_allocated())
                 }
                 let og = std::mem::replace(compact, compact_clone);

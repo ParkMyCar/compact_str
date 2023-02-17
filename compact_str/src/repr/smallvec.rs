@@ -1,7 +1,11 @@
 use smallvec::SmallVec;
 
 use super::inline::InlineBuffer;
-use super::{Repr, HEAP_MASK, MAX_SIZE};
+use super::{
+    Repr,
+    HEAP_MASK,
+    MAX_SIZE,
+};
 
 impl Repr {
     /// Consumes the [`Repr`] returning a byte vector in a [`SmallVec`]
@@ -25,8 +29,9 @@ impl Repr {
 
 #[cfg(test)]
 mod tests {
-    use crate::CompactString;
     use test_case::test_case;
+
+    use crate::CompactString;
 
     #[test_case("" ; "empty")]
     #[test_case("abc" ; "short")]

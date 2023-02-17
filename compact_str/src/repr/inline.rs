@@ -135,7 +135,7 @@ mod tests {
 
         let inline = unsafe { InlineBuffer::new(s) };
         let (array, length) = inline.into_array();
-        
+
         assert_eq!(s.len(), length);
 
         // all bytes after the length should be 0

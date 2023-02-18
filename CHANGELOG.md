@@ -1,4 +1,31 @@
 # Upcoming
+* Add `into_bytes()` method behind the `smallvec` feature which converts a `CompactString` into a byte vector using a [`SmallVec`](https://docs.rs/smallvec/latest/smallvec/)
+  * Implemented in [`api: Add CompactString::into_bytes`](https://github.com/ParkMyCar/compact_str/pull/258)
+* Add `from_string_buffer()` method which __always__ re-uses the underlying buffer from `String`
+  * Implemented in [`api: Update From<String> and From<Box<str>> to eagerly inline`](https://github.com/ParkMyCar/compact_str/pull/256)
+* Eagerly inline strings when `Clone`-ing a `CompactString`
+  * Implemented in [`perf: Inline strings when Clone-ing`](https://github.com/ParkMyCar/compact_str/pull/254)
+* Updated `From<String>` and `From<Box<str>>` to eagerly inline strings
+  * Implemented in [`api: Update From<String> and From<Box<str>> to eagerly inline`](https://github.com/ParkMyCar/compact_str/pull/256)
+* Fix a typo in the documentation on `CompactString`
+  * Implemented in [`Fix a typo in documentation`](https://github.com/ParkMyCar/compact_str/pull/235/files)
+* Implement `AsRef<[u8]>` for `CompactString`
+  * Implemented in [`impl AsRef<[u8]> for CompactString`](https://github.com/ParkMyCar/compact_str/pull/230/files)
+* Improve the performance of string and length access by using branchless instructions
+  * Implemented in [`perf: Refactor underlying buffers for branchless access`](https://github.com/ParkMyCar/compact_str/pull/229)
+* Implement `From<CompactString> for Cow<'_, str>`
+  * Implemented in [`Implement From<CompactString> for Cow<'_, str>`](https://github.com/ParkMyCar/compact_str/pull/228)
+* Improve the performance of `CompactString::new_inline`
+  * Implemented in [`Copy inline string reversed`](https://github.com/ParkMyCar/compact_str/pull/219)
+* Implement more `FromIterator` and `Extend` traits for `CompactString`
+  * Implemented in [`Implement more FromIterator & Extend traits`](https://github.com/ParkMyCar/compact_str/pull/218)
+* Add `into_string()` method
+  * Implemented in [`Implement more FromIterator & Extend traits`](https://github.com/ParkMyCar/compact_str/pull/218)
+
+# 0.6.1
+### August 22, 2022
+* Enable the `std` feature in `proptest` to fix documentation on docs.rs
+  * Implemented in [`Enable "proptest/std" feature`](https://github.com/ParkMyCar/compact_str/pull/217)
 
 # 0.6.0
 ### August 21, 2022

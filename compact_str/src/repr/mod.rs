@@ -501,9 +501,8 @@ impl Clone for Repr {
             let heap = unsafe { &*(this as *const _ as *const HeapBuffer) };
 
             // If the contained string is small enough, we will inline it instead of allocating
-            if heap.capacity() <= MAX_SIZE {
-                // SAFETY: Checked to make sure the capacity is <= MAX_SIZE, which means the length
-                // of the string is also <= MAX_SIZE
+            if heap.len <= MAX_SIZE {
+                // SAFETY: Checked to make sure the length is <= MAX_SIZE
                 let inline = unsafe { InlineBuffer::new(this.as_str()) };
                 // SAFETY: InlineBuffer and Repr have the same layout
                 unsafe { mem::transmute(inline) }

@@ -87,6 +87,55 @@ mod tests;
 /// assert_eq!(CompactString::new("chicago"), "chicago");
 /// assert_eq!(CompactString::new("houston"), String::from("houston"));
 /// ```
+///
+/// # Converting from a `String`
+/// It's important that a `CompactString` interops well with `String`, so you can easily use both in
+/// your code base.
+///
+/// `CompactString` implements `From<String>` and operates in the following manner:
+/// - Eagerly inlines the string, possibly dropping excess capacity
+/// - Otherwise re-uses the same underlying buffer from `String`
+///
+/// ```
+/// use compact_str::CompactString;
+///
+/// // eagerly inlining
+/// let short = String::from("hello world");
+/// let short_c = CompactString::from(short);
+/// assert!(!short_c.is_heap_allocated());
+///
+/// // dropping excess capacity
+/// let mut excess = String::with_capacity(256);
+/// excess.push_str("abc");
+///
+/// let excess_c = CompactString::from(excess);
+/// assert!(!excess_c.is_heap_allocated());
+/// assert!(excess_c.capacity() < 256);
+///
+/// // re-using the same buffer
+/// let long = String::from("this is a longer string that will be heap allocated");
+///
+/// let long_ptr = long.as_ptr();
+/// let long_len = long.len();
+/// let long_cap = long.capacity();
+///
+/// let mut long_c = CompactString::from(long);
+/// assert!(long_c.is_heap_allocated());
+///
+/// let cpt_ptr = long_c.as_ptr();
+/// let cpt_len = long_c.len();
+/// let cpt_cap = long_c.capacity();
+///
+/// // the original String and the CompactString point to the same place in memory, buffer re-use!
+/// assert_eq!(cpt_ptr, long_ptr);
+/// assert_eq!(cpt_len, long_len);
+/// assert_eq!(cpt_cap, long_cap);
+/// ```
+///
+/// ### Prevent Eagerly Inlining
+/// A consequence of eagerly inlining is you then need to de-allocate the existing buffer, which
+/// might not always be desirable if you're converting a very large amount of `String`s. If your
+/// code is very sensitive to allocations, consider the [`CompactString::from_string_buffer`] API.
 #[derive(Clone)]
 #[repr(transparent)]
 pub struct CompactString(Repr);
@@ -1379,6 +1428,82 @@ impl CompactString {
     pub fn into_string(self) -> String {
         self.0.into_string()
     }
+
+    /// Convert a [`String`] into a [`CompactString`] _without inlining_.
+    ///
+    /// Note: You probably don't need to use this method, instead you should use `From<String>`
+    /// which is implemented for [`CompactString`].
+    ///
+    /// This method exists incase your code is very sensitive to memory allocations. Normally when
+    /// converting a [`String`] to a [`CompactString`] we'll inline short strings onto the stack.
+    /// But this results in [`Drop`]-ing the original [`String`], which causes memory it owned on
+    /// the heap to be deallocated. Instead when using this method, we always reuse the buffer that
+    /// was previously owned by the [`String`], so no trips to the allocator are needed.
+    ///
+    /// # Examples
+    ///
+    /// ### Short Strings
+    /// ```
+    /// use compact_str::CompactString;
+    ///
+    /// let short = "hello world".to_string();
+    /// let c_heap = CompactString::from_string_buffer(short);
+    ///
+    /// // using CompactString::from_string_buffer, we'll re-use the String's underlying buffer
+    /// assert!(c_heap.is_heap_allocated());
+    ///
+    /// // note: when Clone-ing a short heap allocated string, we'll eagerly inline at that point
+    /// let c_inline = c_heap.clone();
+    /// assert!(!c_inline.is_heap_allocated());
+    ///
+    /// assert_eq!(c_heap, c_inline);
+    /// ```
+    ///
+    /// ### Longer Strings
+    /// ```
+    /// use compact_str::CompactString;
+    ///
+    /// let x = "longer string that will be on the heap".to_string();
+    /// let c1 = CompactString::from(x);
+    ///
+    /// let y = "longer string that will be on the heap".to_string();
+    /// let c2 = CompactString::from_string_buffer(y);
+    ///
+    /// // for longer strings, we re-use the underlying String's buffer in both cases
+    /// assert!(c1.is_heap_allocated());
+    /// assert!(c2.is_heap_allocated());
+    /// ```
+    ///
+    /// ### Buffer Re-use
+    /// ```
+    /// use compact_str::CompactString;
+    ///
+    /// let og = "hello world".to_string();
+    /// let og_addr = og.as_ptr();
+    ///
+    /// let mut c = CompactString::from_string_buffer(og);
+    /// let ex_addr = c.as_ptr();
+    ///
+    /// // When converting to/from String and CompactString with from_string_buffer we always re-use
+    /// // the same underlying allocated memory/buffer
+    /// assert_eq!(og_addr, ex_addr);
+    ///
+    /// let long = "this is a long string that will be on the heap".to_string();
+    /// let long_addr = long.as_ptr();
+    ///
+    /// let mut long_c = CompactString::from(long);
+    /// let long_ex_addr = long_c.as_ptr();
+    ///
+    /// // When converting to/from String and CompactString with From<String>, we'll also re-use the
+    /// // underlying buffer, if the string is long, otherwise when converting to CompactString we
+    /// // eagerly inline
+    /// assert_eq!(long_addr, long_ex_addr);
+    /// ```
+    #[inline]
+    pub fn from_string_buffer(s: String) -> Self {
+        let repr = Repr::from_string(s, false);
+        CompactString(repr)
+    }
 }
 
 impl Default for CompactString {
@@ -1492,7 +1617,7 @@ impl<'a> From<&'a str> for CompactString {
 
 impl From<String> for CompactString {
     fn from(s: String) -> Self {
-        let repr = Repr::from_string(s);
+        let repr = Repr::from_string(s, true);
         CompactString(repr)
     }
 }
@@ -1507,6 +1632,7 @@ impl<'a> From<Cow<'a, str>> for CompactString {
     fn from(cow: Cow<'a, str>) -> Self {
         match cow {
             Cow::Borrowed(s) => s.into(),
+            // we separate these two so we can re-use the underlying buffer in the owned case
             Cow::Owned(s) => s.into(),
         }
     }
@@ -1514,7 +1640,8 @@ impl<'a> From<Cow<'a, str>> for CompactString {
 
 impl From<Box<str>> for CompactString {
     fn from(b: Box<str>) -> Self {
-        let repr = Repr::from_box_str(b);
+        let s = b.into_string();
+        let repr = Repr::from_string(s, true);
         CompactString(repr)
     }
 }

@@ -9,7 +9,7 @@ impl CompactString {
     /// This consumes the [`CompactString`] and returns a [`SmallVec`], so we do not need to copy
     /// contents
     ///
-    /// Note: [`SmallVec`] is an inline-able version [`Vec`], just like [`CompactString`] is an
+    /// Note: [`SmallVec`] is an inline-able version of [`Vec`], just like [`CompactString`] is an
     /// inline-able version of [`String`].
     ///
     /// # Example

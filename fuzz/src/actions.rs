@@ -44,6 +44,8 @@ pub enum Action<'a> {
     Retain(u8, char),
     /// Clones each string, and drops the originals
     CloneAndDrop,
+    /// Converts each string into a byte vector, and then back into a string
+    RoundTripIntoBytes,
 }
 
 impl Action<'_> {
@@ -342,6 +344,38 @@ impl Action<'_> {
                 }
                 let og = std::mem::replace(compact, compact_clone);
                 drop(og);
+            }
+            RoundTripIntoBytes => {
+                // note: we don't operate on the cloned versions, we only use them for equality 
+                // checks, because Clone-ing a string will truncate it's capacity. We want to 
+                // operate on the "original" strings since they might have excess capacity, 
+                // "orphaned" bytes from popping, or other interesting scenarios
+
+                // create clones so we can check equality
+                let control_clone = control.clone();
+                let compact_clone = compact.clone();
+
+                // take ownership of the originals so we can roundtrip them
+                let old_control = std::mem::take(control);
+                let old_compact = std::mem::take(compact);
+                
+                let control_bytes = old_control.into_bytes();
+                let compact_bytes = old_compact.into_bytes();
+
+                // assert the byte content is the same
+                assert_eq!(control_bytes.len(), compact_bytes.len());
+                assert_eq!(&control_bytes[..], &compact_bytes[..]);
+
+                // roundtrip back to strings
+                let new_control = String::from_utf8(control_bytes).expect("invalid utf8");
+                let new_compact = CompactString::from_utf8(compact_bytes).expect("invalid utf8");
+
+                assert_eq!(new_control, new_compact);
+                assert_eq!(new_control, control_clone);
+                assert_eq!(new_compact, compact_clone);
+
+                *control = new_control;
+                *compact = new_compact;
             }
         }
     }

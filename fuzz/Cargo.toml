@@ -11,7 +11,7 @@ cargo-fuzz = true
 [dependencies]
 arbitrary = { version = "1.1.1", features = ["derive"] }
 bytes = "1"
-compact_str = { path = "../compact_str", features = ["bytes"] }
+compact_str = { path = "../compact_str", features = ["bytes", "smallvec"] }
 rand = { version = "0.8", features = ["small_rng"] }
 rand_distr = "0.4"
 

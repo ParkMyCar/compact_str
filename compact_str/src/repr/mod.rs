@@ -7,6 +7,8 @@ use std::borrow::Cow;
 
 #[cfg(feature = "bytes")]
 mod bytes;
+#[cfg(feature = "smallvec")]
+mod smallvec;
 
 mod capacity;
 mod heap;

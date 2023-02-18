@@ -73,6 +73,31 @@ impl InlineBuffer {
         Self::new_const("")
     }
 
+    /// Consumes the [`InlineBuffer`] returning the entire underlying array and the length of the
+    /// string that it contains
+    #[inline]
+    #[cfg(feature = "smallvec")]
+    pub fn into_array(self) -> ([u8; MAX_SIZE], usize) {
+        let mut buffer = self.0;
+
+        let length = core::cmp::min(
+            (buffer[MAX_SIZE - 1].wrapping_sub(LENGTH_MASK)) as usize,
+            MAX_SIZE,
+        );
+
+        let last_byte_ref = &mut buffer[MAX_SIZE - 1];
+
+        // unset the last byte of the buffer if it's just storing the length of the string
+        //
+        // Note: we should never add an `else` statement here, keeping the conditional simple allows
+        // the compiler to optimize this to a conditional-move instead of a branch
+        if length < MAX_SIZE {
+            *last_byte_ref = 0;
+        }
+
+        (buffer, length)
+    }
+
     /// Set's the length of the content for this [`InlineBuffer`]
     ///
     /// # SAFETY:
@@ -123,5 +148,56 @@ mod tests {
                 }
             }
         })
+    }
+
+    #[cfg(feature = "smallvec")]
+    mod smallvec {
+        use quickcheck_macros::quickcheck;
+
+        use crate::repr::{
+            InlineBuffer,
+            MAX_SIZE,
+        };
+
+        #[test]
+        fn test_into_array() {
+            let s = "hello world!";
+
+            let inline = unsafe { InlineBuffer::new(s) };
+            let (array, length) = inline.into_array();
+
+            assert_eq!(s.len(), length);
+
+            // all bytes after the length should be 0
+            assert!(array[length..].iter().all(|b| *b == 0));
+
+            // taking a string slice should give back the same string as the original
+            let ex_s = unsafe { std::str::from_utf8_unchecked(&array[..length]) };
+            assert_eq!(s, ex_s);
+        }
+
+        #[quickcheck]
+        #[cfg_attr(miri, ignore)]
+        fn quickcheck_into_array(s: String) {
+            let mut total_length = 0;
+            let s: String = s
+                .chars()
+                .take_while(|c| {
+                    total_length += c.len_utf8();
+                    total_length < MAX_SIZE
+                })
+                .collect();
+
+            let inline = unsafe { InlineBuffer::new(&s) };
+            let (array, length) = inline.into_array();
+            assert_eq!(s.len(), length);
+
+            // all bytes after the length should be 0
+            assert!(array[length..].iter().all(|b| *b == 0));
+
+            // taking a string slice should give back the same string as the original
+            let ex_s = unsafe { std::str::from_utf8_unchecked(&array[..length]) };
+            assert_eq!(s, ex_s);
+        }
     }
 }

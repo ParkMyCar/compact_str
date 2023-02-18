@@ -14,3 +14,5 @@ mod quickcheck;
 mod rkyv;
 #[cfg(feature = "serde")]
 mod serde;
+#[cfg(feature = "smallvec")]
+mod smallvec;

@@ -42,11 +42,13 @@ A `CompactString` specifically has the following properties:
     * 12 bytes if running on a 32 bit architecture
   * Strings longer than 24 bytes are stored on the heap
   * `Clone` is `O(n)`
-  * Conversion `From<String>` or `From<Box<str>>` is `O(1)`
+  * `From<String>` or `From<Box<str>>` re-uses underlying buffer
+    * Eagerly inlines small strings
   * Heap based string grows at a rate of 1.5x
     * The std library `String` grows at a rate of 2x
   * Space optimized for `Option<_>`
     * `size_of::<CompactString>() == size_of::<Option<CompactString>>()`
+  * Uses [branchless instructions](https://en.algorithmica.org/hpc/pipelining/branchless/) for string accesses
 
 ### Traits
 This crate exposes two traits, `ToCompactString` and `CompactStringExt`.
@@ -75,6 +77,7 @@ This crate exposes one macro `format_compact!` that can be used to create `Compa
 * `proptest`, which implements the [`proptest::arbitrary::Arbitrary`](https://docs.rs/proptest/1/proptest/arbitrary/trait.Arbitrary.html) trait for fuzzing
 * `quickcheck`, which implements the [`quickcheck::Arbitrary`](https://docs.rs/quickcheck/1/quickcheck/trait.Arbitrary.html) trait for fuzzing
 * `rkyv`, which implements [`rkyv::Archive`](https://docs.rs/rkyv/0.7/rkyv/trait.Archive.html), [`rkyv::Serialize`](https://docs.rs/rkyv/0.7/rkyv/trait.Serialize.html) and [`rkyv::Deserialize`](https://docs.rs/rkyv/0.7/rkyv/trait.Deserialize.html) for fast zero-copy serialization, interchangable with serialized Strings
+* `smallvec`, provides the `into_bytes()` method which enables you to convert a `CompactString` into a byte vector, using [`smallvec::SmallVec`](https://docs.rs/smallvec/latest/smallvec/struct.SmallVec.html)
 
 ### How it works
 Note: this explanation assumes a 64-bit architecture, for 32-bit architectures generally divide any number by 2.

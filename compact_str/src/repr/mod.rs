@@ -570,6 +570,7 @@ impl Repr {
     /// types, but that prevented us from defining a "niche" value to make `Option<CompactString>`
     /// the same size as just `CompactString`
     #[inline(always)]
+    #[cfg(feature = "smallvec")]
     const unsafe fn into_inline(self) -> InlineBuffer {
         core::mem::transmute(self)
     }

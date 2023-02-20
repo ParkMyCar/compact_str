@@ -44,6 +44,8 @@ pub enum Action<'a> {
     Retain(u8, char),
     /// Clones each string, and drops the originals
     CloneAndDrop,
+    /// Calls into_bytes, validates equality, and converts back into strings
+    RoundTripIntoBytes,
 }
 
 impl Action<'_> {
@@ -342,6 +344,33 @@ impl Action<'_> {
                 }
                 let og = std::mem::replace(compact, compact_clone);
                 drop(og);
+            }
+            RoundTripIntoBytes => {
+                // cloning truncates capacity, so we only use the clones for checking equality
+                let control_clone = control.clone();
+                let compact_clone = compact.clone();
+
+                let og_control = std::mem::take(control);
+                let og_compact = std::mem::take(compact);
+
+                let control_bytes = og_control.into_bytes();
+                let comapct_bytes = og_compact.into_bytes();
+
+                // check to make sure the bytes are the same!
+                assert_eq!(control_bytes.len(), comapct_bytes.len());
+                assert_eq!(&control_bytes[..], &comapct_bytes[..]);
+
+                // roundtrip back into strings
+                let new_control = String::from_utf8(control_bytes).expect("valid UTF-8");
+                let new_compact = CompactString::from_utf8(comapct_bytes).expect("valid UTF-8");
+
+                // make sure we roundtripped successfully
+                assert_eq!(new_control, control_clone);
+                assert_eq!(new_compact, compact_clone);
+
+                // re-assign
+                *control = new_control;
+                *compact = new_compact;
             }
         }
     }

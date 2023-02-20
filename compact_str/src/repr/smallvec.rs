@@ -1,6 +1,5 @@
 use smallvec::SmallVec;
 
-use super::inline::InlineBuffer;
 use super::{
     Repr,
     HEAP_MASK,
@@ -20,7 +19,8 @@ impl Repr {
             let bytes = string.into_bytes();
             SmallVec::from_vec(bytes)
         } else {
-            let inline: InlineBuffer = unsafe { std::mem::transmute(self) };
+            // SAFETY: We just checked the discriminant to make sure we're an InlineBuffer
+            let inline = unsafe { self.into_inline() };
             let (array, length) = inline.into_array();
             SmallVec::from_buf_and_len(array, length)
         }

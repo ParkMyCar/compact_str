@@ -44,7 +44,7 @@ mod tests {
 
     #[test]
     fn test_buffer_reuse() {
-        let mut c = CompactString::from("I am a longer string that will be on the heap");
+        let c = CompactString::from("I am a longer string that will be on the heap");
         let c_ptr = c.as_ptr();
 
         let bytes = c.into_bytes();
@@ -61,7 +61,7 @@ mod tests {
     #[proptest]
     #[cfg_attr(miri, ignore)]
     fn proptest_buffer_reuse(#[strategy(rand_long_unicode())] s: String) {
-        let mut c = CompactString::from(s);
+        let c = CompactString::from(s);
         let c_ptr = c.as_ptr();
 
         let bytes = c.into_bytes();

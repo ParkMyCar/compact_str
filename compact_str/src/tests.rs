@@ -930,7 +930,7 @@ fn test_from_string_buffer_small_string_with_excess_capacity() {
     let str_cap = string.capacity();
 
     // using from_string_buffer should always re-use the underlying buffer
-    let mut compact = CompactString::from_string_buffer(string);
+    let compact = CompactString::from_string_buffer(string);
     assert!(compact.is_heap_allocated());
 
     let cpt_ptr = compact.as_ptr();
@@ -964,7 +964,7 @@ fn test_from_string_buffer_small_string_with_no_excess_capacity() {
     let str_cap = string.capacity();
 
     // using from_string_buffer should always re-use the underlying buffer
-    let mut compact = CompactString::from_string_buffer(string);
+    let compact = CompactString::from_string_buffer(string);
     assert!(compact.is_heap_allocated());
 
     let cpt_ptr = compact.as_ptr();

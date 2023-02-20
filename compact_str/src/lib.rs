@@ -880,7 +880,7 @@ impl CompactString {
 
     /// Converts a [`CompactString`] to a raw pointer.
     #[inline]
-    pub fn as_ptr(&mut self) -> *const u8 {
+    pub fn as_ptr(&self) -> *const u8 {
         self.0.as_slice().as_ptr()
     }
 

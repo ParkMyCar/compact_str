@@ -1,4 +1,6 @@
 # Upcoming
+* Change `as_ptr()` to require only `&self` and not `&mut self`
+  * Implemented in [``]()
 * Add `into_bytes()` method behind the `smallvec` feature which converts a `CompactString` into a byte vector using a [`SmallVec`](https://docs.rs/smallvec/latest/smallvec/)
   * Implemented in [`api: Add CompactString::into_bytes`](https://github.com/ParkMyCar/compact_str/pull/258)
 * Add `from_string_buffer()` method which __always__ re-uses the underlying buffer from `String`

@@ -126,7 +126,7 @@ jobs:
     name: cargo test -Zrandomize-layout
     runs-on: ubuntu-latest
     env:
-      RUSTFLAGS="-Zrandomize-layout"
+      RUSTFLAGS: -Zrandomize-layout
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1

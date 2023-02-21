@@ -122,6 +122,34 @@ jobs:
         run: |
           cargo miri test --all-features --manifest-path=compact_str/Cargo.toml
 
+  randomize-layout:
+    name: cargo test -Zrandomize-layout
+    runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS="-Zrandomize-layout"
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-nightly-test-randomize-layout
+          restore-keys: |
+            ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-nightly-test
+            ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-nightly
+      - name: Run Tests with Randomized Layout
+        run: |
+          cargo test --all-features --manifest-path=compact_str/Cargo.toml
+
   example-bytes:
     name: example - bytes
     runs-on: ubuntu-latest

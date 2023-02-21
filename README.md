@@ -32,7 +32,7 @@
 
 ### About
 A `CompactString` is a more memory efficient string type, that can store smaller strings on the stack, and transparently stores longer strings on the heap (aka a small string optimization).
-They can mostly be used as a drop in replacement for `String` and are particularly useful in parsing, deserializing, or any other application where you may
+It can mostly be used as a drop in replacement for `String` and are particularly useful in parsing, deserializing, or any other application where you may
 have smaller strings.
 
 ### Properties
@@ -70,7 +70,7 @@ This crate exposes one macro `format_compact!` that can be used to create `Compa
 
 ### Features
 `compact_str` has the following optional features:
-* `serde`, which implements [`Deserialize`](https://docs.rs/serde/1/serde/trait.Deserialize.html) and [`Serialize`](https://docs.rs/serde/1/serde/trait.Serialize.html) from the popular [`serde`](https://docs.rs/serde/1/serde/) crate, for `CompactString`.
+* `serde`, which implements [`Deserialize`](https://docs.rs/serde/1/serde/trait.Deserialize.html) and [`Serialize`](https://docs.rs/serde/1/serde/trait.Serialize.html) from the popular [`serde`](https://docs.rs/serde/1/serde/) crate, for `CompactString`
 * `bytes`, which provides two methods `from_utf8_buf<B: Buf>(buf: &mut B)` and `from_utf8_buf_unchecked<B: Buf>(buf: &mut B)`, which allows for the creation of a `CompactString` from a [`bytes::Buf`](https://docs.rs/bytes/1/bytes/trait.Buf.html)
 * `markup`, which implements [`Render`](https://docs.rs/markup/0.13/markup/trait.Render.html) trait, so `CompactString`s can be used in templates as HTML escaped strings
 * `arbitrary`, which implements the [`arbitrary::Arbitrary`](https://docs.rs/arbitrary/1/arbitrary/trait.Arbitrary.html) trait for fuzzing
@@ -102,24 +102,23 @@ The memory layout of a `CompactString` looks something like:
 
 #### Memory Layout
 Internally a `CompactString` has two variants:
+
 1. **Inline**, a string <= 24 bytes long
 2. **Heap** allocated, a string > 24 bytes long
 
-To maximize memory usage, we use a [`union`](https://doc.rust-lang.org/reference/items/unions.html) instead of an `enum`. In Rust an `enum` requires at least 1 byte
-for the discriminant (tracking what variant we are), instead we use a `union` which allows us to manually define the discriminant. `CompactString` defines the
-discriminant *within* the last byte, using any extra bits for metadata. Specifically the discriminant has two variants:
+We define a discriminant (aka track which variant we are) *within* the last byte, specifically:
 
 1. `0b11111110` - All 1s with a trailing 0, indicates **heap** allocated
 2. `0b11XXXXXX` - Two leading 1s, indicates **inline**, with the trailing 6 bits used to store the length
 
-and specifically the overall memory layout of a `CompactString` is:
+and the overall memory layout of a `CompactString` is:
 
 1. `heap:   { ptr: NonNull<u8>, len: usize, cap: Capacity }`
 2. `inline: { buffer: [u8; 24] }`
 
 <sub>Both variants are 24 bytes long</sub>
 
-For **heap** allocated strings we use a custom `BoxString` which normally stores the capacity of the string on the stack, but also optionally allows us to store it on the heap. Since we use the last byte to track our discriminant, we only have 7 bytes to store the capacity, or 3 bytes on a 32-bit architecture. 7 bytes allows us to store a value up to `2^56`, aka 64 petabytes, while 3 bytes only allows us to store a value up to `2^24`, aka 16 megabytes. 
+For **heap** allocated strings we use a custom `HeapBuffer` which normally stores the capacity of the string on the stack, but also optionally allows us to store it on the heap. Since we use the last byte to track our discriminant, we only have 7 bytes to store the capacity, or 3 bytes on a 32-bit architecture. 7 bytes allows us to store a value up to `2^56`, aka 64 petabytes, while 3 bytes only allows us to store a value up to `2^24`, aka 16 megabytes. 
 
 For 64-bit architectures we always inline the capacity, because we can safely assume our strings will never be larger than 64 petabytes, but on 32-bit architectures, when creating or growing a `CompactString`, if the text is larger than 16MB then we move the capacity onto the heap. 
 
@@ -141,12 +140,12 @@ Specifically, the last byte on the stack for a `CompactString` has the following
 ### Testing
 Strings and unicode can be quite messy, even further, we're working with things at the bit level. `compact_str` has an _extensive_ test suite comprised of unit testing, property testing, and fuzz testing, to ensure our invariants are upheld. We test across all major OSes (Windows, macOS, and Linux), architectures (64-bit and 32-bit), and endian-ness (big endian and little endian).
 
-Fuzz testing is run with `libFuzzer` _and_ `AFL++` with `AFL++` running on both `x86_64` and `ARMv7` architectures. We test with [`miri`](https://github.com/rust-lang/miri) to catch cases of undefined behavior, and run all tests on every rust compiler since `v1.49` to ensure support for our minimum supported Rust version (MSRV).
+Fuzz testing is run with `libFuzzer`, `AFL++`, *and* `honggfuzz`, with `AFL++` running on both `x86_64` and `ARMv7` architectures. We test with [`miri`](https://github.com/rust-lang/miri) to catch cases of undefined behavior, and run all tests on every Rust compiler since `v1.57` to ensure support for our minimum supported Rust version (MSRV).
 
 ### `unsafe` code
-`CompactString` uses a bit of unsafe code because accessing fields from a `union` is inherently unsafe, the compiler can't guarantee what value is actually stored.
-We also have some manually implemented heap data structures, i.e. `BoxString`, and mess with bytes at a bit level.
-That being said, uses of unsafe code in this library are quite limited and constrained to only where absolutely necessary, and always documented with
+`CompactString` uses a bit of unsafe code because we manually define what variant we are, so unlike an enum, the compiler can't guarantee what value is actually stored.
+We also have some manually implemented heap data structures, i.e. `HeapBuffer`, and mess with bytes at a bit level, to make the most out of our resources.
+That being said, uses of unsafe code in this library are constrained to only where *absolutely* necessary, and always documented with
 `// SAFETY: <reason>`.
 
 ### Similar Crates

@@ -1,4 +1,10 @@
 # Upcoming
+... all released!
+
+# 0.7.0
+### February 21, 2023
+* Use the `-Zrandomize-layout` `rustc` flag in CI
+  * Implemented in [`ci: Randomize Layout in CI`](https://github.com/ParkMyCar/compact_str/pull/266)
 * Change `as_ptr()` to require only `&self` and not `&mut self`
   * Implemented in [`refactor: Change CompactString::as_ptr to take &self`](https://github.com/ParkMyCar/compact_str/pull/262)
 * Add `into_bytes()` method behind the `smallvec` feature which converts a `CompactString` into a byte vector using a [`SmallVec`](https://docs.rs/smallvec/latest/smallvec/)

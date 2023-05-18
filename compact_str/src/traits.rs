@@ -13,7 +13,6 @@ use super::repr::{
     IntoRepr,
     Repr,
 };
-use super::utility::count;
 use crate::CompactString;
 
 /// A trait for converting a value to a `CompactString`.
@@ -101,11 +100,8 @@ impl<T: fmt::Display> ToCompactString for T {
             &num::NonZeroU128 as s => s.into_repr(),
             &num::NonZeroI128 as s => s.into_repr(),
             s => {
-                let num_bytes = count(s);
-                let mut c = CompactString::with_capacity(num_bytes);
-
+                let mut c = CompactString::new_inline("");
                 write!(&mut c, "{}", s).expect("fmt::Display incorrectly implemented!");
-
                 return c;
             }
         });

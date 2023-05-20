@@ -378,7 +378,6 @@ impl Action<'_> {
 
 fn to_index(s: &str, idx: u8) -> usize {
     s.char_indices()
-        .into_iter()
         .map(|(idx, _)| idx)
         .chain([s.len()])
         .cycle()

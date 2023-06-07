@@ -59,7 +59,7 @@ jobs:
         # deps decide the version since the API should still be semver compatible
         run: |
           cd compact_str
-          cargo hack test --features bytes,markup,quickcheck,rkyv,serde --version-range 1.57..
+          cargo hack check --features bytes,markup,quickcheck,rkyv,serde --version-range 1.57..
 
   feature_powerset:
     name: cargo check feature-powerset

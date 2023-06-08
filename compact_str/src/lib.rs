@@ -35,7 +35,6 @@ use std::iter::FusedIterator;
 
 mod features;
 mod macros;
-mod utility;
 
 mod repr;
 use repr::Repr;

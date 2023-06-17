@@ -353,20 +353,17 @@ impl Repr {
         let mut pointer = self as *const Self as *const u8;
         let heap_pointer = self.0 as *const u8;
 
-        let pointer_ref = &mut pointer;
-
         // initially has the value of the stack length, conditionally becomes the heap length
         let mut length = core::cmp::min((last_byte.wrapping_sub(LENGTH_MASK)) as usize, MAX_SIZE);
         let heap_length = self.1;
-        let length_ref = &mut length;
 
         // our discriminant is stored in the last byte and denotes stack vs heap
         //
         // Note: We should never add an `else` statement here, keeping the conditional simple allows
         // the compiler to optimize this to a conditional-move instead of a branch
         if last_byte == HEAP_MASK {
-            *pointer_ref = heap_pointer;
-            *length_ref = heap_length;
+            pointer = heap_pointer;
+            length = heap_length;
         }
 
         // SAFETY: We know the data is valid, aligned, and part of the same contiguous allocated

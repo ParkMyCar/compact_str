@@ -58,8 +58,7 @@ jobs:
         # Instead of pinning to a specific version of `arbitrary` or `proptest`, we'll let user's 
         # deps decide the version since the API should still be semver compatible
         run: |
-          cd compact_str
-          cargo hack check --features bytes,markup,quickcheck,rkyv,serde,smallvec --version-range 1.57..
+          cargo hack check --features bytes,markup,quickcheck,rkyv,serde,smallvec --manifest-path=compact_str/Cargo.toml --version-range 1.57..
 
   feature_powerset:
     name: cargo check feature-powerset

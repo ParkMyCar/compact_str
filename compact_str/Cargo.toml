@@ -30,7 +30,7 @@ static_assertions = "1"
 [dev-dependencies]
 cfg-if = "1"
 proptest = { version = "1.0.*", default-features = false, features = ["std"] }
-quickcheck = "1"
+quickcheck = { version = "1", default-features = false }
 quickcheck_macros = "1"
 rayon = "1.6.0"
 rkyv = { version = "0.7", default-features = false, features = ["alloc", "size_32"] }

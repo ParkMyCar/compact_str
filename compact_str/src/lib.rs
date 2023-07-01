@@ -216,6 +216,37 @@ impl CompactString {
         CompactString(Repr::new_inline(text))
     }
 
+    /// Creates a new inline [`CompactString`] from `&'static str`
+    /// at compile time.
+    ///
+    /// Complexity: O(1)
+    ///
+    /// # Examples
+    /// ```
+    /// use compact_str::CompactString;
+    ///
+    /// const DEFAULT_NAME: CompactString = CompactString::from_static_str("untitled");
+    /// ```
+    #[inline]
+    pub const fn from_static_str(text: &'static str) -> Self {
+        CompactString(Repr::from_static_str(text))
+    }
+
+    /// Get back the `&'static str` constructed by [`CompactString::from_static_str`].
+    ///
+    /// # Examples
+    /// ```
+    /// use compact_str::CompactString;
+    ///
+    /// const DEFAULT_NAME: CompactString = CompactString::from_static_str("untitled");
+    /// assert_eq!(DEFAULT_NAME.as_static_str().unwrap(), "untitled");
+    /// ```
+    #[inline]
+    #[rustversion::attr(since(1.58), const)]
+    pub fn as_static_str(&self) -> Option<&'static str> {
+        self.0.as_static_str()
+    }
+
     /// Creates a new empty [`CompactString`] with the capacity to fit at least `capacity` bytes.
     ///
     /// A `CompactString` will inline strings on the stack, if they're small enough. Specifically,
@@ -1020,15 +1051,22 @@ impl CompactString {
     ///
     /// ```
     /// # use compact_str::CompactString;
-    /// let mut s = CompactString::new("Hello, world!");
+    /// let mut s = CompactString::from_static_str("Hello, world!");
     /// assert_eq!(s.split_off(5), ", world!");
     /// assert_eq!(s, "Hello");
     /// ```
     pub fn split_off(&mut self, at: usize) -> Self {
-        let result = self[at..].into();
-        // SAFETY: the previous line `self[at...]` would have panicked if `at` was invalid
-        unsafe { self.set_len(at) };
-        result
+        if let Some(s) = self.as_static_str() {
+            let result = Self::from_static_str(&s[at..]);
+            // SAFETY: the previous line `self[at...]` would have panicked if `at` was invalid
+            unsafe { self.set_len(at) };
+            result
+        } else {
+            let result = self[at..].into();
+            // SAFETY: the previous line `self[at...]` would have panicked if `at` was invalid
+            unsafe { self.set_len(at) };
+            result
+        }
     }
 
     /// Remove a range from the [`CompactString`], and return it as an iterator.
@@ -1940,7 +1978,11 @@ impl From<CompactString> for String {
 impl From<CompactString> for Cow<'_, str> {
     #[inline]
     fn from(s: CompactString) -> Self {
-        Self::Owned(s.into_string())
+        if let Some(s) = s.as_static_str() {
+            Self::Borrowed(s)
+        } else {
+            Self::Owned(s.into_string())
+        }
     }
 }
 
@@ -2106,7 +2148,15 @@ impl fmt::Write for CompactString {
     fn write_fmt(mut self: &mut Self, args: fmt::Arguments<'_>) -> fmt::Result {
         match args.as_str() {
             Some(s) => {
-                self.push_str(s);
+                if self.is_empty() && !self.is_heap_allocated() {
+                    // Since self is currently an empty inline variant or
+                    // an empty `StaticStr` variant, constructing a new one
+                    // with `Self::from_static_str` is more efficient since
+                    // it is guaranteed to be O(1).
+                    *self = Self::from_static_str(s);
+                } else {
+                    self.push_str(s);
+                }
                 Ok(())
             }
             None => fmt::write(&mut self, args),

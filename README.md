@@ -134,7 +134,8 @@ Specifically, the last byte on the stack for a `CompactString` has the following
 * `[0, 191]` - Is the last byte of a UTF-8 char, the `CompactString` is stored on the stack and implicitly has a length of `24`
 * `[192, 215]` - Denotes a length in the range of `[0, 23]`, this `CompactString` is stored on the stack.
 * `216` - Denotes this `CompactString` is stored on the heap
-* `[217, 255]` - Unused, denotes e.g. the `None` variant for `Option<CompactString>`
+* `217` - Denotes this `CompactString` stores a `&'static str`.
+* `[218, 255]` - Unused, denotes e.g. the `None` variant for `Option<CompactString>`
 
 ### Testing
 Strings and unicode can be quite messy, even further, we're working with things at the bit level. `compact_str` has an _extensive_ test suite comprised of unit testing, property testing, and fuzz testing, to ensure our invariants are upheld. We test across all major OSes (Windows, macOS, and Linux), architectures (64-bit and 32-bit), and endian-ness (big endian and little endian).

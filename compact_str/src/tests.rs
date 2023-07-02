@@ -326,6 +326,50 @@ fn proptest_from_utf8_unchecked(#[strategy(rand_bytes())] bytes: Vec<u8>) {
     }
 }
 
+#[proptest]
+#[cfg_attr(miri, ignore)]
+fn proptest_to_ascii_uppercase(#[strategy(rand_unicode())] control: String) {
+    let compact = CompactString::new(&control);
+
+    let control = control.to_ascii_uppercase();
+    let compact = compact.to_ascii_uppercase();
+
+    prop_assert_eq!(control, compact);
+}
+
+#[proptest]
+#[cfg_attr(miri, ignore)]
+fn proptest_to_ascii_lowercase(#[strategy(rand_unicode())] control: String) {
+    let compact = CompactString::new(&control);
+
+    let control = control.to_ascii_lowercase();
+    let compact = compact.to_ascii_lowercase();
+
+    prop_assert_eq!(control, compact);
+}
+
+#[proptest]
+#[cfg_attr(miri, ignore)]
+fn proptest_to_uppercase(#[strategy(rand_unicode())] control: String) {
+    let compact = CompactString::new(&control);
+
+    let control = control.to_uppercase();
+    let compact = compact.to_uppercase();
+
+    prop_assert_eq!(control, compact);
+}
+
+#[proptest]
+#[cfg_attr(miri, ignore)]
+fn proptest_to_lowercase(#[strategy(rand_unicode())] control: String) {
+    let compact = CompactString::new(&control);
+
+    let control = control.to_lowercase();
+    let compact = compact.to_lowercase();
+
+    prop_assert_eq!(control, compact);
+}
+
 #[test]
 fn test_const_creation() {
     const EMPTY: CompactString = CompactString::new_inline("");

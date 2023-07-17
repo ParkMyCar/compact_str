@@ -131,11 +131,10 @@ For **inline** strings we only have a 24 byte buffer on the stack. This might ma
 To do this, we utilize the fact that the last byte of our string could only ever have a value in the range `[0, 192)`. We know this because all strings in Rust are valid [UTF-8](https://en.wikipedia.org/wiki/UTF-8), and the only valid byte pattern for the last byte of a UTF-8 character (and thus the possible last byte of a string) is `0b0XXXXXXX` aka `[0, 128)` or `0b10XXXXXX` aka `[128, 192)`. This leaves all values in `[192, 255]` as unused in our last byte. Therefore, we can use values in the range of `[192, 215]` to represent a length in the range of `[0, 23]`, and if our last byte has a value `< 192`, we know that's a UTF-8 character, and can interpret the length of our string as `24`.
 
 Specifically, the last byte on the stack for a `CompactString` has the following uses:
-* `[0, 192)` - Is the last byte of a UTF-8 char, the `CompactString` is stored on the stack and implicitly has a length of `24`
+* `[0, 191]` - Is the last byte of a UTF-8 char, the `CompactString` is stored on the stack and implicitly has a length of `24`
 * `[192, 215]` - Denotes a length in the range of `[0, 23]`, this `CompactString` is stored on the stack.
-* `[215, 254)` - Unused
-* `254` - Denotes this `CompactString` is stored on the heap
-* `255` - Denotes the `None` variant for an `Option<CompactString>`
+* `216` - Denotes this `CompactString` is stored on the heap
+* `[217, 255]` - Unused, denotes e.g. the `None` variant for `Option<CompactString>`
 
 ### Testing
 Strings and unicode can be quite messy, even further, we're working with things at the bit level. `compact_str` has an _extensive_ test suite comprised of unit testing, property testing, and fuzz testing, to ensure our invariants are upheld. We test across all major OSes (Windows, macOS, and Linux), architectures (64-bit and 32-bit), and endian-ness (big endian and little endian).

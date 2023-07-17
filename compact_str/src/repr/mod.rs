@@ -14,23 +14,23 @@ mod capacity;
 mod heap;
 mod inline;
 mod iter;
-mod nonmax;
+mod last_utf8_char;
 mod num;
 mod traits;
 
 use capacity::Capacity;
 use heap::HeapBuffer;
 use inline::InlineBuffer;
-use nonmax::NonMaxU8;
+use last_utf8_char::LastUtf8Char;
 pub use traits::IntoRepr;
 
 /// The max size of a string we can fit inline
 pub const MAX_SIZE: usize = std::mem::size_of::<String>();
 /// Used as a discriminant to identify different variants
-pub const HEAP_MASK: u8 = 0b11111110;
+pub const HEAP_MASK: u8 = LastUtf8Char::Heap as u8;
 /// When our string is stored inline, we represent the length of the string in the last byte, offset
 /// by `LENGTH_MASK`
-pub const LENGTH_MASK: u8 = 0b11000000;
+pub const LENGTH_MASK: u8 = LastUtf8Char::L0 as u8;
 
 const EMPTY: Repr = Repr::new_inline("");
 
@@ -45,7 +45,7 @@ pub struct Repr(
     u16,
     u8,
     // ...so that the last byte can be a NonMax, which allows the compiler to see a niche value
-    NonMaxU8,
+    LastUtf8Char,
 );
 
 unsafe impl Send for Repr {}

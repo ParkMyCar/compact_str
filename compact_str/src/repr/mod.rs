@@ -335,7 +335,7 @@ impl Repr {
 
     #[inline]
     pub fn pop(&mut self) -> Option<char> {
-        let ch = self.as_str().chars().rev().next()?;
+        let ch = self.as_str().chars().next_back()?;
 
         // SAFETY: We know this is is a valid length which falls on a char boundary
         unsafe { self.set_len(self.len() - ch.len_utf8()) };

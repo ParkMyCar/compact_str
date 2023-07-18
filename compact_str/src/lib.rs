@@ -844,6 +844,42 @@ impl CompactString {
         core::ptr::copy_nonoverlapping(replace_with.as_ptr(), data.add(start), replace_with.len());
     }
 
+    /// Creates a new [`CompactString`] by repeating a string `n` times.
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if the capacity would overflow.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// use compact_str::CompactString;
+    /// assert_eq!(CompactString::new("abc").repeat(4), CompactString::new("abcabcabcabc"));
+    /// ```
+    ///
+    /// A panic upon overflow:
+    ///
+    /// ```should_panic
+    /// use compact_str::CompactString;
+    ///
+    /// // this will panic at runtime
+    /// let huge = CompactString::new("0123456789abcdef").repeat(usize::MAX);
+    /// ```
+    #[must_use]
+    pub fn repeat(&self, n: usize) -> Self {
+        if n == 0 || self.is_empty() {
+            Self::new_inline("")
+        } else if n == 1 {
+            self.clone()
+        } else {
+            let mut out = Self::with_capacity(self.len() * n);
+            (0..n).for_each(|_| out.push_str(self));
+            out
+        }
+    }
+
     /// Truncate the [`CompactString`] to a shorter length.
     ///
     /// If the length of the [`CompactString`] is less or equal to `new_len`, the call is a no-op.

@@ -24,31 +24,20 @@ jobs:
     name: libFuzzer [x86_64]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         name: Checkout compact_str
-      - uses: actions-rs/toolchain@v1
-        name: Install Rust
+          
+      - name: Install toolchain
+        run: |
+          rustup toolchain install nightly --no-self-update --profile minimal
+          rustup override set nightly
+      - name: Install cargo-fuzz
+        uses: taiki-e/install-action@v2
         with:
-          profile: minimal
-          toolchain: nightly
-          override: true
-      - uses: actions-rs/install@v0.1
-        name: Install cargo-fuzz
-        with:
-          crate: cargo-fuzz
-          version: latest
-      - uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-nightly-fuzz-libfuzzer
-          restore-keys: |
-            ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-nightly-fuzz
-            ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-nightly
+          tool: cargo-fuzz
+      - uses: Swatinem/rust-cache@v2
+
+
       - name: Set Fuzz Time
         run: |
           if [[ "${{github.event_name}}" == "push" || "${{github.event_name}}" == "pull_request" ]]; then
@@ -57,11 +46,8 @@ jobs:
             echo "fuzz_time=1800" >> $GITHUB_ENV
           fi
           echo "${{ env.fuzz_time }}"
-      - uses: actions-rs/cargo@v1
-        name: Fuzz!
-        with:
-          command: fuzz
-          args: run --features=libfuzzer-sys --debug-assertions compact_str -- -max_total_time=${{ env.fuzz_time }}
+      - name: Fuzz!
+        run: cargo fuzz run --features=libfuzzer-sys --debug-assertions compact_str -- -max_total_time=${{ env.fuzz_time }}
       - name: File Issue (if failure found)
         if: failure()
         uses: JasonEtco/create-an-issue@v2.9

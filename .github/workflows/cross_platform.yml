@@ -20,89 +20,60 @@ env:
   MIRIFAGS: "-Zmiri-tag-raw-pointers -Zmiri-check-number-validity"
 
 jobs:
-  x_plat_os:
-    name: x_plat_os
-    strategy:
-      matrix:
-        os: [windows-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v3
-        name: Checkout Repo
-      - uses: actions-rs/toolchain@v1
-        name: Install Rust
-        with:
-          profile: minimal
-          toolchain: nightly
-          override: true
-          components: miri
-      - uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-x-plat-${{ matrix.os }}
-      - uses: actions-rs/cargo@v1
-        name: cargo test
-        with:
-          command: test
-          args: --release --all-features --manifest-path=compact_str/Cargo.toml -- --include-ignored
-      - uses: actions-rs/cargo@v1
-        name: cargo test miri
-        with:
-          command: miri
-          args: test --all-features --manifest-path=compact_str/Cargo.toml
-
-  x_plat_arch:
-    name: x_plat_arch
-    runs-on: ubuntu-latest
+  cross-test:
     strategy:
       fail-fast: false
       matrix:
-        target: [
-          # 32-bit Little Endian
-          "i686-unknown-linux-gnu",
-          "arm-unknown-linux-gnueabihf",
-          "armv7-unknown-linux-gnueabihf",
-          # 32-bit Big Endian
-          "powerpc-unknown-linux-gnu",
-          # 64-bit Little Endian
-          "powerpc64le-unknown-linux-gnu",
-          "aarch64-unknown-linux-gnu",
-          # 64-bit Big Endian
-          "powerpc64-unknown-linux-gnu",
-        ]
+        include:
+          - name: macos
+            OS: macos-latest
+            target: x86_64-apple-darwin
+          - name: Windows
+            OS: windows-latest
+            target: x86_64-pc-windows-msvc
+          - name: Linux 32-bit
+            OS: ubuntu-latest
+            target: i686-unknown-linux-gnu
+            cross: true
+          - name: Linux MIPS Big Endian 32-bit
+            OS: ubuntu-latest
+            target: mips-unknown-linux-gnu
+            cross: true
+          - name: Linux MIPS Little Endian 32-bit
+            OS: ubuntu-latest
+            target: mipsel-unknown-linux-gnu
+            cross: true
+          - name: Linux PowerPC Big Endian 32-bit
+            OS: ubuntu-latest
+            target: powerpc-unknown-linux-gnu
+            cross: true
+          - name: Linux PowerPC Little Endian 64-bit
+            OS: ubuntu-latest
+            target: powerpc64le-unknown-linux-gnu
+            cross: true
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.OS }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         name: Checkout Repo
-      - uses: actions-rs/toolchain@v1
-        name: Install Rust
+
+      - name: Install toolchain
+        run: |
+          rustup toolchain install nightly --no-self-update --profile minimal --component miri --target ${{ matrix.target }}
+          rustup override set nightly
+      - name: Install cross
+        if: "matrix.cross"
+        uses: taiki-e/install-action@cross
+
+      - uses: Swatinem/rust-cache@v2
         with:
-          profile: minimal
-          toolchain: nightly
-          target: ${{ matrix.target }}
-          override: true
-          components: miri
-      - uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-x-plat-${{ matrix.target }}
-      - uses: actions-rs/cargo@v1
-        name: cargo test
-        with:
-          use-cross: true
-          command: test
-          args: --release --all-features --manifest-path=compact_str/Cargo.toml --target ${{ matrix.target }}
-      - uses: actions-rs/cargo@v1
-        name: cargo test miri
-        with:
-          command: miri
-          args: test --all-features --manifest-path=compact_str/Cargo.toml --target ${{ matrix.target }}
+          key: ${{ matrix.target }}
+
+      - name: cargo test
+        if: "! matrix.cross"
+        run: cargo test --release --all-features --manifest-path=compact_str/Cargo.toml --target ${{ matrix.target }} -- --include-ignored
+      - name: cargo test
+        if: "matrix.cross"
+        run: cross test --release --all-features --manifest-path=compact_str/Cargo.toml --target ${{ matrix.target }}
+      - name: cargo test miri
+        run: cargo miri test --all-features --manifest-path=compact_str/Cargo.toml --target ${{ matrix.target }}

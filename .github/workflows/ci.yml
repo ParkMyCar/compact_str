@@ -18,109 +18,60 @@ jobs:
     name: cargo check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-      - uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-stable-check
-          restore-keys: |
-            ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-stable
-      - uses: actions-rs/cargo@v1
-        with:
-          command: check
-          args: --tests --all-features
+      - uses: actions/checkout@v4
+
+      - name: Install toolchain
+        run: rustup toolchain install stable --no-self-update --profile minimal
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Check
+        run: cargo check --tests --all-features
 
   test:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - toolchain: stable
+          - toolchain: nightly
+
     name: cargo test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-      - uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-stable-test
-          restore-keys: |
-            ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-stable
-      - name: Install cargo-nextest
-        uses: taiki-e/install-action@nextest
-      - name: cargo test
-        run: |
-          cargo nextest run --release --all-features --manifest-path=compact_str/Cargo.toml --run-ignored=all
+      - uses: actions/checkout@v4
 
-  test-nightly:
-    name: cargo test nightly
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-nightly-test
-          restore-keys: |
-            ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-nightly
+      - name: Install toolchain
+        run: |
+          rustup toolchain install ${{ matrix.toolchain }} --no-self-update --profile minimal
+          rustup override set ${{ matrix.toolchain }}
       - name: Install cargo-nextest
         uses: taiki-e/install-action@nextest
-      # Install nightly after cargo-nextest is installed, as cargo-nextest failed to compile on nightly
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: nightly
-          override: true
+
+      - uses: Swatinem/rust-cache@v2
+
       - name: cargo test
         run: |
           cargo nextest run --release --all-features --manifest-path=compact_str/Cargo.toml --run-ignored=all
+          cargo test --doc --release --all-features --manifest-path=compact_str/Cargo.toml
 
   miri:
     name: cargo miri test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: nightly
-          override: true
-          components: miri
-      - uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-nightly-test-miri
-          restore-keys: |
-            ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-nightly-test
-            ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-nightly
+      - uses: actions/checkout@v4
+
+      - name: Install toolchain
+        run: |
+          rustup toolchain install nightly --no-self-update --profile minimal --component miri
+          rustup override set nightly
+      - name: Install cargo-nextest
+        uses: taiki-e/install-action@nextest
+      - uses: Swatinem/rust-cache@v2
+
       - name: Run Miri
         run: |
-          cargo miri test --all-features --manifest-path=compact_str/Cargo.toml
+          cargo miri nextest run --all-features --manifest-path=compact_str/Cargo.toml
+          cargo miri test --doc --all-features --manifest-path=compact_str/Cargo.toml
 
   randomize-layout:
     name: cargo test -Zrandomize-layout
@@ -128,54 +79,38 @@ jobs:
     env:
       RUSTFLAGS: -Zrandomize-layout
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: nightly
-          override: true
-      - uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-nightly-test-randomize-layout
-          restore-keys: |
-            ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-nightly-test
-            ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-nightly
+      - uses: actions/checkout@v4
+
+      - name: Install toolchain
+        run: |
+          rustup toolchain install nightly --no-self-update --profile minimal
+          rustup override set nightly
+      - name: Install cargo-nextest
+        uses: taiki-e/install-action@nextest
+      - uses: Swatinem/rust-cache@v2
+
       - name: Run Tests with Randomized Layout
         run: |
-          cargo test --all-features --manifest-path=compact_str/Cargo.toml
+          cargo nextest run --all-features --manifest-path=compact_str/Cargo.toml
+          cargo test --doc --all-features --manifest-path=compact_str/Cargo.toml
 
   examples:
-    name: example
+    name: example - ${{ matrix.ex }}
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         ex: ["bytes", "macros", "serde", "traits"] 
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v4
+
+      - name: Install toolchain
+        run: |
+          rustup toolchain install nightly --no-self-update --profile minimal
+          rustup override set nightly
+      - uses: Swatinem/rust-cache@v2
         with:
-          profile: minimal
-          toolchain: nightly
-          override: true
-      - uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-nightly-example-${{ matrix.ex }}
-          restore-keys: |
-            ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-nightly-example
-            ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-nightly
-      - uses: actions-rs/cargo@v1
-        with:
-          command: run
-          args: --manifest-path examples/${{ matrix.ex }}/Cargo.toml
+          key: ${{ matrix.ex }}
+
+      - name: Run example-bytes
+        run: cargo run --manifest-path examples/${{ matrix.ex }}/Cargo.toml

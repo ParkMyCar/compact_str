@@ -27,6 +27,7 @@ use core::str::{
 };
 use core::{
     fmt,
+    mem,
     slice,
 };
 use std::borrow::Cow;
@@ -35,6 +36,7 @@ use std::iter::FusedIterator;
 
 mod features;
 mod macros;
+mod unicode_data;
 
 mod repr;
 use repr::Repr;
@@ -522,6 +524,15 @@ impl CompactString {
     pub fn as_mut_str(&mut self) -> &mut str {
         let len = self.len();
         unsafe { std::str::from_utf8_unchecked_mut(&mut self.0.as_mut_buf()[..len]) }
+    }
+
+    unsafe fn spare_capacity_mut(&mut self) -> &mut [mem::MaybeUninit<u8>] {
+        let buf = self.0.as_mut_buf();
+        let ptr = buf.as_mut_ptr();
+        let cap = buf.len();
+        let len = self.len();
+
+        slice::from_raw_parts_mut(ptr.add(len) as *mut mem::MaybeUninit<u8>, cap - len)
     }
 
     /// Returns a byte slice of the [`CompactString`]'s contents.
@@ -1539,6 +1550,244 @@ impl CompactString {
         let repr = Repr::from_string(s, false);
         CompactString(repr)
     }
+
+    /// Returns a copy of this string where each character is mapped to its
+    /// ASCII lower case equivalent.
+    ///
+    /// ASCII letters 'A' to 'Z' are mapped to 'a' to 'z',
+    /// but non-ASCII letters are unchanged.
+    ///
+    /// To lowercase the value in-place, use [`str::make_ascii_lowercase`].
+    ///
+    /// To lowercase ASCII characters in addition to non-ASCII characters, use
+    /// [`CompactString::to_lowercase`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use compact_str::CompactString;
+    /// let s = CompactString::new("Grüße, Jürgen ❤");
+    ///
+    /// assert_eq!("grüße, jürgen ❤", s.to_ascii_lowercase());
+    /// ```
+    #[must_use = "to lowercase the value in-place, use `make_ascii_lowercase()`"]
+    #[inline]
+    pub fn to_ascii_lowercase(&self) -> Self {
+        let mut s = self.clone();
+        s.make_ascii_lowercase();
+        s
+    }
+
+    /// Returns a copy of this string where each character is mapped to its
+    /// ASCII upper case equivalent.
+    ///
+    /// ASCII letters 'a' to 'z' are mapped to 'A' to 'Z',
+    /// but non-ASCII letters are unchanged.
+    ///
+    /// To uppercase the value in-place, use [`str::make_ascii_uppercase`].
+    ///
+    /// To uppercase ASCII characters in addition to non-ASCII characters, use
+    /// [`CompactString::to_uppercase`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use compact_str::CompactString;
+    /// let s = CompactString::new("Grüße, Jürgen ❤");
+    ///
+    /// assert_eq!("GRüßE, JüRGEN ❤", s.to_ascii_uppercase());
+    /// ```
+    #[must_use = "to uppercase the value in-place, use `make_ascii_uppercase()`"]
+    #[inline]
+    pub fn to_ascii_uppercase(&self) -> Self {
+        let mut s = self.clone();
+        s.make_ascii_uppercase();
+        s
+    }
+
+    /// Returns the lowercase equivalent of this string slice, as a new [`CompactString`].
+    ///
+    /// 'Lowercase' is defined according to the terms of the Unicode Derived Core Property
+    /// `Lowercase`.
+    ///
+    /// Since some characters can expand into multiple characters when changing
+    /// the case, this function returns a [`CompactString`] instead of modifying the
+    /// parameter in-place.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// use compact_str::CompactString;
+    /// let s = CompactString::new("HELLO");
+    ///
+    /// assert_eq!("hello", s.to_lowercase());
+    /// ```
+    ///
+    /// A tricky example, with sigma:
+    ///
+    /// ```
+    /// use compact_str::CompactString;
+    /// let sigma = CompactString::new("Σ");
+    ///
+    /// assert_eq!("σ", sigma.to_lowercase());
+    ///
+    /// // but at the end of a word, it's ς, not σ:
+    /// let odysseus = CompactString::new("ὈΔΥΣΣΕΎΣ");
+    ///
+    /// assert_eq!("ὀδυσσεύς", odysseus.to_lowercase());
+    /// ```
+    ///
+    /// Languages without case are not changed:
+    ///
+    /// ```
+    /// use compact_str::CompactString;
+    /// let new_year = CompactString::new("农历新年");
+    ///
+    /// assert_eq!(new_year, new_year.to_lowercase());
+    /// ```
+    #[must_use = "this returns the lowercase string as a new String, \
+                  without modifying the original"]
+    pub fn to_lowercase(&self) -> Self {
+        let mut s = convert_while_ascii(self.as_bytes(), u8::to_ascii_lowercase);
+
+        // Safety: we know this is a valid char boundary since
+        // out.len() is only progressed if ascii bytes are found
+        let rest = unsafe { self.get_unchecked(s.len()..) };
+
+        for (i, c) in rest.char_indices() {
+            if c == 'Σ' {
+                // Σ maps to σ, except at the end of a word where it maps to ς.
+                // This is the only conditional (contextual) but language-independent mapping
+                // in `SpecialCasing.txt`,
+                // so hard-code it rather than have a generic "condition" mechanism.
+                // See https://github.com/rust-lang/rust/issues/26035
+                map_uppercase_sigma(rest, i, &mut s)
+            } else {
+                s.extend(c.to_lowercase());
+            }
+        }
+        return s;
+
+        fn map_uppercase_sigma(from: &str, i: usize, to: &mut CompactString) {
+            // See https://www.unicode.org/versions/Unicode7.0.0/ch03.pdf#G33992
+            // for the definition of `Final_Sigma`.
+            debug_assert!('Σ'.len_utf8() == 2);
+            let is_word_final = case_ignorable_then_cased(from[..i].chars().rev())
+                && !case_ignorable_then_cased(from[i + 2..].chars());
+            to.push_str(if is_word_final { "ς" } else { "σ" });
+        }
+
+        fn case_ignorable_then_cased<I: Iterator<Item = char>>(mut iter: I) -> bool {
+            use unicode_data::case_ignorable::lookup as Case_Ignorable;
+            use unicode_data::cased::lookup as Cased;
+            match iter.find(|&c| !Case_Ignorable(c)) {
+                Some(c) => Cased(c),
+                None => false,
+            }
+        }
+    }
+
+    /// Returns the uppercase equivalent of this string slice, as a new [`CompactString`].
+    ///
+    /// 'Uppercase' is defined according to the terms of the Unicode Derived Core Property
+    /// `Uppercase`.
+    ///
+    /// Since some characters can expand into multiple characters when changing
+    /// the case, this function returns a [`CompactString`] instead of modifying the
+    /// parameter in-place.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// use compact_str::CompactString;
+    /// let s = CompactString::new("hello");
+    ///
+    /// assert_eq!("HELLO", s.to_uppercase());
+    /// ```
+    ///
+    /// Scripts without case are not changed:
+    ///
+    /// ```
+    /// use compact_str::CompactString;
+    /// let new_year = CompactString::new("农历新年");
+    ///
+    /// assert_eq!(new_year, new_year.to_uppercase());
+    /// ```
+    ///
+    /// One character can become multiple:
+    /// ```
+    /// use compact_str::CompactString;
+    /// let s = CompactString::new("tschüß");
+    ///
+    /// assert_eq!("TSCHÜSS", s.to_uppercase());
+    /// ```
+    #[must_use = "this returns the uppercase string as a new String, \
+                  without modifying the original"]
+    pub fn to_uppercase(&self) -> Self {
+        let mut out = convert_while_ascii(self.as_bytes(), u8::to_ascii_uppercase);
+
+        // Safety: we know this is a valid char boundary since
+        // out.len() is only progressed if ascii bytes are found
+        let rest = unsafe { self.get_unchecked(out.len()..) };
+
+        for c in rest.chars() {
+            out.extend(c.to_uppercase());
+        }
+
+        out
+    }
+}
+
+/// Converts the bytes while the bytes are still ascii.
+/// For better average performance, this is happens in chunks of `2*size_of::<usize>()`.
+/// Returns a vec with the converted bytes.
+///
+/// Copied from https://doc.rust-lang.org/nightly/src/alloc/str.rs.html#623-666
+#[inline]
+fn convert_while_ascii(b: &[u8], convert: fn(&u8) -> u8) -> CompactString {
+    let mut out = CompactString::with_capacity(b.len());
+
+    const USIZE_SIZE: usize = mem::size_of::<usize>();
+    const MAGIC_UNROLL: usize = 2;
+    const N: usize = USIZE_SIZE * MAGIC_UNROLL;
+    const NONASCII_MASK: usize = usize::from_ne_bytes([0x80; USIZE_SIZE]);
+
+    let mut i = 0;
+    unsafe {
+        while i + N <= b.len() {
+            // Safety: we have checks the sizes `b` and `out` to know that our
+            let in_chunk = b.get_unchecked(i..i + N);
+            let out_chunk = out.spare_capacity_mut().get_unchecked_mut(i..i + N);
+
+            let mut bits = 0;
+            for j in 0..MAGIC_UNROLL {
+                // read the bytes 1 usize at a time (unaligned since we haven't checked the
+                // alignment) safety: in_chunk is valid bytes in the range
+                bits |= in_chunk.as_ptr().cast::<usize>().add(j).read_unaligned();
+            }
+            // if our chunks aren't ascii, then return only the prior bytes as init
+            if bits & NONASCII_MASK != 0 {
+                break;
+            }
+
+            // perform the case conversions on N bytes (gets heavily autovec'd)
+            for j in 0..N {
+                // safety: in_chunk and out_chunk is valid bytes in the range
+                let out = out_chunk.get_unchecked_mut(j);
+                out.write(convert(in_chunk.get_unchecked(j)));
+            }
+
+            // mark these bytes as initialised
+            i += N;
+        }
+        out.set_len(i);
+    }
+
+    out
 }
 
 impl Default for CompactString {

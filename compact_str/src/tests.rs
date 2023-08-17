@@ -1580,3 +1580,16 @@ fn test_from_string_buffer_inlines_on_clone() {
     // when cloning the CompactString we should inline it
     assert!(!b.is_heap_allocated());
 }
+
+#[test]
+fn multiple_nieches_test() {
+    #[allow(unused)]
+    enum Value {
+        String(CompactString),
+        Bool(bool),
+        Signed(isize),
+        Unsigned(usize),
+        Null,
+    }
+    assert_eq!(std::mem::size_of::<Value>(), std::mem::size_of::<String>());
+}

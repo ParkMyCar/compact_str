@@ -1,14 +1,14 @@
-/// [`NonMaxU8`] is an unsigned 8-bit integer data type that has a valid range of `[0, 254]`.
-/// Excluding `255` allows the Rust compiler to use `255` as a niche.
+/// [`LastUtf8Char`] is an unsigned 8-bit integer data type that has a valid range of `[0, 216]`.
+/// Excluding `[217, 255]` allows the Rust compiler to use these values as niches.
 ///
-/// Specifically the compiler can use `255` to encode the `None` variant of `Option<NonMaxU8>`
-/// allowing `std::mem::size_of::<NonMaxU8> == std::mem::size_of::<Option<NonMaxU8>>()`
-#[allow(clippy::upper_case_acronyms)]
+/// Specifically the compiler can use a value in this range to encode the `None` variant of
+/// `Option<NonMaxU8>` allowing
+/// `std::mem::size_of::<NonMaxU8> == std::mem::size_of::<Option<NonMaxU8>>()`
 #[allow(dead_code)]
-#[allow(non_camel_case_types)]
 #[derive(Copy, Clone, Debug)]
 #[repr(u8)]
-pub enum NonMaxU8 {
+pub enum LastUtf8Char {
+    // single character, ASCII:
     V0 = 0,
     V1 = 1,
     V2 = 2,
@@ -137,6 +137,8 @@ pub enum NonMaxU8 {
     V125 = 125,
     V126 = 126,
     V127 = 127,
+
+    // trailing byte in a multi-byte UTF-8 sequence
     V128 = 128,
     V129 = 129,
     V130 = 130,
@@ -201,69 +203,40 @@ pub enum NonMaxU8 {
     V189 = 189,
     V190 = 190,
     V191 = 191,
-    V192 = 192,
-    V193 = 193,
-    V194 = 194,
-    V195 = 195,
-    V196 = 196,
-    V197 = 197,
-    V198 = 198,
-    V199 = 199,
-    V200 = 200,
-    V201 = 201,
-    V202 = 202,
-    V203 = 203,
-    V204 = 204,
-    V205 = 205,
-    V206 = 206,
-    V207 = 207,
-    V208 = 208,
-    V209 = 209,
-    V210 = 210,
-    V211 = 211,
-    V212 = 212,
-    V213 = 213,
-    V214 = 214,
-    V215 = 215,
-    V216 = 216,
-    V217 = 217,
-    V218 = 218,
-    V219 = 219,
-    V220 = 220,
-    V221 = 221,
-    V222 = 222,
-    V223 = 223,
-    V224 = 224,
-    V225 = 225,
-    V226 = 226,
-    V227 = 227,
-    V228 = 228,
-    V229 = 229,
-    V230 = 230,
-    V231 = 231,
-    V232 = 232,
-    V233 = 233,
-    V234 = 234,
-    V235 = 235,
-    V236 = 236,
-    V237 = 237,
-    V238 = 238,
-    V239 = 239,
-    V240 = 240,
-    V241 = 241,
-    V242 = 242,
-    V243 = 243,
-    V244 = 244,
-    V245 = 245,
-    V246 = 246,
-    V247 = 247,
-    V248 = 248,
-    V249 = 249,
-    V250 = 250,
-    V251 = 251,
-    V252 = 252,
-    V253 = 253,
-    V254 = 254,
+
+    // Cannot be last character of a UTF-8 sequence (leading byte of a sequence)
+    // V192 .. V244,
+    // Can never occur in UTF-8 (start for a codepoint > U+10FFFF)
+    // V245 .. 255,
+
+    // length marker:
+    L0 = 192,
+    L1 = 193,
+    L2 = 194,
+    L3 = 195,
+    L4 = 196,
+    L5 = 197,
+    L6 = 198,
+    L7 = 199,
+    L8 = 200,
+    L9 = 201,
+    L10 = 202,
+    L11 = 203,
+    L12 = 204,
+    L13 = 205,
+    L14 = 206,
+    L15 = 207,
+    L16 = 208,
+    L17 = 209,
+    L18 = 210,
+    L19 = 211,
+    L20 = 212,
+    L21 = 213,
+    L22 = 214,
+    L23 = 215,
+
+    Heap = 216,
 }
 
-static_assertions::assert_eq_size!(NonMaxU8, Option<NonMaxU8>, u8);
+static_assertions::assert_eq_size!(LastUtf8Char, Option<LastUtf8Char>, u8);
+static_assertions::const_assert!(std::mem::size_of::<String>() <= 24);

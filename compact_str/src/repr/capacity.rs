@@ -13,10 +13,12 @@ const CAPACITY_IS_ON_THE_HEAP: [u8; USIZE_SIZE] = {
     flag
 };
 
-// how many bytes we can use for capacity
-const SPACE_FOR_CAPACITY: usize = USIZE_SIZE - 1;
 // the maximum value we're able to store, e.g. on 64-bit arch this is 2^56 - 2
-pub const MAX_VALUE: usize = 2usize.pow(SPACE_FOR_CAPACITY as u32 * 8) - 2;
+pub const MAX_VALUE: usize = {
+    let mut bytes = [255; USIZE_SIZE];
+    bytes[USIZE_SIZE - 1] = 0;
+    usize::from_le_bytes(bytes) - 1
+};
 
 /// An integer type that uses `core::mem::size_of::<usize>() - 1` bytes to store the capacity of
 /// a heap buffer.
@@ -84,7 +86,7 @@ impl Capacity {
         // * `src` is valid for reads of `SPACE_FOR_CAPACITY` because it is less than `USIZE_SIZE`
         // * `dst` is valid for reads of `SPACE_FOR_CAPACITY` because it is less than `USIZE_SIZE`
         // * `src` and `dst` do not overlap because we created `usize_buf`
-        core::ptr::copy_nonoverlapping(self.0.as_ptr(), usize_buf.as_mut_ptr(), SPACE_FOR_CAPACITY);
+        core::ptr::copy_nonoverlapping(self.0.as_ptr(), usize_buf.as_mut_ptr(), USIZE_SIZE - 1);
         usize::from_le_bytes(usize_buf)
     }
 

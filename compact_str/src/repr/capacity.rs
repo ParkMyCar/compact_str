@@ -3,20 +3,15 @@ use crate::repr::LastUtf8Char;
 // how many bytes a `usize` occupies
 const USIZE_SIZE: usize = core::mem::size_of::<usize>();
 
-/// Used to generate [`CAPACITY_IS_ON_THE_HEAP`]
-#[allow(non_snake_case)]
-const fn CAP_ON_HEAP_FLAG() -> [u8; USIZE_SIZE] {
-    // all bytes 255, with the last being HEAP_MASK
-    let mut flag = [255; USIZE_SIZE];
-    flag[USIZE_SIZE - 1] = LastUtf8Char::Heap as u8;
-    flag
-}
-
 /// State that describes the capacity as being stored on the heap.
 ///
 /// All bytes `255`, with the last being [`LastUtf8Char::Heap`], using the same amount of bytes
 /// as `usize`. Example (64-bit): `[255, 255, 255, 255, 255, 255, 255, 216]`
-const CAPACITY_IS_ON_THE_HEAP: [u8; USIZE_SIZE] = CAP_ON_HEAP_FLAG();
+const CAPACITY_IS_ON_THE_HEAP: [u8; USIZE_SIZE] = {
+    let mut flag = [255; USIZE_SIZE];
+    flag[USIZE_SIZE - 1] = LastUtf8Char::Heap as u8;
+    flag
+};
 
 // how many bytes we can use for capacity
 const SPACE_FOR_CAPACITY: usize = USIZE_SIZE - 1;

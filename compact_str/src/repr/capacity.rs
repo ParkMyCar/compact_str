@@ -1,3 +1,5 @@
+use core::fmt;
+
 use crate::repr::LastUtf8Char;
 
 // how many bytes a `usize` occupies
@@ -47,12 +49,18 @@ pub const MAX_VALUE: usize = {
 /// heap, because with it's impossible to create a string that is 64 petabytes or larger. But for
 /// 32-bit architectures we need to be able to store a capacity larger than 16 megabytes, since a
 /// string larger than 16 megabytes probably isn't that uncommon.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
 pub struct Capacity(usize);
 
 static_assertions::assert_eq_size!(Capacity, usize);
 static_assertions::assert_eq_align!(Capacity, usize);
+
+impl fmt::Debug for Capacity {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Capacity(0x{:x})", usize::from_le(self.0))
+    }
+}
 
 impl Capacity {
     #[inline]

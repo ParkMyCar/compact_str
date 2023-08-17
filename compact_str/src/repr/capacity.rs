@@ -16,10 +16,6 @@ const CAPACITY_IS_ON_THE_HEAP: [u8; USIZE_SIZE] = {
 // how many bytes we can use for capacity
 const SPACE_FOR_CAPACITY: usize = USIZE_SIZE - 1;
 // the maximum value we're able to store, e.g. on 64-bit arch this is 2^56 - 2
-//
-// note: Preferably we'd used usize.pow(..) here, but that's not a `const fn`, so we need to use
-// bitshift operators, and there's a lint against using them in this pattern, which IMO isn't a
-// great lint
 pub const MAX_VALUE: usize = 2usize.pow(SPACE_FOR_CAPACITY as u32 * 8) - 2;
 
 /// An integer type that uses `core::mem::size_of::<usize>() - 1` bytes to store the capacity of

@@ -1,4 +1,4 @@
-use crate::repr::HEAP_MASK;
+use crate::repr::LastUtf8Char;
 
 // how many bytes a `usize` occupies
 const USIZE_SIZE: usize = core::mem::size_of::<usize>();
@@ -8,14 +8,14 @@ const USIZE_SIZE: usize = core::mem::size_of::<usize>();
 const fn CAP_ON_HEAP_FLAG() -> [u8; USIZE_SIZE] {
     // all bytes 255, with the last being HEAP_MASK
     let mut flag = [255; USIZE_SIZE];
-    flag[USIZE_SIZE - 1] = HEAP_MASK;
+    flag[USIZE_SIZE - 1] = LastUtf8Char::Heap as u8;
     flag
 }
 
 /// State that describes the capacity as being stored on the heap.
 ///
-/// All bytes `255`, with the last being [`HEAP_MASK`], using the same amount of bytes as `usize`
-/// Example (64-bit): `[255, 255, 255, 255, 255, 255, 255, 254]`
+/// All bytes `255`, with the last being [`LastUtf8Char::Heap`], using the same amount of bytes
+/// as `usize`. Example (64-bit): `[255, 255, 255, 255, 255, 255, 255, 216]`
 const CAPACITY_IS_ON_THE_HEAP: [u8; USIZE_SIZE] = CAP_ON_HEAP_FLAG();
 
 // how many bytes we can use for capacity
@@ -61,7 +61,7 @@ impl Capacity {
                 debug_assert!(capacity <= MAX_VALUE);
 
                 let mut bytes = capacity.to_le_bytes();
-                bytes[core::mem::size_of::<usize>() - 1] = HEAP_MASK;
+                bytes[core::mem::size_of::<usize>() - 1] = LastUtf8Char::Heap as u8;
                 Capacity(bytes)
             } else if #[cfg(target_pointer_width = "32")] {
                 // on 32-bit arches we might need to store the capacity on the heap
@@ -70,10 +70,10 @@ impl Capacity {
                     // the heap. return an Error so `BoxString` can do the right thing
                     Capacity(CAPACITY_IS_ON_THE_HEAP)
                 } else {
-                    // otherwise, we can store this capacity inline! Set the last byte to be our `HEAP_MASK`
+                    // otherwise, we can store this capacity inline! Set the last byte to be our `LastUtf8Char::Heap as u8`
                     // for our discriminant, using the leading bytes to store the actual value
                     let mut bytes = capacity.to_le_bytes();
-                    bytes[core::mem::size_of::<usize>() - 1] = HEAP_MASK;
+                    bytes[core::mem::size_of::<usize>() - 1] = LastUtf8Char::Heap as u8;
                     Capacity(bytes)
                 }
             } else {

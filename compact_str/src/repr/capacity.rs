@@ -3,17 +3,27 @@ use crate::repr::LastUtf8Char;
 // how many bytes a `usize` occupies
 const USIZE_SIZE: usize = core::mem::size_of::<usize>();
 
+/// Mask of bits in [`Capacity`] that encode the value.
+const VALID_MASK: usize = {
+    let mut bytes = [255; USIZE_SIZE];
+    bytes[USIZE_SIZE - 1] = 0;
+    usize::from_ne_bytes(bytes)
+};
+
+/// Mask of bits that are set in [`Capacity`] if the string data is stored on the heap.
+const HEAP_MARKER: usize = {
+    let mut bytes = [0; USIZE_SIZE];
+    bytes[USIZE_SIZE - 1] = LastUtf8Char::Heap as u8;
+    usize::from_ne_bytes(bytes)
+};
+
 /// State that describes the capacity as being stored on the heap.
 ///
 /// All bytes `255`, with the last being [`LastUtf8Char::Heap`], using the same amount of bytes
 /// as `usize`. Example (64-bit): `[255, 255, 255, 255, 255, 255, 255, 216]`
-const CAPACITY_IS_ON_THE_HEAP: Capacity = {
-    let mut flag = [255; USIZE_SIZE];
-    flag[USIZE_SIZE - 1] = LastUtf8Char::Heap as u8;
-    Capacity(flag)
-};
+const CAPACITY_IS_ON_THE_HEAP: Capacity = Capacity(VALID_MASK | HEAP_MARKER);
 
-// the maximum value we're able to store, e.g. on 64-bit arch this is 2^56 - 2
+/// The maximum value we're able to store, e.g. on 64-bit arch this is 2^56 - 2.
 pub const MAX_VALUE: usize = {
     let mut bytes = [255; USIZE_SIZE];
     bytes[USIZE_SIZE - 1] = 0;
@@ -37,10 +47,9 @@ pub const MAX_VALUE: usize = {
 /// heap, because with it's impossible to create a string that is 64 petabytes or larger. But for
 /// 32-bit architectures we need to be able to store a capacity larger than 16 megabytes, since a
 /// string larger than 16 megabytes probably isn't that uncommon.
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-#[cfg_attr(target_pointer_width = "64", repr(align(8)))]
-#[cfg_attr(target_pointer_width = "32", repr(align(4)))]
-pub struct Capacity([u8; USIZE_SIZE]);
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct Capacity(usize);
 
 static_assertions::assert_eq_size!(Capacity, usize);
 static_assertions::assert_eq_align!(Capacity, usize);
@@ -53,9 +62,7 @@ impl Capacity {
                 // on 64-bit arches we can always fit the capacity inline
                 debug_assert!(capacity <= MAX_VALUE);
 
-                let mut bytes = capacity.to_le_bytes();
-                bytes[core::mem::size_of::<usize>() - 1] = LastUtf8Char::Heap as u8;
-                Capacity(bytes)
+                Capacity(capacity.to_le() | HEAP_MARKER)
             } else if #[cfg(target_pointer_width = "32")] {
                 // on 32-bit arches we might need to store the capacity on the heap
                 if capacity > MAX_VALUE {
@@ -65,9 +72,7 @@ impl Capacity {
                 } else {
                     // otherwise, we can store this capacity inline! Set the last byte to be our `LastUtf8Char::Heap as u8`
                     // for our discriminant, using the leading bytes to store the actual value
-                    let mut bytes = capacity.to_le_bytes();
-                    bytes[core::mem::size_of::<usize>() - 1] = LastUtf8Char::Heap as u8;
-                    Capacity(bytes)
+                    Capacity(capacity.to_le() | HEAP_MARKER)
                 }
             } else {
                 compile_error!("Unsupported target_pointer_width");
@@ -80,14 +85,8 @@ impl Capacity {
     /// # SAFETY:
     /// * `self` must be less than or equal to [`MAX_VALUE`]
     #[inline(always)]
-    pub unsafe fn as_usize(&self) -> usize {
-        let mut usize_buf = [0u8; USIZE_SIZE];
-        // SAFETY:
-        // * `src` is valid for reads of `SPACE_FOR_CAPACITY` because it is less than `USIZE_SIZE`
-        // * `dst` is valid for reads of `SPACE_FOR_CAPACITY` because it is less than `USIZE_SIZE`
-        // * `src` and `dst` do not overlap because we created `usize_buf`
-        core::ptr::copy_nonoverlapping(self.0.as_ptr(), usize_buf.as_mut_ptr(), USIZE_SIZE - 1);
-        usize::from_le_bytes(usize_buf)
+    pub unsafe fn as_usize(self) -> usize {
+        usize::from_le(self.0 & VALID_MASK)
     }
 
     /// Returns whether or not this [`Capacity`] has a value that indicates the capacity is being
@@ -131,7 +130,6 @@ mod tests {
 
     #[cfg(target_pointer_width = "32")]
     #[test]
-
     fn test_invalid_value() {
         let invalid_val = usize::MAX;
         let cap = Capacity::new(invalid_val);

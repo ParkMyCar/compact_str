@@ -7,10 +7,10 @@ const USIZE_SIZE: usize = core::mem::size_of::<usize>();
 ///
 /// All bytes `255`, with the last being [`LastUtf8Char::Heap`], using the same amount of bytes
 /// as `usize`. Example (64-bit): `[255, 255, 255, 255, 255, 255, 255, 216]`
-const CAPACITY_IS_ON_THE_HEAP: [u8; USIZE_SIZE] = {
+const CAPACITY_IS_ON_THE_HEAP: Capacity = {
     let mut flag = [255; USIZE_SIZE];
     flag[USIZE_SIZE - 1] = LastUtf8Char::Heap as u8;
-    flag
+    Capacity(flag)
 };
 
 // the maximum value we're able to store, e.g. on 64-bit arch this is 2^56 - 2
@@ -61,7 +61,7 @@ impl Capacity {
                 if capacity > MAX_VALUE {
                     // if we need the last byte to encode this capacity then we need to put the capacity on
                     // the heap. return an Error so `BoxString` can do the right thing
-                    Capacity(CAPACITY_IS_ON_THE_HEAP)
+                    CAPACITY_IS_ON_THE_HEAP
                 } else {
                     // otherwise, we can store this capacity inline! Set the last byte to be our `LastUtf8Char::Heap as u8`
                     // for our discriminant, using the leading bytes to store the actual value
@@ -93,8 +93,8 @@ impl Capacity {
     /// Returns whether or not this [`Capacity`] has a value that indicates the capacity is being
     /// stored on the heap
     #[inline(always)]
-    pub fn is_heap(&self) -> bool {
-        self.0 == CAPACITY_IS_ON_THE_HEAP
+    pub fn is_heap(self) -> bool {
+        self == CAPACITY_IS_ON_THE_HEAP
     }
 }
 

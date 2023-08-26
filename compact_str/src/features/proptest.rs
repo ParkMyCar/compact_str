@@ -10,6 +10,7 @@ use proptest::strategy::{
     Strategy,
 };
 use proptest::string::StringParam;
+use alloc::string::String;
 
 use crate::CompactString;
 
@@ -25,6 +26,7 @@ impl Arbitrary for CompactString {
 
 #[cfg(test)]
 mod test {
+    use alloc::string::String;
     use proptest::prelude::*;
 
     use crate::CompactString;

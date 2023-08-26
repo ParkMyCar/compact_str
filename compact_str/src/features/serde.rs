@@ -1,4 +1,6 @@
 use std::fmt;
+use alloc::string::String;
+use alloc::vec::Vec;
 
 use serde::de::{
     Deserializer,
@@ -77,6 +79,8 @@ impl<'de> serde::Deserialize<'de> for CompactString {
 
 #[cfg(test)]
 mod tests {
+    use alloc::string::{String, ToString};
+    use alloc::vec::Vec;
     use serde::{
         Deserialize,
         Serialize,

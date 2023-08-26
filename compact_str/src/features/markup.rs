@@ -1,5 +1,8 @@
 use std::fmt;
 
+#[cfg(test)]
+use alloc::string::String;
+
 use markup::Render;
 
 use crate::CompactString;

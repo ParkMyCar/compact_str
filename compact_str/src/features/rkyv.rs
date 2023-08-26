@@ -62,6 +62,7 @@ impl PartialOrd<CompactString> for ArchivedString {
 #[cfg(test)]
 mod tests {
     use alloc::string::String;
+
     use rkyv::Deserialize;
     use test_strategy::proptest;
 

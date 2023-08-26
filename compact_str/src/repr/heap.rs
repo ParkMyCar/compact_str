@@ -331,8 +331,10 @@ pub fn deallocate_ptr(ptr: ptr::NonNull<u8>, cap: Capacity) {
 }
 
 mod heap_capacity {
-    use core::ptr;
-    use core::alloc;
+    use core::{
+        alloc,
+        ptr,
+    };
 
     use super::StrBuffer;
 
@@ -381,8 +383,10 @@ mod heap_capacity {
 }
 
 mod inline_capacity {
-    use core::ptr;
-    use core::alloc;
+    use core::{
+        alloc,
+        ptr,
+    };
 
     use super::StrBuffer;
 

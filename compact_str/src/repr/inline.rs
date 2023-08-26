@@ -152,13 +152,14 @@ mod tests {
 
     #[cfg(feature = "smallvec")]
     mod smallvec {
+        use alloc::string::String;
+
         use quickcheck_macros::quickcheck;
 
         use crate::repr::{
             InlineBuffer,
             MAX_SIZE,
         };
-        use alloc::string::String;
 
         #[test]
         fn test_into_array() {

@@ -2,6 +2,7 @@
 
 use alloc::boxed::Box;
 use alloc::vec::Vec;
+
 use quickcheck::{
     Arbitrary,
     Gen,
@@ -36,6 +37,7 @@ impl Arbitrary for CompactString {
 #[cfg(test)]
 mod test {
     use alloc::string::String;
+
     use quickcheck_macros::quickcheck;
 
     use crate::CompactString;

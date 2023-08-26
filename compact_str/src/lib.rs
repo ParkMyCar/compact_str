@@ -1,6 +1,5 @@
 #![doc = include_str!("../README.md")]
 #![cfg_attr(docsrs, feature(doc_cfg))]
-
 #![no_std]
 
 #[cfg(feature = "std")]
@@ -10,6 +9,9 @@ extern crate std;
 #[cfg_attr(test, macro_use)]
 extern crate alloc;
 
+use alloc::borrow::Cow;
+use alloc::boxed::Box;
+use alloc::string::String;
 #[doc(hidden)]
 pub use core;
 use core::borrow::{
@@ -21,7 +23,10 @@ use core::hash::{
     Hash,
     Hasher,
 };
-use core::iter::FromIterator;
+use core::iter::{
+    FromIterator,
+    FusedIterator,
+};
 use core::ops::{
     Add,
     AddAssign,
@@ -39,11 +44,6 @@ use core::{
     mem,
     slice,
 };
-use alloc::borrow::Cow;
-use alloc::string::String;
-use alloc::boxed::Box;
-use core::iter::FusedIterator;
-
 #[cfg(feature = "std")]
 use std::ffi::OsStr;
 

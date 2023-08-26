@@ -1,10 +1,10 @@
+use alloc::borrow::Cow;
+use alloc::boxed::Box;
 use core::str::Utf8Error;
 use core::{
     mem,
     ptr,
 };
-use alloc::borrow::Cow;
-use alloc::boxed::Box;
 
 #[cfg(feature = "bytes")]
 mod bytes;
@@ -19,11 +19,12 @@ mod last_utf8_char;
 mod num;
 mod traits;
 
+use alloc::string::String;
+
 use capacity::Capacity;
 use heap::HeapBuffer;
 use inline::InlineBuffer;
 use last_utf8_char::LastUtf8Char;
-use alloc::string::String;
 pub use traits::IntoRepr;
 
 /// The max size of a string we can fit inline
@@ -702,7 +703,10 @@ impl Extend<String> for Repr {
 
 #[cfg(test)]
 mod tests {
-    use alloc::string::{String, ToString};
+    use alloc::string::{
+        String,
+        ToString,
+    };
     use alloc::vec::Vec;
 
     use quickcheck_macros::quickcheck;

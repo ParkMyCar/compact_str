@@ -419,6 +419,7 @@ impl NumChars for isize {
 #[cfg(test)]
 mod tests {
     use alloc::string::ToString;
+
     use super::IntoRepr;
 
     #[test]

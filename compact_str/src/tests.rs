@@ -1,10 +1,15 @@
-use core::slice;
-use core::num;
-use core::str::FromStr;
 use alloc::borrow::Cow;
-use alloc::string::{String, ToString};
-use alloc::vec::Vec;
 use alloc::boxed::Box;
+use alloc::string::{
+    String,
+    ToString,
+};
+use alloc::vec::Vec;
+use core::str::FromStr;
+use core::{
+    num,
+    slice,
+};
 
 use proptest::collection::SizeRange;
 use proptest::prelude::*;

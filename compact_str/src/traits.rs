@@ -1,9 +1,9 @@
+use alloc::string::String;
 use core::fmt::{
     self,
     Write,
 };
 use core::num;
-use alloc::string::String;
 
 use castaway::{
     match_type,
@@ -193,9 +193,12 @@ where
 
 #[cfg(test)]
 mod tests {
-    use core::num;
-    use alloc::string::{String, ToString};
+    use alloc::string::{
+        String,
+        ToString,
+    };
     use alloc::vec::Vec;
+    use core::num;
 
     use proptest::prelude::*;
     use test_strategy::proptest;

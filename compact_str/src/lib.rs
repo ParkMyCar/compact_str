@@ -4,6 +4,7 @@
 #![no_std]
 
 #[cfg(feature = "std")]
+#[macro_use]
 extern crate std;
 
 #[cfg_attr(test, macro_use)]

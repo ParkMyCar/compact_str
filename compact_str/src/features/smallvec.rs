@@ -29,6 +29,7 @@ impl CompactString {
 
 #[cfg(test)]
 mod tests {
+    use alloc::string::String;
     use proptest::prelude::*;
     use test_strategy::proptest;
 

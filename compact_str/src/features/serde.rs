@@ -1,6 +1,5 @@
 use alloc::string::String;
 use alloc::vec::Vec;
-use std::fmt;
 
 use serde::de::{
     Deserializer,
@@ -19,7 +18,7 @@ fn compact_string<'de: 'a, 'a, D: Deserializer<'de>>(
     impl<'a> Visitor<'a> for CompactStringVisitor {
         type Value = CompactString;
 
-        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        fn expecting(&self, formatter: &mut core::fmt::Formatter) -> core::fmt::Result {
             formatter.write_str("a string")
         }
 
@@ -36,14 +35,14 @@ fn compact_string<'de: 'a, 'a, D: Deserializer<'de>>(
         }
 
         fn visit_bytes<E: Error>(self, v: &[u8]) -> Result<Self::Value, E> {
-            match std::str::from_utf8(v) {
+            match core::str::from_utf8(v) {
                 Ok(s) => Ok(CompactString::from(s)),
                 Err(_) => Err(Error::invalid_value(Unexpected::Bytes(v), &self)),
             }
         }
 
         fn visit_borrowed_bytes<E: Error>(self, v: &'a [u8]) -> Result<Self::Value, E> {
-            match std::str::from_utf8(v) {
+            match core::str::from_utf8(v) {
                 Ok(s) => Ok(CompactString::from(s)),
                 Err(_) => Err(Error::invalid_value(Unexpected::Bytes(v), &self)),
             }

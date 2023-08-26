@@ -52,7 +52,7 @@ mod test {
     #[quickcheck]
     #[cfg_attr(miri, ignore)]
     fn quickcheck_inlines_strings(compact: CompactString) {
-        if compact.len() <= std::mem::size_of::<String>() {
+        if compact.len() <= core::mem::size_of::<String>() {
             assert!(!compact.is_heap_allocated())
         } else {
             assert!(compact.is_heap_allocated())

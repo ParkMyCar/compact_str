@@ -315,9 +315,9 @@ fn proptest_from_utf8_unchecked(#[strategy(rand_bytes())] bytes: Vec<u8>) {
 
     // check if we were valid UTF-8, if so, assert the data written into the CompactString is
     // correct
-    let data_is_valid = std::str::from_utf8(&bytes);
-    let compact_is_valid = std::str::from_utf8(compact.as_bytes());
-    let std_str_is_valid = std::str::from_utf8(std_str.as_bytes());
+    let data_is_valid = core::str::from_utf8(&bytes);
+    let compact_is_valid = core::str::from_utf8(compact.as_bytes());
+    let std_str_is_valid = core::str::from_utf8(std_str.as_bytes());
 
     match (data_is_valid, compact_is_valid, std_str_is_valid) {
         (Ok(d), Ok(c), Ok(s)) => {
@@ -1598,5 +1598,8 @@ fn multiple_nieches_test() {
         Unsigned(usize),
         Null,
     }
-    assert_eq!(core::mem::size_of::<Value>(), std::mem::size_of::<String>());
+    assert_eq!(
+        core::mem::size_of::<Value>(),
+        core::mem::size_of::<String>()
+    );
 }

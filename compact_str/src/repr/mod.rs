@@ -79,7 +79,7 @@ impl Repr {
             let inline = InlineBuffer::new_const(text);
             Repr::from_inline(inline)
         } else {
-            panic!("Inline string was too long, max length is `std::mem::size_of::<CompactString>()` bytes");
+            panic!("Inline string was too long, max length is `core::mem::size_of::<CompactString>()` bytes");
         }
     }
 

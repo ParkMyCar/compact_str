@@ -33,7 +33,7 @@ mod test {
 
     use crate::CompactString;
 
-    const MAX_SIZE: usize = std::mem::size_of::<String>();
+    const MAX_SIZE: usize = core::mem::size_of::<String>();
 
     proptest! {
         #[test]

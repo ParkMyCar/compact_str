@@ -11,6 +11,12 @@ readme = "../README.md"
 keywords = ["string", "compact", "small", "memory", "mutable"]
 categories = ["encoding", "parsing", "memory-management", "text-processing"]
 
+[features]
+default = [
+    "std",
+]
+std = []
+
 [dependencies]
 arbitrary = { version = "1", optional = true, default-features = false }
 bytes = { version = "1", optional = true }

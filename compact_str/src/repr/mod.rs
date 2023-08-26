@@ -3,7 +3,8 @@ use core::{
     mem,
     ptr,
 };
-use std::borrow::Cow;
+use alloc::borrow::Cow;
+use alloc::boxed::Box;
 
 #[cfg(feature = "bytes")]
 mod bytes;
@@ -22,10 +23,11 @@ use capacity::Capacity;
 use heap::HeapBuffer;
 use inline::InlineBuffer;
 use last_utf8_char::LastUtf8Char;
+use alloc::string::String;
 pub use traits::IntoRepr;
 
 /// The max size of a string we can fit inline
-pub const MAX_SIZE: usize = std::mem::size_of::<String>();
+pub const MAX_SIZE: usize = core::mem::size_of::<String>();
 /// Used as a discriminant to identify different variants
 pub const HEAP_MASK: u8 = LastUtf8Char::Heap as u8;
 /// When our string is stored inline, we represent the length of the string in the last byte, offset
@@ -700,6 +702,9 @@ impl Extend<String> for Repr {
 
 #[cfg(test)]
 mod tests {
+    use alloc::string::{String, ToString};
+    use alloc::vec::Vec;
+
     use quickcheck_macros::quickcheck;
     use test_case::test_case;
 

@@ -24,7 +24,7 @@ jobs:
     name: Windows
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         name: Checkout Repo
       - uses: actions-rs/toolchain@v1
         name: Install Rust
@@ -57,7 +57,7 @@ jobs:
     name: macOS
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         name: Checkout Repo
       - uses: actions-rs/toolchain@v1
         name: Install Rust
@@ -92,7 +92,7 @@ jobs:
   #   name: Linux 32-bit
   #   runs-on: ubuntu-latest
   #   steps:
-  #     - uses: actions/checkout@v2
+  #     - uses: actions/checkout@v3
   #       name: Checkout Repo
   #     - uses: actions-rs/toolchain@v1
   #       name: Install Rust
@@ -126,7 +126,7 @@ jobs:
   #   name: Linux MIPS Big Endian 32-bit
   #   runs-on: ubuntu-latest
   #   steps:
-  #     - uses: actions/checkout@v2
+  #     - uses: actions/checkout@v3
   #       name: Checkout Repo
   #     - uses: actions-rs/toolchain@v1
   #       name: Install Rust
@@ -160,7 +160,7 @@ jobs:
   #   name: Linux MIPS Little Endian 32-bit
   #   runs-on: ubuntu-latest
   #   steps:
-  #     - uses: actions/checkout@v2
+  #     - uses: actions/checkout@v3
   #       name: Checkout Repo
   #     - uses: actions-rs/toolchain@v1
   #       name: Install Rust
@@ -194,7 +194,7 @@ jobs:
   #   name: Linux PowerPC Big Endian 32-bit
   #   runs-on: ubuntu-latest
   #   steps:
-  #     - uses: actions/checkout@v2
+  #     - uses: actions/checkout@v3
   #       name: Checkout Repo
   #     - uses: actions-rs/toolchain@v1
   #       name: Install Rust
@@ -228,7 +228,7 @@ jobs:
   #   name: Linux PowerPC Little Endian 64-bit
   #   runs-on: ubuntu-latest
   #   steps:
-  #     - uses: actions/checkout@v2
+  #     - uses: actions/checkout@v3
   #       name: Checkout Repo
   #     - uses: actions-rs/toolchain@v1
   #       name: Install Rust

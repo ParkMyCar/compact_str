@@ -1,5 +1,5 @@
 # Upcoming
-... all released!
+* Update MSRV to 1.59
 
 # 0.7.0
 ### February 21, 2023

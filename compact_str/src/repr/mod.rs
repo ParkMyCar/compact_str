@@ -396,23 +396,36 @@ impl Repr {
             return s.len();
         }
 
-        // the last byte stores our discriminant and stack length
-        let last_byte = self.last_byte();
+        // This ugly looking code results in two conditional moves and only one comparison, without
+        // branching. The outcome of a comparison is a tristate `{lt, eq, gt}`, but the compiler
+        // won't use this optimization if you match on `len_inline.cmp(&MAX_SIZE)`, so we have to
+        // do it manually.
 
-        // initially has the value of the stack length, conditionally becomes the heap length
-        let mut length = core::cmp::min((last_byte.wrapping_sub(LENGTH_MASK)) as usize, MAX_SIZE);
-        let heap_length = self.1;
-        let length_ref = &mut length;
+        // Force the compiler to read the variable, so it won't put the reading in a branch.
+        let len_heap = self.1;
+        // SAFETY: This assembly instruction is a noop that only affects the instruction ordering.
+        #[cfg(not(miri))]
+        unsafe {
+            std::arch::asm!(
+                "/* {len_heap} */",
+                len_heap = in(reg) len_heap,
+                options(nomem, nostack),
+            );
+        };
 
-        // our discriminant is stored in the last byte and denotes stack vs heap
-        //
-        // Note: We should never add an `else` statement here, keeping the conditional simple allows
-        // the compiler to optimize this to a conditional-move instead of a branch
-        if last_byte == HEAP_MASK {
-            *length_ref = heap_length;
+        // Extending the variable early results in fewer instructions, because loading and
+        // extending can be done in one instruction.
+        let len_inline = (self.last_byte() as usize).wrapping_sub(LENGTH_MASK as usize);
+
+        // Do not add an `else` statement, or the compiler will introduce branching.
+        let mut len = len_heap;
+        if len_inline < MAX_SIZE {
+            len = len_inline;
         }
-
-        *length_ref
+        if len_inline > MAX_SIZE {
+            len = MAX_SIZE;
+        }
+        len
     }
 
     /// Returns the overall capacity of the underlying buffer

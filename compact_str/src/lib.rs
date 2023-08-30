@@ -1685,14 +1685,58 @@ impl CompactString {
     ///
     /// assert_eq!(new_year, new_year.to_lowercase());
     /// ```
-    #[must_use = "this returns the lowercase string as a new String, \
+    #[must_use = "this returns the lowercase string as a new CompactString, \
                   without modifying the original"]
     pub fn to_lowercase(&self) -> Self {
-        let mut s = convert_while_ascii(self.as_bytes(), u8::to_ascii_lowercase);
+        Self::from_str_to_lowercase(self.as_str())
+    }
+
+    /// Returns the lowercase equivalent of this string slice, as a new [`CompactString`].
+    ///
+    /// 'Lowercase' is defined according to the terms of the Unicode Derived Core Property
+    /// `Lowercase`.
+    ///
+    /// Since some characters can expand into multiple characters when changing
+    /// the case, this function returns a [`CompactString`] instead of modifying the
+    /// parameter in-place.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// use compact_str::CompactString;
+    ///
+    /// assert_eq!("hello", CompactString::from_str_to_lowercase("HELLO"));
+    /// ```
+    ///
+    /// A tricky example, with sigma:
+    ///
+    /// ```
+    /// use compact_str::CompactString;
+    ///
+    /// assert_eq!("σ", CompactString::from_str_to_lowercase("Σ"));
+    ///
+    /// // but at the end of a word, it's ς, not σ:
+    /// assert_eq!("ὀδυσσεύς", CompactString::from_str_to_lowercase("ὈΔΥΣΣΕΎΣ"));
+    /// ```
+    ///
+    /// Languages without case are not changed:
+    ///
+    /// ```
+    /// use compact_str::CompactString;
+    ///
+    /// let new_year = "农历新年";
+    /// assert_eq!(new_year, CompactString::from_str_to_lowercase(new_year));
+    /// ```
+    #[must_use = "this returns the lowercase string as a new CompactString, \
+                  without modifying the original"]
+    pub fn from_str_to_lowercase(input: &str) -> Self {
+        let mut s = convert_while_ascii(input.as_bytes(), u8::to_ascii_lowercase);
 
         // Safety: we know this is a valid char boundary since
         // out.len() is only progressed if ascii bytes are found
-        let rest = unsafe { self.get_unchecked(s.len()..) };
+        let rest = unsafe { input.get_unchecked(s.len()..) };
 
         for (i, c) in rest.char_indices() {
             if c == 'Σ' {
@@ -1763,14 +1807,54 @@ impl CompactString {
     ///
     /// assert_eq!("TSCHÜSS", s.to_uppercase());
     /// ```
-    #[must_use = "this returns the uppercase string as a new String, \
+    #[must_use = "this returns the uppercase string as a new CompactString, \
                   without modifying the original"]
     pub fn to_uppercase(&self) -> Self {
-        let mut out = convert_while_ascii(self.as_bytes(), u8::to_ascii_uppercase);
+        Self::from_str_to_uppercase(self.as_str())
+    }
+
+    /// Returns the uppercase equivalent of this string slice, as a new [`CompactString`].
+    ///
+    /// 'Uppercase' is defined according to the terms of the Unicode Derived Core Property
+    /// `Uppercase`.
+    ///
+    /// Since some characters can expand into multiple characters when changing
+    /// the case, this function returns a [`CompactString`] instead of modifying the
+    /// parameter in-place.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// use compact_str::CompactString;
+    ///
+    /// assert_eq!("HELLO", CompactString::from_str_to_uppercase("hello"));
+    /// ```
+    ///
+    /// Scripts without case are not changed:
+    ///
+    /// ```
+    /// use compact_str::CompactString;
+    ///
+    /// let new_year = "农历新年";
+    /// assert_eq!(new_year, CompactString::from_str_to_uppercase(new_year));
+    /// ```
+    ///
+    /// One character can become multiple:
+    /// ```
+    /// use compact_str::CompactString;
+    ///
+    /// assert_eq!("TSCHÜSS", CompactString::from_str_to_uppercase("tschüß"));
+    /// ```
+    #[must_use = "this returns the uppercase string as a new CompactString, \
+                  without modifying the original"]
+    pub fn from_str_to_uppercase(input: &str) -> Self {
+        let mut out = convert_while_ascii(input.as_bytes(), u8::to_ascii_uppercase);
 
         // Safety: we know this is a valid char boundary since
         // out.len() is only progressed if ascii bytes are found
-        let rest = unsafe { self.get_unchecked(out.len()..) };
+        let rest = unsafe { input.get_unchecked(out.len()..) };
 
         for c in rest.chars() {
             out.extend(c.to_uppercase());

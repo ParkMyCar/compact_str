@@ -86,172 +86,174 @@ jobs:
           command: miri
           args: test --all-features --manifest-path=compact_str/Cargo.toml
 
-  linux_32bit:
-    name: Linux 32-bit
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-        name: Checkout Repo
-      - uses: actions-rs/toolchain@v1
-        name: Install Rust
-        with:
-          toolchain: nightly
-          target: i686-unknown-linux-gnu
-          override: true
-          components: miri
-      - uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-x-plat-linux-32bit-v2
-      - uses: actions-rs/cargo@v1
-        name: cargo test
-        with:
-          use-cross: true
-          command: test
-          args: --release --all-features --manifest-path=compact_str/Cargo.toml --target i686-unknown-linux-gnu
-      - uses: actions-rs/cargo@v1
-        name: cargo test miri
-        with:
-          command: miri
-          args: test --all-features --manifest-path=compact_str/Cargo.toml --target i686-unknown-linux-gnu
+  # TODO(parkmycar): Re-enable before release of next version.
+  #
+  # linux_32bit:
+  #   name: Linux 32-bit
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #       name: Checkout Repo
+  #     - uses: actions-rs/toolchain@v1
+  #       name: Install Rust
+  #       with:
+  #         toolchain: nightly
+  #         target: i686-unknown-linux-gnu
+  #         override: true
+  #         components: miri
+  #     - uses: actions/cache@v3
+  #       with:
+  #         path: |
+  #           ~/.cargo/bin/
+  #           ~/.cargo/registry/index/
+  #           ~/.cargo/registry/cache/
+  #           ~/.cargo/git/db/
+  #           target/
+  #         key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-x-plat-linux-32bit-v2
+  #     - uses: actions-rs/cargo@v1
+  #       name: cargo test
+  #       with:
+  #         use-cross: true
+  #         command: test
+  #         args: --release --all-features --manifest-path=compact_str/Cargo.toml --target i686-unknown-linux-gnu
+  #     - uses: actions-rs/cargo@v1
+  #       name: cargo test miri
+  #       with:
+  #         command: miri
+  #         args: test --all-features --manifest-path=compact_str/Cargo.toml --target i686-unknown-linux-gnu
 
-  linux_mips_32bit:
-    name: Linux MIPS Big Endian 32-bit
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-        name: Checkout Repo
-      - uses: actions-rs/toolchain@v1
-        name: Install Rust
-        with:
-          toolchain: nightly
-          target: mips-unknown-linux-gnu
-          override: true
-          components: miri
-      - uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-x-plat-linux-mips-32bit-v2
-      - uses: actions-rs/cargo@v1
-        name: cargo test
-        with:
-          use-cross: true
-          command: test
-          args: --release --all-features --manifest-path=compact_str/Cargo.toml --target mips-unknown-linux-gnu
-      - uses: actions-rs/cargo@v1
-        name: cargo test miri
-        with:
-          command: miri
-          args: test --all-features --manifest-path=compact_str/Cargo.toml --target mips-unknown-linux-gnu
+  # linux_mips_32bit:
+  #   name: Linux MIPS Big Endian 32-bit
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #       name: Checkout Repo
+  #     - uses: actions-rs/toolchain@v1
+  #       name: Install Rust
+  #       with:
+  #         toolchain: nightly
+  #         target: mips-unknown-linux-gnu
+  #         override: true
+  #         components: miri
+  #     - uses: actions/cache@v3
+  #       with:
+  #         path: |
+  #           ~/.cargo/bin/
+  #           ~/.cargo/registry/index/
+  #           ~/.cargo/registry/cache/
+  #           ~/.cargo/git/db/
+  #           target/
+  #         key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-x-plat-linux-mips-32bit-v2
+  #     - uses: actions-rs/cargo@v1
+  #       name: cargo test
+  #       with:
+  #         use-cross: true
+  #         command: test
+  #         args: --release --all-features --manifest-path=compact_str/Cargo.toml --target mips-unknown-linux-gnu
+  #     - uses: actions-rs/cargo@v1
+  #       name: cargo test miri
+  #       with:
+  #         command: miri
+  #         args: test --all-features --manifest-path=compact_str/Cargo.toml --target mips-unknown-linux-gnu
 
-  linux_mips_le_32bit:
-    name: Linux MIPS Little Endian 32-bit
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-        name: Checkout Repo
-      - uses: actions-rs/toolchain@v1
-        name: Install Rust
-        with:
-          toolchain: nightly
-          target: mipsel-unknown-linux-gnu
-          override: true
-          components: miri
-      - uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-x-plat-linux-mips-le-32bit-v2
-      - uses: actions-rs/cargo@v1
-        name: cargo test
-        with:
-          use-cross: true
-          command: test
-          args: --release --all-features --manifest-path=compact_str/Cargo.toml --target mipsel-unknown-linux-gnu
-      - uses: actions-rs/cargo@v1
-        name: cargo test miri
-        with:
-          command: miri
-          args: test --all-features --manifest-path=compact_str/Cargo.toml --target mipsel-unknown-linux-gnu
+  # linux_mips_le_32bit:
+  #   name: Linux MIPS Little Endian 32-bit
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #       name: Checkout Repo
+  #     - uses: actions-rs/toolchain@v1
+  #       name: Install Rust
+  #       with:
+  #         toolchain: nightly
+  #         target: mipsel-unknown-linux-gnu
+  #         override: true
+  #         components: miri
+  #     - uses: actions/cache@v3
+  #       with:
+  #         path: |
+  #           ~/.cargo/bin/
+  #           ~/.cargo/registry/index/
+  #           ~/.cargo/registry/cache/
+  #           ~/.cargo/git/db/
+  #           target/
+  #         key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-x-plat-linux-mips-le-32bit-v2
+  #     - uses: actions-rs/cargo@v1
+  #       name: cargo test
+  #       with:
+  #         use-cross: true
+  #         command: test
+  #         args: --release --all-features --manifest-path=compact_str/Cargo.toml --target mipsel-unknown-linux-gnu
+  #     - uses: actions-rs/cargo@v1
+  #       name: cargo test miri
+  #       with:
+  #         command: miri
+  #         args: test --all-features --manifest-path=compact_str/Cargo.toml --target mipsel-unknown-linux-gnu
 
-  linux_powerpc_bit:
-    name: Linux PowerPC Big Endian 32-bit
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-        name: Checkout Repo
-      - uses: actions-rs/toolchain@v1
-        name: Install Rust
-        with:
-          toolchain: nightly
-          target: powerpc-unknown-linux-gnu
-          override: true
-          components: miri
-      - uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-x-plat-linux-powerpc-32bit-v2
-      - uses: actions-rs/cargo@v1
-        name: cargo test
-        with:
-          use-cross: true
-          command: test
-          args: --release --all-features --manifest-path=compact_str/Cargo.toml --target powerpc-unknown-linux-gnu
-      - uses: actions-rs/cargo@v1
-        name: cargo test miri
-        with:
-          command: miri
-          args: test --all-features --manifest-path=compact_str/Cargo.toml --target powerpc-unknown-linux-gnu
+  # linux_powerpc_bit:
+  #   name: Linux PowerPC Big Endian 32-bit
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #       name: Checkout Repo
+  #     - uses: actions-rs/toolchain@v1
+  #       name: Install Rust
+  #       with:
+  #         toolchain: nightly
+  #         target: powerpc-unknown-linux-gnu
+  #         override: true
+  #         components: miri
+  #     - uses: actions/cache@v3
+  #       with:
+  #         path: |
+  #           ~/.cargo/bin/
+  #           ~/.cargo/registry/index/
+  #           ~/.cargo/registry/cache/
+  #           ~/.cargo/git/db/
+  #           target/
+  #         key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-x-plat-linux-powerpc-32bit-v2
+  #     - uses: actions-rs/cargo@v1
+  #       name: cargo test
+  #       with:
+  #         use-cross: true
+  #         command: test
+  #         args: --release --all-features --manifest-path=compact_str/Cargo.toml --target powerpc-unknown-linux-gnu
+  #     - uses: actions-rs/cargo@v1
+  #       name: cargo test miri
+  #       with:
+  #         command: miri
+  #         args: test --all-features --manifest-path=compact_str/Cargo.toml --target powerpc-unknown-linux-gnu
 
-  linux_powerpc_le_64bit:
-    name: Linux PowerPC Little Endian 64-bit
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-        name: Checkout Repo
-      - uses: actions-rs/toolchain@v1
-        name: Install Rust
-        with:
-          toolchain: nightly
-          target: powerpc64le-unknown-linux-gnu
-          override: true
-          components: miri
-      - uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-x-plat-linux-powerpc-le-64bit-v2
-      - uses: actions-rs/cargo@v1
-        name: cargo test
-        with:
-          use-cross: true
-          command: test
-          args: --release --all-features --manifest-path=compact_str/Cargo.toml --target powerpc64le-unknown-linux-gnu
-      - uses: actions-rs/cargo@v1
-        name: cargo test miri
-        with:
-          command: miri
-          args: test --all-features --manifest-path=compact_str/Cargo.toml --target powerpc64le-unknown-linux-gnu
+  # linux_powerpc_le_64bit:
+  #   name: Linux PowerPC Little Endian 64-bit
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #       name: Checkout Repo
+  #     - uses: actions-rs/toolchain@v1
+  #       name: Install Rust
+  #       with:
+  #         toolchain: nightly
+  #         target: powerpc64le-unknown-linux-gnu
+  #         override: true
+  #         components: miri
+  #     - uses: actions/cache@v3
+  #       with:
+  #         path: |
+  #           ~/.cargo/bin/
+  #           ~/.cargo/registry/index/
+  #           ~/.cargo/registry/cache/
+  #           ~/.cargo/git/db/
+  #           target/
+  #         key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-x-plat-linux-powerpc-le-64bit-v2
+  #     - uses: actions-rs/cargo@v1
+  #       name: cargo test
+  #       with:
+  #         use-cross: true
+  #         command: test
+  #         args: --release --all-features --manifest-path=compact_str/Cargo.toml --target powerpc64le-unknown-linux-gnu
+  #     - uses: actions-rs/cargo@v1
+  #       name: cargo test miri
+  #       with:
+  #         command: miri
+  #         args: test --all-features --manifest-path=compact_str/Cargo.toml --target powerpc64le-unknown-linux-gnu

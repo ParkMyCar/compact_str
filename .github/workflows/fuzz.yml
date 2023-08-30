@@ -64,7 +64,7 @@ jobs:
           args: run --features=libfuzzer-sys --debug-assertions compact_str -- -max_total_time=${{ env.fuzz_time }}
       - name: File Issue (if failure found)
         if: failure()
-        uses: JasonEtco/create-an-issue@v2.6
+        uses: JasonEtco/create-an-issue@v2.9
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:

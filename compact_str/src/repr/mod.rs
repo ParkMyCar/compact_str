@@ -390,10 +390,6 @@ impl Repr {
     #[allow(clippy::len_without_is_empty)] // is_empty exists on CompactString
     #[inline]
     pub fn len(&self) -> usize {
-        if let Some(s) = self.as_static_str() {
-            return s.len();
-        }
-
         // This ugly looking code results in two conditional moves and only one comparison, without
         // branching. The outcome of a comparison is a tristate `{lt, eq, gt}`, but the compiler
         // won't use this optimization if you match on `len_inline.cmp(&MAX_SIZE)`, so we have to
@@ -411,18 +407,22 @@ impl Repr {
             );
         };
 
+        let last_byte = self.last_byte();
+
         // Extending the variable early results in fewer instructions, because loading and
         // extending can be done in one instruction.
-        let len_inline = (self.last_byte() as usize).wrapping_sub(LENGTH_MASK as usize);
+        let mut len = (last_byte as usize)
+            .wrapping_sub(LENGTH_MASK as usize)
+            .min(MAX_SIZE);
 
-        // Do not add an `else` statement, or the compiler will introduce branching.
-        let mut len = len_heap;
-        if len_inline < MAX_SIZE {
-            len = len_inline;
+        // our discriminant is stored in the last byte and denotes stack vs heap
+        //
+        // Note: We should never add an `else` statement here, keeping the conditional simple allows
+        // the compiler to optimize this to a conditional-move instead of a branch
+        if last_byte == HEAP_MASK || last_byte == STATIC_STR_MASK {
+            len = len_heap;
         }
-        if len_inline > MAX_SIZE {
-            len = MAX_SIZE;
-        }
+
         len
     }
 

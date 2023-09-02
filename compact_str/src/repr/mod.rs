@@ -460,8 +460,7 @@ impl Repr {
     }
 
     #[inline]
-    #[rustversion::attr(since(1.58), const)]
-    pub fn as_static_str(&self) -> Option<&'static str> {
+    pub const fn as_static_str(&self) -> Option<&'static str> {
         if self.is_static_str() {
             // SAFETY: A `Repr` is transmuted from `StaticStr`
             let s: &StaticStr = unsafe { &*(self as *const Self as *const StaticStr) };

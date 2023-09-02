@@ -314,6 +314,8 @@ impl Repr {
 
     #[inline]
     pub fn push_str(&mut self, s: &str) {
+        // If `s` is empty, then there's no reason to reserve or push anything
+        // at all.
         if s.is_empty() {
             return;
         }

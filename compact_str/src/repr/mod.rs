@@ -355,10 +355,6 @@ impl Repr {
     /// Returns the string content, and only the string content, as a slice of bytes.
     #[inline]
     pub fn as_slice(&self) -> &[u8] {
-        if let Some(s) = self.as_static_str() {
-            return s.as_bytes();
-        }
-
         // the last byte stores our discriminant and stack length
         let last_byte = self.last_byte();
 
@@ -374,7 +370,7 @@ impl Repr {
         //
         // Note: We should never add an `else` statement here, keeping the conditional simple allows
         // the compiler to optimize this to a conditional-move instead of a branch
-        if last_byte == HEAP_MASK {
+        if last_byte == HEAP_MASK || last_byte == STATIC_STR_MASK {
             pointer = heap_pointer;
             length = heap_length;
         }
@@ -462,11 +458,12 @@ impl Repr {
     }
 
     #[inline]
-    pub const fn as_static_str(&self) -> Option<&'static str> {
+    #[rustversion::attr(since(1.64), const)]
+    pub fn as_static_str(&self) -> Option<&'static str> {
         if self.is_static_str() {
             // SAFETY: A `Repr` is transmuted from `StaticStr`
             let s: &StaticStr = unsafe { &*(self as *const Self as *const StaticStr) };
-            Some(s.text)
+            Some(s.get_text())
         } else {
             None
         }
@@ -518,7 +515,7 @@ impl Repr {
     /// * If the underlying buffer is stored inline, `len` must be <= MAX_SIZE
     pub unsafe fn set_len(&mut self, len: usize) {
         if let Some(s) = self.as_static_variant_mut() {
-            s.text = &s.text[..len];
+            s.set_len(len);
         } else if self.is_heap_allocated() {
             // SAFETY: We just checked the discriminant to make sure we're heap allocated
             let heap_buffer = self.as_mut_heap();

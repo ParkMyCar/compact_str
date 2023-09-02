@@ -242,7 +242,8 @@ impl CompactString {
     /// assert_eq!(DEFAULT_NAME.as_static_str().unwrap(), "untitled");
     /// ```
     #[inline]
-    pub const fn as_static_str(&self) -> Option<&'static str> {
+    #[rustversion::attr(since(1.64), const)]
+    pub fn as_static_str(&self) -> Option<&'static str> {
         self.0.as_static_str()
     }
 

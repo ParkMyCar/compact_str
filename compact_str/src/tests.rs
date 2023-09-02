@@ -548,7 +548,7 @@ fn test_compact_str_is_send_and_sync() {
     is_send_and_sync::<CompactString>();
 }
 
-#[test_case(CompactString::default; "inline")]
+#[test_case(CompactString::default(); "inline")]
 #[test_case(CompactString::from_static_str(""); "static_str")]
 fn test_fmt_write(mut compact: CompactString) {
     use core::fmt::Write;
@@ -1265,85 +1265,84 @@ fn test_truncate_panics_on_non_char_boundary() {
     emojis.truncate(1);
 }
 
-#[test]
-fn test_insert() {
-    for to_compact in [CompactString::from, CompactString::from_static_str] {
-        // insert into empty string
-        let mut one_byte = to_compact("");
-        one_byte.insert(0, '.');
-        assert_eq!(one_byte, ".");
+#[test_case(CompactString::from; "inline")]
+#[test_case(CompactString::from_static_str; "static_str")]
+fn test_insert(to_compact: fn(&'static str) -> CompactString) {
+    // insert into empty string
+    let mut one_byte = to_compact("");
+    one_byte.insert(0, '.');
+    assert_eq!(one_byte, ".");
 
-        let mut two_bytes = to_compact("");
-        two_bytes.insert(0, 'Ü');
-        assert_eq!(two_bytes, "Ü");
+    let mut two_bytes = to_compact("");
+    two_bytes.insert(0, 'Ü');
+    assert_eq!(two_bytes, "Ü");
 
-        let mut three_bytes = to_compact("");
-        three_bytes.insert(0, '€');
-        assert_eq!(three_bytes, "€");
+    let mut three_bytes = to_compact("");
+    three_bytes.insert(0, '€');
+    assert_eq!(three_bytes, "€");
 
-        let mut four_bytes = to_compact("");
-        four_bytes.insert(0, '😀');
-        assert_eq!(four_bytes, "😀");
+    let mut four_bytes = to_compact("");
+    four_bytes.insert(0, '😀');
+    assert_eq!(four_bytes, "😀");
 
-        // insert at the front of string
-        let mut one_byte = to_compact("😀");
-        one_byte.insert(0, '.');
-        assert_eq!(one_byte, ".😀");
+    // insert at the front of string
+    let mut one_byte = to_compact("😀");
+    one_byte.insert(0, '.');
+    assert_eq!(one_byte, ".😀");
 
-        let mut two_bytes = to_compact("😀");
-        two_bytes.insert(0, 'Ü');
-        assert_eq!(two_bytes, "Ü😀");
+    let mut two_bytes = to_compact("😀");
+    two_bytes.insert(0, 'Ü');
+    assert_eq!(two_bytes, "Ü😀");
 
-        let mut three_bytes = to_compact("😀");
-        three_bytes.insert(0, '€');
-        assert_eq!(three_bytes, "€😀");
+    let mut three_bytes = to_compact("😀");
+    three_bytes.insert(0, '€');
+    assert_eq!(three_bytes, "€😀");
 
-        let mut four_bytes = to_compact("😀");
-        four_bytes.insert(0, '😀');
-        assert_eq!(four_bytes, "😀😀");
+    let mut four_bytes = to_compact("😀");
+    four_bytes.insert(0, '😀');
+    assert_eq!(four_bytes, "😀😀");
 
-        // insert at the end of string
-        let mut one_byte = to_compact("😀");
-        one_byte.insert(4, '.');
-        assert_eq!(one_byte, "😀.");
+    // insert at the end of string
+    let mut one_byte = to_compact("😀");
+    one_byte.insert(4, '.');
+    assert_eq!(one_byte, "😀.");
 
-        let mut two_bytes = to_compact("😀");
-        two_bytes.insert(4, 'Ü');
-        assert_eq!(two_bytes, "😀Ü");
+    let mut two_bytes = to_compact("😀");
+    two_bytes.insert(4, 'Ü');
+    assert_eq!(two_bytes, "😀Ü");
 
-        let mut three_bytes = to_compact("😀");
-        three_bytes.insert(4, '€');
-        assert_eq!(three_bytes, "😀€");
+    let mut three_bytes = to_compact("😀");
+    three_bytes.insert(4, '€');
+    assert_eq!(three_bytes, "😀€");
 
-        let mut four_bytes = to_compact("😀");
-        four_bytes.insert(4, '😀');
-        assert_eq!(four_bytes, "😀😀");
+    let mut four_bytes = to_compact("😀");
+    four_bytes.insert(4, '😀');
+    assert_eq!(four_bytes, "😀😀");
 
-        // insert in the middle of string
-        let mut one_byte = to_compact("😀😀");
-        one_byte.insert(4, '.');
-        assert_eq!(one_byte, "😀.😀");
+    // insert in the middle of string
+    let mut one_byte = to_compact("😀😀");
+    one_byte.insert(4, '.');
+    assert_eq!(one_byte, "😀.😀");
 
-        let mut two_bytes = to_compact("😀😀");
-        two_bytes.insert(4, 'Ü');
-        assert_eq!(two_bytes, "😀Ü😀");
+    let mut two_bytes = to_compact("😀😀");
+    two_bytes.insert(4, 'Ü');
+    assert_eq!(two_bytes, "😀Ü😀");
 
-        let mut three_bytes = to_compact("😀😀");
-        three_bytes.insert(4, '€');
-        assert_eq!(three_bytes, "😀€😀");
+    let mut three_bytes = to_compact("😀😀");
+    three_bytes.insert(4, '€');
+    assert_eq!(three_bytes, "😀€😀");
 
-        let mut four_bytes = to_compact("😀😀");
-        four_bytes.insert(4, '😀');
-        assert_eq!(four_bytes, "😀😀😀");
+    let mut four_bytes = to_compact("😀😀");
+    four_bytes.insert(4, '😀');
+    assert_eq!(four_bytes, "😀😀😀");
 
-        // edge case: new length is 24 bytes
-        let mut s = to_compact("\u{ffff}\u{ffff}\u{ffff}\u{ffff}\u{ffff}\u{ffff}\u{ffff}");
-        s.insert(21, '\u{ffff}');
-        assert_eq!(
-            s,
-            "\u{ffff}\u{ffff}\u{ffff}\u{ffff}\u{ffff}\u{ffff}\u{ffff}\u{ffff}",
-        );
-    }
+    // edge case: new length is 24 bytes
+    let mut s = to_compact("\u{ffff}\u{ffff}\u{ffff}\u{ffff}\u{ffff}\u{ffff}\u{ffff}");
+    s.insert(21, '\u{ffff}');
+    assert_eq!(
+        s,
+        "\u{ffff}\u{ffff}\u{ffff}\u{ffff}\u{ffff}\u{ffff}\u{ffff}\u{ffff}",
+    );
 }
 
 #[test]

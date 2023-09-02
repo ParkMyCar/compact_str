@@ -6,6 +6,7 @@ use std::str::FromStr;
 use proptest::collection::SizeRange;
 use proptest::prelude::*;
 use proptest::strategy::Strategy;
+use test_case::test_case;
 use test_strategy::proptest;
 
 use crate::{
@@ -516,17 +517,16 @@ fn test_extend_packed_from_empty() {
     assert!(!compact.is_heap_allocated());
 }
 
-#[test]
-fn test_pop_empty() {
+#[test_case(CompactString::from(""); "inline")]
+#[test_case(CompactString::from_static_str(""); "static_str")]
+fn test_pop_empty(mut compact: CompactString) {
     let num_pops = 256;
-    for mut compact in [CompactString::from(""), CompactString::from_static_str("")] {
-        (0..num_pops).for_each(|_| {
-            let ch = compact.pop();
-            assert!(ch.is_none());
-        });
-        assert!(compact.is_empty());
-        assert_eq!(compact, "");
-    }
+    (0..num_pops).for_each(|_| {
+        let ch = compact.pop();
+        assert!(ch.is_none());
+    });
+    assert!(compact.is_empty());
+    assert_eq!(compact, "");
 }
 
 #[test]
@@ -548,20 +548,19 @@ fn test_compact_str_is_send_and_sync() {
     is_send_and_sync::<CompactString>();
 }
 
-#[test]
-fn test_fmt_write() {
+#[test_case(CompactString::default; "inline")]
+#[test_case(CompactString::from_static_str(""); "static_str")]
+fn test_fmt_write(mut compact: CompactString) {
     use core::fmt::Write;
 
-    for mut compact in [CompactString::default(), CompactString::from_static_str("")] {
-        write!(compact, "test").unwrap();
-        assert_eq!(compact, "test");
+    write!(compact, "test").unwrap();
+    assert_eq!(compact, "test");
 
-        writeln!(compact, "{}", 1234).unwrap();
-        assert_eq!(compact, "test1234\n");
+    writeln!(compact, "{}", 1234).unwrap();
+    assert_eq!(compact, "test1234\n");
 
-        write!(compact, "{:>8} {} {:<8}", "some", "more", "words").unwrap();
-        assert_eq!(compact, "test1234\n    some more words   ");
-    }
+    write!(compact, "{:>8} {} {:<8}", "some", "more", "words").unwrap();
+    assert_eq!(compact, "test1234\n    some more words   ");
 }
 
 #[test]

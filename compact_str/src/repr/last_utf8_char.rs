@@ -236,6 +236,7 @@ pub enum LastUtf8Char {
     L23 = 215,
 
     Heap = 216,
+    Static = 217,
 }
 
 static_assertions::assert_eq_size!(LastUtf8Char, Option<LastUtf8Char>, u8);

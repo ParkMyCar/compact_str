@@ -644,51 +644,25 @@ impl Repr {
         // SAFETY: An `InlineBuffer` and `Repr` have the same size
         &mut *(self as *mut _ as *mut InlineBuffer)
     }
-
-    /// Reinterprets a `&Repr` as an `&InlineBuffer`
-    ///
-    /// # SAFETY
-    /// * The caller must guarantee that the provided [`Repr`] is actually an [`InlineBuffer`] by
-    /// checking the discriminant
-    ///
-    /// Note: We used to define [`Repr`] as a `union` which implicitly transmuted between the two
-    /// types, but that prevented us from defining a "niche" value to make `Option<CompactString>`
-    /// the same size as just `CompactString`
-    #[inline(always)]
-    unsafe fn as_inline(&self) -> &InlineBuffer {
-        // SAFETY: An `InlineBuffer` and `Repr` have the same size
-        &*(self as *const _ as *const InlineBuffer)
-    }
 }
 
 impl Clone for Repr {
     #[inline]
     fn clone(&self) -> Self {
-        let last_byte = self.last_byte();
-
-        #[cold]
+        #[inline(never)]
         fn clone_heap(this: &Repr) -> Repr {
-            // SAFETY: We just checked the discriminant to make sure we're heap allocated
-            let heap = unsafe { this.as_heap() };
-
-            // If the contained string is small enough, we will inline it instead of allocating
-            if heap.len <= MAX_SIZE {
-                // SAFETY: Checked to make sure the length is <= MAX_SIZE
-                let inline = unsafe { InlineBuffer::new(this.as_str()) };
-                Repr::from_inline(inline)
-            } else {
-                let new = heap.clone();
-                Repr::from_heap(new)
-            }
+            Repr::new(this.as_str())
         }
-        if let Some(s) = self.as_static_str() {
-            Self::from_static_str(s)
-        } else if last_byte == HEAP_MASK {
+
+        // There are only two cases we need to care about: If the string is allocated on the heap
+        // or not. If it is, then the data must be cloned proberly, otherwise we can simply copy
+        // the `Repr`.
+        if self.is_heap_allocated() {
             clone_heap(self)
         } else {
-            // SAFETY: We checked above that the discriminant indicates we're inline
-            let inline = unsafe { self.as_inline() };
-            Repr::from_inline(inline.copy())
+            // SAFETY: We just checked that `self` can be copied because it is an inline string or
+            // a reference to a `&'static str`.
+            unsafe { std::ptr::read(self) }
         }
     }
 }

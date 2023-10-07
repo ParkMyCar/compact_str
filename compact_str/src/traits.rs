@@ -1,19 +1,14 @@
-use alloc::string::String;
-use core::fmt::{
-    self,
-    Write,
-};
+use core::fmt::{self, Write};
 use core::num;
 
-use castaway::{
-    match_type,
-    LifetimeFree,
-};
+// TODO(parkmycar): Re-enable when a new version of `castaway` is released.
+//
+// <https://github.com/ParkMyCar/compact_str/issues/304>
+// use alloc::string::String;
 
-use super::repr::{
-    IntoRepr,
-    Repr,
-};
+use castaway::{match_type, LifetimeFree};
+
+use super::repr::{IntoRepr, Repr};
 use crate::CompactString;
 
 /// A trait for converting a value to a `CompactString`.
@@ -86,7 +81,10 @@ impl<T: fmt::Display> ToCompactString for T {
             &f64 as s => s.into_repr(),
             &bool as s => s.into_repr(),
             &char as s => s.into_repr(),
-            &String as s => Repr::new(s),
+            // TODO(parkmycar): Re-enable when a new version of `castaway` is released.
+            //
+            // <https://github.com/ParkMyCar/compact_str/issues/304>
+            // &String as s => Repr::new(s),
             &CompactString as s => Repr::new(s),
             &num::NonZeroU8 as s => s.into_repr(),
             &num::NonZeroI8 as s => s.into_repr(),
@@ -193,20 +191,14 @@ where
 
 #[cfg(test)]
 mod tests {
-    use alloc::string::{
-        String,
-        ToString,
-    };
+    use alloc::string::{String, ToString};
     use alloc::vec::Vec;
     use core::num;
 
     use proptest::prelude::*;
     use test_strategy::proptest;
 
-    use super::{
-        CompactStringExt,
-        ToCompactString,
-    };
+    use super::{CompactStringExt, ToCompactString};
     use crate::CompactString;
 
     #[test]

@@ -1765,6 +1765,9 @@ fn test_from_string_buffer_inlines_on_clone() {
     assert!(!b.is_heap_allocated());
 }
 
+// This feature was enabled by <https://github.com/rust-lang/rust/pull/94075> which was first
+// released in Rust 1.65.
+#[rustversion::since(1.65)]
 #[test]
 fn multiple_nieches_test() {
     #[allow(unused)]

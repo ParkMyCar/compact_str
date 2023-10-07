@@ -18,7 +18,7 @@ env:
 
 jobs:
   msrv:
-    name: cargo test msrv..
+    name: cargo check msrv 1.59..
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -59,6 +59,7 @@ jobs:
         # deps decide the version since the API should still be semver compatible
         run: |
           cargo hack check --features bytes,markup,quickcheck,rkyv,serde,smallvec --manifest-path=compact_str/Cargo.toml --version-range 1.59..
+          cargo hack check --features bytes,markup,quickcheck,rkyv,serde,smallvec,proptest,arbitrary --manifest-path=compact_str/Cargo.toml --version-range 1.64..
 
   feature_powerset:
     name: cargo check feature-powerset

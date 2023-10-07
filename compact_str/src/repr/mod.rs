@@ -419,7 +419,7 @@ impl Repr {
         //
         // Note: We should never add an `else` statement here, keeping the conditional simple allows
         // the compiler to optimize this to a conditional-move instead of a branch
-        if last_byte == HEAP_MASK || last_byte == STATIC_STR_MASK {
+        if last_byte >= HEAP_MASK {
             len = len_heap;
         }
 

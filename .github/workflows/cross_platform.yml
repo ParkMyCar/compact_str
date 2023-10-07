@@ -20,9 +20,12 @@ env:
   MIRIFAGS: "-Zmiri-tag-raw-pointers -Zmiri-check-number-validity"
 
 jobs:
-  windows:
-    name: Windows
-    runs-on: windows-latest
+  x_plat_os:
+    name: x_plat_os
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
         name: Checkout Repo
@@ -41,40 +44,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-x-plat-windows-v3
-      - uses: actions-rs/cargo@v1
-        name: cargo test
-        with:
-          command: test
-          args: --release --all-features --manifest-path=compact_str/Cargo.toml -- --include-ignored
-      - uses: actions-rs/cargo@v1
-        name: cargo test miri
-        with:
-          command: miri
-          args: test --all-features --manifest-path=compact_str/Cargo.toml
-
-  macos:
-    name: macOS
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v3
-        name: Checkout Repo
-      - uses: actions-rs/toolchain@v1
-        name: Install Rust
-        with:
-          profile: minimal
-          toolchain: nightly
-          override: true
-          components: miri
-      - uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-x-plat-macos-v3
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-x-plat-${{ matrix.os }}
       - uses: actions-rs/cargo@v1
         name: cargo test
         with:

@@ -403,7 +403,7 @@ impl Repr {
         // SAFETY: This assembly instruction is a noop that only affects the instruction ordering.
         #[cfg(not(miri))]
         unsafe {
-            std::arch::asm!(
+            core::arch::asm!(
                 "/* {len_heap} */",
                 len_heap = in(reg) len_heap,
                 options(nomem, nostack),

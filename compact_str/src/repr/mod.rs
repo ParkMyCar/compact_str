@@ -358,23 +358,20 @@ impl Repr {
     /// Returns the string content, and only the string content, as a slice of bytes.
     #[inline]
     pub fn as_slice(&self) -> &[u8] {
-        // the last byte stores our discriminant and stack length
-        let last_byte = self.last_byte();
-
         // initially has the value of the stack pointer, conditionally becomes the heap pointer
         let mut pointer = self as *const Self as *const u8;
         let heap_pointer = self.0 as *const u8;
+        if self.last_byte() >= HEAP_MASK {
+            pointer = heap_pointer;
+        }
 
         // initially has the value of the stack length, conditionally becomes the heap length
-        let mut length = core::cmp::min((last_byte.wrapping_sub(LENGTH_MASK)) as usize, MAX_SIZE);
+        let mut length = core::cmp::min(
+            self.last_byte().wrapping_sub(LENGTH_MASK) as usize,
+            MAX_SIZE,
+        );
         let heap_length = self.1;
-
-        // our discriminant is stored in the last byte and denotes stack vs heap
-        //
-        // Note: We should never add an `else` statement here, keeping the conditional simple allows
-        // the compiler to optimize this to a conditional-move instead of a branch
-        if last_byte == HEAP_MASK || last_byte == STATIC_STR_MASK {
-            pointer = heap_pointer;
+        if self.last_byte() >= HEAP_MASK {
             length = heap_length;
         }
 

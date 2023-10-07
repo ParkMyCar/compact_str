@@ -11,6 +11,12 @@ readme = "../README.md"
 keywords = ["string", "compact", "small", "memory", "mutable"]
 categories = ["encoding", "parsing", "memory-management", "text-processing"]
 
+[features]
+default = [
+    "std",
+]
+std = []
+
 [dependencies]
 arbitrary = { version = "1", optional = true, default-features = false }
 bytes = { version = "1", optional = true }
@@ -21,7 +27,10 @@ rkyv = { version = "0.7", optional = true, default-features = false, features = 
 serde = { version = "1", optional = true }
 smallvec = { version = "1", optional = true, features = ["union"] }
 
-castaway = "0.2"
+# TODO: replace with the below version when castaway is updated on crates.io
+castaway = { version = "0.2", default-features = false }
+# castaway = { version = "0.2", default-features = false, features = ["alloc"] }
+
 cfg-if = "1"
 itoa = "1"
 ryu = "1"

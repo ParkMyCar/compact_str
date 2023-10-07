@@ -152,6 +152,8 @@ mod tests {
 
     #[cfg(feature = "smallvec")]
     mod smallvec {
+        use alloc::string::String;
+
         use quickcheck_macros::quickcheck;
 
         use crate::repr::{
@@ -172,7 +174,7 @@ mod tests {
             assert!(array[length..].iter().all(|b| *b == 0));
 
             // taking a string slice should give back the same string as the original
-            let ex_s = unsafe { std::str::from_utf8_unchecked(&array[..length]) };
+            let ex_s = unsafe { core::str::from_utf8_unchecked(&array[..length]) };
             assert_eq!(s, ex_s);
         }
 
@@ -196,7 +198,7 @@ mod tests {
             assert!(array[length..].iter().all(|b| *b == 0));
 
             // taking a string slice should give back the same string as the original
-            let ex_s = unsafe { std::str::from_utf8_unchecked(&array[..length]) };
+            let ex_s = unsafe { core::str::from_utf8_unchecked(&array[..length]) };
             assert_eq!(s, ex_s);
         }
     }

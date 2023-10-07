@@ -69,6 +69,9 @@ impl CompactString {
 
 #[cfg(test)]
 mod test {
+    use alloc::string::String;
+    use alloc::vec::Vec;
+    #[cfg(feature = "std")]
     use std::io::Cursor;
 
     use proptest::prelude::*;

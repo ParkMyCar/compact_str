@@ -81,6 +81,7 @@ impl Repr {
 
 #[cfg(test)]
 mod test {
+    #[cfg(feature = "std")]
     use std::io::Cursor;
 
     use test_case::test_case;
@@ -156,7 +157,7 @@ mod test {
             51, 51, 0, 52, 55, 247, 204, 45, 44, 210, 132, 50, 206, 51,
         ];
         let (front, back) = data.split_at(data.len() / 2 + 1);
-        let mut queue = std::collections::VecDeque::with_capacity(data.len());
+        let mut queue = alloc::collections::VecDeque::with_capacity(data.len());
 
         // create a non-contiguous slice of memory in queue
         front.into_iter().copied().for_each(|x| queue.push_back(x));

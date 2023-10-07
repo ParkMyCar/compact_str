@@ -1,6 +1,17 @@
 #![doc = include_str!("../README.md")]
 #![cfg_attr(docsrs, feature(doc_cfg))]
+#![no_std]
 
+#[cfg(feature = "std")]
+#[macro_use]
+extern crate std;
+
+#[cfg_attr(test, macro_use)]
+extern crate alloc;
+
+use alloc::borrow::Cow;
+use alloc::boxed::Box;
+use alloc::string::String;
 #[doc(hidden)]
 pub use core;
 use core::borrow::{
@@ -12,7 +23,10 @@ use core::hash::{
     Hash,
     Hasher,
 };
-use core::iter::FromIterator;
+use core::iter::{
+    FromIterator,
+    FusedIterator,
+};
 use core::ops::{
     Add,
     AddAssign,
@@ -30,9 +44,8 @@ use core::{
     mem,
     slice,
 };
-use std::borrow::Cow;
+#[cfg(feature = "std")]
 use std::ffi::OsStr;
-use std::iter::FusedIterator;
 
 mod features;
 mod macros;
@@ -427,7 +440,7 @@ impl CompactString {
     pub fn from_utf16_lossy<B: AsRef<[u16]>>(buf: B) -> Self {
         let buf = buf.as_ref();
         let mut ret = CompactString::with_capacity(buf.len());
-        for c in std::char::decode_utf16(buf.iter().copied()) {
+        for c in core::char::decode_utf16(buf.iter().copied()) {
             match c {
                 Ok(c) => ret.push(c),
                 Err(_) => ret.push_str("�"),
@@ -554,7 +567,7 @@ impl CompactString {
     #[inline]
     pub fn as_mut_str(&mut self) -> &mut str {
         let len = self.len();
-        unsafe { std::str::from_utf8_unchecked_mut(&mut self.0.as_mut_buf()[..len]) }
+        unsafe { core::str::from_utf8_unchecked_mut(&mut self.0.as_mut_buf()[..len]) }
     }
 
     unsafe fn spare_capacity_mut(&mut self) -> &mut [mem::MaybeUninit<u8>] {
@@ -991,14 +1004,14 @@ impl CompactString {
         unsafe {
             // first move the tail to the new back
             let data = self.as_mut_ptr();
-            std::ptr::copy(
+            core::ptr::copy(
                 data.add(idx),
                 data.add(idx + string.len()),
                 new_len - idx - string.len(),
             );
 
             // then insert the new bytes
-            std::ptr::copy_nonoverlapping(string.as_ptr(), data.add(idx), string.len());
+            core::ptr::copy_nonoverlapping(string.as_ptr(), data.add(idx), string.len());
 
             // and lastly resize the string
             self.set_len(new_len);
@@ -1330,7 +1343,7 @@ impl CompactString {
         let mut iter = v.iter();
         while let Some(s) = next_char(&mut iter, &mut buf) {
             // SAFETY: next_char() only returns valid strings
-            let s = unsafe { std::str::from_utf8_unchecked(s) };
+            let s = unsafe { core::str::from_utf8_unchecked(s) };
             result.push_str(s);
         }
         result
@@ -1357,7 +1370,7 @@ impl CompactString {
         match unsafe { v.align_to::<u16>() } {
             (&[], v, &[]) => {
                 // Input is correcty aligned.
-                for c in std::char::decode_utf16(v.iter().copied().map(from_int)) {
+                for c in core::char::decode_utf16(v.iter().copied().map(from_int)) {
                     result.push(c.map_err(|_| Utf16Error(()))?);
                 }
             }
@@ -1365,7 +1378,7 @@ impl CompactString {
                 // Input's alignment is off.
                 // SAFETY: we can always reinterpret a `[u8; 2*N]` slice as `[[u8; 2]; N]`
                 let v = unsafe { slice::from_raw_parts(v.as_ptr().cast(), v.len() / 2) };
-                for c in std::char::decode_utf16(v.iter().copied().map(from_bytes)) {
+                for c in core::char::decode_utf16(v.iter().copied().map(from_bytes)) {
                     result.push(c.map_err(|_| Utf16Error(()))?);
                 }
             }
@@ -1393,7 +1406,7 @@ impl CompactString {
         match unsafe { v.align_to::<u16>() } {
             (&[], v, &[]) => {
                 // Input is correcty aligned.
-                for c in std::char::decode_utf16(v.iter().copied().map(from_int)) {
+                for c in core::char::decode_utf16(v.iter().copied().map(from_int)) {
                     match c {
                         Ok(c) => result.push(c),
                         Err(_) => result.push_str("�"),
@@ -1404,7 +1417,7 @@ impl CompactString {
                 // Input's alignment is off.
                 // SAFETY: we can always reinterpret a `[u8; 2*N]` slice as `[[u8; 2]; N]`
                 let v = unsafe { slice::from_raw_parts(v.as_ptr().cast(), v.len() / 2) };
-                for c in std::char::decode_utf16(v.iter().copied().map(from_bytes)) {
+                for c in core::char::decode_utf16(v.iter().copied().map(from_bytes)) {
                     match c {
                         Ok(c) => result.push(c),
                         Err(_) => result.push_str("�"),
@@ -1942,6 +1955,7 @@ impl AsRef<str> for CompactString {
     }
 }
 
+#[cfg(feature = "std")]
 impl AsRef<OsStr> for CompactString {
     #[inline]
     fn as_ref(&self) -> &OsStr {
@@ -2294,7 +2308,7 @@ pub struct Drain<'a> {
     compact_string: *mut CompactString,
     start: usize,
     end: usize,
-    chars: std::str::Chars<'a>,
+    chars: core::str::Chars<'a>,
 }
 
 // SAFETY: Drain keeps the lifetime of the CompactString it belongs to.

@@ -1,3 +1,5 @@
+use alloc::string::String;
+
 /// [`LastUtf8Char`] is an unsigned 8-bit integer data type that has a valid range of `[0, 216]`.
 /// Excluding `[217, 255]` allows the Rust compiler to use these values as niches.
 ///
@@ -240,4 +242,4 @@ pub enum LastUtf8Char {
 }
 
 static_assertions::assert_eq_size!(LastUtf8Char, Option<LastUtf8Char>, u8);
-static_assertions::const_assert!(std::mem::size_of::<String>() <= 24);
+static_assertions::const_assert!(core::mem::size_of::<String>() <= 24);

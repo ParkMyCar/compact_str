@@ -54,13 +54,15 @@ impl PartialEq<CompactString> for ArchivedString {
 
 impl PartialOrd<CompactString> for ArchivedString {
     #[inline]
-    fn partial_cmp(&self, other: &CompactString) -> Option<std::cmp::Ordering> {
+    fn partial_cmp(&self, other: &CompactString) -> Option<core::cmp::Ordering> {
         PartialOrd::partial_cmp(self.as_str(), other.as_str())
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use alloc::string::String;
+
     use rkyv::Deserialize;
     use test_strategy::proptest;
 

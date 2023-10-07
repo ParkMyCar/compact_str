@@ -1,7 +1,15 @@
-use core::slice;
-use std::borrow::Cow;
-use std::num;
-use std::str::FromStr;
+use alloc::borrow::Cow;
+use alloc::boxed::Box;
+use alloc::string::{
+    String,
+    ToString,
+};
+use alloc::vec::Vec;
+use core::str::FromStr;
+use core::{
+    num,
+    slice,
+};
 
 use proptest::collection::SizeRange;
 use proptest::prelude::*;
@@ -308,9 +316,9 @@ fn proptest_from_utf8_unchecked(#[strategy(rand_bytes())] bytes: Vec<u8>) {
 
     // check if we were valid UTF-8, if so, assert the data written into the CompactString is
     // correct
-    let data_is_valid = std::str::from_utf8(&bytes);
-    let compact_is_valid = std::str::from_utf8(compact.as_bytes());
-    let std_str_is_valid = std::str::from_utf8(std_str.as_bytes());
+    let data_is_valid = core::str::from_utf8(&bytes);
+    let compact_is_valid = core::str::from_utf8(compact.as_bytes());
+    let std_str_is_valid = core::str::from_utf8(std_str.as_bytes());
 
     match (data_is_valid, compact_is_valid, std_str_is_valid) {
         (Ok(d), Ok(c), Ok(s)) => {
@@ -495,7 +503,6 @@ fn test_from_str_trait() {
 #[cfg_attr(target_pointer_width = "32", ignore)]
 fn test_from_char_iter() {
     let s = "\u{0} 0 \u{0}a𐀀𐀀 𐀀a𐀀";
-    println!("{}", s.len());
     let compact: CompactString = s.chars().into_iter().collect();
 
     assert!(!compact.is_heap_allocated());
@@ -1733,7 +1740,7 @@ fn test_collect() {
 fn test_into_cow() {
     let og = "aaa";
     let compact = CompactString::new(og);
-    let cow: std::borrow::Cow<'_, str> = compact.into();
+    let cow: alloc::borrow::Cow<'_, str> = compact.into();
 
     assert_eq!(og, cow);
 }
@@ -1768,5 +1775,8 @@ fn multiple_nieches_test() {
         Unsigned(usize),
         Null,
     }
-    assert_eq!(std::mem::size_of::<Value>(), std::mem::size_of::<String>());
+    assert_eq!(
+        core::mem::size_of::<Value>(),
+        core::mem::size_of::<String>()
+    );
 }

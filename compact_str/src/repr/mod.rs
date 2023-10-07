@@ -1,9 +1,10 @@
+use alloc::borrow::Cow;
+use alloc::boxed::Box;
 use core::str::Utf8Error;
 use core::{
     mem,
     ptr,
 };
-use std::borrow::Cow;
 
 #[cfg(feature = "bytes")]
 mod bytes;
@@ -19,6 +20,8 @@ mod num;
 mod static_str;
 mod traits;
 
+use alloc::string::String;
+
 use capacity::Capacity;
 use heap::HeapBuffer;
 use inline::InlineBuffer;
@@ -27,7 +30,7 @@ use static_str::StaticStr;
 pub use traits::IntoRepr;
 
 /// The max size of a string we can fit inline
-pub const MAX_SIZE: usize = std::mem::size_of::<String>();
+pub const MAX_SIZE: usize = core::mem::size_of::<String>();
 /// Used as a discriminant to identify different variants
 pub const HEAP_MASK: u8 = LastUtf8Char::Heap as u8;
 /// Used for `StaticStr` variant
@@ -81,7 +84,7 @@ impl Repr {
             let inline = InlineBuffer::new_const(text);
             Repr::from_inline(inline)
         } else {
-            panic!("Inline string was too long, max length is `std::mem::size_of::<CompactString>()` bytes");
+            panic!("Inline string was too long, max length is `core::mem::size_of::<CompactString>()` bytes");
         }
     }
 
@@ -759,6 +762,12 @@ impl Extend<String> for Repr {
 
 #[cfg(test)]
 mod tests {
+    use alloc::string::{
+        String,
+        ToString,
+    };
+    use alloc::vec::Vec;
+
     use quickcheck_macros::quickcheck;
     use test_case::test_case;
 

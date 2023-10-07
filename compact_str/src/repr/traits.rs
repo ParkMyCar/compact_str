@@ -43,6 +43,8 @@ impl IntoRepr for char {
 
 #[cfg(test)]
 mod tests {
+    use alloc::string::ToString;
+
     use quickcheck_macros::quickcheck;
 
     use super::IntoRepr;

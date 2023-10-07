@@ -1,3 +1,4 @@
+use alloc::string::String;
 use core::fmt::{
     self,
     Write,
@@ -192,6 +193,11 @@ where
 
 #[cfg(test)]
 mod tests {
+    use alloc::string::{
+        String,
+        ToString,
+    };
+    use alloc::vec::Vec;
     use core::num;
 
     use proptest::prelude::*;

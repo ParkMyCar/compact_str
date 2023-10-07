@@ -148,7 +148,7 @@ impl HeapBuffer {
                 // * `new_size` will be > 0, we return early if the requested capacity is 0
                 // * Checked above if `new_size` overflowed when rounding to alignment
                 match ptr::NonNull::new(unsafe {
-                    std::alloc::realloc(self.ptr.as_ptr(), cur_layout, new_size)
+                    ::alloc::alloc::realloc(self.ptr.as_ptr(), cur_layout, new_size)
                 }) {
                     Some(ptr) => (new_cap, ptr),
                     None => return Err(()),
@@ -178,7 +178,7 @@ impl HeapBuffer {
                 // * The layout is the same because we checked that the capacity is on the heap
                 // * `new_size` will be > 0, we return early if the requested capacity is 0
                 // * Checked above if `new_size` overflowed when rounding to alignment
-                let cap_ptr = unsafe { std::alloc::realloc(adj_ptr, cur_layout, new_size) };
+                let cap_ptr = unsafe { alloc::alloc::realloc(adj_ptr, cur_layout, new_size) };
                 // Check if reallocation succeeded
                 if cap_ptr.is_null() {
                     return Err(());
@@ -331,8 +331,10 @@ pub fn deallocate_ptr(ptr: ptr::NonNull<u8>, cap: Capacity) {
 }
 
 mod heap_capacity {
-    use core::ptr;
-    use std::alloc;
+    use core::{
+        alloc,
+        ptr,
+    };
 
     use super::StrBuffer;
 
@@ -343,13 +345,13 @@ mod heap_capacity {
 
         // SAFETY: `alloc(...)` has undefined behavior if the layout is zero-sized. We know the
         // layout can't be zero-sized though because we're always at least allocating one `usize`
-        let raw_ptr = unsafe { alloc::alloc(layout) };
+        let raw_ptr = unsafe { ::alloc::alloc::alloc(layout) };
 
         // Check to make sure our pointer is non-null, some allocators return null pointers instead
         // of panicking
         match ptr::NonNull::new(raw_ptr) {
             Some(ptr) => ptr,
-            None => alloc::handle_alloc_error(layout),
+            None => ::alloc::alloc::handle_alloc_error(layout),
         }
     }
 
@@ -360,7 +362,7 @@ mod heap_capacity {
     ///   must have `ptr -> [cap<usize> ; string<bytes>]`
     pub unsafe fn dealloc(ptr: ptr::NonNull<u8>, capacity: usize) {
         let layout = layout(capacity);
-        alloc::dealloc(ptr.as_ptr(), layout);
+        ::alloc::alloc::dealloc(ptr.as_ptr(), layout);
     }
 
     #[repr(C)]
@@ -381,8 +383,10 @@ mod heap_capacity {
 }
 
 mod inline_capacity {
-    use core::ptr;
-    use std::alloc;
+    use core::{
+        alloc,
+        ptr,
+    };
 
     use super::StrBuffer;
 
@@ -396,13 +400,13 @@ mod inline_capacity {
         // SAFETY: `alloc(...)` has undefined behavior if the layout is zero-sized. We specify that
         // `capacity` must be > 0 as a constraint to uphold the safety of this method. If capacity
         // is greater than 0, then our layout will be non-zero-sized.
-        let raw_ptr = alloc::alloc(layout);
+        let raw_ptr = ::alloc::alloc::alloc(layout);
 
         // Check to make sure our pointer is non-null, some allocators return null pointers instead
         // of panicking
         match ptr::NonNull::new(raw_ptr) {
             Some(ptr) => ptr,
-            None => alloc::handle_alloc_error(layout),
+            None => ::alloc::alloc::handle_alloc_error(layout),
         }
     }
 
@@ -412,7 +416,7 @@ mod inline_capacity {
     /// * `ptr` must point to the start of a `HeapBuffer` whose capacity is on the inline
     pub unsafe fn dealloc(ptr: ptr::NonNull<u8>, capacity: usize) {
         let layout = layout(capacity);
-        alloc::dealloc(ptr.as_ptr(), layout);
+        ::alloc::alloc::dealloc(ptr.as_ptr(), layout);
     }
 
     #[repr(C)]

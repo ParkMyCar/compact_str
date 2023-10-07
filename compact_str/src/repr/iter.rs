@@ -1,7 +1,9 @@
 //! Implementations of the [`FromIterator`] trait to make building [`Repr`]s more ergonomic
 
+use alloc::borrow::Cow;
+use alloc::boxed::Box;
+use alloc::string::String;
 use core::iter::FromIterator;
-use std::borrow::Cow;
 
 use super::{
     InlineBuffer,
@@ -139,6 +141,8 @@ impl<'a> FromIterator<Cow<'a, str>> for Repr {
 
 #[cfg(test)]
 mod tests {
+    use alloc::string::String;
+
     use super::Repr;
 
     #[test]

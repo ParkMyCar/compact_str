@@ -401,7 +401,17 @@ impl Repr {
         // Force the compiler to read the variable, so it won't put the reading in a branch.
         let len_heap = self.1;
         // SAFETY: This assembly instruction is a noop that only affects the instruction ordering.
-        #[cfg(not(miri))]
+        #[cfg(all(
+            not(miri),
+            any(
+                target_arch = "x86",
+                target_arch = "x86_64",
+                target_arch = "arm",
+                target_arch = "aarch64",
+                target_arch = "loongarch",
+                target_arch = "riscv",
+            )
+        ))]
         unsafe {
             core::arch::asm!(
                 "/* {len_heap} */",

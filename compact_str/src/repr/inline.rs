@@ -122,11 +122,12 @@ impl InlineBuffer {
 
 #[cfg(test)]
 mod tests {
-    use rayon::prelude::*;
-
+    #[rustversion::since(1.63)]
     #[test]
     #[ignore] // we run this in CI, but unless you're compiling in release, this takes a while
     fn test_unused_utf8_bytes() {
+        use rayon::prelude::*;
+
         // test to validate for all char the first and last bytes are never within a specified range
         // note: according to the UTF-8 spec it shouldn't be, but we double check that here
         (0..u32::MAX).into_par_iter().for_each(|i| {

@@ -107,8 +107,6 @@ impl Capacity {
 
 #[cfg(test)]
 mod tests {
-    use rayon::prelude::*;
-
     use super::Capacity;
 
     #[test]
@@ -147,9 +145,12 @@ mod tests {
         assert_eq!(16777215, after);
     }
 
+    #[rustversion::since(1.63)]
     #[test]
     #[cfg_attr(miri, ignore)]
     fn test_all_valid_32bit_values() {
+        use rayon::prelude::*;
+
         #[cfg(target_pointer_width = "32")]
         assert_eq!(16_777_214, super::MAX_VALUE);
 

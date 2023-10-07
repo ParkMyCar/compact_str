@@ -5,6 +5,7 @@ members = [
     "examples/macros",
     "examples/serde",
     "examples/traits",
-    "compact_str",
     "fuzz",
 ]
+
+exclude = ["compact_str"]

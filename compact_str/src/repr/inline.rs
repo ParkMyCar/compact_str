@@ -113,11 +113,6 @@ impl InlineBuffer {
             self.0[MAX_SIZE - 1] = len as u8 | LENGTH_MASK;
         }
     }
-
-    #[inline(always)]
-    pub fn copy(&self) -> Self {
-        InlineBuffer(self.0)
-    }
 }
 
 #[cfg(test)]

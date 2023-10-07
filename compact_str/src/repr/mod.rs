@@ -675,7 +675,7 @@ impl Clone for Repr {
         } else {
             // SAFETY: We just checked that `self` can be copied because it is an inline string or
             // a reference to a `&'static str`.
-            unsafe { std::ptr::read(self) }
+            unsafe { core::ptr::read(self) }
         }
     }
 }

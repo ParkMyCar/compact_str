@@ -1,14 +1,22 @@
-use core::fmt::{self, Write};
+use core::fmt::{
+    self,
+    Write,
+};
 use core::num;
 
 // TODO(parkmycar): Re-enable when a new version of `castaway` is released.
 //
 // <https://github.com/ParkMyCar/compact_str/issues/304>
 // use alloc::string::String;
+use castaway::{
+    match_type,
+    LifetimeFree,
+};
 
-use castaway::{match_type, LifetimeFree};
-
-use super::repr::{IntoRepr, Repr};
+use super::repr::{
+    IntoRepr,
+    Repr,
+};
 use crate::CompactString;
 
 /// A trait for converting a value to a `CompactString`.
@@ -191,14 +199,20 @@ where
 
 #[cfg(test)]
 mod tests {
-    use alloc::string::{String, ToString};
+    use alloc::string::{
+        String,
+        ToString,
+    };
     use alloc::vec::Vec;
     use core::num;
 
     use proptest::prelude::*;
     use test_strategy::proptest;
 
-    use super::{CompactStringExt, ToCompactString};
+    use super::{
+        CompactStringExt,
+        ToCompactString,
+    };
     use crate::CompactString;
 
     #[test]

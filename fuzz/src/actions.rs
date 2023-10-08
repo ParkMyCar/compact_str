@@ -253,7 +253,15 @@ impl Action<'_> {
 
                 let compact_capacity = compact.capacity();
                 assert_eq!(compact.split_off(at), control.split_off(at));
-                assert_eq!(compact.capacity(), compact_capacity);
+
+                // The capacity of the CompactString should not change when using split_off, unless
+                // the CompactString is backed by a &'static str, in which case the capacity should
+                // be the point at which we split the string.
+                if compact.as_static_str().is_some() {
+                    assert_eq!(compact.capacity(), at);
+                } else {
+                    assert_eq!(compact.capacity(), compact_capacity);
+                }
 
                 assert_eq!(control, compact);
                 assert_eq!(control.len(), compact.len());
@@ -264,6 +272,8 @@ impl Action<'_> {
                 let (start, end) = (start.min(end), start.max(end));
 
                 let compact_capacity = compact.capacity();
+                let is_static = compact.as_static_str().is_some();
+
                 let control_drain = control.drain(start..end);
                 let compact_drain = compact.drain(start..end);
 
@@ -271,7 +281,10 @@ impl Action<'_> {
                 drop(control_drain);
                 drop(compact_drain);
                 assert_eq!(control.as_str(), compact.as_str());
-                assert_eq!(compact.capacity(), compact_capacity);
+
+                if !is_static {
+                    assert_eq!(compact.capacity(), compact_capacity);
+                }
             }
             Remove(val) => {
                 let idx = to_index(control, val);

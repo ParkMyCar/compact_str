@@ -536,7 +536,7 @@ mod test {
     #[test]
     fn test_realloc_shrink_heap_to_inline() {
         // TODO: test this case
-        assert!(true)
+        assert_eq!(1, 1);
     }
 
     #[test_case(&[42; 0]; "empty")]

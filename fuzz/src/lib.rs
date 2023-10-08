@@ -143,9 +143,7 @@ mod test {
 
     #[test]
     fn test_rand() {
-        let mut nums: Vec<_> = (0..10_000)
-            .map(|i| generate_rand_max_num_actions(i))
-            .collect();
+        let mut nums: Vec<_> = (0..10_000).map(generate_rand_max_num_actions).collect();
 
         let min = nums.iter().min().copied().unwrap();
         let max = nums.iter().max().copied().unwrap();

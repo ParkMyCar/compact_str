@@ -7,5 +7,6 @@ members = [
     "examples/traits",
     "fuzz",
 ]
-
 exclude = ["compact_str"]
+
+resolver = "2"

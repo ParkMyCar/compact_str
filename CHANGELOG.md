@@ -1,5 +1,41 @@
 # Upcoming
+... all released!
+
+# 0.8.0-beta
+### October 7, 2023
+
+### Issues Pending Completion
+* Re-enabling specialization for `String` in the `ToCompactString` trait, [#304](https://github.com/ParkMyCar/compact_str/issues/304)
+
+### Changes
+
+* Support storing a `&'static str` in a `CompactString` in `O(1)`
+    * Implemented in [`feat: Support O(1) CompactString::from_static_str`](https://github.com/ParkMyCar/compact_str/pull/273)
+* Support `no_std` environments
+    * Implemented in [`support no_std`](https://github.com/ParkMyCar/compact_str/pull/287)
+* Add `repeat()` API to `CompactString`
+    * Implemented in [`feat: Implement CompactString::repeat`](https://github.com/ParkMyCar/compact_str/pull/275)
+* Add `to_ascii_lowercase()`, `to_ascii_uppercase()`, `to_lowercase()`, and `to_uppercase()` APIs to `CompactString`
+    * Implemented in [`feat: Implement case conversion fn for CompactString`](https://github.com/ParkMyCar/compact_str/pull/274)
+* Add `from_str_to_lower(...)` and `from_str_to_upper(...)` APIs to `CompactString`
+    * Implemented in [`feat: Impl CompactString::from_str_to_{lower, upper}case`](https://github.com/ParkMyCar/compact_str/pull/284)
+* Improve the performance of the `CompactString::as_str()` API
+    * Implemented in [`Remove branches from Repr::as_slice()`](https://github.com/ParkMyCar/compact_str/pull/306)
+* Improve the performance of the `CompactString::len()` API
+    * Implemented in [`Simplify Repr::len()`](https://github.com/ParkMyCar/compact_str/pull/283)
+* Improve the performance of the `Clone` implementation for `CompactString`
+    * Implemented in [`Simplify clone()`](https://github.com/ParkMyCar/compact_str/pull/299)
+* Improve the performance of some internal types.
+    * Implemented in [`Fix and optimize Capacity`](https://github.com/ParkMyCar/compact_str/pull/285)
+* Open more niches for enum layout optimizations
+    * Implemented in [`Open up more niches`](https://github.com/ParkMyCar/compact_str/pull/276)
 * Update MSRV to 1.59
+    * Implemented in [`MSRV: Bump to 1.59 `](https://github.com/ParkMyCar/compact_str/pull/296)
+
+# 0.7.1
+### June 21, 2023
+* Improve the performance of the `ToCompactString` trait
+    * Implemented in [`fix: Don't count bytes in ToCompactString`](https://github.com/ParkMyCar/compact_str/pull/270)
 
 # 0.7.0
 ### February 21, 2023

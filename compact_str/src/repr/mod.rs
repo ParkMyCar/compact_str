@@ -839,10 +839,7 @@ mod tests {
         assert_eq!(r.len(), s_len);
         assert_eq!(r.as_str(), s_str.as_str());
 
-        if s_cap == 0 {
-            // we should always inline the string, if the length of the source string is 0
-            assert!(!r.is_heap_allocated());
-        } else if try_to_inline && s_len <= MAX_SIZE {
+        if s_cap == 0 || (try_to_inline && s_len <= MAX_SIZE) {
             // we should inline the string, if we were asked to, and the length of the string would
             // fit inline, meaning we would truncate capacity
             assert!(!r.is_heap_allocated());

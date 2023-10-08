@@ -138,9 +138,8 @@ mod tests {
                 }
 
                 // check ranges for last byte
-                match buf[c.len_utf8() - 1] {
-                    x @ 192..=255 => panic!("last byte within 192..=255, {}", x),
-                    _ => (),
+                if let x @ 192..=255 = buf[c.len_utf8() - 1] {
+                    panic!("last byte within 192..=255, {}", x)
                 }
             }
         })

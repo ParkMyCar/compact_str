@@ -74,7 +74,7 @@ fn proptest_strings_roundtrip(#[strategy(rand_unicode())] word: String) {
 #[proptest]
 #[cfg_attr(miri, ignore)]
 fn proptest_strings_allocated_properly(#[strategy(rand_unicode())] word: String) {
-    let compact = CompactString::new(&word);
+    let compact = CompactString::new(word);
     assert_allocated_properly(&compact);
 }
 
@@ -191,6 +191,7 @@ fn proptest_extend_chars_allocated_properly(
     compact.extend(extend.chars());
 
     let mut control = start.clone();
+    #[allow(clippy::string_extend_chars)]
     control.extend(extend.chars());
 
     prop_assert_eq!(&compact, &control);
@@ -206,7 +207,6 @@ fn proptest_truncate(#[strategy(rand_unicode())] mut control: String, val: u8) {
     // turn the arbitrary number `val` into character indices
     let new_len = control
         .char_indices()
-        .into_iter()
         .cycle()
         .nth(val as usize)
         .unwrap_or_default()
@@ -233,7 +233,7 @@ fn proptest_truncate(#[strategy(rand_unicode())] mut control: String, val: u8) {
 #[cfg_attr(miri, ignore)]
 fn proptest_from_utf16_roundtrips(#[strategy(rand_unicode())] control: String) {
     let utf16_buf: Vec<u16> = control.encode_utf16().collect();
-    let compact = CompactString::from_utf16(&utf16_buf).unwrap();
+    let compact = CompactString::from_utf16(utf16_buf).unwrap();
 
     assert_eq!(compact, control);
 }
@@ -258,7 +258,7 @@ fn proptest_from_utf16_random(#[strategy(rand_u16s())] buf: Vec<u16>) {
 #[cfg_attr(miri, ignore)]
 fn proptest_from_utf16_lossy_roundtrips(#[strategy(rand_unicode())] control: String) {
     let utf16_buf: Vec<u16> = control.encode_utf16().collect();
-    let compact = CompactString::from_utf16_lossy(&utf16_buf);
+    let compact = CompactString::from_utf16_lossy(utf16_buf);
 
     assert_eq!(compact, control);
 }
@@ -279,7 +279,6 @@ fn proptest_remove(#[strategy(rand_unicode_with_range(1..80))] mut control: Stri
 
     let idx = control
         .char_indices()
-        .into_iter()
         .cycle()
         .nth(val as usize)
         .unwrap_or_default()
@@ -423,7 +422,7 @@ fn test_short_ascii() {
         let compact = CompactString::new(s);
         assert_eq!(compact, s);
         assert_eq!(s, compact);
-        assert_eq!(compact.is_heap_allocated(), false);
+        assert!(!compact.is_heap_allocated());
     }
 }
 
@@ -480,8 +479,6 @@ fn test_medium_unicode() {
         assert_eq!(compact, s);
         assert_eq!(s, compact);
 
-        #[cfg(target_pointer_width = "64")]
-        let is_heap = is_heap;
         #[cfg(target_pointer_width = "32")]
         let is_heap = true;
 
@@ -503,7 +500,7 @@ fn test_from_str_trait() {
 #[cfg_attr(target_pointer_width = "32", ignore)]
 fn test_from_char_iter() {
     let s = "\u{0} 0 \u{0}a𐀀𐀀 𐀀a𐀀";
-    let compact: CompactString = s.chars().into_iter().collect();
+    let compact: CompactString = s.chars().collect();
 
     assert!(!compact.is_heap_allocated());
     assert_eq!(s, compact);
@@ -566,10 +563,12 @@ fn test_fmt_write(mut compact: CompactString) {
     writeln!(compact, "{}", 1234).unwrap();
     assert_eq!(compact, "test1234\n");
 
+    #[allow(clippy::write_literal)]
     write!(compact, "{:>8} {} {:<8}", "some", "more", "words").unwrap();
     assert_eq!(compact, "test1234\n    some more words   ");
 }
 
+#[allow(clippy::unnecessary_to_owned, clippy::op_ref)]
 #[test]
 fn test_plus_operator() {
     // + &CompactString
@@ -597,6 +596,7 @@ fn test_plus_operator() {
     assert_eq!(String::from("a") + &"b", "ab");
 }
 
+#[allow(clippy::unnecessary_to_owned, clippy::op_ref)]
 #[test]
 fn test_plus_operator_static_str() {
     // + &CompactString
@@ -1428,7 +1428,7 @@ fn test_with_capacity_16711422() {
 fn test_from_utf16() {
     let control = String::from("🦄 hello world! 🎮 ");
     let utf16_buf: Vec<u16> = control.encode_utf16().collect();
-    let compact = CompactString::from_utf16(&utf16_buf).unwrap();
+    let compact = CompactString::from_utf16(utf16_buf).unwrap();
 
     assert_eq!(compact, control);
 
@@ -1581,11 +1581,11 @@ fn proptest_from_utf8_lossy(#[strategy(rand_bytes())] bytes: Vec<u8>) {
 #[proptest]
 #[cfg_attr(miri, ignore)]
 fn proptest_from_utf16(#[strategy(rand_u16s())] buf: Vec<u16>) {
-    const FUNCS: &[(
-        fn(&[u8]) -> Result<CompactString, crate::Utf16Error>,
-        fn(u16) -> u16,
-        fn([u8; 2]) -> u16,
-    )] = &[
+    type FromUtf16Func = fn(&[u8]) -> Result<CompactString, crate::Utf16Error>;
+    type FromU16Endian = fn(u16) -> u16;
+    type FromU16EndianBytes = fn([u8; 2]) -> u16;
+
+    const FUNCS: &[(FromUtf16Func, FromU16Endian, FromU16EndianBytes)] = &[
         (
             |v| CompactString::from_utf16le(v),
             u16::from_le,

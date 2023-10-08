@@ -1,4 +1,13 @@
 # Upcoming
+... all released!
+
+# 0.8.0-beta
+### October 8, 2023
+
+## Outstanding Issues
+* Re-enable specialization for `String` in `trait ToCompactString`, [#304](https://github.com/ParkMyCar/compact_str/issues/304)
+
+## Changes
 
 * Support storing a `&'static str` in a `CompactString` in `O(1)`
     * Implemented in [`feat: Support O(1) CompactString::from_static_str`](https://github.com/ParkMyCar/compact_str/pull/273)

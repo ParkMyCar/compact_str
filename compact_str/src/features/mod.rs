@@ -4,6 +4,8 @@
 mod arbitrary;
 #[cfg(feature = "bytes")]
 mod bytes;
+#[cfg(feature = "diesel")]
+mod diesel;
 #[cfg(feature = "markup")]
 mod markup;
 #[cfg(feature = "proptest")]

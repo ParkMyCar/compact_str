@@ -20,6 +20,7 @@ std = []
 [dependencies]
 arbitrary = { version = "1", optional = true, default-features = false }
 bytes = { version = "1", optional = true }
+diesel = { version = "2", optional = true, default-features = false }
 markup = { version = "0.13", optional = true, default-features = false }
 proptest = { version = "1", optional = true, default-features = false, features = ["std"] }
 quickcheck = { version = "1", optional = true, default-features = false }

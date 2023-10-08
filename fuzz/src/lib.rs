@@ -99,7 +99,9 @@ fn assert_properly_allocated(compact: &CompactString, control: &str) {
     if control.len() <= MAX_INLINE_LENGTH {
         assert!(!compact.is_heap_allocated());
     } else {
-        assert!(compact.is_heap_allocated());
+        let is_static = compact.as_static_str().is_some();
+        let is_heap = compact.is_heap_allocated();
+        assert!(is_static || is_heap);
     }
 }
 

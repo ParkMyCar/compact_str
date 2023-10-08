@@ -1054,7 +1054,8 @@ impl CompactString {
 
     /// Split the [`CompactString`] into at the given byte index.
     ///
-    /// Calling this function does not change the capacity of the [`CompactString`].
+    /// Calling this function does not change the capacity of the [`CompactString`], unless the
+    /// [`CompactString`] is backed by a `&'static str`.
     ///
     /// # Panics
     ///
@@ -1065,8 +1066,11 @@ impl CompactString {
     /// ```
     /// # use compact_str::CompactString;
     /// let mut s = CompactString::from_static_str("Hello, world!");
-    /// assert_eq!(s.split_off(5), ", world!");
+    /// let w = s.split_off(5);
+    ///
+    /// assert_eq!(w, ", world!");
     /// assert_eq!(s, "Hello");
+    /// assert_eq!(s.capacity(), 5);
     /// ```
     pub fn split_off(&mut self, at: usize) -> Self {
         if let Some(s) = self.as_static_str() {

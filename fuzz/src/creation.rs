@@ -15,6 +15,12 @@ use compact_str::{
     ToCompactString,
 };
 
+static EMPTY_STATIC_STR: &str = "";
+static SHORT_STATIC_STR: &str = "hello";
+static EMOJI_STATIC_STR: &str = "😊🦀🗽nycabc🧙‍♂️🐶";
+static LONG_STATIC_STR: &str = "this isn't too long, but longer than our inline capacity";
+static HUGE_STATIC_STR: &str = include_str!("../../bench/data/moby10b.txt");
+
 use super::assert_properly_allocated;
 use crate::{
     MAX_INLINE_LENGTH,
@@ -89,6 +95,8 @@ pub enum Creation<'a> {
     CollectBoxStr(Vec<Box<str>>),
     /// Create using [`std::default::Default`]
     Default,
+    /// Create using [`CompactString::from_static_str`], using a collection of interesting strings.
+    FromStaticStr(u8),
 }
 
 /// Types that we're able to convert to a [`CompactString`]
@@ -744,6 +752,25 @@ impl Creation<'_> {
             Default => {
                 let compact = CompactString::default();
                 let std_str = String::default();
+
+                assert_eq!(compact, std_str);
+                assert_properly_allocated(&compact, &std_str);
+
+                Some((compact, std_str))
+            }
+            FromStaticStr(choice) => {
+                let s = match choice {
+                    0..=60 => EMPTY_STATIC_STR,
+                    61..=120 => SHORT_STATIC_STR,
+                    121..=180 => EMOJI_STATIC_STR,
+                    181..=240 => LONG_STATIC_STR,
+                    // Purposefully reduce the chances of using a huge static string, so we don't
+                    // slowdown fuzzing too much.
+                    241..=255 => HUGE_STATIC_STR,
+                };
+
+                let compact = CompactString::from_static_str(s);
+                let std_str = s.to_string();
 
                 assert_eq!(compact, std_str);
                 assert_properly_allocated(&compact, &std_str);

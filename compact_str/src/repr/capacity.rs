@@ -145,20 +145,17 @@ mod tests {
         assert_eq!(16777215, after);
     }
 
-    #[rustversion::since(1.63)]
     #[test]
     #[cfg_attr(miri, ignore)]
     fn test_all_valid_32bit_values() {
-        use rayon::prelude::*;
-
         #[cfg(target_pointer_width = "32")]
         assert_eq!(16_777_214, super::MAX_VALUE);
 
-        (0..=16_777_214).into_par_iter().for_each(|i| {
+        for i in 0..=16_777_214 {
             let cap = Capacity::new(i);
             let val = unsafe { cap.as_usize() };
 
             assert_eq!(val, i, "value roundtriped to wrong value?");
-        });
+        }
     }
 }

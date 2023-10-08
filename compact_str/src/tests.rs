@@ -1632,6 +1632,15 @@ fn proptest_from_utf16(#[strategy(rand_u16s())] buf: Vec<u16>) {
     }
 }
 
+#[proptest]
+#[cfg_attr(miri, ignore)]
+fn proptest_repeat(n: u16, s: String) {
+    let compact = CompactString::new(&s).repeat(n as usize);
+    let control = s.repeat(n as usize);
+
+    assert_eq!(compact, control);
+}
+
 #[test]
 fn test_from_utf16x() {
     let dancing_men = b"\x3d\xd8\x6f\xdc\x0d\x20\x42\x26\x0f\xfe";

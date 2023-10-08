@@ -46,6 +46,8 @@ pub enum Action<'a> {
     CloneAndDrop,
     /// Calls into_bytes, validates equality, and converts back into strings
     RoundTripIntoBytes,
+    // Repeat the string to form a new string.
+    Repeat(usize),
 }
 
 impl Action<'_> {
@@ -164,7 +166,7 @@ impl Action<'_> {
             }
             Reserve(num_bytes) => {
                 // if this would make us larger then 24MB, then no-op
-                if (compact.capacity() + num_bytes as usize) > super::TWENTY_FOUR_MB_AS_BYTES {
+                if (compact.capacity() + num_bytes as usize) > super::TWENTY_FOUR_MIB_AS_BYTES {
                     return;
                 }
 
@@ -371,6 +373,24 @@ impl Action<'_> {
                 // re-assign
                 *control = new_control;
                 *compact = new_compact;
+            }
+            Repeat(times) => {
+                // Cap the amount of times we'll repeat to make runs fast.
+                let mut times = times % 3;
+
+                // If we'd grow larger than our limit, truncate the string.
+                if times * compact.len() > super::TWENTY_FOUR_MIB_AS_BYTES {
+                    times = 0;
+                }
+
+                let new_compact = compact.repeat(times);
+                let new_control = control.repeat(times);
+
+                assert_eq!(new_compact, new_control);
+                super::assert_properly_allocated(&new_compact, &new_control);
+
+                *compact = new_compact;
+                *control = new_control;
             }
         }
     }

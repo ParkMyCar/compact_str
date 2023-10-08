@@ -690,7 +690,7 @@ impl Creation<'_> {
             WithCapacity(val) => {
                 // pick some value between [0, 24MB]
                 let ratio: f32 = (val as f32) / (u32::MAX as f32);
-                let num_bytes = ((super::TWENTY_FOUR_MB_AS_BYTES as f32) * ratio) as u32;
+                let num_bytes = ((super::TWENTY_FOUR_MIB_AS_BYTES as f32) * ratio) as u32;
 
                 let compact = CompactString::with_capacity(num_bytes as usize);
                 let std_str = String::with_capacity(num_bytes as usize);

@@ -21,7 +21,7 @@ use rand_distr::{
 
 const MAX_INLINE_LENGTH: usize = std::mem::size_of::<String>();
 const MIN_HEAP_CAPACITY: usize = std::mem::size_of::<usize>() * 4;
-const TWENTY_FOUR_MB_AS_BYTES: usize = 24 * 1024 * 1024;
+const TWENTY_FOUR_MIB_AS_BYTES: usize = 24 * 1024 * 1024;
 
 mod actions;
 mod creation;

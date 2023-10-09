@@ -212,6 +212,9 @@ impl CompactString {
 
     /// Creates a new inline [`CompactString`] at compile time.
     ///
+    /// For most use cases you should use the method [`CompactString::from_static_str()`],
+    /// which will inline static strings, too, if they are short enough.
+    ///
     /// # Examples
     /// ```
     /// use compact_str::CompactString;
@@ -229,10 +232,9 @@ impl CompactString {
         CompactString(Repr::new_inline(text))
     }
 
-    /// Creates a new inline [`CompactString`] from `&'static str`
-    /// at compile time.
+    /// Creates a new inline [`CompactString`] from `&'static str` at compile time.
     ///
-    /// Complexity: O(1)
+    /// Complexity: O(1). As an optimization, short strings get inlined.
     ///
     /// # Examples
     /// ```
@@ -251,8 +253,12 @@ impl CompactString {
     /// ```
     /// use compact_str::CompactString;
     ///
-    /// const DEFAULT_NAME: CompactString = CompactString::from_static_str("untitled");
-    /// assert_eq!(DEFAULT_NAME.as_static_str().unwrap(), "untitled");
+    /// const DEFAULT_NAME: CompactString =
+    ///     CompactString::from_static_str("That is not dead which can eternal lie.");
+    /// assert_eq!(
+    ///     DEFAULT_NAME.as_static_str().unwrap(),
+    ///     "That is not dead which can eternal lie.",
+    /// );
     /// ```
     #[inline]
     #[rustversion::attr(since(1.64), const)]
@@ -1097,7 +1103,6 @@ impl CompactString {
     ///
     /// assert_eq!(w, ", world!");
     /// assert_eq!(s, "Hello");
-    /// assert_eq!(s.capacity(), 5);
     /// ```
     pub fn split_off(&mut self, at: usize) -> Self {
         if let Some(s) = self.as_static_str() {

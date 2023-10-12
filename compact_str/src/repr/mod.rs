@@ -721,16 +721,17 @@ impl Drop for Repr {
 impl Extend<char> for Repr {
     #[inline]
     fn extend<T: IntoIterator<Item = char>>(&mut self, iter: T) {
-        let mut iterator = iter.into_iter().peekable();
+        let iter = iter.into_iter();
 
-        // if the iterator is empty, no work needs to be done!
-        if iterator.peek().is_none() {
-            return;
+        let (lower_bound, _) = iter.size_hint();
+        if lower_bound > 0 {
+            // Ignore the error and hope that the lower_bound is incorrect.
+            let _: Result<(), ReserveError> = self.reserve(lower_bound);
         }
-        let (lower_bound, _) = iterator.size_hint();
 
-        self.reserve(lower_bound).unwrap();
-        iterator.for_each(|c| self.push_str(c.encode_utf8(&mut [0; 4])));
+        for c in iter {
+            self.push_str(c.encode_utf8(&mut [0; 4]));
+        }
     }
 }
 

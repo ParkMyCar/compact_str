@@ -347,7 +347,7 @@ pub unsafe fn do_alloc(layout: Layout) -> Result<ptr::NonNull<u8>, ReserveError>
     // Implementations are encouraged to return null on memory exhaustion rather than aborting.
     match ptr::NonNull::new(raw_ptr) {
         Some(ptr) => Ok(ptr),
-        None => Err(ReserveError(())),
+        None => Err(ReserveError::Exhausted),
     }
 }
 

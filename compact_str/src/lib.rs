@@ -268,6 +268,11 @@ impl CompactString {
     /// then it will be inlined. This also means that `CompactString`s have a minimum capacity
     /// of `std::mem::size_of::<String>`.
     ///
+    /// # Panics
+    ///
+    /// This method panics if the system is out-of-memory.
+    /// Use [`CompactString::try_with_capacity()`] if you want to handle such a problem manually.
+    ///
     /// # Examples
     ///
     /// ### "zero" Capacity
@@ -314,6 +319,15 @@ impl CompactString {
     #[track_caller]
     pub fn with_capacity(capacity: usize) -> Self {
         CompactString(Repr::with_capacity(capacity).unwrap())
+    }
+
+    /// Fallible version of [`CompactString::with_capacity()`]
+    ///
+    /// This method won't panic if the system is out-of-memory, but return an [`ReserveError`].
+    /// Otherwise it behaves the same as [`CompactString::with_capacity()`].
+    #[inline]
+    pub fn try_with_capacity(capacity: usize) -> Result<Self, ReserveError> {
+        Repr::with_capacity(capacity).map(CompactString)
     }
 
     /// Convert a slice of bytes into a [`CompactString`].
@@ -524,7 +538,8 @@ impl CompactString {
     /// * Reserving additional bytes may cause the `CompactString` to become heap allocated
     ///
     /// # Panics
-    /// Panics if the new capacity overflows `usize`
+    /// This method panics if the new capacity overflows `usize` or if the system is out-of-memory.
+    /// Use [`CompactString::try_reserve()`] if you want to handle such a problem manually.
     ///
     /// # Examples
     /// ```
@@ -542,6 +557,15 @@ impl CompactString {
     #[track_caller]
     pub fn reserve(&mut self, additional: usize) {
         self.0.reserve(additional).unwrap()
+    }
+
+    /// Fallible version of [`CompactString::reserve()`]
+    ///
+    /// This method won't panic if the system is out-of-memory, but return an [`ReserveError`]
+    /// Otherwise it behaves the same as [`CompactString::reserve()`].
+    #[inline]
+    pub fn try_reserve(&mut self, additional: usize) -> Result<(), ReserveError> {
+        self.0.reserve(additional)
     }
 
     /// Returns a string slice containing the entire [`CompactString`].
@@ -2404,11 +2428,18 @@ impl DoubleEndedIterator for Drain<'_> {
 impl FusedIterator for Drain<'_> {}
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct ReserveError(());
+#[non_exhaustive]
+pub enum ReserveError {
+    Exhausted,
+    Overflow,
+}
 
 impl fmt::Display for ReserveError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str("Cannot allocated memory to hold CompactString")
+        f.write_str(match self {
+            ReserveError::Exhausted => "Cannot allocated memory to hold CompactString",
+            ReserveError::Overflow => "Attempted to reserve more than 'usize' bytes",
+        })
     }
 }
 

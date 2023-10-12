@@ -242,9 +242,7 @@ impl Repr {
     #[inline]
     pub fn reserve(&mut self, additional: usize) -> Result<(), ReserveError> {
         let len = self.len();
-        let needed_capacity = len
-            .checked_add(additional)
-            .expect("Attempted to reserve more than 'usize' bytes");
+        let needed_capacity = len.checked_add(additional).ok_or(ReserveError::Overflow)?;
 
         if !self.is_static_str() && needed_capacity <= self.capacity() {
             // we already have enough space, no-op
@@ -781,6 +779,7 @@ mod tests {
         Repr,
         MAX_SIZE,
     };
+    use crate::ReserveError;
 
     const EIGHTEEN_MB: usize = 18 * 1024 * 1024;
     const EIGHTEEN_MB_STR: &str = unsafe { core::str::from_utf8_unchecked(&[42; EIGHTEEN_MB]) };
@@ -1009,10 +1008,10 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Attempted to reserve more than 'usize' bytes")]
     fn test_reserve_overflow() {
         let mut r = Repr::new("abc").unwrap();
-        r.reserve(usize::MAX).unwrap();
+        let err = r.reserve(usize::MAX).unwrap_err();
+        assert_eq!(err, ReserveError::Overflow)
     }
 
     #[test_case(""; "empty")]

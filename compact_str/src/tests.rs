@@ -1490,11 +1490,58 @@ fn test_reserve_shrink_roundtrip() {
 
 #[test]
 fn test_reserve_shrink_roundtrip_static() {
+    // longer than 24 bytes, so the string does not get inlined
+    const TEXT: &str = "Hello, world! How are you today?";
+
+    let mut s = CompactString::from_static_str(TEXT);
+    assert!(!s.is_heap_allocated());
+    assert_eq!(s.capacity(), TEXT.len());
+    assert_eq!(s, TEXT);
+
+    s.reserve(128);
+    assert!(s.is_heap_allocated());
+    assert!(s.capacity() >= 128 + TEXT.len());
+    assert_eq!(s, TEXT);
+
+    s.shrink_to(64);
+    assert!(s.is_heap_allocated());
+    assert!(s.capacity() >= 64);
+    assert_eq!(s, TEXT);
+
+    s.shrink_to_fit();
+    assert!(s.is_heap_allocated());
+    assert_eq!(s.capacity(), s.len());
+    assert_eq!(s, TEXT);
+
+    s.reserve(SIXTEEN_MB);
+    assert!(s.is_heap_allocated());
+    assert!(s.capacity() >= SIXTEEN_MB + TEXT.len());
+    assert_eq!(s, TEXT);
+
+    s.shrink_to(64);
+    assert!(s.is_heap_allocated());
+    assert!(s.capacity() >= 64);
+    assert_eq!(s, TEXT);
+
+    s.reserve(SIXTEEN_MB);
+    assert!(s.is_heap_allocated());
+    assert!(s.capacity() >= SIXTEEN_MB + TEXT.len());
+    assert_eq!(s, TEXT);
+
+    s.shrink_to_fit();
+    assert!(s.is_heap_allocated());
+    assert_eq!(s.capacity(), s.len());
+    assert_eq!(s, TEXT);
+}
+
+#[test]
+fn test_reserve_shrink_roundtrip_static_inline() {
+    // shorter than 12 bytes, so the string gets inlined
     const TEXT: &str = "Hello.";
 
     let mut s = CompactString::from_static_str(TEXT);
     assert!(!s.is_heap_allocated());
-    assert_eq!(s.capacity(), s.len());
+    assert_eq!(s.capacity(), TEXT.len());
     assert_eq!(s, TEXT);
 
     s.reserve(128);

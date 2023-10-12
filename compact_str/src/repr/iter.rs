@@ -19,7 +19,7 @@ impl FromIterator<char> for Repr {
         // If the size hint indicates we can't store this inline, then create a heap string
         let (size_hint, _) = iter.size_hint();
         if size_hint > MAX_SIZE {
-            return Repr::from_string(iter.collect(), true);
+            return Repr::from_string(iter.collect(), true).unwrap();
         }
 
         // Otherwise, continuously pull chars from the iterator
@@ -43,7 +43,7 @@ impl FromIterator<char> for Repr {
                 // extend heap with remaining characters
                 string.extend(iter);
 
-                return Repr::from_string(string, true);
+                return Repr::from_string(string, true).unwrap();
             }
 
             // write the current char into a slice of the unoccupied space
@@ -95,7 +95,7 @@ where
             // extend heap with remaining strings
             string.extend(iter);
 
-            return Repr::from_string(string, true);
+            return Repr::from_string(string, true).unwrap();
         }
 
         // write the current string into a slice of the unoccupied space

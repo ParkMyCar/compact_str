@@ -71,6 +71,7 @@ unsafe impl LifetimeFree for Repr {}
 ///     * For floats we use [`ryu`] crate which sometimes provides different formatting than [`std`]
 impl<T: fmt::Display> ToCompactString for T {
     #[inline]
+    #[track_caller]
     fn to_compact_string(&self) -> CompactString {
         let repr = match_type!(self, {
             &u8 as s => s.into_repr(),
@@ -93,7 +94,7 @@ impl<T: fmt::Display> ToCompactString for T {
             //
             // <https://github.com/ParkMyCar/compact_str/issues/304>
             // &String as s => Repr::new(s),
-            &CompactString as s => Repr::new(s),
+            &CompactString as s => Repr::new(s).unwrap(),
             &num::NonZeroU8 as s => s.into_repr(),
             &num::NonZeroI8 as s => s.into_repr(),
             &num::NonZeroU16 as s => s.into_repr(),

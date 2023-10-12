@@ -9,18 +9,22 @@ pub trait IntoRepr {
 }
 
 impl IntoRepr for f32 {
+    #[inline]
+    #[track_caller]
     fn into_repr(self) -> Repr {
         let mut buf = ryu::Buffer::new();
         let s = buf.format(self);
-        Repr::new(s)
+        Repr::new(s).unwrap()
     }
 }
 
 impl IntoRepr for f64 {
+    #[inline]
+    #[track_caller]
     fn into_repr(self) -> Repr {
         let mut buf = ryu::Buffer::new();
         let s = buf.format(self);
-        Repr::new(s)
+        Repr::new(s).unwrap()
     }
 }
 

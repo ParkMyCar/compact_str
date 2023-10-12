@@ -23,13 +23,12 @@ const DEC_DIGITS_LUT: &[u8] = b"\
 macro_rules! impl_IntoRepr {
     ($t:ident, $conv_ty:ident) => {
         impl IntoRepr for $t {
-            #[inline]
             fn into_repr(self) -> Repr {
                 // Determine the number of digits in this value
                 //
                 // Note: this considers the `-` symbol
                 let num_digits = NumChars::num_chars(self);
-                let mut repr = Repr::with_capacity(num_digits);
+                let mut repr = Repr::with_capacity(num_digits).unwrap();
 
                 #[allow(unused_comparisons)]
                 let is_nonnegative = self >= 0;
@@ -128,17 +127,19 @@ impl_IntoRepr!(isize, u64);
 /// characters and then writing.
 impl IntoRepr for u128 {
     #[inline]
+    #[track_caller]
     fn into_repr(self) -> Repr {
         let mut buffer = itoa::Buffer::new();
-        Repr::new(buffer.format(self))
+        Repr::new(buffer.format(self)).unwrap()
     }
 }
 
 impl IntoRepr for i128 {
     #[inline]
+    #[track_caller]
     fn into_repr(self) -> Repr {
         let mut buffer = itoa::Buffer::new();
-        Repr::new(buffer.format(self))
+        Repr::new(buffer.format(self)).unwrap()
     }
 }
 

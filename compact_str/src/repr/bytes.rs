@@ -53,12 +53,12 @@ impl Repr {
                 // If we hit the edge case, reserve additional space to make the repr becomes heap
                 // allocated, which prevents us from writing this last byte inline
                 if last_byte >= 0b11000000 {
-                    repr.reserve(MAX_SIZE + 1);
+                    repr.reserve(MAX_SIZE + 1).unwrap();
                 }
             }
 
             // reserve at least enough space to fit this chunk
-            repr.reserve(chunk_len);
+            repr.reserve(chunk_len).unwrap();
 
             // SAFETY: The caller is responsible for making sure the provided buffer is UTF-8. This
             // invariant is documented in the public API

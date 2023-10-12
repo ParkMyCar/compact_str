@@ -206,8 +206,9 @@ impl CompactString {
     /// let boxed = CompactString::new(&b);
     /// ```
     #[inline]
+    #[track_caller]
     pub fn new<T: AsRef<str>>(text: T) -> Self {
-        CompactString(Repr::new(text.as_ref()))
+        CompactString(Repr::new(text.as_ref()).unwrap())
     }
 
     /// Creates a new inline [`CompactString`] at compile time.
@@ -310,8 +311,9 @@ impl CompactString {
     /// assert!(empty.is_heap_allocated());
     /// ```
     #[inline]
+    #[track_caller]
     pub fn with_capacity(capacity: usize) -> Self {
-        CompactString(Repr::with_capacity(capacity))
+        CompactString(Repr::with_capacity(capacity).unwrap())
     }
 
     /// Convert a slice of bytes into a [`CompactString`].
@@ -375,8 +377,9 @@ impl CompactString {
     /// ```
     #[inline]
     #[must_use]
+    #[track_caller]
     pub unsafe fn from_utf8_unchecked<B: AsRef<[u8]>>(buf: B) -> Self {
-        CompactString(Repr::from_utf8_unchecked(buf))
+        CompactString(Repr::from_utf8_unchecked(buf).unwrap())
     }
 
     /// Decode a [`UTF-16`](https://en.wikipedia.org/wiki/UTF-16) slice of bytes into a
@@ -536,8 +539,9 @@ impl CompactString {
     /// assert!(compact.capacity() >= 200);
     /// ```
     #[inline]
+    #[track_caller]
     pub fn reserve(&mut self, additional: usize) {
-        self.0.reserve(additional)
+        self.0.reserve(additional).unwrap()
     }
 
     /// Returns a string slice containing the entire [`CompactString`].
@@ -1601,8 +1605,9 @@ impl CompactString {
     /// assert_eq!(long_addr, long_ex_addr);
     /// ```
     #[inline]
+    #[track_caller]
     pub fn from_string_buffer(s: String) -> Self {
-        let repr = Repr::from_string(s, false);
+        let repr = Repr::from_string(s, false).unwrap();
         CompactString(repr)
     }
 
@@ -2033,15 +2038,19 @@ impl Hash for CompactString {
 }
 
 impl<'a> From<&'a str> for CompactString {
+    #[inline]
+    #[track_caller]
     fn from(s: &'a str) -> Self {
-        let repr = Repr::new(s);
+        let repr = Repr::new(s).unwrap();
         CompactString(repr)
     }
 }
 
 impl From<String> for CompactString {
+    #[inline]
+    #[track_caller]
     fn from(s: String) -> Self {
-        let repr = Repr::from_string(s, true);
+        let repr = Repr::from_string(s, true).unwrap();
         CompactString(repr)
     }
 }
@@ -2063,9 +2072,11 @@ impl<'a> From<Cow<'a, str>> for CompactString {
 }
 
 impl From<Box<str>> for CompactString {
+    #[inline]
+    #[track_caller]
     fn from(b: Box<str>) -> Self {
         let s = b.into_string();
-        let repr = Repr::from_string(s, true);
+        let repr = Repr::from_string(s, true).unwrap();
         CompactString(repr)
     }
 }
@@ -2391,5 +2402,18 @@ impl DoubleEndedIterator for Drain<'_> {
 }
 
 impl FusedIterator for Drain<'_> {}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct ReserveError(());
+
+impl fmt::Display for ReserveError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("Cannot allocated memory to hold CompactString")
+    }
+}
+
+#[cfg(feature = "std")]
+#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
+impl std::error::Error for ReserveError {}
 
 static_assertions::assert_eq_size!(CompactString, String);

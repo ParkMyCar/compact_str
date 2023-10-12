@@ -287,32 +287,49 @@ impl Repr {
         // Note: We can't shrink the inline variant since it's buffer is a fixed size
         // or the static str variant since it is just a pointer, so we only
         // take action here if our string is heap allocated
-        if self.is_heap_allocated() {
-            // SAFETY: We just checked the discriminant to make sure we're heap allocated
-            let heap = unsafe { self.as_mut_heap() };
+        if !self.is_heap_allocated() {
+            return;
+        }
 
-            let old_capacity = heap.capacity();
-            let new_capacity = heap.len.max(min_capacity);
+        // SAFETY: We just checked the discriminant to make sure we're heap allocated
+        let heap = unsafe { self.as_mut_heap() };
 
-            if new_capacity <= MAX_SIZE {
-                // String can be inlined.
-                let mut inline = InlineBuffer::empty();
-                // SAFETY: Our src is on the heap, so it does not overlap with our new inline
-                // buffer, and the src is a `Repr` so we can assume it's valid UTF-8
-                unsafe {
-                    inline
-                        .0
-                        .as_mut_ptr()
-                        .copy_from_nonoverlapping(heap.ptr.as_ptr(), heap.len)
-                };
-                // SAFETY: The src we wrote from was a `Repr` which we can assume is valid UTF-8
-                unsafe { inline.set_len(heap.len) }
-                *self = Repr::from_inline(inline);
-            } else if new_capacity < old_capacity {
-                // String can be shrunk.
-                // We can ignore the result. The string keeps its old capacity, but that's okay.
-                let _ = heap.realloc(new_capacity);
-            }
+        let old_capacity = heap.capacity();
+        let new_capacity = heap.len.max(min_capacity);
+
+        if new_capacity <= MAX_SIZE {
+            // Inline string if possible.
+
+            let mut inline = InlineBuffer::empty();
+            // SAFETY: Our src is on the heap, so it does not overlap with our new inline
+            // buffer, and the src is a `Repr` so we can assume it's valid UTF-8
+            unsafe {
+                inline
+                    .0
+                    .as_mut_ptr()
+                    .copy_from_nonoverlapping(heap.ptr.as_ptr(), heap.len)
+            };
+            // SAFETY: The src we wrote from was a `Repr` which we can assume is valid UTF-8
+            unsafe { inline.set_len(heap.len) }
+            *self = Repr::from_inline(inline);
+            return;
+        }
+
+        // Return if the string cannot be strunk.
+        if new_capacity >= old_capacity {
+            return;
+        }
+
+        // Try to shrink in-place.
+        if heap.realloc(new_capacity).is_ok() {
+            return;
+        }
+
+        // Otherwise try to allocate a new, smaller chunk.
+        // We can ignore the error. The string keeps its old capacity, but that's okay.
+        if let Ok(mut new_this) = Repr::with_capacity(new_capacity) {
+            new_this.push_str(self.as_str());
+            *self = new_this;
         }
     }
 

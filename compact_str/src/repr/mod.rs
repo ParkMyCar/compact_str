@@ -245,7 +245,7 @@ impl Repr {
     #[inline]
     pub fn reserve(&mut self, additional: usize) -> Result<(), ReserveError> {
         let len = self.len();
-        let needed_capacity = len.checked_add(additional).ok_or(ReserveError::Overflow)?;
+        let needed_capacity = len.checked_add(additional).ok_or(ReserveError(()))?;
 
         if !self.is_static_str() && needed_capacity <= self.capacity() {
             // we already have enough space, no-op
@@ -1015,7 +1015,7 @@ mod tests {
     fn test_reserve_overflow() {
         let mut r = Repr::new("abc").unwrap();
         let err = r.reserve(usize::MAX).unwrap_err();
-        assert_eq!(err, ReserveError::Overflow)
+        assert_eq!(err, ReserveError(()));
     }
 
     #[test_case(""; "empty")]

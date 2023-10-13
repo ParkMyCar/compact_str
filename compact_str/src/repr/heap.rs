@@ -348,10 +348,7 @@ pub unsafe fn do_alloc(layout: Layout) -> Result<ptr::NonNull<u8>, ReserveError>
 
     // Check to make sure our pointer is non-null.
     // Implementations are encouraged to return null on memory exhaustion rather than aborting.
-    match ptr::NonNull::new(raw_ptr) {
-        Some(ptr) => Ok(ptr),
-        None => Err(ReserveError::Exhausted),
-    }
+    ptr::NonNull::new(raw_ptr).ok_or(ReserveError(()))
 }
 
 mod heap_capacity {

@@ -2427,19 +2427,13 @@ impl DoubleEndedIterator for Drain<'_> {
 
 impl FusedIterator for Drain<'_> {}
 
+/// A possible error value if allocating or resizing a [`CompactString`] failed.
 #[derive(Debug, Clone, Copy, PartialEq)]
-#[non_exhaustive]
-pub enum ReserveError {
-    Exhausted,
-    Overflow,
-}
+pub struct ReserveError(());
 
 impl fmt::Display for ReserveError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(match self {
-            ReserveError::Exhausted => "Cannot allocated memory to hold CompactString",
-            ReserveError::Overflow => "Attempted to reserve more than 'usize' bytes",
-        })
+        f.write_str("Cannot allocated memory to hold CompactString")
     }
 }
 
@@ -2447,19 +2441,22 @@ impl fmt::Display for ReserveError {
 #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl std::error::Error for ReserveError {}
 
+/// A possible error value if [`ToCompactString::try_to_compact_string()`] failed.
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[non_exhaustive]
 pub enum ToCompactStringError {
+    /// Cannot allocated memory to hold CompactString
     Reserve(ReserveError),
+    /// [`Display::fmt()`][core::fmt::Display::fmt] returned an error
     Fmt(fmt::Error),
 }
 
 impl fmt::Display for ToCompactStringError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(match self {
-            ToCompactStringError::Reserve(_) => "Could not reserve memory for CompactString",
-            ToCompactStringError::Fmt(_) => "Could not format CompactString",
-        })
+        match self {
+            ToCompactStringError::Reserve(err) => err.fmt(f),
+            ToCompactStringError::Fmt(err) => err.fmt(f),
+        }
     }
 }
 

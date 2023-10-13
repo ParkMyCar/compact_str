@@ -20,6 +20,7 @@ use super::repr::{
 use crate::{
     CompactString,
     ToCompactStringError,
+    UnwrapWithMsg,
 };
 
 /// A trait for converting a value to a `CompactString`.
@@ -52,7 +53,7 @@ pub trait ToCompactString {
     #[inline]
     #[track_caller]
     fn to_compact_string(&self) -> CompactString {
-        self.try_to_compact_string().unwrap()
+        self.try_to_compact_string().unwrap_with_msg()
     }
 
     /// Fallible version of [`ToCompactString::to_compact_string()`]

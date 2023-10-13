@@ -208,7 +208,7 @@ impl CompactString {
     #[inline]
     #[track_caller]
     pub fn new<T: AsRef<str>>(text: T) -> Self {
-        CompactString(Repr::new(text.as_ref()).unwrap())
+        CompactString(Repr::new(text.as_ref()).unwrap_with_msg())
     }
 
     /// Creates a new inline [`CompactString`] at compile time.
@@ -318,7 +318,7 @@ impl CompactString {
     #[inline]
     #[track_caller]
     pub fn with_capacity(capacity: usize) -> Self {
-        CompactString(Repr::with_capacity(capacity).unwrap())
+        CompactString(Repr::with_capacity(capacity).unwrap_with_msg())
     }
 
     /// Fallible version of [`CompactString::with_capacity()`]
@@ -393,7 +393,7 @@ impl CompactString {
     #[must_use]
     #[track_caller]
     pub unsafe fn from_utf8_unchecked<B: AsRef<[u8]>>(buf: B) -> Self {
-        CompactString(Repr::from_utf8_unchecked(buf).unwrap())
+        CompactString(Repr::from_utf8_unchecked(buf).unwrap_with_msg())
     }
 
     /// Decode a [`UTF-16`](https://en.wikipedia.org/wiki/UTF-16) slice of bytes into a
@@ -556,7 +556,7 @@ impl CompactString {
     #[inline]
     #[track_caller]
     pub fn reserve(&mut self, additional: usize) {
-        self.0.reserve(additional).unwrap()
+        self.0.reserve(additional).unwrap_with_msg()
     }
 
     /// Fallible version of [`CompactString::reserve()`]
@@ -1631,7 +1631,7 @@ impl CompactString {
     #[inline]
     #[track_caller]
     pub fn from_string_buffer(s: String) -> Self {
-        let repr = Repr::from_string(s, false).unwrap();
+        let repr = Repr::from_string(s, false).unwrap_with_msg();
         CompactString(repr)
     }
 
@@ -2065,7 +2065,7 @@ impl<'a> From<&'a str> for CompactString {
     #[inline]
     #[track_caller]
     fn from(s: &'a str) -> Self {
-        let repr = Repr::new(s).unwrap();
+        let repr = Repr::new(s).unwrap_with_msg();
         CompactString(repr)
     }
 }
@@ -2074,7 +2074,7 @@ impl From<String> for CompactString {
     #[inline]
     #[track_caller]
     fn from(s: String) -> Self {
-        let repr = Repr::from_string(s, true).unwrap();
+        let repr = Repr::from_string(s, true).unwrap_with_msg();
         CompactString(repr)
     }
 }
@@ -2100,7 +2100,7 @@ impl From<Box<str>> for CompactString {
     #[track_caller]
     fn from(b: Box<str>) -> Self {
         let s = b.into_string();
-        let repr = Repr::from_string(s, true).unwrap();
+        let repr = Repr::from_string(s, true).unwrap_with_msg();
         CompactString(repr)
     }
 }
@@ -2486,6 +2486,32 @@ impl std::error::Error for ToCompactStringError {
             ToCompactStringError::Fmt(err) => Some(err),
         }
     }
+}
+
+trait UnwrapWithMsg {
+    type T;
+
+    fn unwrap_with_msg(self) -> Self::T;
+}
+
+impl<T, E: fmt::Display> UnwrapWithMsg for Result<T, E> {
+    type T = T;
+
+    #[inline(always)]
+    #[track_caller]
+    fn unwrap_with_msg(self) -> T {
+        match self {
+            Ok(value) => value,
+            Err(err) => unwrap_with_msg_fail(err),
+        }
+    }
+}
+
+#[inline(never)]
+#[cold]
+#[track_caller]
+fn unwrap_with_msg_fail<E: fmt::Display>(error: E) -> ! {
+    panic!("{error}")
 }
 
 static_assertions::assert_eq_size!(CompactString, String);

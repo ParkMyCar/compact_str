@@ -10,7 +10,10 @@ use super::{
     Repr,
     MAX_SIZE,
 };
-use crate::ReserveError;
+use crate::{
+    ReserveError,
+    UnwrapWithMsg,
+};
 
 /// The minimum size we'll allocate on the heap is one usize larger than our max inline size
 const MIN_HEAP_SIZE: usize = MAX_SIZE + mem::size_of::<usize>();
@@ -237,7 +240,7 @@ impl HeapBuffer {
 impl Clone for HeapBuffer {
     fn clone(&self) -> Self {
         // Create a new HeapBuffer with the same capacity as the original
-        let mut new = Self::with_capacity(self.capacity()).unwrap();
+        let mut new = Self::with_capacity(self.capacity()).unwrap_with_msg();
 
         // SAFETY:
         // * `src` and `dst` don't overlap because we just created `dst`

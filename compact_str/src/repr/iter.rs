@@ -11,7 +11,10 @@ use super::{
     EMPTY,
     MAX_SIZE,
 };
-use crate::CompactString;
+use crate::{
+    CompactString,
+    UnwrapWithMsg,
+};
 
 impl FromIterator<char> for Repr {
     #[inline]
@@ -68,7 +71,7 @@ where
             // extend heap with remaining strings
             string.extend(iter);
 
-            return Repr::from_string(string, true).unwrap();
+            return Repr::from_string(string, true).unwrap_with_msg();
         }
 
         // write the current string into a slice of the unoccupied space

@@ -29,7 +29,10 @@ use last_utf8_char::LastUtf8Char;
 use static_str::StaticStr;
 pub(crate) use traits::IntoRepr;
 
-use crate::ReserveError;
+use crate::{
+    ReserveError,
+    UnwrapWithMsg,
+};
 
 /// The max size of a string we can fit inline
 pub const MAX_SIZE: usize = core::mem::size_of::<String>();
@@ -112,7 +115,7 @@ impl Repr {
         // Get a &str from the Vec, failing if it's not valid UTF-8
         let s = core::str::from_utf8(buf.as_ref())?;
         // Construct a Repr from the &str
-        Ok(Self::new(s).unwrap())
+        Ok(Self::new(s).unwrap_with_msg())
     }
 
     /// Create a [`Repr`] from a slice of bytes that is UTF-8, without validating that it is indeed
@@ -137,7 +140,7 @@ impl Repr {
             // If we hit the edge case, reserve additional space to make the repr becomes heap
             // allocated, which prevents us from writing this last byte inline
             if last_byte >= 0b11000000 {
-                repr.reserve(MAX_SIZE + 1).unwrap();
+                repr.reserve(MAX_SIZE + 1)?;
             }
         }
 
@@ -343,7 +346,7 @@ impl Repr {
         let str_len = s.len();
 
         // Reserve at least enough space to fit `s`
-        self.reserve(str_len).unwrap();
+        self.reserve(str_len).unwrap_with_msg();
 
         // SAFTEY: `s` which we're appending to the buffer, is valid UTF-8
         let slice = unsafe { self.as_mut_buf() };
@@ -514,7 +517,7 @@ impl Repr {
         #[cold]
         fn inline_static_str(this: &mut Repr) {
             if let Some(s) = this.as_static_str() {
-                *this = Repr::new(s).unwrap();
+                *this = Repr::new(s).unwrap_with_msg();
             }
         }
 
@@ -684,7 +687,7 @@ impl Clone for Repr {
     fn clone(&self) -> Self {
         #[inline(never)]
         fn clone_heap(this: &Repr) -> Repr {
-            Repr::new(this.as_str()).unwrap()
+            Repr::new(this.as_str()).unwrap_with_msg()
         }
 
         // There are only two cases we need to care about: If the string is allocated on the heap

@@ -11,7 +11,10 @@ use core::{
 
 use super::traits::IntoRepr;
 use super::Repr;
-use crate::ToCompactStringError;
+use crate::{
+    ToCompactStringError,
+    UnwrapWithMsg,
+};
 
 const DEC_DIGITS_LUT: &[u8] = b"\
       0001020304050607080910111213141516171819\
@@ -29,7 +32,7 @@ macro_rules! impl_IntoRepr {
                 //
                 // Note: this considers the `-` symbol
                 let num_digits = NumChars::num_chars(self);
-                let mut repr = Repr::with_capacity(num_digits).unwrap();
+                let mut repr = Repr::with_capacity(num_digits).unwrap_with_msg();
 
                 #[allow(unused_comparisons)]
                 let is_nonnegative = self >= 0;

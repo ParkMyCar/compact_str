@@ -1,47 +1,48 @@
 use super::Repr;
+use crate::ToCompactStringError;
 
 const FALSE: Repr = Repr::new_inline("false");
 const TRUE: Repr = Repr::new_inline("true");
 
 /// Defines how to _efficiently_ create a [`Repr`] from `self`
-pub trait IntoRepr {
-    fn into_repr(self) -> Repr;
+pub(crate) trait IntoRepr {
+    fn into_repr(self) -> Result<Repr, ToCompactStringError>;
 }
 
 impl IntoRepr for f32 {
     #[inline]
-    #[track_caller]
-    fn into_repr(self) -> Repr {
+    fn into_repr(self) -> Result<Repr, ToCompactStringError> {
         let mut buf = ryu::Buffer::new();
         let s = buf.format(self);
-        Repr::new(s).unwrap()
+        Ok(Repr::new(s)?)
     }
 }
 
 impl IntoRepr for f64 {
     #[inline]
-    #[track_caller]
-    fn into_repr(self) -> Repr {
+    fn into_repr(self) -> Result<Repr, ToCompactStringError> {
         let mut buf = ryu::Buffer::new();
         let s = buf.format(self);
-        Repr::new(s).unwrap()
+        Ok(Repr::new(s)?)
     }
 }
 
 impl IntoRepr for bool {
-    fn into_repr(self) -> Repr {
+    #[inline]
+    fn into_repr(self) -> Result<Repr, ToCompactStringError> {
         if self {
-            TRUE
+            Ok(TRUE)
         } else {
-            FALSE
+            Ok(FALSE)
         }
     }
 }
 
 impl IntoRepr for char {
-    fn into_repr(self) -> Repr {
+    #[inline]
+    fn into_repr(self) -> Result<Repr, ToCompactStringError> {
         let mut buf = [0_u8; 4];
-        Repr::new_inline(self.encode_utf8(&mut buf))
+        Ok(Repr::new_inline(self.encode_utf8(&mut buf)))
     }
 }
 
@@ -56,18 +57,18 @@ mod tests {
     #[test]
     fn test_into_repr_bool() {
         let t = true;
-        let repr = t.into_repr();
+        let repr = t.into_repr().unwrap();
         assert_eq!(repr.as_str(), t.to_string());
 
         let f = false;
-        let repr = f.into_repr();
+        let repr = f.into_repr().unwrap();
         assert_eq!(repr.as_str(), f.to_string());
     }
 
     #[quickcheck]
     #[cfg_attr(miri, ignore)]
     fn quickcheck_into_repr_char(val: char) {
-        let repr = char::into_repr(val);
+        let repr = char::into_repr(val).unwrap();
         assert_eq!(repr.as_str(), val.to_string());
     }
 
@@ -82,7 +83,7 @@ mod tests {
         ];
 
         for x in &vals {
-            let repr = f64::into_repr(*x);
+            let repr = f64::into_repr(*x).unwrap();
             let roundtrip = repr.as_str().parse::<f64>().unwrap();
 
             assert_eq!(*x, roundtrip);
@@ -91,7 +92,7 @@ mod tests {
 
     #[test]
     fn test_into_repr_f64_nan() {
-        let repr = f64::into_repr(f64::NAN);
+        let repr = f64::into_repr(f64::NAN).unwrap();
         let roundtrip = repr.as_str().parse::<f64>().unwrap();
         assert!(roundtrip.is_nan());
     }
@@ -99,7 +100,7 @@ mod tests {
     #[quickcheck]
     #[cfg_attr(miri, ignore)]
     fn quickcheck_into_repr_f64(val: f64) {
-        let repr = f64::into_repr(val);
+        let repr = f64::into_repr(val).unwrap();
         let roundtrip = repr.as_str().parse::<f64>().unwrap();
 
         // Note: The formatting of floats by `ryu` sometimes differs from that of `std`, so instead
@@ -125,7 +126,7 @@ mod tests {
         ];
 
         for x in &vals {
-            let repr = f32::into_repr(*x);
+            let repr = f32::into_repr(*x).unwrap();
             let roundtrip = repr.as_str().parse::<f32>().unwrap();
 
             assert_eq!(*x, roundtrip);
@@ -135,7 +136,7 @@ mod tests {
     #[test]
     #[cfg_attr(all(target_arch = "powerpc64", target_pointer_width = "64"), ignore)]
     fn test_into_repr_f32_nan() {
-        let repr = f32::into_repr(f32::NAN);
+        let repr = f32::into_repr(f32::NAN).unwrap();
         let roundtrip = repr.as_str().parse::<f32>().unwrap();
         assert!(roundtrip.is_nan());
     }
@@ -143,7 +144,7 @@ mod tests {
     #[quickcheck]
     #[cfg_attr(all(target_arch = "powerpc64", target_pointer_width = "64"), ignore)]
     fn proptest_into_repr_f32(val: f32) {
-        let repr = f32::into_repr(val);
+        let repr = f32::into_repr(val).unwrap();
         let roundtrip = repr.as_str().parse::<f32>().unwrap();
 
         // Note: The formatting of floats by `ryu` sometimes differs from that of `std`, so instead

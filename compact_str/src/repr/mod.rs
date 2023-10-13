@@ -27,7 +27,7 @@ use heap::HeapBuffer;
 use inline::InlineBuffer;
 use last_utf8_char::LastUtf8Char;
 use static_str::StaticStr;
-pub use traits::IntoRepr;
+pub(crate) use traits::IntoRepr;
 
 use crate::ReserveError;
 

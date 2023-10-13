@@ -17,7 +17,10 @@ use super::repr::{
     IntoRepr,
     Repr,
 };
-use crate::CompactString;
+use crate::{
+    CompactString,
+    ToCompactStringError,
+};
 
 /// A trait for converting a value to a `CompactString`.
 ///
@@ -27,6 +30,11 @@ use crate::CompactString;
 /// implementation for free.
 pub trait ToCompactString {
     /// Converts the given value to a [`CompactString`].
+    ///
+    /// # Panics
+    ///
+    /// Panics if the system runs out of memory and it cannot hold the whole string,
+    /// or if [`Display::fmt()`][core::fmt::Display::fmt] returns an error.
     ///
     /// # Examples
     ///
@@ -41,7 +49,18 @@ pub trait ToCompactString {
     ///
     /// assert_eq!(i.to_compact_string(), five);
     /// ```
-    fn to_compact_string(&self) -> CompactString;
+    #[inline]
+    #[track_caller]
+    fn to_compact_string(&self) -> CompactString {
+        self.try_to_compact_string().unwrap()
+    }
+
+    /// Fallible version of [`ToCompactString::to_compact_string()`]
+    ///
+    /// This method won't panic if the system is out-of-memory, but return a
+    /// [`ReserveError`][crate::ReserveError].
+    /// Otherwise it behaves the same as [`ToCompactString::to_compact_string()`].
+    fn try_to_compact_string(&self) -> Result<CompactString, ToCompactStringError>;
 }
 
 /// # Safety
@@ -71,50 +90,49 @@ unsafe impl LifetimeFree for Repr {}
 ///     * For floats we use [`ryu`] crate which sometimes provides different formatting than [`std`]
 impl<T: fmt::Display> ToCompactString for T {
     #[inline]
-    #[track_caller]
-    fn to_compact_string(&self) -> CompactString {
+    fn try_to_compact_string(&self) -> Result<CompactString, ToCompactStringError> {
         let repr = match_type!(self, {
-            &u8 as s => s.into_repr(),
-            &i8 as s => s.into_repr(),
-            &u16 as s => s.into_repr(),
-            &i16 as s => s.into_repr(),
-            &u32 as s => s.into_repr(),
-            &i32 as s => s.into_repr(),
-            &u64 as s => s.into_repr(),
-            &i64 as s => s.into_repr(),
-            &u128 as s => s.into_repr(),
-            &i128 as s => s.into_repr(),
-            &usize as s => s.into_repr(),
-            &isize as s => s.into_repr(),
-            &f32 as s => s.into_repr(),
-            &f64 as s => s.into_repr(),
-            &bool as s => s.into_repr(),
-            &char as s => s.into_repr(),
+            &u8 as s => s.into_repr()?,
+            &i8 as s => s.into_repr()?,
+            &u16 as s => s.into_repr()?,
+            &i16 as s => s.into_repr()?,
+            &u32 as s => s.into_repr()?,
+            &i32 as s => s.into_repr()?,
+            &u64 as s => s.into_repr()?,
+            &i64 as s => s.into_repr()?,
+            &u128 as s => s.into_repr()?,
+            &i128 as s => s.into_repr()?,
+            &usize as s => s.into_repr()?,
+            &isize as s => s.into_repr()?,
+            &f32 as s => s.into_repr()?,
+            &f64 as s => s.into_repr()?,
+            &bool as s => s.into_repr()?,
+            &char as s => s.into_repr()?,
             // TODO(parkmycar): Re-enable when a new version of `castaway` is released.
             //
             // <https://github.com/ParkMyCar/compact_str/issues/304>
-            // &String as s => Repr::new(s),
-            &CompactString as s => Repr::new(s).unwrap(),
-            &num::NonZeroU8 as s => s.into_repr(),
-            &num::NonZeroI8 as s => s.into_repr(),
-            &num::NonZeroU16 as s => s.into_repr(),
-            &num::NonZeroI16 as s => s.into_repr(),
-            &num::NonZeroU32 as s => s.into_repr(),
-            &num::NonZeroI32 as s => s.into_repr(),
-            &num::NonZeroU64 as s => s.into_repr(),
-            &num::NonZeroI64 as s => s.into_repr(),
-            &num::NonZeroUsize as s => s.into_repr(),
-            &num::NonZeroIsize as s => s.into_repr(),
-            &num::NonZeroU128 as s => s.into_repr(),
-            &num::NonZeroI128 as s => s.into_repr(),
+            // &String as s => return Ok(Repr::new(s)?),
+            &CompactString as s => Repr::new(s)?,
+            &num::NonZeroU8 as s => s.into_repr()?,
+            &num::NonZeroI8 as s => s.into_repr()?,
+            &num::NonZeroU16 as s => s.into_repr()?,
+            &num::NonZeroI16 as s => s.into_repr()?,
+            &num::NonZeroU32 as s => s.into_repr()?,
+            &num::NonZeroI32 as s => s.into_repr()?,
+            &num::NonZeroU64 as s => s.into_repr()?,
+            &num::NonZeroI64 as s => s.into_repr()?,
+            &num::NonZeroUsize as s => s.into_repr()?,
+            &num::NonZeroIsize as s => s.into_repr()?,
+            &num::NonZeroU128 as s => s.into_repr()?,
+            &num::NonZeroI128 as s => s.into_repr()?,
             s => {
                 let mut c = CompactString::new_inline("");
-                write!(&mut c, "{}", s).expect("fmt::Display incorrectly implemented!");
-                return c;
+                write!(c, "{}", s)?;
+                return Ok(c);
             }
         });
 
-        CompactString(repr)
+        Ok(CompactString(repr))
     }
 }
 

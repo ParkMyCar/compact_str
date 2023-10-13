@@ -2447,4 +2447,45 @@ impl fmt::Display for ReserveError {
 #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl std::error::Error for ReserveError {}
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+#[non_exhaustive]
+pub enum ToCompactStringError {
+    Reserve(ReserveError),
+    Fmt(fmt::Error),
+}
+
+impl fmt::Display for ToCompactStringError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            ToCompactStringError::Reserve(_) => "Could not reserve memory for CompactString",
+            ToCompactStringError::Fmt(_) => "Could not format CompactString",
+        })
+    }
+}
+
+impl From<ReserveError> for ToCompactStringError {
+    #[inline]
+    fn from(value: ReserveError) -> Self {
+        Self::Reserve(value)
+    }
+}
+
+impl From<fmt::Error> for ToCompactStringError {
+    #[inline]
+    fn from(value: fmt::Error) -> Self {
+        Self::Fmt(value)
+    }
+}
+
+#[cfg(feature = "std")]
+#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
+impl std::error::Error for ToCompactStringError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            ToCompactStringError::Reserve(err) => Some(err),
+            ToCompactStringError::Fmt(err) => Some(err),
+        }
+    }
+}
+
 static_assertions::assert_eq_size!(CompactString, String);

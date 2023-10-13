@@ -1821,12 +1821,15 @@ fn test_from_string_buffer_inlines_on_clone() {
     assert!(!b.is_heap_allocated());
 }
 
+// With debug assertions enabled the invocation will panic if you try to allocate more memory than
+// the system even has.
+#[cfg(not(debug_assertions))]
+#[cfg(target_pointer_width = "64")]
 #[test]
 #[should_panic = "Cannot allocated memory to hold CompactString"]
-#[cfg(target_pointer_width = "64")]
 fn test_alloc_excessively_long_string() {
-    // 2**56 - 2 bytes
-    CompactString::with_capacity(0x00ff_ffff_ffff_fffe);
+    // 2**56 - 2 bytes, the maximum number `Capacity` can hold
+    CompactString::with_capacity((1 << 56) - 2);
 }
 
 // This feature was enabled by <https://github.com/rust-lang/rust/pull/94075> which was first

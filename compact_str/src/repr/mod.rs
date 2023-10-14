@@ -675,6 +675,26 @@ impl Clone for Repr {
             unsafe { core::ptr::read(self) }
         }
     }
+
+    #[inline]
+    fn clone_from(&mut self, source: &Self) {
+        #[inline(never)]
+        fn clone_from_heap(this: &mut Repr, source: &Repr) {
+            unsafe { this.set_len(0) };
+            this.push_str(source.as_str());
+        }
+
+        // There are only two cases we need to care about: If the string is allocated on the heap
+        // or not. If it is, then the data must be cloned proberly, otherwise we can simply copy
+        // the `Repr`.
+        if source.is_heap_allocated() {
+            clone_from_heap(self, source)
+        } else {
+            // SAFETY: We just checked that `source` can be copied because it is an inline string or
+            // a reference to a `&'static str`.
+            *self = unsafe { core::ptr::read(source) }
+        }
+    }
 }
 
 impl Drop for Repr {
@@ -1017,6 +1037,21 @@ mod tests {
         assert_eq!(r_a.len(), r_b.len());
         assert_eq!(r_a.capacity(), r_b.capacity());
         assert_eq!(r_a.is_heap_allocated(), r_b.is_heap_allocated());
+    }
+
+    #[test_case(Repr::from_static_str(""), Repr::from_static_str(""); "empty clone from static")]
+    #[test_case(Repr::new_inline("abc"), Repr::from_static_str("efg"); "short clone from static")]
+    #[test_case(Repr::new("i am a longer string that will be on the heap"), Repr::from_static_str(EIGHTEEN_MB_STR); "long clone from static")]
+    #[test_case(Repr::from_static_str(""), Repr::new_inline(""); "empty clone from inline")]
+    #[test_case(Repr::new_inline("abc"), Repr::new_inline("efg"); "short clone from inline")]
+    #[test_case(Repr::new("i am a longer string that will be on the heap"), Repr::new_inline("small"); "long clone from inline")]
+    #[test_case(Repr::from_static_str(""), Repr::new(EIGHTEEN_MB_STR); "empty clone from heap")]
+    #[test_case(Repr::new_inline("abc"), Repr::new(EIGHTEEN_MB_STR); "short clone from heap")]
+    #[test_case(Repr::new("i am a longer string that will be on the heap"), Repr::new(EIGHTEEN_MB_STR); "long clone from heap")]
+    fn test_clone_from(mut initial: Repr, source: Repr) {
+        initial.clone_from(&source);
+        assert_eq!(initial.as_str(), source.as_str());
+        assert_eq!(initial.is_heap_allocated(), source.is_heap_allocated());
     }
 
     #[quickcheck]

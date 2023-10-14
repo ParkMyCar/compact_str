@@ -35,7 +35,7 @@ pub const MAX_VALUE: usize = {
 /// An integer type that uses `core::mem::size_of::<usize>() - 1` bytes to store the capacity of
 /// a heap buffer.
 ///
-/// Assumming a 64-bit arch, a [`super::BoxString`] uses 8 bytes for a pointer, 8 bytes for a
+/// Assuming a 64-bit arch, a [`super::BoxString`] uses 8 bytes for a pointer, 8 bytes for a
 /// length, and then needs 1 byte for a discriminant. We need to store the capacity somewhere, and
 /// we could store it on the heap, but we also have 7 unused bytes. [`Capacity`] handles storing a
 /// value in these 7 bytes, returning an error if it's not possible, at which point we'll store the

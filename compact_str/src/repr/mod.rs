@@ -48,7 +48,7 @@ const EMPTY: Repr = Repr::new_inline("");
 
 #[repr(C)]
 pub struct Repr(
-    // We have a pointer in the repesentation to properly carry provenance
+    // We have a pointer in the representation to properly carry provenance
     *const (),
     // Then we need two `usize`s (aka WORDs) of data, for the first we just define a `usize`...
     usize,
@@ -214,7 +214,7 @@ impl Repr {
         }
 
         if self.is_heap_allocated() {
-            // SAFTEY: we just checked that the discriminant indicates we're a HeapBuffer
+            // SAFETY: we just checked that the discriminant indicates we're a HeapBuffer
             let heap_buffer = unsafe { self.into_heap() };
 
             if heap_buffer.cap.is_heap() {
@@ -256,7 +256,7 @@ impl Repr {
             // It's possible to have a `Repr` that is heap allocated with a capacity less than
             // MAX_SIZE, if that `Repr` was created From a String or Box<str>
             //
-            // SAFTEY: Our needed_capacity is >= our length, which is <= than MAX_SIZE
+            // SAFETY: Our needed_capacity is >= our length, which is <= than MAX_SIZE
             let inline = unsafe { InlineBuffer::new(self.as_str()) };
             *self = Repr::from_inline(inline);
             Ok(())
@@ -348,7 +348,7 @@ impl Repr {
         // Reserve at least enough space to fit `s`
         self.reserve(str_len).unwrap_with_msg();
 
-        // SAFTEY: `s` which we're appending to the buffer, is valid UTF-8
+        // SAFETY: `s` which we're appending to the buffer, is valid UTF-8
         let slice = unsafe { self.as_mut_buf() };
         let push_buffer = &mut slice[len..len + str_len];
 
@@ -359,7 +359,7 @@ impl Repr {
 
         // Increment the length of our string
         //
-        // SAFETY: We appened `s` which is valid UTF-8, and if our size became greater than
+        // SAFETY: We appended `s` which is valid UTF-8, and if our size became greater than
         // MAX_SIZE, our call to reserve would make us heap allocated
         unsafe { self.set_len(len + str_len) };
     }
@@ -691,7 +691,7 @@ impl Clone for Repr {
         }
 
         // There are only two cases we need to care about: If the string is allocated on the heap
-        // or not. If it is, then the data must be cloned proberly, otherwise we can simply copy
+        // or not. If it is, then the data must be cloned properly, otherwise we can simply copy
         // the `Repr`.
         if self.is_heap_allocated() {
             clone_heap(self)

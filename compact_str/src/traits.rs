@@ -137,7 +137,7 @@ impl<T: fmt::Display> ToCompactString for T {
     }
 }
 
-/// A trait that provides convience methods for creating a [`CompactString`] from a collection of
+/// A trait that provides convenience methods for creating a [`CompactString`] from a collection of
 /// items. It is implemented for all types that can be converted into an iterator, and that iterator
 /// yields types that can be converted into a `str`.
 ///
@@ -154,7 +154,7 @@ impl<T: fmt::Display> ToCompactString for T {
 /// let concat = words.concat_compact();
 /// assert_eq!(concat, "☀️🌕🌑☀️");
 ///
-/// // join the words, with a seperator
+/// // join the words, with a separator
 /// let join = words.join_compact(" ➡️ ");
 /// assert_eq!(join, "☀️ ➡️ 🌕 ➡️ 🌑 ➡️ ☀️");
 /// ```
@@ -172,7 +172,7 @@ pub trait CompactStringExt {
     /// ```
     fn concat_compact(&self) -> CompactString;
 
-    /// Joins all the items of a collection, placing a seperator between them, forming a
+    /// Joins all the items of a collection, placing a separator between them, forming a
     /// [`CompactString`]
     ///
     /// # Example
@@ -184,7 +184,7 @@ pub trait CompactStringExt {
     ///
     /// assert_eq!(compact, "apples, oranges, bananas");
     /// ```
-    fn join_compact<S: AsRef<str>>(&self, seperator: S) -> CompactString;
+    fn join_compact<S: AsRef<str>>(&self, separator: S) -> CompactString;
 }
 
 impl<I, C> CompactStringExt for C
@@ -200,11 +200,11 @@ where
             })
     }
 
-    fn join_compact<S: AsRef<str>>(&self, seperator: S) -> CompactString {
+    fn join_compact<S: AsRef<str>>(&self, separator: S) -> CompactString {
         let mut compact_string = CompactString::new_inline("");
 
         let mut iter = self.into_iter().peekable();
-        let sep = seperator.as_ref();
+        let sep = separator.as_ref();
 
         while let Some(item) = iter.next() {
             compact_string.push_str(item.as_ref());
@@ -248,9 +248,9 @@ mod tests {
 
     #[proptest]
     #[cfg_attr(miri, ignore)]
-    fn proptest_join(items: Vec<String>, seperator: String) {
-        let c: CompactString = items.join_compact(&seperator);
-        let s: String = items.join(&seperator);
+    fn proptest_join(items: Vec<String>, separator: String) {
+        let c: CompactString = items.join_compact(&separator);
+        let s: String = items.join(&separator);
         assert_eq!(c, s);
     }
 

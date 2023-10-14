@@ -191,7 +191,7 @@ impl HeapBuffer {
 
                 // Our allocation succeeded! Write the new capacity
                 //
-                // SAFTEY:
+                // SAFETY:
                 // * `src` and `dst` are both valid for reads of `usize` number of bytes
                 // * `src` and `dst` don't overlap because we created `src`
                 unsafe {
@@ -370,7 +370,7 @@ mod heap_capacity {
 
     /// Deallocates a pointer which references a `HeapBuffer` whose capacity is on the heap
     ///
-    /// # Saftey
+    /// # Safety
     /// * `ptr` must point to the start of a `HeapBuffer` whose capacity is on the heap. i.e. we
     ///   must have `ptr -> [cap<usize> ; string<bytes>]`
     pub unsafe fn dealloc(ptr: ptr::NonNull<u8>, capacity: usize) {
@@ -415,7 +415,7 @@ mod inline_capacity {
 
     /// Deallocates a pointer which references a `HeapBuffer` whose capacity is stored inline
     ///
-    /// # Saftey
+    /// # Safety
     /// * `ptr` must point to the start of a `HeapBuffer` whose capacity is on the inline
     pub unsafe fn dealloc(ptr: ptr::NonNull<u8>, capacity: usize) {
         let layout = layout(capacity);

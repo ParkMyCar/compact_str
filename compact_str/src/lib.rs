@@ -1401,7 +1401,7 @@ impl CompactString {
         //         `[u8; 2*N]` to `[u16; N]`. `slice::align_to()` checks if the alignment is right.
         match unsafe { v.align_to::<u16>() } {
             (&[], v, &[]) => {
-                // Input is correcty aligned.
+                // Input is correctly aligned.
                 for c in core::char::decode_utf16(v.iter().copied().map(from_int)) {
                     result.push(c.map_err(|_| Utf16Error(()))?);
                 }
@@ -1437,7 +1437,7 @@ impl CompactString {
         //         `[u8; 2*N]` to `[u16; N]`. `slice::align_to()` checks if the alignment is right.
         match unsafe { v.align_to::<u16>() } {
             (&[], v, &[]) => {
-                // Input is correcty aligned.
+                // Input is correctly aligned.
                 for c in core::char::decode_utf16(v.iter().copied().map(from_int)) {
                     match c {
                         Ok(c) => result.push(c),
@@ -2433,7 +2433,7 @@ pub struct ReserveError(());
 
 impl fmt::Display for ReserveError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str("Cannot allocated memory to hold CompactString")
+        f.write_str("Cannot allocate memory to hold CompactString")
     }
 }
 
@@ -2445,7 +2445,7 @@ impl std::error::Error for ReserveError {}
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[non_exhaustive]
 pub enum ToCompactStringError {
-    /// Cannot allocated memory to hold CompactString
+    /// Cannot allocate memory to hold CompactString
     Reserve(ReserveError),
     /// [`Display::fmt()`][core::fmt::Display::fmt] returned an error
     Fmt(fmt::Error),

@@ -1,6 +1,6 @@
 //! Implementations for efficiently converting a number into a [`Repr`]
 //!
-//! Adapted from the implemenation in the `std` library at
+//! Adapted from the implementation in the `std` library at
 //! <https://github.com/rust-lang/rust/blob/b8214dc6c6fc20d0a660fb5700dca9ebf51ebe89/src/libcore/fmt/num.rs#L188-L266>
 
 use core::{

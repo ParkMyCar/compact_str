@@ -2146,6 +2146,99 @@ impl<'a> From<&'a CompactString> for Cow<'a, str> {
     }
 }
 
+#[rustversion::since(1.60)]
+#[cfg(target_has_atomic = "ptr")]
+impl From<CompactString> for alloc::sync::Arc<str> {
+    fn from(value: CompactString) -> Self {
+        Self::from(value.as_str())
+    }
+}
+
+impl From<CompactString> for alloc::rc::Rc<str> {
+    fn from(value: CompactString) -> Self {
+        Self::from(value.as_str())
+    }
+}
+
+#[cfg(feature = "std")]
+impl From<CompactString> for Box<dyn std::error::Error + Send + Sync> {
+    fn from(value: CompactString) -> Self {
+        struct StringError(CompactString);
+
+        impl std::error::Error for StringError {
+            #[allow(deprecated)]
+            fn description(&self) -> &str {
+                &self.0
+            }
+        }
+
+        impl fmt::Display for StringError {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                fmt::Display::fmt(&self.0, f)
+            }
+        }
+
+        // Purposefully skip printing "StringError(..)"
+        impl fmt::Debug for StringError {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                fmt::Debug::fmt(&self.0, f)
+            }
+        }
+
+        Box::new(StringError(value))
+    }
+}
+
+#[cfg(feature = "std")]
+impl From<CompactString> for Box<dyn std::error::Error> {
+    fn from(value: CompactString) -> Self {
+        let err1: Box<dyn std::error::Error + Send + Sync> = From::from(value);
+        let err2: Box<dyn std::error::Error> = err1;
+        err2
+    }
+}
+
+impl From<CompactString> for Box<str> {
+    fn from(value: CompactString) -> Self {
+        if value.is_heap_allocated() {
+            value.into_string().into_boxed_str()
+        } else {
+            Box::from(value.as_str())
+        }
+    }
+}
+
+#[cfg(feature = "std")]
+impl From<CompactString> for std::ffi::OsString {
+    fn from(value: CompactString) -> Self {
+        Self::from(value.into_string())
+    }
+}
+
+#[cfg(feature = "std")]
+impl From<CompactString> for std::path::PathBuf {
+    fn from(value: CompactString) -> Self {
+        Self::from(std::ffi::OsString::from(value))
+    }
+}
+
+#[cfg(feature = "std")]
+impl AsRef<std::path::Path> for CompactString {
+    fn as_ref(&self) -> &std::path::Path {
+        std::path::Path::new(self.as_str())
+    }
+}
+
+impl From<CompactString> for alloc::vec::Vec<u8> {
+    fn from(value: CompactString) -> Self {
+        if value.is_heap_allocated() {
+            value.into_string().into_bytes()
+        } else {
+            value.as_bytes().to_vec()
+        }
+    }
+}
+
 impl FromStr for CompactString {
     type Err = core::convert::Infallible;
     fn from_str(s: &str) -> Result<CompactString, Self::Err> {

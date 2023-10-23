@@ -1802,6 +1802,99 @@ fn test_into_cow() {
 }
 
 #[test]
+fn test_into_arc() {
+    let short = "short";
+    let long = "i am a long string that will be allocated on the heap";
+    let arc = alloc::sync::Arc::<str>::from(CompactString::new(short));
+    assert_eq!(short, &*arc);
+    let arc = alloc::sync::Arc::<str>::from(CompactString::new(long));
+    assert_eq!(long, &*arc);
+}
+
+#[test]
+fn test_into_rc() {
+    let short = "short";
+    let long = "i am a long string that will be allocated on the heap";
+    let rc = alloc::rc::Rc::<str>::from(CompactString::new(short));
+    assert_eq!(short, &*rc);
+    let rc = alloc::rc::Rc::<str>::from(CompactString::new(long));
+    assert_eq!(long, &*rc);
+}
+
+#[test]
+fn test_into_error() {
+    let short = "short";
+    let long = "i am a long string that will be allocated on the heap";
+    let short_error_ss =
+        Box::<dyn std::error::Error + Send + Sync>::from(CompactString::new(short));
+    assert_eq!(short, format!("{short_error_ss}"));
+    assert_eq!(format!("{short:?}"), format!("{short_error_ss:?}"));
+    let long_error_ss = Box::<dyn std::error::Error + Send + Sync>::from(CompactString::new(long));
+    assert_eq!(long, format!("{long_error_ss}"));
+    assert_eq!(format!("{long:?}"), format!("{long_error_ss:?}"));
+
+    let short_error = Box::<dyn std::error::Error>::from(CompactString::new(short));
+    assert_eq!(short, format!("{short_error}"));
+    assert_eq!(format!("{short:?}"), format!("{short_error:?}"));
+    let long_error = Box::<dyn std::error::Error>::from(CompactString::new(long));
+    assert_eq!(long, format!("{long_error}"));
+    assert_eq!(format!("{long:?}"), format!("{long_error:?}"));
+}
+
+#[test]
+fn test_into_box_str() {
+    let short = "short";
+    let long = "i am a long string that will be allocated on the heap";
+    let s = Box::<str>::from(CompactString::new(short));
+    assert_eq!(short, &*s);
+    let l = Box::<str>::from(CompactString::new(long));
+    assert_eq!(long, &*l);
+}
+
+#[test]
+fn test_into_os_string() {
+    let short = "short";
+    let long = "i am a long string that will be allocated on the heap";
+    let s = std::ffi::OsString::from(CompactString::new(short));
+    assert_eq!(s.as_os_str().to_str().unwrap(), short);
+    let l = std::ffi::OsString::from(CompactString::new(long));
+    assert_eq!(l.as_os_str().to_str().unwrap(), long);
+}
+
+#[test]
+fn test_into_path_buf() {
+    let short = "short";
+    let long = "i am a long string that will be allocated on the heap";
+    let s = std::path::PathBuf::from(CompactString::new(short));
+    assert_eq!(s.as_os_str().to_str().unwrap(), short);
+    let l = std::path::PathBuf::from(CompactString::new(long));
+    assert_eq!(l.as_os_str().to_str().unwrap(), long);
+}
+
+#[test]
+fn test_as_ref_path() {
+    let short = "short";
+    let long = "i am a long string that will be allocated on the heap";
+    let s = CompactString::new(short);
+    assert_eq!(
+        AsRef::<std::path::Path>::as_ref(&s).to_str().unwrap(),
+        short
+    );
+    let l = CompactString::new(long);
+    assert_eq!(AsRef::<std::path::Path>::as_ref(&l).to_str().unwrap(), long);
+}
+
+#[test]
+fn test_into_vec_u8() {
+    let short = "short";
+    let long = "i am a long string that will be allocated on the heap";
+    let s = Vec::<u8>::from(CompactString::new(short));
+    assert_eq!(&s, short.as_bytes());
+    let l = Vec::<u8>::from(CompactString::new(long));
+    assert_eq!(&l, long.as_bytes());
+}
+
+#[test]
 fn test_from_string_buffer_inlines_on_push() {
     let mut compact = CompactString::from_string_buffer("hello".to_string());
     assert!(compact.is_heap_allocated());

@@ -1,6 +1,6 @@
 //! Implementations for efficiently converting a number into a [`Repr`]
 //!
-//! Adapted from the implemenation in the `std` library at
+//! Adapted from the implementation in the `std` library at
 //! <https://github.com/rust-lang/rust/blob/b8214dc6c6fc20d0a660fb5700dca9ebf51ebe89/src/libcore/fmt/num.rs#L188-L266>
 
 use core::{
@@ -11,6 +11,10 @@ use core::{
 
 use super::traits::IntoRepr;
 use super::Repr;
+use crate::{
+    ToCompactStringError,
+    UnwrapWithMsg,
+};
 
 const DEC_DIGITS_LUT: &[u8] = b"\
       0001020304050607080910111213141516171819\
@@ -23,13 +27,12 @@ const DEC_DIGITS_LUT: &[u8] = b"\
 macro_rules! impl_IntoRepr {
     ($t:ident, $conv_ty:ident) => {
         impl IntoRepr for $t {
-            #[inline]
-            fn into_repr(self) -> Repr {
+            fn into_repr(self) -> Result<Repr, ToCompactStringError> {
                 // Determine the number of digits in this value
                 //
                 // Note: this considers the `-` symbol
                 let num_digits = NumChars::num_chars(self);
-                let mut repr = Repr::with_capacity(num_digits);
+                let mut repr = Repr::with_capacity(num_digits).unwrap_with_msg();
 
                 #[allow(unused_comparisons)]
                 let is_nonnegative = self >= 0;
@@ -98,7 +101,7 @@ macro_rules! impl_IntoRepr {
                 // we should have moved all the way down our buffer
                 debug_assert_eq!(curr, 0);
 
-                repr
+                Ok(repr)
             }
         }
     };
@@ -128,17 +131,17 @@ impl_IntoRepr!(isize, u64);
 /// characters and then writing.
 impl IntoRepr for u128 {
     #[inline]
-    fn into_repr(self) -> Repr {
+    fn into_repr(self) -> Result<Repr, ToCompactStringError> {
         let mut buffer = itoa::Buffer::new();
-        Repr::new(buffer.format(self))
+        Ok(Repr::new(buffer.format(self))?)
     }
 }
 
 impl IntoRepr for i128 {
     #[inline]
-    fn into_repr(self) -> Repr {
+    fn into_repr(self) -> Result<Repr, ToCompactStringError> {
         let mut buffer = itoa::Buffer::new();
-        Repr::new(buffer.format(self))
+        Ok(Repr::new(buffer.format(self))?)
     }
 }
 
@@ -147,7 +150,7 @@ macro_rules! impl_NonZero_IntoRepr {
     ($t:path) => {
         impl IntoRepr for $t {
             #[inline]
-            fn into_repr(self) -> Repr {
+            fn into_repr(self) -> Result<Repr, ToCompactStringError> {
                 self.get().into_repr()
             }
         }
@@ -427,7 +430,7 @@ mod tests {
         let vals = [u8::MIN, u8::MIN + 1, 0, 42, u8::MAX - 1, u8::MAX];
 
         for x in &vals {
-            let repr = u8::into_repr(*x);
+            let repr = u8::into_repr(*x).unwrap();
             assert_eq!(repr.as_str(), x.to_string());
         }
     }
@@ -437,7 +440,7 @@ mod tests {
         let vals = [i8::MIN, i8::MIN + 1, 0, 42, i8::MAX - 1, i8::MAX];
 
         for x in &vals {
-            let repr = i8::into_repr(*x);
+            let repr = i8::into_repr(*x).unwrap();
             assert_eq!(repr.as_str(), x.to_string());
         }
     }
@@ -447,7 +450,7 @@ mod tests {
         let vals = [u16::MIN, u16::MIN + 1, 0, 42, u16::MAX - 1, u16::MAX];
 
         for x in &vals {
-            let repr = u16::into_repr(*x);
+            let repr = u16::into_repr(*x).unwrap();
             assert_eq!(repr.as_str(), x.to_string());
         }
     }
@@ -457,7 +460,7 @@ mod tests {
         let vals = [i16::MIN, i16::MIN + 1, 0, 42, i16::MAX - 1, i16::MAX];
 
         for x in &vals {
-            let repr = i16::into_repr(*x);
+            let repr = i16::into_repr(*x).unwrap();
             assert_eq!(repr.as_str(), x.to_string());
         }
     }
@@ -467,7 +470,7 @@ mod tests {
         let vals = [u32::MIN, u32::MIN + 1, 0, 42, u32::MAX - 1, u32::MAX];
 
         for x in &vals {
-            let repr = u32::into_repr(*x);
+            let repr = u32::into_repr(*x).unwrap();
             assert_eq!(repr.as_str(), x.to_string());
         }
     }
@@ -477,7 +480,7 @@ mod tests {
         let vals = [i32::MIN, i32::MIN + 1, 0, 42, i32::MAX - 1, i32::MAX];
 
         for x in &vals {
-            let repr = i32::into_repr(*x);
+            let repr = i32::into_repr(*x).unwrap();
             assert_eq!(repr.as_str(), x.to_string());
         }
     }
@@ -487,7 +490,7 @@ mod tests {
         let vals = [u64::MIN, u64::MIN + 1, 0, 42, u64::MAX - 1, u64::MAX];
 
         for x in &vals {
-            let repr = u64::into_repr(*x);
+            let repr = u64::into_repr(*x).unwrap();
             assert_eq!(repr.as_str(), x.to_string());
         }
     }
@@ -497,7 +500,7 @@ mod tests {
         let vals = [i64::MIN, i64::MIN + 1, 0, 42, i64::MAX - 1, i64::MAX];
 
         for x in &vals {
-            let repr = i64::into_repr(*x);
+            let repr = i64::into_repr(*x).unwrap();
             assert_eq!(repr.as_str(), x.to_string());
         }
     }
@@ -514,7 +517,7 @@ mod tests {
         ];
 
         for x in &vals {
-            let repr = usize::into_repr(*x);
+            let repr = usize::into_repr(*x).unwrap();
             assert_eq!(repr.as_str(), x.to_string());
         }
     }
@@ -531,7 +534,7 @@ mod tests {
         ];
 
         for x in &vals {
-            let repr = isize::into_repr(*x);
+            let repr = isize::into_repr(*x).unwrap();
             assert_eq!(repr.as_str(), x.to_string());
         }
     }
@@ -541,7 +544,7 @@ mod tests {
         let vals = [u128::MIN, u128::MIN + 1, 0, 42, u128::MAX - 1, u128::MAX];
 
         for x in &vals {
-            let repr = u128::into_repr(*x);
+            let repr = u128::into_repr(*x).unwrap();
             assert_eq!(repr.as_str(), x.to_string());
         }
     }
@@ -551,7 +554,7 @@ mod tests {
         let vals = [i128::MIN, i128::MIN + 1, 0, 42, i128::MAX - 1, i128::MAX];
 
         for x in &vals {
-            let repr = i128::into_repr(*x);
+            let repr = i128::into_repr(*x).unwrap();
             assert_eq!(repr.as_str(), x.to_string());
         }
     }

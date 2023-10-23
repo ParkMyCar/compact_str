@@ -139,7 +139,7 @@ fn proptest_reserve_and_write_bytes(#[strategy(rand_unicode())] word: String) {
     let slice = unsafe { compact.as_mut_bytes() };
     slice[..word.len()].copy_from_slice(word.as_bytes());
 
-    // SAFTEY: We know this is the length of our string, since `compact` started with 0 bytes
+    // SAFETY: We know this is the length of our string, since `compact` started with 0 bytes
     // and we just wrote `word.len()` bytes
     unsafe { compact.set_len(word.len()) }
 
@@ -159,7 +159,7 @@ fn proptest_reserve_and_write_bytes_allocated_properly(#[strategy(rand_unicode()
     let slice = unsafe { compact.as_mut_bytes() };
     slice[..word.len()].copy_from_slice(word.as_bytes());
 
-    // SAFTEY: We know this is the length of our string, since `compact` started with 0 bytes
+    // SAFETY: We know this is the length of our string, since `compact` started with 0 bytes
     // and we just wrote `word.len()` bytes
     unsafe { compact.set_len(word.len()) }
 
@@ -1396,7 +1396,7 @@ fn test_remove_str_len() {
 fn test_with_capacity_16711422() {
     // Fuzzing with AFL on a 32-bit ARM arch found this bug!
     //
-    // We have our own heap implemenation called BoxString, which optionally stores the capacity
+    // We have our own heap implementation called BoxString, which optionally stores the capacity
     // on the heap, which is really only relevant for 32-bit architectures. The discriminant it used
     // to determine if capacity was on the heap, was when the last `usize` number of bytes were all
     // equal to our internal HEAP_MASK, which at the time was `255`. At the time this worked and was
@@ -1490,11 +1490,58 @@ fn test_reserve_shrink_roundtrip() {
 
 #[test]
 fn test_reserve_shrink_roundtrip_static() {
+    // longer than 24 bytes, so the string does not get inlined
+    const TEXT: &str = "Hello, world! How are you today?";
+
+    let mut s = CompactString::from_static_str(TEXT);
+    assert!(!s.is_heap_allocated());
+    assert_eq!(s.capacity(), TEXT.len());
+    assert_eq!(s, TEXT);
+
+    s.reserve(128);
+    assert!(s.is_heap_allocated());
+    assert!(s.capacity() >= 128 + TEXT.len());
+    assert_eq!(s, TEXT);
+
+    s.shrink_to(64);
+    assert!(s.is_heap_allocated());
+    assert!(s.capacity() >= 64);
+    assert_eq!(s, TEXT);
+
+    s.shrink_to_fit();
+    assert!(s.is_heap_allocated());
+    assert_eq!(s.capacity(), s.len());
+    assert_eq!(s, TEXT);
+
+    s.reserve(SIXTEEN_MB);
+    assert!(s.is_heap_allocated());
+    assert!(s.capacity() >= SIXTEEN_MB + TEXT.len());
+    assert_eq!(s, TEXT);
+
+    s.shrink_to(64);
+    assert!(s.is_heap_allocated());
+    assert!(s.capacity() >= 64);
+    assert_eq!(s, TEXT);
+
+    s.reserve(SIXTEEN_MB);
+    assert!(s.is_heap_allocated());
+    assert!(s.capacity() >= SIXTEEN_MB + TEXT.len());
+    assert_eq!(s, TEXT);
+
+    s.shrink_to_fit();
+    assert!(s.is_heap_allocated());
+    assert_eq!(s.capacity(), s.len());
+    assert_eq!(s, TEXT);
+}
+
+#[test]
+fn test_reserve_shrink_roundtrip_static_inline() {
+    // shorter than 12 bytes, so the string gets inlined
     const TEXT: &str = "Hello.";
 
     let mut s = CompactString::from_static_str(TEXT);
     assert!(!s.is_heap_allocated());
-    assert_eq!(s.capacity(), s.len());
+    assert_eq!(s.capacity(), TEXT.len());
     assert_eq!(s, TEXT);
 
     s.reserve(128);
@@ -1772,6 +1819,17 @@ fn test_from_string_buffer_inlines_on_clone() {
     let b = a.clone();
     // when cloning the CompactString we should inline it
     assert!(!b.is_heap_allocated());
+}
+
+// With debug assertions enabled the invocation will panic if you try to allocate more memory than
+// the system even has.
+#[cfg(not(debug_assertions))]
+#[cfg(target_pointer_width = "64")]
+#[test]
+#[should_panic = "Cannot allocate memory to hold CompactString"]
+fn test_alloc_excessively_long_string() {
+    // 2**56 - 2 bytes, the maximum number `Capacity` can hold
+    CompactString::with_capacity((1 << 56) - 2);
 }
 
 // This feature was enabled by <https://github.com/rust-lang/rust/pull/94075> which was first

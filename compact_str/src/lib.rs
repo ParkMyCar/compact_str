@@ -206,8 +206,9 @@ impl CompactString {
     /// let boxed = CompactString::new(&b);
     /// ```
     #[inline]
+    #[track_caller]
     pub fn new<T: AsRef<str>>(text: T) -> Self {
-        CompactString(Repr::new(text.as_ref()))
+        CompactString(Repr::new(text.as_ref()).unwrap_with_msg())
     }
 
     /// Creates a new inline [`CompactString`] at compile time.
@@ -267,6 +268,11 @@ impl CompactString {
     /// then it will be inlined. This also means that `CompactString`s have a minimum capacity
     /// of `std::mem::size_of::<String>`.
     ///
+    /// # Panics
+    ///
+    /// This method panics if the system is out-of-memory.
+    /// Use [`CompactString::try_with_capacity()`] if you want to handle such a problem manually.
+    ///
     /// # Examples
     ///
     /// ### "zero" Capacity
@@ -310,8 +316,18 @@ impl CompactString {
     /// assert!(empty.is_heap_allocated());
     /// ```
     #[inline]
+    #[track_caller]
     pub fn with_capacity(capacity: usize) -> Self {
-        CompactString(Repr::with_capacity(capacity))
+        CompactString(Repr::with_capacity(capacity).unwrap_with_msg())
+    }
+
+    /// Fallible version of [`CompactString::with_capacity()`]
+    ///
+    /// This method won't panic if the system is out-of-memory, but return an [`ReserveError`].
+    /// Otherwise it behaves the same as [`CompactString::with_capacity()`].
+    #[inline]
+    pub fn try_with_capacity(capacity: usize) -> Result<Self, ReserveError> {
+        Repr::with_capacity(capacity).map(CompactString)
     }
 
     /// Convert a slice of bytes into a [`CompactString`].
@@ -375,8 +391,9 @@ impl CompactString {
     /// ```
     #[inline]
     #[must_use]
+    #[track_caller]
     pub unsafe fn from_utf8_unchecked<B: AsRef<[u8]>>(buf: B) -> Self {
-        CompactString(Repr::from_utf8_unchecked(buf))
+        CompactString(Repr::from_utf8_unchecked(buf).unwrap_with_msg())
     }
 
     /// Decode a [`UTF-16`](https://en.wikipedia.org/wiki/UTF-16) slice of bytes into a
@@ -521,7 +538,8 @@ impl CompactString {
     /// * Reserving additional bytes may cause the `CompactString` to become heap allocated
     ///
     /// # Panics
-    /// Panics if the new capacity overflows `usize`
+    /// This method panics if the new capacity overflows `usize` or if the system is out-of-memory.
+    /// Use [`CompactString::try_reserve()`] if you want to handle such a problem manually.
     ///
     /// # Examples
     /// ```
@@ -536,7 +554,17 @@ impl CompactString {
     /// assert!(compact.capacity() >= 200);
     /// ```
     #[inline]
+    #[track_caller]
     pub fn reserve(&mut self, additional: usize) {
+        self.0.reserve(additional).unwrap_with_msg()
+    }
+
+    /// Fallible version of [`CompactString::reserve()`]
+    ///
+    /// This method won't panic if the system is out-of-memory, but return an [`ReserveError`]
+    /// Otherwise it behaves the same as [`CompactString::reserve()`].
+    #[inline]
+    pub fn try_reserve(&mut self, additional: usize) -> Result<(), ReserveError> {
         self.0.reserve(additional)
     }
 
@@ -1373,7 +1401,7 @@ impl CompactString {
         //         `[u8; 2*N]` to `[u16; N]`. `slice::align_to()` checks if the alignment is right.
         match unsafe { v.align_to::<u16>() } {
             (&[], v, &[]) => {
-                // Input is correcty aligned.
+                // Input is correctly aligned.
                 for c in core::char::decode_utf16(v.iter().copied().map(from_int)) {
                     result.push(c.map_err(|_| Utf16Error(()))?);
                 }
@@ -1409,7 +1437,7 @@ impl CompactString {
         //         `[u8; 2*N]` to `[u16; N]`. `slice::align_to()` checks if the alignment is right.
         match unsafe { v.align_to::<u16>() } {
             (&[], v, &[]) => {
-                // Input is correcty aligned.
+                // Input is correctly aligned.
                 for c in core::char::decode_utf16(v.iter().copied().map(from_int)) {
                     match c {
                         Ok(c) => result.push(c),
@@ -1601,8 +1629,9 @@ impl CompactString {
     /// assert_eq!(long_addr, long_ex_addr);
     /// ```
     #[inline]
+    #[track_caller]
     pub fn from_string_buffer(s: String) -> Self {
-        let repr = Repr::from_string(s, false);
+        let repr = Repr::from_string(s, false).unwrap_with_msg();
         CompactString(repr)
     }
 
@@ -2033,15 +2062,19 @@ impl Hash for CompactString {
 }
 
 impl<'a> From<&'a str> for CompactString {
+    #[inline]
+    #[track_caller]
     fn from(s: &'a str) -> Self {
-        let repr = Repr::new(s);
+        let repr = Repr::new(s).unwrap_with_msg();
         CompactString(repr)
     }
 }
 
 impl From<String> for CompactString {
+    #[inline]
+    #[track_caller]
     fn from(s: String) -> Self {
-        let repr = Repr::from_string(s, true);
+        let repr = Repr::from_string(s, true).unwrap_with_msg();
         CompactString(repr)
     }
 }
@@ -2063,9 +2096,11 @@ impl<'a> From<Cow<'a, str>> for CompactString {
 }
 
 impl From<Box<str>> for CompactString {
+    #[inline]
+    #[track_caller]
     fn from(b: Box<str>) -> Self {
         let s = b.into_string();
-        let repr = Repr::from_string(s, true);
+        let repr = Repr::from_string(s, true).unwrap_with_msg();
         CompactString(repr)
     }
 }
@@ -2391,5 +2426,89 @@ impl DoubleEndedIterator for Drain<'_> {
 }
 
 impl FusedIterator for Drain<'_> {}
+
+/// A possible error value if allocating or resizing a [`CompactString`] failed.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct ReserveError(());
+
+impl fmt::Display for ReserveError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("Cannot allocate memory to hold CompactString")
+    }
+}
+
+#[cfg(feature = "std")]
+#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
+impl std::error::Error for ReserveError {}
+
+/// A possible error value if [`ToCompactString::try_to_compact_string()`] failed.
+#[derive(Debug, Clone, Copy, PartialEq)]
+#[non_exhaustive]
+pub enum ToCompactStringError {
+    /// Cannot allocate memory to hold CompactString
+    Reserve(ReserveError),
+    /// [`Display::fmt()`][core::fmt::Display::fmt] returned an error
+    Fmt(fmt::Error),
+}
+
+impl fmt::Display for ToCompactStringError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ToCompactStringError::Reserve(err) => err.fmt(f),
+            ToCompactStringError::Fmt(err) => err.fmt(f),
+        }
+    }
+}
+
+impl From<ReserveError> for ToCompactStringError {
+    #[inline]
+    fn from(value: ReserveError) -> Self {
+        Self::Reserve(value)
+    }
+}
+
+impl From<fmt::Error> for ToCompactStringError {
+    #[inline]
+    fn from(value: fmt::Error) -> Self {
+        Self::Fmt(value)
+    }
+}
+
+#[cfg(feature = "std")]
+#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
+impl std::error::Error for ToCompactStringError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            ToCompactStringError::Reserve(err) => Some(err),
+            ToCompactStringError::Fmt(err) => Some(err),
+        }
+    }
+}
+
+trait UnwrapWithMsg {
+    type T;
+
+    fn unwrap_with_msg(self) -> Self::T;
+}
+
+impl<T, E: fmt::Display> UnwrapWithMsg for Result<T, E> {
+    type T = T;
+
+    #[inline(always)]
+    #[track_caller]
+    fn unwrap_with_msg(self) -> T {
+        match self {
+            Ok(value) => value,
+            Err(err) => unwrap_with_msg_fail(err),
+        }
+    }
+}
+
+#[inline(never)]
+#[cold]
+#[track_caller]
+fn unwrap_with_msg_fail<E: fmt::Display>(error: E) -> ! {
+    panic!("{error}")
+}
 
 static_assertions::assert_eq_size!(CompactString, String);

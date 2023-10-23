@@ -8,53 +8,29 @@ use core::iter::FromIterator;
 use super::{
     InlineBuffer,
     Repr,
+    EMPTY,
     MAX_SIZE,
 };
-use crate::CompactString;
+use crate::{
+    CompactString,
+    UnwrapWithMsg,
+};
 
 impl FromIterator<char> for Repr {
+    #[inline]
     fn from_iter<T: IntoIterator<Item = char>>(iter: T) -> Self {
-        let mut iter = iter.into_iter();
+        let iter = iter.into_iter();
 
-        // If the size hint indicates we can't store this inline, then create a heap string
-        let (size_hint, _) = iter.size_hint();
-        if size_hint > MAX_SIZE {
-            return Repr::from_string(iter.collect(), true);
+        let (lower_bound, _) = iter.size_hint();
+        let mut this = match Repr::with_capacity(lower_bound) {
+            Ok(this) => this,
+            Err(_) => EMPTY, // Ignore the error and hope that the lower_bound is incorrect.
+        };
+
+        for c in iter {
+            this.push_str(c.encode_utf8(&mut [0; 4]));
         }
-
-        // Otherwise, continuously pull chars from the iterator
-        let mut curr_len = 0;
-        let mut inline_buf = InlineBuffer::new_const("");
-        while let Some(c) = iter.next() {
-            let char_len = c.len_utf8();
-
-            // If this new character is too large to fit into the inline buffer, then create a heap
-            // string
-            if char_len + curr_len > MAX_SIZE {
-                let (min_remaining, _) = iter.size_hint();
-                let mut string = String::with_capacity(char_len + curr_len + min_remaining);
-
-                // push existing characters onto the heap
-                // SAFETY: `inline_buf` has been filled with `char`s which are valid UTF-8
-                string
-                    .push_str(unsafe { core::str::from_utf8_unchecked(&inline_buf.0[..curr_len]) });
-                // push current char onto the heap
-                string.push(c);
-                // extend heap with remaining characters
-                string.extend(iter);
-
-                return Repr::from_string(string, true);
-            }
-
-            // write the current char into a slice of the unoccupied space
-            c.encode_utf8(&mut inline_buf.0[curr_len..]);
-            curr_len += char_len;
-        }
-
-        // SAFETY: Everything we just pushed onto the buffer is a `str` which is valid UTF-8
-        unsafe { inline_buf.set_len(curr_len) }
-
-        Repr::from_inline(inline_buf)
+        this
     }
 }
 
@@ -95,7 +71,7 @@ where
             // extend heap with remaining strings
             string.extend(iter);
 
-            return Repr::from_string(string, true);
+            return Repr::from_string(string, true).unwrap_with_msg();
         }
 
         // write the current string into a slice of the unoccupied space

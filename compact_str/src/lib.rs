@@ -150,7 +150,6 @@ mod tests;
 /// A consequence of eagerly inlining is you then need to de-allocate the existing buffer, which
 /// might not always be desirable if you're converting a very large amount of `String`s. If your
 /// code is very sensitive to allocations, consider the [`CompactString::from_string_buffer`] API.
-#[derive(Clone)]
 #[repr(transparent)]
 pub struct CompactString(Repr);
 
@@ -1956,6 +1955,18 @@ fn convert_while_ascii(b: &[u8], convert: fn(&u8) -> u8) -> CompactString {
     }
 
     out
+}
+
+impl Clone for CompactString {
+    #[inline]
+    fn clone(&self) -> Self {
+        Self(self.0.clone())
+    }
+
+    #[inline]
+    fn clone_from(&mut self, source: &Self) {
+        self.0.clone_from(&source.0)
+    }
 }
 
 impl Default for CompactString {

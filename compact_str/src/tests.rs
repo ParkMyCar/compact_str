@@ -1853,95 +1853,25 @@ fn multiple_niches_test() {
 
 #[test]
 fn test_is_empty() {
-    // 0
+    const ZEROS: &[&str] = &[
+        "\0",                                                 // 1
+        "\0\0\0\0\0\0\0\0\0\0\0\0",                           // 12
+        "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0",   // 24
+        "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", // 25
+    ];
+
     assert!(CompactString::new("").is_empty());
     assert!(CompactString::from_static_str("").is_empty());
-    // 1
-    assert!(!CompactString::new("\0").is_empty());
-    assert!(!CompactString::from_static_str("\0").is_empty());
-    // 2
-    assert!(!CompactString::new("\0\0").is_empty());
-    assert!(!CompactString::from_static_str("\0\0").is_empty());
-    // 3
-    assert!(!CompactString::new("\0\0\0").is_empty());
-    assert!(!CompactString::from_static_str("\0\0\0").is_empty());
-    // 4
-    assert!(!CompactString::new("\0\0\0\0").is_empty());
-    assert!(!CompactString::from_static_str("\0\0\0\0").is_empty());
-    // 5
-    assert!(!CompactString::new("\0\0\0\0\0").is_empty());
-    assert!(!CompactString::from_static_str("\0\0\0\0\0").is_empty());
-    // 6
-    assert!(!CompactString::new("\0\0\0\0\0\0").is_empty());
-    assert!(!CompactString::from_static_str("\0\0\0\0\0\0").is_empty());
-    // 7
-    assert!(!CompactString::new("\0\0\0\0\0\0\0").is_empty());
-    assert!(!CompactString::from_static_str("\0\0\0\0\0\0\0").is_empty());
-    // 8
-    assert!(!CompactString::new("\0\0\0\0\0\0\0\0").is_empty());
-    assert!(!CompactString::from_static_str("\0\0\0\0\0\0\0\0").is_empty());
-    // 9
-    assert!(!CompactString::new("\0\0\0\0\0\0\0\0\0").is_empty());
-    assert!(!CompactString::from_static_str("\0\0\0\0\0\0\0\0\0").is_empty());
-    // 10
-    assert!(!CompactString::new("\0\0\0\0\0\0\0\0\0\0").is_empty());
-    assert!(!CompactString::from_static_str("\0\0\0\0\0\0\0\0\0\0").is_empty());
-    // 11
-    assert!(!CompactString::new("\0\0\0\0\0\0\0\0\0\0\0").is_empty());
-    assert!(!CompactString::from_static_str("\0\0\0\0\0\0\0\0\0\0\0").is_empty());
-    // 12
-    assert!(!CompactString::new("\0\0\0\0\0\0\0\0\0\0\0\0").is_empty());
-    assert!(!CompactString::from_static_str("\0\0\0\0\0\0\0\0\0\0\0\0").is_empty());
-    // 13
-    assert!(!CompactString::new("\0\0\0\0\0\0\0\0\0\0\0\0\0").is_empty());
-    assert!(!CompactString::from_static_str("\0\0\0\0\0\0\0\0\0\0\0\0\0").is_empty());
-    // 14
-    assert!(!CompactString::new("\0\0\0\0\0\0\0\0\0\0\0\0\0\0").is_empty());
-    assert!(!CompactString::from_static_str("\0\0\0\0\0\0\0\0\0\0\0\0\0\0").is_empty());
-    // 15
-    assert!(!CompactString::new("\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0").is_empty());
-    assert!(!CompactString::from_static_str("\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0").is_empty());
-    // 16
-    assert!(!CompactString::new("\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0").is_empty());
-    assert!(!CompactString::from_static_str("\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0").is_empty());
-    // 17
-    assert!(!CompactString::new("\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0").is_empty());
-    assert!(!CompactString::from_static_str("\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0").is_empty());
-    // 18
-    assert!(!CompactString::new("\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0").is_empty());
-    assert!(!CompactString::from_static_str("\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0").is_empty());
-    // 19
-    assert!(!CompactString::new("\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0").is_empty());
-    assert!(!CompactString::from_static_str("\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0").is_empty());
-    // 20
-    assert!(!CompactString::new("\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0").is_empty());
-    assert!(!CompactString::from_static_str("\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0").is_empty());
-    // 21
-    assert!(!CompactString::new("\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0").is_empty());
-    assert!(
-        !CompactString::from_static_str("\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0").is_empty()
-    );
-    // 22
-    assert!(!CompactString::new("\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0").is_empty());
-    assert!(
-        !CompactString::from_static_str("\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0").is_empty()
-    );
-    // 23
-    assert!(!CompactString::new("\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0").is_empty());
-    assert!(
-        !CompactString::from_static_str("\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0")
-            .is_empty()
-    );
-    // 24
-    assert!(!CompactString::new("\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0").is_empty());
-    assert!(
-        !CompactString::from_static_str("\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0")
-            .is_empty()
-    );
-    // 25
-    assert!(!CompactString::new("\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0").is_empty());
-    assert!(
-        !CompactString::from_static_str("\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0")
-            .is_empty()
-    );
+
+    for (len, s) in ZEROS.iter().copied().enumerate() {
+        let mut a = CompactString::new(s);
+        let mut b = CompactString::new(s);
+
+        for _ in (1..=len).rev() {
+            a.truncate(len);
+            b.truncate(len);
+            assert!(!a.is_empty());
+            assert!(!b.is_empty());
+        }
+    }
 }

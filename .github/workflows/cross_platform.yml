@@ -35,13 +35,13 @@ jobs:
             OS: ubuntu-latest
             target: i686-unknown-linux-gnu
             cross: true
-          - name: Linux MIPS Big Endian 32-bit
+          - name: Linux ARMv6 32-bit
             OS: ubuntu-latest
-            target: mips-unknown-linux-gnu
+            target: arm-unknown-linux-gnueabihf
             cross: true
-          - name: Linux MIPS Little Endian 32-bit
+          - name: Linux ARMv7-A 32-bit
             OS: ubuntu-latest
-            target: mipsel-unknown-linux-gnu
+            target: armv7-unknown-linux-gnueabihf
             cross: true
           - name: Linux PowerPC Big Endian 32-bit
             OS: ubuntu-latest
@@ -50,6 +50,14 @@ jobs:
           - name: Linux PowerPC Little Endian 64-bit
             OS: ubuntu-latest
             target: powerpc64le-unknown-linux-gnu
+            cross: true
+          - name: Linux ARM64 Little Endian 64-bit
+            OS: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            cross: true
+          - name: Linux PowerPC Big Endian 64-bit
+            OS: ubuntu-latest
+            target: powerpc64-unknown-linux-gnu
             cross: true
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.OS }}

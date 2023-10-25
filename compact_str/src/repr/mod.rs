@@ -1069,13 +1069,13 @@ mod tests {
 
     #[test_case(Repr::from_static_str(""), Repr::from_static_str(""); "empty clone from static")]
     #[test_case(Repr::new_inline("abc"), Repr::from_static_str("efg"); "short clone from static")]
-    #[test_case(Repr::new("i am a longer string that will be on the heap"), Repr::from_static_str(EIGHTEEN_MB_STR); "long clone from static")]
+    #[test_case(Repr::new("i am a longer string that will be on the heap").unwrap(), Repr::from_static_str(EIGHTEEN_MB_STR); "long clone from static")]
     #[test_case(Repr::from_static_str(""), Repr::new_inline(""); "empty clone from inline")]
     #[test_case(Repr::new_inline("abc"), Repr::new_inline("efg"); "short clone from inline")]
-    #[test_case(Repr::new("i am a longer string that will be on the heap"), Repr::new_inline("small"); "long clone from inline")]
-    #[test_case(Repr::from_static_str(""), Repr::new(EIGHTEEN_MB_STR); "empty clone from heap")]
-    #[test_case(Repr::new_inline("abc"), Repr::new(EIGHTEEN_MB_STR); "short clone from heap")]
-    #[test_case(Repr::new("i am a longer string that will be on the heap"), Repr::new(EIGHTEEN_MB_STR); "long clone from heap")]
+    #[test_case(Repr::new("i am a longer string that will be on the heap").unwrap(), Repr::new_inline("small"); "long clone from inline")]
+    #[test_case(Repr::from_static_str(""), Repr::new(EIGHTEEN_MB_STR).unwrap(); "empty clone from heap")]
+    #[test_case(Repr::new_inline("abc"), Repr::new(EIGHTEEN_MB_STR).unwrap(); "short clone from heap")]
+    #[test_case(Repr::new("i am a longer string that will be on the heap").unwrap(), Repr::new(EIGHTEEN_MB_STR).unwrap(); "long clone from heap")]
     fn test_clone_from(mut initial: Repr, source: Repr) {
         initial.clone_from(&source);
         assert_eq!(initial.as_str(), source.as_str());

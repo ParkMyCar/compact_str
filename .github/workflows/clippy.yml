@@ -16,52 +16,37 @@ jobs:
     name: cargo fmt
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         name: Checkout compact_str
-      - uses: actions-rs/toolchain@v1
-        name: Install Rust
-        with:
-          profile: minimal
-          # We currently use some unstable features in rustfmt, hence the nightly toolchain
-          toolchain: nightly
-          override: true
-      - run: rustup component add rustfmt
-        name: Add rustfmt
-      - uses: actions-rs/cargo@v1
-        name: Run rustfmt Workspace
-        with:
-          command: fmt
-          args: --all -- --check
-      - uses: actions-rs/cargo@v1
-        name: Run rustfmt compact_str
-        with:
-          command: fmt
-          args: --all --manifest-path compact_str/Cargo.toml -- --check
+
+      - name: Install toolchain
+        run: |
+          rustup toolchain install nightly --no-self-update --profile minimal --component rustfmt
+          rustup override set nightly
+
+      - name: Run rustfmt Workspace
+        run: cargo fmt --all -- --check
+      - name: Run rustfmt compact_str
+        run: cargo fmt --all --manifest-path compact_str/Cargo.toml -- --check
 
   clippy:
     name: cargo clippy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         name: Checkout compact_str
-      - uses: actions-rs/toolchain@v1
-        name: Install Rust
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-      - run: rustup component add clippy
-        name: Add clippy
-      - uses: actions-rs/cargo@v1
-        name: Run clippy Workspace
-        with:
-          command: clippy
-          args: --tests
-      - uses: actions-rs/cargo@v1
-        name: Run clippy compact_str
-        with:
-          command: clippy
-          args: --tests --manifest-path compact_str/Cargo.toml
+
+      - name: Install toolchain
+        run: |
+          rustup toolchain install nightly --no-self-update --profile minimal --component clippy
+          rustup override set nightly
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Run clippy Workspace
+        run: cargo clippy --no-deps --tests
+
+      - name: Run clippy compact_str
+        run: cargo clippy --no-deps --tests --manifest-path compact_str/Cargo.toml
 
   doc:
     name: cargo doc
@@ -69,17 +54,14 @@ jobs:
     env:
       RUSTDOCFLAGS: "-D warnings --cfg docsrs"
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         name: Checkout compact_str
-      - uses: actions-rs/toolchain@v1
-        name: Install Rust
-        with:
-          profile: minimal
-          # docs.rs uses a nightly toolchain
-          toolchain: nightly
-          override: true
-      - uses: actions-rs/cargo@v1
-        name: Run rustdoc
-        with:
-          command: doc
-          args: --all-features --no-deps --manifest-path compact_str/Cargo.toml
+
+      - name: Install toolchain
+        run: |
+          rustup toolchain install nightly --no-self-update --profile minimal
+          rustup override set nightly
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Run rustdoc
+        run: cargo doc --all-features --no-deps --manifest-path compact_str/Cargo.toml

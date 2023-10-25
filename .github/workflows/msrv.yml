@@ -21,33 +21,14 @@ jobs:
     name: cargo check msrv 1.59..
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-      - name: Toolchain Cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.rustup/downloads
-            ~/.rustup/toolchains
-            ~/.rustup/update-hashes
-          key: ${{ runner.os }}-x86_64-rustup
-      - name: Cargo Build Cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-stable-cargo-hack
-          restore-keys: |
-            ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-stable
-      - name: install cargo hack
-        run: cargo install cargo-hack --force
+      - uses: actions/checkout@v4
+
+      - name: Install toolchain
+        run: rustup toolchain install stable --no-self-update --profile minimal
+      - name: Install cargo hack
+        uses: taiki-e/install-action@cargo-hack
+      - uses: Swatinem/rust-cache@v2
+
       - name: cargo test msrv..
         # note: we exclude both `arbitrary` and `proptest` from here because their MSRVs were both
         # bumped on a minor version release:
@@ -65,25 +46,14 @@ jobs:
     name: cargo check feature-powerset
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-      - name: Cargo Build Cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-stable-cargo-hack
-          restore-keys: |
-            ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-stable
-      - name: install cargo hack
-        run: cargo install cargo-hack --force
+      - uses: actions/checkout@v4
+
+      - name: Install toolchain
+        run: rustup toolchain install stable --no-self-update --profile minimal
+      - name: Install cargo hack
+        uses: taiki-e/install-action@cargo-hack
+      - uses: Swatinem/rust-cache@v2
+
       - name: cargo test msrv..
         run: |
           cd compact_str

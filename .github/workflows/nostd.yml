@@ -15,14 +15,14 @@ jobs:
       matrix:
         opt: ["", "--release"]
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v4
+
+      - name: Install toolchain
+        run: rustup toolchain install stable --no-self-update --profile minimal --target thumbv6m-none-eabi
+
+      - uses: Swatinem/rust-cache@v2
         with:
-          profile: minimal
-          toolchain: stable
-          override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          use-cross: true
-          command: build
-          args: --lib --manifest-path compact_str/Cargo.toml --no-default-features ${{ matrix.opt }} --target thumbv6m-none-eabi
+          key: ${{ matrix.opt }}
+
+      - run: |
+          cargo check --lib --manifest-path compact_str/Cargo.toml --no-default-features ${{ matrix.opt }} --target thumbv6m-none-eabi

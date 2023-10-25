@@ -42,7 +42,7 @@ jobs:
         # Note2: Even though our MSRV is 1.59, we only test from 1.60 because we hit the issue
         # described in <https://github.com/rust-lang/cargo/issues/10189> when using 1.59.
         run: |
-          cargo hack check --features bytes,markup,quickcheck,rkyv,serde,smallvec --version-range 1.60..
+          cargo hack check --features bytes,markup,quickcheck,rkyv,serde,smallvec --manifest-path=compact_str/Cargo.toml --version-range 1.60..
           cargo hack check --features bytes,markup,quickcheck,rkyv,serde,smallvec,proptest,arbitrary --manifest-path=compact_str/Cargo.toml --version-range 1.64..
 
   feature_powerset:

@@ -1,4 +1,4 @@
-#![cfg(test)]
+#![cfg(all(test, not(miri)))]
 
 use std::hint::black_box;
 

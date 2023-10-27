@@ -1,13 +1,18 @@
-use sqlx::database::{
-    HasArguments,
-    HasValueRef,
-};
-use sqlx::encode::IsNull;
+use sqlx::database::HasValueRef;
 use sqlx::error::BoxDynError;
+#[cfg(any(
+    feature = "sqlx-mysql",
+    feature = "sqlx-postgres",
+    feature = "sqlx-sqlite"
+))]
+use sqlx::{
+    database::HasArguments,
+    encode::IsNull,
+    Encode,
+};
 use sqlx::{
     Database,
     Decode,
-    Encode,
     Type,
     Value,
     ValueRef,

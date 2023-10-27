@@ -94,9 +94,14 @@ impl Repr {
 
     #[inline]
     pub const fn from_static_str(text: &'static str) -> Self {
-        let repr = StaticStr::new(text);
-        // SAFETY: A `StaticStr` and `Repr` have the same size
-        unsafe { core::mem::transmute(repr) }
+        if text.len() <= MAX_SIZE {
+            let inline = InlineBuffer::new_const(text);
+            Self::from_inline(inline)
+        } else {
+            let repr = StaticStr::new(text);
+            // SAFETY: A `StaticStr` and `Repr` have the same size
+            unsafe { core::mem::transmute(repr) }
+        }
     }
 
     /// Create a [`Repr`] with the provided `capacity`

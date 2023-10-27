@@ -1254,7 +1254,7 @@ fn test_truncate_noops_if_new_len_greater_than_current_static_str() {
     short.truncate(100);
 
     assert_eq!(short.len(), 5);
-    assert_eq!(short.capacity(), 5);
+    assert_eq!(short.capacity(), MAX_SIZE);
 
     let mut long =
         CompactString::from_static_str("i am a long string that will be allocated on the heap");
@@ -1541,7 +1541,7 @@ fn test_reserve_shrink_roundtrip_static_inline() {
 
     let mut s = CompactString::from_static_str(TEXT);
     assert!(!s.is_heap_allocated());
-    assert_eq!(s.capacity(), TEXT.len());
+    assert_eq!(s.capacity(), MAX_SIZE);
     assert_eq!(s, TEXT);
 
     s.reserve(128);

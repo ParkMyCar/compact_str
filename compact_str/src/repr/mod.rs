@@ -406,7 +406,6 @@ impl Repr {
     }
 
     /// Returns the length of the string that we're storing
-    #[allow(clippy::len_without_is_empty)] // is_empty exists on CompactString
     #[inline]
     pub fn len(&self) -> usize {
         // This ugly looking code results in two conditional moves and only one comparison, without
@@ -415,26 +414,7 @@ impl Repr {
         // do it manually.
 
         // Force the compiler to read the variable, so it won't put the reading in a branch.
-        let len_heap = self.1;
-        // SAFETY: This assembly instruction is a noop that only affects the instruction ordering.
-        #[cfg(all(
-            not(miri),
-            any(
-                target_arch = "x86",
-                target_arch = "x86_64",
-                target_arch = "arm",
-                target_arch = "aarch64",
-                target_arch = "loongarch",
-                target_arch = "riscv",
-            )
-        ))]
-        unsafe {
-            core::arch::asm!(
-                "/* {len_heap} */",
-                len_heap = in(reg) len_heap,
-                options(nomem, nostack),
-            );
-        };
+        let len_heap = ensure_read(self.1);
 
         let last_byte = self.last_byte();
 
@@ -453,6 +433,18 @@ impl Repr {
         }
 
         len
+    }
+
+    /// Returns `true` if the length is 0, `false` otherwise
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        let len_heap = ensure_read(self.1);
+        let last_byte = self.last_byte() as usize;
+        let mut len = last_byte.wrapping_sub(LastUtf8Char::L0 as u8 as usize);
+        if last_byte >= LastUtf8Char::Heap as u8 as usize {
+            len = len_heap;
+        }
+        len == 0
     }
 
     /// Returns the overall capacity of the underlying buffer
@@ -786,6 +778,32 @@ impl Extend<String> for Repr {
     fn extend<T: IntoIterator<Item = String>>(&mut self, iter: T) {
         iter.into_iter().for_each(move |s| self.push_str(&s));
     }
+}
+
+/// Returns the supplied value, and ensures that the value is eagerly loaded into a register.
+#[inline(always)]
+fn ensure_read(value: usize) -> usize {
+    // SAFETY: This assembly instruction is a noop that only affects the instruction ordering.
+    #[cfg(all(
+        not(miri),
+        any(
+            target_arch = "x86",
+            target_arch = "x86_64",
+            target_arch = "arm",
+            target_arch = "aarch64",
+            target_arch = "loongarch",
+            target_arch = "riscv",
+        )
+    ))]
+    unsafe {
+        core::arch::asm!(
+            "/* {value} */",
+            value = in(reg) value,
+            options(nomem, nostack),
+        );
+    };
+
+    value
 }
 
 #[cfg(test)]

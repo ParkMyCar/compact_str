@@ -499,7 +499,7 @@ impl CompactString {
     /// ```
     #[inline]
     pub fn is_empty(&self) -> bool {
-        self.len() == 0
+        self.0.is_empty()
     }
 
     /// Returns the capacity of the [`CompactString`], in bytes.

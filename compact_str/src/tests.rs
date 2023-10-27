@@ -1836,7 +1836,7 @@ fn test_alloc_excessively_long_string() {
 // released in Rust 1.65.
 #[rustversion::since(1.65)]
 #[test]
-fn multiple_nieches_test() {
+fn multiple_niches_test() {
     #[allow(unused)]
     enum Value {
         String(CompactString),
@@ -1849,4 +1849,29 @@ fn multiple_nieches_test() {
         core::mem::size_of::<Value>(),
         core::mem::size_of::<String>()
     );
+}
+
+#[test]
+fn test_is_empty() {
+    const ZEROS: &[&str] = &[
+        "\0",                                                 // 1
+        "\0\0\0\0\0\0\0\0\0\0\0\0",                           // 12
+        "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0",   // 24
+        "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", // 25
+    ];
+
+    assert!(CompactString::new("").is_empty());
+    assert!(CompactString::from_static_str("").is_empty());
+
+    for (len, s) in ZEROS.iter().copied().enumerate() {
+        let mut a = CompactString::new(s);
+        let mut b = CompactString::new(s);
+
+        for _ in (1..=len).rev() {
+            a.truncate(len);
+            b.truncate(len);
+            assert!(!a.is_empty());
+            assert!(!b.is_empty());
+        }
+    }
 }

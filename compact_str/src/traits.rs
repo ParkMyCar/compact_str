@@ -127,7 +127,7 @@ impl<T: fmt::Display> ToCompactString for T {
             &num::NonZeroU128 as s => s.into_repr()?,
             &num::NonZeroI128 as s => s.into_repr()?,
             s => {
-                let mut c = CompactString::new_inline("");
+                let mut c = CompactString::const_new("");
                 write!(c, "{}", s)?;
                 return Ok(c);
             }
@@ -194,14 +194,14 @@ where
 {
     fn concat_compact(&self) -> CompactString {
         self.into_iter()
-            .fold(CompactString::new_inline(""), |mut s, item| {
+            .fold(CompactString::const_new(""), |mut s, item| {
                 s.push_str(item.as_ref());
                 s
             })
     }
 
     fn join_compact<S: AsRef<str>>(&self, separator: S) -> CompactString {
-        let mut compact_string = CompactString::new_inline("");
+        let mut compact_string = CompactString::const_new("");
 
         let mut iter = self.into_iter().peekable();
         let sep = separator.as_ref();

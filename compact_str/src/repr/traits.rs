@@ -1,8 +1,10 @@
+use core::hint::unreachable_unchecked;
+
 use super::Repr;
 use crate::ToCompactStringError;
 
-const FALSE: Repr = Repr::new_inline("false");
-const TRUE: Repr = Repr::new_inline("true");
+const FALSE: Repr = Repr::const_new("false");
+const TRUE: Repr = Repr::const_new("true");
 
 /// Defines how to _efficiently_ create a [`Repr`] from `self`
 pub(crate) trait IntoRepr {
@@ -42,7 +44,16 @@ impl IntoRepr for char {
     #[inline]
     fn into_repr(self) -> Result<Repr, ToCompactStringError> {
         let mut buf = [0_u8; 4];
-        Ok(Repr::new_inline(self.encode_utf8(&mut buf)))
+        let s = self.encode_utf8(&mut buf);
+
+        // This match is just a hint for the compiler.
+        match s.len() {
+            1..=4 => (),
+            // SAFETY: a UTF-8 character is 1 to 4 bytes.
+            _ => unsafe { unreachable_unchecked() },
+        }
+
+        Ok(Repr::new(s)?)
     }
 }
 

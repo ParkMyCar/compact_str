@@ -380,16 +380,16 @@ fn proptest_to_lowercase(#[strategy(rand_unicode())] control: String) {
 
 #[test]
 fn test_const_creation() {
-    const EMPTY: CompactString = CompactString::new_inline("");
-    const SHORT: CompactString = CompactString::new_inline("rust");
+    const EMPTY: CompactString = CompactString::const_new("");
+    const SHORT: CompactString = CompactString::const_new("rust");
 
     const EMPTY_STATIC_STR: CompactString = CompactString::const_new("");
     const SHORT_STATIC_STR: CompactString = CompactString::const_new("rust");
 
     #[cfg(target_pointer_width = "64")]
-    const PACKED: CompactString = CompactString::new_inline("i am 24 characters long!");
+    const PACKED: CompactString = CompactString::const_new("i am 24 characters long!");
     #[cfg(target_pointer_width = "32")]
-    const PACKED: CompactString = CompactString::new_inline("i am 12 char");
+    const PACKED: CompactString = CompactString::const_new("i am 12 char");
 
     const PACKED_STATIC_STR0: CompactString = CompactString::const_new("i am 24 characters long!");
     const PACKED_STATIC_STR1: CompactString = CompactString::const_new("i am 12 char");

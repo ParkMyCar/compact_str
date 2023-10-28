@@ -157,6 +157,8 @@ impl CompactString {
     /// Creates a new [`CompactString`] from any type that implements `AsRef<str>`.
     /// If the string is short enough, then it will be inlined on the stack!
     ///
+    /// In a `static` or `const` context you can use the method [`CompactString::const_new()`].
+    ///
     /// # Examples
     ///
     /// ### Inlined
@@ -210,31 +212,10 @@ impl CompactString {
         CompactString(Repr::new(text.as_ref()).unwrap_with_msg())
     }
 
-    /// Creates a new inline [`CompactString`] at compile time.
-    ///
-    /// For most use cases you should use the method [`CompactString::const_new()`],
-    /// which will inline static strings, too, if they are short enough.
-    ///
-    /// # Examples
-    /// ```
-    /// use compact_str::CompactString;
-    ///
-    /// const DEFAULT_NAME: CompactString = CompactString::new_inline("untitled");
-    /// ```
-    ///
-    /// Note: Trying to create a long string that can't be inlined, will fail to build.
-    /// ```compile_fail
-    /// # use compact_str::CompactString;
-    /// const LONG: CompactString = CompactString::new_inline("this is a long string that can't be stored on the stack");
-    /// ```
-    #[inline]
-    pub const fn new_inline(text: &str) -> Self {
-        CompactString(Repr::new_inline(text))
-    }
-
     /// Creates a new inline [`CompactString`] from `&'static str` at compile time.
-    ///
     /// Complexity: O(1). As an optimization, short strings get inlined.
+    ///
+    /// In a dynamic context you can use the method [`CompactString::new()`].
     ///
     /// # Examples
     /// ```
@@ -248,6 +229,9 @@ impl CompactString {
     }
 
     /// Get back the `&'static str` constructed by [`CompactString::const_new`].
+    ///
+    /// If the string was short enough that it could be inlined, then it was inline, and
+    /// this method will return `None`.
     ///
     /// # Examples
     /// ```
@@ -958,7 +942,7 @@ impl CompactString {
     #[must_use]
     pub fn repeat(&self, n: usize) -> Self {
         if n == 0 || self.is_empty() {
-            Self::new_inline("")
+            Self::const_new("")
         } else if n == 1 {
             self.clone()
         } else {

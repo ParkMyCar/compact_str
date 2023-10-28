@@ -1961,3 +1961,10 @@ fn test_is_empty() {
         }
     }
 }
+
+#[test]
+fn test_drain_from_static_string() {
+    let mut compact =
+        CompactString::const_new("I am a very long string. Well, longer than 24 bytes at least.");
+    let _ = compact.drain(4..=10);
+}

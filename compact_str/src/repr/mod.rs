@@ -368,7 +368,7 @@ impl Repr {
 
     /// Returns the string content, and only the string content, as a slice of bytes.
     #[inline]
-    pub fn as_slice(&self) -> &[u8] {
+    fn as_slice(&self) -> &[u8] {
         // initially has the value of the stack pointer, conditionally becomes the heap pointer
         let mut pointer = self as *const Self as *const u8;
         let heap_pointer = self.0 as *const u8;
@@ -437,6 +437,33 @@ impl Repr {
             len = len_heap;
         }
         len == 0
+    }
+
+    /// Return a reference to the underlying buffer
+    #[inline]
+    pub fn as_ptr(&self) -> *const u8 {
+        // initially has the value of the stack pointer, conditionally becomes the heap pointer
+        let mut pointer = ensure_read_ptr(self as *const Self as *const u8);
+        let heap_pointer = ensure_read_ptr(self.0 as *const u8);
+        if self.last_byte() >= HEAP_MASK {
+            pointer = heap_pointer;
+        }
+        pointer
+    }
+
+    /// Return a mutable reference to the underlying buffer
+    pub fn as_mut_ptr(&mut self) -> *mut u8 {
+        if let Some(static_string) = self.as_static_str() {
+            *self = Repr::new(static_string).unwrap_with_msg();
+        }
+
+        // initially has the value of the stack pointer, conditionally becomes the heap pointer
+        let mut pointer = ensure_read_ptr_mut(self as *mut Self as *mut u8);
+        let heap_pointer = ensure_read_ptr_mut(self.0 as *mut u8);
+        if self.last_byte() >= HEAP_MASK {
+            pointer = heap_pointer;
+        }
+        pointer
     }
 
     /// Returns the overall capacity of the underlying buffer
@@ -784,30 +811,42 @@ impl Extend<String> for Repr {
     }
 }
 
-/// Returns the supplied value, and ensures that the value is eagerly loaded into a register.
-#[inline(always)]
-fn ensure_read(value: usize) -> usize {
-    // SAFETY: This assembly instruction is a noop that only affects the instruction ordering.
-    #[cfg(all(
-        not(miri),
-        any(
-            target_arch = "x86",
-            target_arch = "x86_64",
-            target_arch = "arm",
-            target_arch = "aarch64",
-            target_arch = "loongarch",
-            target_arch = "riscv",
-        )
-    ))]
-    unsafe {
-        core::arch::asm!(
-            "/* {value} */",
-            value = in(reg) value,
-            options(nomem, nostack),
-        );
-    };
+macro_rules! ensure_read {
+    ($($ident:ident $([$constaint:tt])? ($($type:tt)+);)+) => {$(
+        /// Returns the supplied value, and ensures that the value is eagerly loaded into a
+        /// register.
+        #[inline(always)]
+        fn $ident $(<$constaint>)? (value: $($type)+) -> $($type)+ {
+            // SAFETY: This assembly instruction is a noop that only affects the instruction
+            //         ordering.
+            #[cfg(all(
+                not(miri),
+                any(
+                    target_arch = "x86",
+                    target_arch = "x86_64",
+                    target_arch = "arm",
+                    target_arch = "aarch64",
+                    target_arch = "loongarch",
+                    target_arch = "riscv",
+                )
+            ))]
+            unsafe {
+                core::arch::asm!(
+                    "/* {value} */",
+                    value = in(reg) value,
+                    options(nostack, preserves_flags, readonly),
+                );
+            };
 
-    value
+            value
+        }
+    )+};
+}
+
+ensure_read! {
+    ensure_read(usize);
+    ensure_read_ptr[T](*const T);
+    ensure_read_ptr_mut[T](*mut T);
 }
 
 #[cfg(test)]

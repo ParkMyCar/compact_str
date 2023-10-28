@@ -618,7 +618,7 @@ impl CompactString {
     /// ```
     #[inline]
     pub fn as_bytes(&self) -> &[u8] {
-        &self.0.as_slice()[..self.len()]
+        self.as_str().as_bytes()
     }
 
     // TODO: Implement a `try_as_mut_slice(...)` that will fail if it results in cloning?
@@ -996,16 +996,16 @@ impl CompactString {
         unsafe { self.set_len(new_len) };
     }
 
-    /// Converts a [`CompactString`] to a raw pointer.
+    /// Return a reference to the underlying buffer
     #[inline]
     pub fn as_ptr(&self) -> *const u8 {
-        self.0.as_slice().as_ptr()
+        self.0.as_ptr()
     }
 
-    /// Converts a mutable [`CompactString`] to a raw pointer.
+    /// Return a mutable reference to the underlying buffer
     #[inline]
     pub fn as_mut_ptr(&mut self) -> *mut u8 {
-        unsafe { self.0.as_mut_buf().as_mut_ptr() }
+        self.0.as_mut_ptr()
     }
 
     /// Insert string character at an index.

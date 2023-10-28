@@ -212,7 +212,7 @@ impl CompactString {
 
     /// Creates a new inline [`CompactString`] at compile time.
     ///
-    /// For most use cases you should use the method [`CompactString::from_static_str()`],
+    /// For most use cases you should use the method [`CompactString::const_new()`],
     /// which will inline static strings, too, if they are short enough.
     ///
     /// # Examples
@@ -240,21 +240,21 @@ impl CompactString {
     /// ```
     /// use compact_str::CompactString;
     ///
-    /// const DEFAULT_NAME: CompactString = CompactString::from_static_str("untitled");
+    /// const DEFAULT_NAME: CompactString = CompactString::const_new("untitled");
     /// ```
     #[inline]
-    pub const fn from_static_str(text: &'static str) -> Self {
-        CompactString(Repr::from_static_str(text))
+    pub const fn const_new(text: &'static str) -> Self {
+        CompactString(Repr::const_new(text))
     }
 
-    /// Get back the `&'static str` constructed by [`CompactString::from_static_str`].
+    /// Get back the `&'static str` constructed by [`CompactString::const_new`].
     ///
     /// # Examples
     /// ```
     /// use compact_str::CompactString;
     ///
     /// const DEFAULT_NAME: CompactString =
-    ///     CompactString::from_static_str("That is not dead which can eternal lie.");
+    ///     CompactString::const_new("That is not dead which can eternal lie.");
     /// assert_eq!(
     ///     DEFAULT_NAME.as_static_str().unwrap(),
     ///     "That is not dead which can eternal lie.",
@@ -1098,7 +1098,7 @@ impl CompactString {
     ///
     /// ```
     /// # use compact_str::CompactString;
-    /// let mut s = CompactString::from_static_str("Hello, world!");
+    /// let mut s = CompactString::const_new("Hello, world!");
     /// let w = s.split_off(5);
     ///
     /// assert_eq!(w, ", world!");
@@ -1106,7 +1106,7 @@ impl CompactString {
     /// ```
     pub fn split_off(&mut self, at: usize) -> Self {
         if let Some(s) = self.as_static_str() {
-            let result = Self::from_static_str(&s[at..]);
+            let result = Self::const_new(&s[at..]);
             // SAFETY: the previous line `self[at...]` would have panicked if `at` was invalid
             unsafe { self.set_len(at) };
             result
@@ -2397,9 +2397,9 @@ impl fmt::Write for CompactString {
                 if self.is_empty() && !self.is_heap_allocated() {
                     // Since self is currently an empty inline variant or
                     // an empty `StaticStr` variant, constructing a new one
-                    // with `Self::from_static_str` is more efficient since
+                    // with `Self::const_new` is more efficient since
                     // it is guaranteed to be O(1).
-                    *self = Self::from_static_str(s);
+                    *self = Self::const_new(s);
                 } else {
                     self.push_str(s);
                 }

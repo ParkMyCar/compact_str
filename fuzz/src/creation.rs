@@ -95,7 +95,7 @@ pub enum Creation<'a> {
     CollectBoxStr(Vec<Box<str>>),
     /// Create using [`std::default::Default`]
     Default,
-    /// Create using [`CompactString::from_static_str`], using a collection of interesting strings.
+    /// Create using [`CompactString::const_new`], using a collection of interesting strings.
     FromStaticStr(u8),
 }
 
@@ -769,7 +769,7 @@ impl Creation<'_> {
                     241..=255 => HUGE_STATIC_STR,
                 };
 
-                let compact = CompactString::from_static_str(s);
+                let compact = CompactString::const_new(s);
                 let std_str = s.to_string();
 
                 assert_eq!(compact, std_str);

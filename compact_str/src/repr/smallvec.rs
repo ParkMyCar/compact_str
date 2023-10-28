@@ -45,7 +45,7 @@ mod tests {
         assert_eq!(ex_compact, s);
 
         // test `StaticStr` variant
-        let og_compact = CompactString::from_static_str(s);
+        let og_compact = CompactString::const_new(s);
         assert_eq!(og_compact, s);
 
         let bytes = og_compact.into_bytes();

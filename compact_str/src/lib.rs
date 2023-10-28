@@ -212,6 +212,15 @@ impl CompactString {
         CompactString(Repr::new(text.as_ref()).unwrap_with_msg())
     }
 
+    /// Fallible version of [`CompactString::new()`]
+    ///
+    /// This method won't panic if the system is out-of-memory, but return an [`ReserveError`].
+    /// Otherwise it behaves the same as [`CompactString::new()`].
+    #[inline]
+    pub fn try_new<T: AsRef<str>>(text: T) -> Result<Self, ReserveError> {
+        Repr::new(text.as_ref()).map(CompactString)
+    }
+
     /// Creates a new inline [`CompactString`] from `&'static str` at compile time.
     /// Complexity: O(1). As an optimization, short strings get inlined.
     ///

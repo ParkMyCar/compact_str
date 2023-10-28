@@ -83,7 +83,7 @@ This crate exposes one macro `format_compact!` that can be used to create `Compa
 ### How it works
 Note: this explanation assumes a 64-bit architecture, for 32-bit architectures generally divide any number by 2.
 
-Normally strings are stored on the heap since they're dynamically sized. In Rust a `String` consists of three fields, each of which are the size of a `usize`.
+Normally strings are stored on the heap since they're dynamically sized. In Rust, a `String` consists of three fields, each of which are the size of a `usize`.
 e.g. its layout is something like the following:
 
 `String: [ ptr<8> | len<8> | cap<8> ]`

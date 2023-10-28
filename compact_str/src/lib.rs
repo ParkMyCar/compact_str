@@ -209,7 +209,7 @@ impl CompactString {
     #[inline]
     #[track_caller]
     pub fn new<T: AsRef<str>>(text: T) -> Self {
-        CompactString(Repr::new(text.as_ref()).unwrap_with_msg())
+        Self::try_new(text).unwrap_with_msg()
     }
 
     /// Fallible version of [`CompactString::new()`]
@@ -316,7 +316,7 @@ impl CompactString {
     #[inline]
     #[track_caller]
     pub fn with_capacity(capacity: usize) -> Self {
-        CompactString(Repr::with_capacity(capacity).unwrap_with_msg())
+        Self::try_with_capacity(capacity).unwrap_with_msg()
     }
 
     /// Fallible version of [`CompactString::with_capacity()`]
@@ -391,7 +391,9 @@ impl CompactString {
     #[must_use]
     #[track_caller]
     pub unsafe fn from_utf8_unchecked<B: AsRef<[u8]>>(buf: B) -> Self {
-        CompactString(Repr::from_utf8_unchecked(buf).unwrap_with_msg())
+        Repr::from_utf8_unchecked(buf)
+            .map(CompactString)
+            .unwrap_with_msg()
     }
 
     /// Decode a [`UTF-16`](https://en.wikipedia.org/wiki/UTF-16) slice of bytes into a
@@ -554,7 +556,7 @@ impl CompactString {
     #[inline]
     #[track_caller]
     pub fn reserve(&mut self, additional: usize) {
-        self.0.reserve(additional).unwrap_with_msg()
+        self.try_reserve(additional).unwrap_with_msg()
     }
 
     /// Fallible version of [`CompactString::reserve()`]

@@ -40,7 +40,7 @@ A `CompactString` specifically has the following properties:
   * `size_of::<CompactString>() == size_of::<String>()`
   * Stores up to 24 bytes on the stack
     * 12 bytes if running on a 32 bit architecture
-  * Strings longer than 24 bytes are stored on the heap
+  * Strings with a length exceeding 24 bytes are stored in the heap memory.
   * `Clone` is `O(n)`
   * `From<String>` or `From<Box<str>>` re-uses underlying buffer
     * Eagerly inlines small strings

@@ -1,6 +1,6 @@
 <div align="center">
   <h1><code>compact_str</code></h1>
-  <p><strong>A memory efficient string type that can store up to 24* bytes on the stack.</strong></p>
+  <p><strong>A memory-efficient string type that can store up to 24* bytes on the stack.</strong></p>
 
   <a href="https://crates.io/crates/compact_str">
     <img alt="version on crates.io" src="https://img.shields.io/crates/v/compact_str"/>
@@ -42,7 +42,7 @@ A `CompactString` specifically has the following properties:
     * 12 bytes if running on a 32 bit architecture
   * Strings longer than 24 bytes are stored on the heap
   * `Clone` is `O(n)`
-  * `From<String>` or `From<Box<str>>` re-uses underlying buffer
+  * `From<String>` or `From<Box<str>>` re-uses the underlying buffer
     * Eagerly inlines small strings
   * Heap based string grows at a rate of 1.5x
     * The std library `String` grows at a rate of 2x
@@ -83,7 +83,7 @@ This crate exposes one macro `format_compact!` that can be used to create `Compa
 ### How it works
 Note: this explanation assumes a 64-bit architecture, for 32-bit architectures generally divide any number by 2.
 
-Normally strings are stored on the heap since they're dynamically sized. In Rust a `String` consists of three fields, each of which are the size of a `usize`.
+Normally strings are stored on the heap since they're dynamically sized. In Rust a `String` consists of three fields, each of which is the size of a `usize`.
 e.g. its layout is something like the following:
 
 `String: [ ptr<8> | len<8> | cap<8> ]`
@@ -93,7 +93,7 @@ e.g. its layout is something like the following:
 
 This results in 24 bytes being stored on the stack, 8 bytes for each field. Then the actual string is stored on the heap, usually with additional memory allocated to prevent re-allocating if the string is mutated.
 
-The idea of `CompactString` is instead of storing metadata on the stack, just store the string itself. This way for smaller strings we save a bit of memory, and we
+The idea of `CompactString` is that instead of storing metadata on the stack, just store the string itself. This way for smaller strings we save a bit of memory, and we
 don't have to heap allocate so it's more performant. A `CompactString` is limited to 24 bytes (aka `size_of::<String>()`) so it won't ever use more memory than a
 `String` would.
 
@@ -157,4 +157,4 @@ Storing strings on the stack is not a new idea, in fact there are a few other cr
 4. [`flexstr`](https://crates.io/crates/flexstr) - Can inline 22 bytes, `Clone` is `O(1)`, can also store `&'static str`s
 
 <br />
-Thanks for readingme!
+Thanks for reading me!

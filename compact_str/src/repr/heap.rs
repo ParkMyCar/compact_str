@@ -271,6 +271,11 @@ impl Drop for HeapBuffer {
 /// in the `Capacity` itself.
 #[inline]
 pub fn allocate_ptr(capacity: usize) -> Result<(Capacity, ptr::NonNull<u8>), ReserveError> {
+    #[cfg(target_pointer_width = "64")]
+    if capacity > super::capacity::MAX_VALUE {
+        return Err(ReserveError(()));
+    }
+
     // We allocate at least MIN_HEAP_SIZE bytes because we need to allocate at least one byte
     let capacity = capacity.max(MIN_HEAP_SIZE);
     let cap = Capacity::new(capacity);

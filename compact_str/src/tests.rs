@@ -1925,6 +1925,14 @@ fn test_alloc_excessively_long_string() {
     CompactString::with_capacity((1 << 56) - 2);
 }
 
+#[cfg(target_pointer_width = "64")]
+#[test]
+#[should_panic = "Cannot allocate memory to hold CompactString"]
+fn test_alloc_even_more_excessively_long_string() {
+    // 2**56 - 1 bytes, the lowest value that exceeds `Capacity`'s maximum
+    CompactString::with_capacity((1 << 56) - 1);
+}
+
 // This feature was enabled by <https://github.com/rust-lang/rust/pull/94075> which was first
 // released in Rust 1.65.
 #[rustversion::since(1.65)]

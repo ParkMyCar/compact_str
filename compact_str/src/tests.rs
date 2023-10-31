@@ -1922,7 +1922,11 @@ fn test_from_string_buffer_inlines_on_clone() {
 #[should_panic = "Cannot allocate memory to hold CompactString"]
 fn test_alloc_excessively_long_string() {
     // 2**56 - 2 bytes, the maximum number `Capacity` can hold
-    CompactString::with_capacity((1 << 56) - 2);
+    let capacity = core::hint::black_box((1 << 56) - 2);
+    let compact = CompactString::with_capacity(capacity);
+    // rationale: make sure that the result is used.
+    let compact = core::hint::black_box(compact);
+    drop(compact);
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -1930,7 +1934,11 @@ fn test_alloc_excessively_long_string() {
 #[should_panic = "Cannot allocate memory to hold CompactString"]
 fn test_alloc_even_more_excessively_long_string() {
     // 2**56 - 1 bytes, the lowest value that exceeds `Capacity`'s maximum
-    CompactString::with_capacity((1 << 56) - 1);
+    let capacity = core::hint::black_box((1 << 56) - 1);
+    let compact = CompactString::with_capacity(capacity);
+    // rationale: make sure that the result is used.
+    let compact = core::hint::black_box(compact);
+    drop(compact);
 }
 
 // This feature was enabled by <https://github.com/rust-lang/rust/pull/94075> which was first

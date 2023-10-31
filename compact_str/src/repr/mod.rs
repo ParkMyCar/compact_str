@@ -173,20 +173,23 @@ impl Repr {
         let cap = Capacity::new(og_cap);
 
         #[cold]
-        fn capacity_on_heap(s: String) -> Result<Repr, ReserveError> {
-            HeapBuffer::new(s.as_str()).map(Repr::from_heap)
-        }
-
-        #[cold]
         fn empty() -> Result<Repr, ReserveError> {
             Ok(EMPTY)
         }
 
+        #[cfg(not(target_pointer_width = "64"))]
         if cap.is_heap() {
+            #[cold]
+            fn capacity_on_heap(s: String) -> Result<Repr, ReserveError> {
+                HeapBuffer::new(s.as_str()).map(Repr::from_heap)
+            }
+
             // We only hit this case if the provided String is > 16MB and we're on a 32-bit arch. We
             // expect it to be unlikely, thus we hint that to the compiler
-            capacity_on_heap(s)
-        } else if og_cap == 0 {
+            return capacity_on_heap(s);
+        }
+
+        if og_cap == 0 {
             // We don't expect converting from an empty String often, so we make this code path cold
             empty()
         } else if should_inline && s.len() <= MAX_SIZE {
@@ -208,8 +211,9 @@ impl Repr {
     /// Converts a [`Repr`] into a [`String`], in `O(1)` time, if possible
     #[inline]
     pub fn into_string(self) -> String {
+        #[cfg(not(target_pointer_width = "64"))]
         #[cold]
-        fn into_string_heap(this: HeapBuffer) -> String {
+        fn into_string_from_heap_with_cap_on_heap(this: HeapBuffer) -> String {
             // SAFETY: We know pointer is valid for `length` bytes
             let slice = unsafe { core::slice::from_raw_parts(this.ptr.as_ptr(), this.len) };
             // SAFETY: A `Repr` contains valid UTF-8
@@ -218,28 +222,33 @@ impl Repr {
             String::from(s)
         }
 
+        #[cold]
+        fn into_string_from_heap(heap_buffer: HeapBuffer) -> String {
+            #[cfg(not(target_pointer_width = "64"))]
+            if heap_buffer.cap.is_heap() {
+                // We don't expect capacity to be on the heap often, so we mark it as cold
+                return into_string_from_heap_with_cap_on_heap(heap_buffer);
+            }
+
+            // Wrap the BoxString in a ManuallyDrop so the underlying buffer doesn't get freed
+            let this = mem::ManuallyDrop::new(heap_buffer);
+
+            // SAFETY: We checked above to make sure capacity is valid
+            let cap = unsafe { this.cap.as_usize() };
+
+            // SAFETY:
+            // * The memory in `ptr` was previously allocated by the same allocator the standard
+            //   library uses, with a required alignment of exactly 1.
+            // * `length` is less than or equal to capacity, due to internal invaraints.
+            // * `capacity` is correctly maintained internally.
+            // * `BoxString` only ever contains valid UTF-8.
+            unsafe { String::from_raw_parts(this.ptr.as_ptr(), this.len, cap) }
+        }
+
         if self.is_heap_allocated() {
             // SAFETY: we just checked that the discriminant indicates we're a HeapBuffer
             let heap_buffer = unsafe { self.into_heap() };
-
-            if heap_buffer.cap.is_heap() {
-                // We don't expect capacity to be on the heap often, so we mark it as cold
-                into_string_heap(heap_buffer)
-            } else {
-                // Wrap the BoxString in a ManuallyDrop so the underlying buffer doesn't get freed
-                let this = mem::ManuallyDrop::new(heap_buffer);
-
-                // SAFETY: We checked above to make sure capacity is valid
-                let cap = unsafe { this.cap.as_usize() };
-
-                // SAFETY:
-                // * The memory in `ptr` was previously allocated by the same allocator the standard
-                //   library uses, with a required alignment of exactly 1.
-                // * `length` is less than or equal to capacity, due to internal invaraints.
-                // * `capacity` is correctly maintained internally.
-                // * `BoxString` only ever contains valid UTF-8.
-                unsafe { String::from_raw_parts(this.ptr.as_ptr(), this.len, cap) }
-            }
+            into_string_from_heap(heap_buffer)
         } else {
             String::from(self.as_str())
         }

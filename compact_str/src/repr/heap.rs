@@ -2,6 +2,7 @@ use core::alloc::Layout;
 use core::{
     cmp,
     mem,
+    ops,
     ptr,
 };
 
@@ -89,6 +90,7 @@ impl HeapBuffer {
     /// Return the capacity of the [`HeapBuffer`]
     #[inline]
     pub fn capacity(&self) -> usize {
+        #[cfg(not(target_pointer_width = "64"))]
         #[cold]
         fn read_capacity_from_heap(this: &HeapBuffer) -> usize {
             // re-adjust the pointer to include the capacity that's on the heap
@@ -101,12 +103,13 @@ impl HeapBuffer {
             usize::from_ne_bytes(buf)
         }
 
+        #[cfg(not(target_pointer_width = "64"))]
         if self.cap.is_heap() {
-            read_capacity_from_heap(self)
-        } else {
-            // SAFETY: Checked above that the capacity is on the stack
-            unsafe { self.cap.as_usize() }
+            return read_capacity_from_heap(self);
         }
+
+        // SAFETY: Checked above that the capacity is on the stack
+        unsafe { self.cap.as_usize() }
     }
 
     /// Try to grow the [`HeapBuffer`] by reallocating, returning an error if we fail
@@ -126,99 +129,121 @@ impl HeapBuffer {
         // Always allocate at least MIN_HEAP_SIZE
         let new_capacity = cmp::max(new_capacity, MIN_HEAP_SIZE);
 
-        let (new_cap, new_ptr) = match (self.cap.is_heap(), new_cap.is_heap()) {
-            // both current and new capacity can be stored inline
-            (false, false) => {
-                // SAFETY: checked above that our capacity is valid
-                let cap = unsafe { self.cap.as_usize() };
+        /// both current and new capacity can be stored inline
+        fn realloc_cap_inline(
+            this: &mut HeapBuffer,
+            new_capacity: usize,
+            new_cap: Capacity,
+        ) -> ops::ControlFlow<Result<usize, ()>, (Capacity, ptr::NonNull<u8>)> {
+            // SAFETY: checked above that our capacity is valid
+            let cap = unsafe { this.cap.as_usize() };
 
-                // current capacity is the same as the new, nothing to do!
-                if cap == new_capacity {
-                    return Ok(new_capacity);
-                }
-
-                let cur_layout = inline_capacity::layout(cap);
-                let new_layout = inline_capacity::layout(new_capacity);
-                let new_size = new_layout.size();
-
-                // It's possible `new_size` could overflow since inline_capacity::layout pads for
-                // alignment
-                if new_size < new_capacity {
-                    return Err(());
-                }
-
-                // SAFETY:
-                // * We're using the same allocator that we used for `ptr`
-                // * The layout is the same because we checked that the capacity is inline
-                // * `new_size` will be > 0, we return early if the requested capacity is 0
-                // * Checked above if `new_size` overflowed when rounding to alignment
-                match ptr::NonNull::new(unsafe {
-                    ::alloc::alloc::realloc(self.ptr.as_ptr(), cur_layout, new_size)
-                }) {
-                    Some(ptr) => (new_cap, ptr),
-                    None => return Err(()),
-                }
+            // current capacity is the same as the new, nothing to do!
+            if cap == new_capacity {
+                return ops::ControlFlow::Break(Ok(new_capacity));
             }
-            // both current and new capacity need to be stored on the heap
-            (true, true) => {
-                let cur_layout = heap_capacity::layout(self.capacity());
-                let new_layout = heap_capacity::layout(new_capacity);
-                let new_size = new_layout.size();
 
-                // alloc::realloc requires that size > 0
-                debug_assert!(new_size > 0);
+            let cur_layout = inline_capacity::layout(cap);
+            let new_layout = inline_capacity::layout(new_capacity);
+            let new_size = new_layout.size();
 
-                // It's possible `new_size` could overflow since heap_capacity::layout requires a
-                // few additional bytes
-                if new_size < new_capacity {
-                    return Err(());
-                }
-
-                // move our pointer back one WORD since our capacity is behind it
-                let raw_ptr = self.ptr.as_ptr();
-                let adj_ptr = raw_ptr.wrapping_sub(mem::size_of::<usize>());
-
-                // SAFETY:
-                // * We're using the same allocator that we used for `ptr`
-                // * The layout is the same because we checked that the capacity is on the heap
-                // * `new_size` will be > 0, we return early if the requested capacity is 0
-                // * Checked above if `new_size` overflowed when rounding to alignment
-                let cap_ptr = unsafe { alloc::alloc::realloc(adj_ptr, cur_layout, new_size) };
-                // Check if reallocation succeeded
-                if cap_ptr.is_null() {
-                    return Err(());
-                }
-
-                // Our allocation succeeded! Write the new capacity
-                //
-                // SAFETY:
-                // * `src` and `dst` are both valid for reads of `usize` number of bytes
-                // * `src` and `dst` don't overlap because we created `src`
-                unsafe {
-                    ptr::copy_nonoverlapping(
-                        new_capacity.to_ne_bytes().as_ptr(),
-                        cap_ptr,
-                        mem::size_of::<usize>(),
-                    )
-                };
-
-                // Finally, adjust our pointer backup so it points at the string content
-                let str_ptr = cap_ptr.wrapping_add(mem::size_of::<usize>());
-                // SAFETY: We checked above to make sure the pointer was non-null
-                let ptr = unsafe { ptr::NonNull::new_unchecked(str_ptr) };
-
-                (new_cap, ptr)
+            // It's possible `new_size` could overflow since inline_capacity::layout pads for
+            // alignment
+            if new_size < new_capacity {
+                return ops::ControlFlow::Break(Err(()));
             }
+
+            // SAFETY:
+            // * We're using the same allocator that we used for `ptr`
+            // * The layout is the same because we checked that the capacity is inline
+            // * `new_size` will be > 0, we return early if the requested capacity is 0
+            // * Checked above if `new_size` overflowed when rounding to alignment
+            match ptr::NonNull::new(unsafe {
+                ::alloc::alloc::realloc(this.ptr.as_ptr(), cur_layout, new_size)
+            }) {
+                Some(ptr) => ops::ControlFlow::Continue((new_cap, ptr)),
+                None => ops::ControlFlow::Break(Err(())),
+            }
+        }
+
+        /// both current and new capacity need to be stored on the heap
+        #[cfg(not(target_pointer_width = "64"))]
+        #[cold]
+        #[inline(never)]
+        fn realloc_cap_on_heap(
+            this: &mut HeapBuffer,
+            new_capacity: usize,
+            new_cap: Capacity,
+        ) -> ops::ControlFlow<Result<usize, ()>, (Capacity, ptr::NonNull<u8>)> {
+            let cur_layout = heap_capacity::layout(this.capacity());
+            let new_layout = heap_capacity::layout(new_capacity);
+            let new_size = new_layout.size();
+
+            // alloc::realloc requires that size > 0
+            debug_assert!(new_size > 0);
+
+            // It's possible `new_size` could overflow since heap_capacity::layout requires a
+            // few additional bytes
+            if new_size < new_capacity {
+                return ops::ControlFlow::Break(Err(()));
+            }
+
+            // move our pointer back one WORD since our capacity is behind it
+            let raw_ptr = this.ptr.as_ptr();
+            let adj_ptr = raw_ptr.wrapping_sub(mem::size_of::<usize>());
+
+            // SAFETY:
+            // * We're using the same allocator that we used for `ptr`
+            // * The layout is the same because we checked that the capacity is on the heap
+            // * `new_size` will be > 0, we return early if the requested capacity is 0
+            // * Checked above if `new_size` overflowed when rounding to alignment
+            let cap_ptr = unsafe { alloc::alloc::realloc(adj_ptr, cur_layout, new_size) };
+            // Check if reallocation succeeded
+            if cap_ptr.is_null() {
+                return ops::ControlFlow::Break(Err(()));
+            }
+
+            // Our allocation succeeded! Write the new capacity
+            //
+            // SAFETY:
+            // * `src` and `dst` are both valid for reads of `usize` number of bytes
+            // * `src` and `dst` don't overlap because we created `src`
+            unsafe {
+                ptr::copy_nonoverlapping(
+                    new_capacity.to_ne_bytes().as_ptr(),
+                    cap_ptr,
+                    mem::size_of::<usize>(),
+                )
+            };
+
+            // Finally, adjust our pointer backup so it points at the string content
+            let str_ptr = cap_ptr.wrapping_add(mem::size_of::<usize>());
+            // SAFETY: We checked above to make sure the pointer was non-null
+            let ptr = unsafe { ptr::NonNull::new_unchecked(str_ptr) };
+
+            ops::ControlFlow::Continue((new_cap, ptr))
+        }
+
+        #[cfg(not(target_pointer_width = "64"))]
+        let result = match (self.cap.is_heap(), new_cap.is_heap()) {
+            (false, false) => realloc_cap_inline(self, new_capacity, new_cap),
+            (true, true) => realloc_cap_on_heap(self, new_capacity, new_cap),
             // capacity is currently inline or on the heap, but needs to move, can't realloc because
             // we'd need to change the layout!
             (false, true) | (true, false) => return Err(()),
         };
+        #[cfg(target_pointer_width = "64")]
+        let result = realloc_cap_inline(self, new_capacity, new_cap);
 
-        // set our new pointer and new capacity
-        self.ptr = new_ptr;
-        self.cap = new_cap;
-
-        Ok(new_capacity)
+        match result {
+            ops::ControlFlow::Continue((new_cap, new_ptr)) => {
+                // set our new pointer and new capacity
+                self.ptr = new_ptr;
+                self.cap = new_cap;
+                Ok(new_capacity)
+            }
+            ops::ControlFlow::Break(result) => result,
+        }
     }
 
     /// Set's the length of the content for this [`HeapBuffer`]
@@ -284,6 +309,7 @@ pub fn allocate_ptr(capacity: usize) -> Result<(Capacity, ptr::NonNull<u8>), Res
     // MIN_HEAP_SIZE bytes
     debug_assert!(capacity > 0);
 
+    #[cfg(not(target_pointer_width = "64"))]
     #[cold]
     fn allocate_with_capacity_on_heap(capacity: usize) -> Result<ptr::NonNull<u8>, ReserveError> {
         // write our capacity onto the heap
@@ -303,18 +329,21 @@ pub fn allocate_ptr(capacity: usize) -> Result<(Capacity, ptr::NonNull<u8>), Res
         Ok(unsafe { ptr::NonNull::new_unchecked(raw_ptr) })
     }
 
-    let ptr = if cap.is_heap() {
-        allocate_with_capacity_on_heap(capacity)
-    } else {
-        unsafe { inline_capacity::alloc(capacity) }
-    };
+    #[cfg(not(target_pointer_width = "64"))]
+    if cap.is_heap() {
+        let ptr = allocate_with_capacity_on_heap(capacity);
+        return Ok((cap, ptr?));
+    }
 
+    // SAFETY: We just checked that the new capacity won't be stored on the heap.
+    let ptr = unsafe { inline_capacity::alloc(capacity) };
     Ok((cap, ptr?))
 }
 
 /// Deallocates a buffer on the heap, handling when the capacity is also stored on the heap
 #[inline]
 pub fn deallocate_ptr(ptr: ptr::NonNull<u8>, cap: Capacity) {
+    #[cfg(not(target_pointer_width = "64"))]
     #[cold]
     fn deallocate_with_capacity_on_heap(ptr: ptr::NonNull<u8>) {
         // re-adjust the pointer to include the capacity that's on the heap
@@ -326,19 +355,20 @@ pub fn deallocate_ptr(ptr: ptr::NonNull<u8>, cap: Capacity) {
             ptr::copy_nonoverlapping(adj_ptr, buf.as_mut_ptr(), mem::size_of::<usize>());
         }
         let capacity = usize::from_ne_bytes(buf);
-        // SAFETY: We know the pointer is not null since we got it as a NonNull
+        // SAFETY: We know the pointer is not null since we got it as a ptr::NonNull
         let ptr = unsafe { ptr::NonNull::new_unchecked(adj_ptr) };
         // SAFETY: We checked above that our capacity is on the heap, and we readjusted the
         // pointer to reference the capacity
         unsafe { heap_capacity::dealloc(ptr, capacity) }
     }
 
+    #[cfg(not(target_pointer_width = "64"))]
     if cap.is_heap() {
-        deallocate_with_capacity_on_heap(ptr);
-    } else {
-        // SAFETY: Our capacity is always inline on 64-bit archs
-        unsafe { inline_capacity::dealloc(ptr, cap.as_usize()) }
+        return deallocate_with_capacity_on_heap(ptr);
     }
+
+    // SAFETY: We just checked that the new capacity won't be stored on the heap.
+    unsafe { inline_capacity::dealloc(ptr, cap.as_usize()) }
 }
 
 /// SAFETY: `layout` must not be zero sized
@@ -356,6 +386,7 @@ pub unsafe fn do_alloc(layout: Layout) -> Result<ptr::NonNull<u8>, ReserveError>
     ptr::NonNull::new(raw_ptr).ok_or(ReserveError(()))
 }
 
+#[cfg(not(target_pointer_width = "64"))]
 mod heap_capacity {
     use core::{
         alloc,

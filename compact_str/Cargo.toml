@@ -25,7 +25,7 @@ markup = { version = "0.13", optional = true, default-features = false }
 proptest = { version = "1", optional = true, default-features = false, features = ["std"] }
 quickcheck = { version = "1", optional = true, default-features = false }
 rkyv = { version = "0.7", optional = true, default-features = false, features = ["size_32"] }
-serde = { version = "1", optional = true }
+serde = { version = "1", optional = true, default-features = false, features = ["derive", "alloc"] }
 smallvec = { version = "1", optional = true, features = ["union"] }
 
 # TODO: replace with the below version when castaway is updated on crates.io

@@ -12,10 +12,22 @@ keywords = ["string", "compact", "small", "memory", "mutable"]
 categories = ["encoding", "parsing", "memory-management", "text-processing"]
 
 [features]
-default = [
-    "std",
-]
+default = ["std"]
 std = []
+
+arbitrary = ["dep:arbitrary"]
+bytes = ["dep:bytes"]
+diesel = ["dep:diesel"]
+markup = ["dep:markup"]
+proptest = ["dep:proptest"]
+quickcheck = ["dep:quickcheck"]
+rkyv = ["dep:rkyv"]
+serde = ["dep:serde"]
+smallvec = ["dep:smallvec"]
+sqlx = ["dep:sqlx", "std"]
+sqlx-mysql = ["sqlx", "sqlx/mysql"]
+sqlx-postgres = ["sqlx", "sqlx/postgres"]
+sqlx-sqlite = ["sqlx", "sqlx/sqlite"]
 
 [dependencies]
 arbitrary = { version = "1", optional = true, default-features = false }
@@ -27,6 +39,7 @@ quickcheck = { version = "1", optional = true, default-features = false }
 rkyv = { version = "0.7", optional = true, default-features = false, features = ["size_32"] }
 serde = { version = "1", optional = true, default-features = false, features = ["derive", "alloc"] }
 smallvec = { version = "1", optional = true, features = ["union"] }
+sqlx = { version = "0.7", optional = true, default-features = false }
 
 # TODO: replace with the below version when castaway is updated on crates.io
 castaway = { version = "0.2", default-features = false }

@@ -5,6 +5,7 @@ members = [
     "examples/diesel",
     "examples/macros",
     "examples/serde",
+    "examples/sqlx",
     "examples/traits",
     "fuzz",
 ]

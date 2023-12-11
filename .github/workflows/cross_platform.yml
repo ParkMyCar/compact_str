@@ -82,6 +82,8 @@ jobs:
         run: cargo test --release --all-features --manifest-path=compact_str/Cargo.toml --target ${{ matrix.target }} -- --include-ignored
       - name: cargo test
         if: "matrix.cross"
-        run: cross test --release --all-features --manifest-path=compact_str/Cargo.toml --target ${{ matrix.target }}
+        # Note: we exclude sqlx from here because it can require building system dependencies, e.g. libsqlite3-sys.
+        run: cross test --release --features=arbitrary,bytes,diesel,markup,proptest,quickcheck,rkyv,serde,smallvec --manifest-path=compact_str/Cargo.toml --target ${{ matrix.target }}
       - name: cargo test miri
-        run: cargo miri test --all-features --manifest-path=compact_str/Cargo.toml --target ${{ matrix.target }}
+        # Note: we exclude sqlx from here because it can require building system dependencies, e.g. libsqlite3-sys.
+        run: cargo miri test --features=arbitrary,bytes,diesel,markup,proptest,quickcheck,rkyv,serde,smallvec --manifest-path=compact_str/Cargo.toml --target ${{ matrix.target }}

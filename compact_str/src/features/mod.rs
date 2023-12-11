@@ -18,3 +18,5 @@ mod rkyv;
 mod serde;
 #[cfg(feature = "smallvec")]
 mod smallvec;
+#[cfg(feature = "sqlx")]
+mod sqlx;

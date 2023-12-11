@@ -100,7 +100,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ex: ["bytes", "macros", "serde", "traits"] 
+        ex: ["bytes", "macros", "serde", "traits"]
     steps:
       - uses: actions/checkout@v4
 
@@ -112,5 +112,26 @@ jobs:
         with:
           key: ${{ matrix.ex }}
 
-      - name: Run example-bytes
+      - name: Run example-${{ matrix.ex }}
         run: cargo run --manifest-path examples/${{ matrix.ex }}/Cargo.toml
+
+  example-tests:
+    name: example - ${{ matrix.ex }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ex: ["diesel", "sqlx"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install toolchain
+        run: |
+          rustup toolchain install nightly --no-self-update --profile minimal
+          rustup override set nightly
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.ex }}-test
+
+      - name: Test example-${{ matrix.ex }}
+        run: cargo test --manifest-path examples/${{ matrix.ex }}/Cargo.toml

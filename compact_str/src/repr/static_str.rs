@@ -24,6 +24,7 @@ pub struct StaticStr {
     discriminant: [u8; DISCRIMINANT_SIZE],
 }
 static_assertions::assert_eq_size!(StaticStr, Repr);
+static_assertions::assert_eq_align!(StaticStr, Repr);
 static_assertions::assert_eq_size!(&'static str, (*const u8, usize));
 
 impl StaticStr {

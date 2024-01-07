@@ -7,9 +7,16 @@ use super::{
 };
 
 /// A buffer stored on the stack whose size is equal to the stack size of `String`
-#[repr(transparent)]
+#[cfg(target_pointer_width = "64")]
+#[repr(C, align(8))]
 pub struct InlineBuffer(pub [u8; MAX_SIZE]);
+
+#[cfg(target_pointer_width = "32")]
+#[repr(C, align(4))]
+pub struct InlineBuffer(pub [u8; MAX_SIZE]);
+
 static_assertions::assert_eq_size!(InlineBuffer, Repr);
+static_assertions::assert_eq_align!(InlineBuffer, Repr);
 
 impl InlineBuffer {
     /// Construct a new [`InlineString`]. A string that lives in a small buffer on the stack
@@ -21,10 +28,10 @@ impl InlineBuffer {
         debug_assert!(text.len() <= MAX_SIZE);
 
         let len = text.len();
-        let mut buffer = [0u8; MAX_SIZE];
+        let mut buffer = InlineBuffer([0u8; MAX_SIZE]);
 
         // set the length in the last byte
-        buffer[MAX_SIZE - 1] = len as u8 | LENGTH_MASK;
+        buffer.0[MAX_SIZE - 1] = len as u8 | LENGTH_MASK;
 
         // copy the string into our buffer
         //
@@ -37,9 +44,9 @@ impl InlineBuffer {
         // * dst (`buffer`) is valid for `len` bytes because we assert src is less than MAX_SIZE
         // * src and dst don't overlap because we created dst
         //
-        ptr::copy_nonoverlapping(text.as_ptr(), buffer.as_mut_ptr(), len);
+        ptr::copy_nonoverlapping(text.as_ptr(), buffer.0.as_mut_ptr(), len);
 
-        InlineBuffer(buffer)
+        buffer
     }
 
     #[inline]

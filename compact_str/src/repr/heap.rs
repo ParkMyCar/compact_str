@@ -39,6 +39,7 @@ pub struct HeapBuffer {
     pub cap: Capacity,
 }
 static_assertions::assert_eq_size!(HeapBuffer, Repr);
+static_assertions::assert_eq_align!(HeapBuffer, Repr);
 
 impl HeapBuffer {
     /// Create a [`HeapBuffer`] with the provided text

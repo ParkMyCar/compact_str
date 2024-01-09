@@ -2065,8 +2065,7 @@ impl<'a> From<&'a str> for CompactString {
     #[inline]
     #[track_caller]
     fn from(s: &'a str) -> Self {
-        let repr = Repr::new(s).unwrap_with_msg();
-        CompactString(repr)
+        CompactString::new(s)
     }
 }
 

@@ -2079,6 +2079,8 @@ impl From<String> for CompactString {
 }
 
 impl<'a> From<&'a String> for CompactString {
+    #[inline]
+    #[track_caller]
     fn from(s: &'a String) -> Self {
         CompactString::new(s)
     }

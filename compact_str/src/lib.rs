@@ -209,7 +209,16 @@ impl CompactString {
     #[inline]
     #[track_caller]
     pub fn new<T: AsRef<str>>(text: T) -> Self {
-        CompactString(Repr::new(text.as_ref()).unwrap_with_msg())
+        Self::try_new(text).unwrap_with_msg()
+    }
+
+    /// Fallible version of [`CompactString::new()`]
+    ///
+    /// This method won't panic if the system is out-of-memory, but return an [`ReserveError`].
+    /// Otherwise it behaves the same as [`CompactString::new()`].
+    #[inline]
+    pub fn try_new<T: AsRef<str>>(text: T) -> Result<Self, ReserveError> {
+        Repr::new(text.as_ref()).map(CompactString)
     }
 
     /// Creates a new inline [`CompactString`] from `&'static str` at compile time.
@@ -307,7 +316,7 @@ impl CompactString {
     #[inline]
     #[track_caller]
     pub fn with_capacity(capacity: usize) -> Self {
-        CompactString(Repr::with_capacity(capacity).unwrap_with_msg())
+        Self::try_with_capacity(capacity).unwrap_with_msg()
     }
 
     /// Fallible version of [`CompactString::with_capacity()`]
@@ -382,7 +391,9 @@ impl CompactString {
     #[must_use]
     #[track_caller]
     pub unsafe fn from_utf8_unchecked<B: AsRef<[u8]>>(buf: B) -> Self {
-        CompactString(Repr::from_utf8_unchecked(buf).unwrap_with_msg())
+        Repr::from_utf8_unchecked(buf)
+            .map(CompactString)
+            .unwrap_with_msg()
     }
 
     /// Decode a [`UTF-16`](https://en.wikipedia.org/wiki/UTF-16) slice of bytes into a
@@ -545,7 +556,7 @@ impl CompactString {
     #[inline]
     #[track_caller]
     pub fn reserve(&mut self, additional: usize) {
-        self.0.reserve(additional).unwrap_with_msg()
+        self.try_reserve(additional).unwrap_with_msg()
     }
 
     /// Fallible version of [`CompactString::reserve()`]
@@ -2065,8 +2076,7 @@ impl<'a> From<&'a str> for CompactString {
     #[inline]
     #[track_caller]
     fn from(s: &'a str) -> Self {
-        let repr = Repr::new(s).unwrap_with_msg();
-        CompactString(repr)
+        CompactString::new(s)
     }
 }
 
@@ -2080,6 +2090,8 @@ impl From<String> for CompactString {
 }
 
 impl<'a> From<&'a String> for CompactString {
+    #[inline]
+    #[track_caller]
     fn from(s: &'a String) -> Self {
         CompactString::new(s)
     }

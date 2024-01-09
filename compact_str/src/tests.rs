@@ -380,20 +380,19 @@ fn proptest_to_lowercase(#[strategy(rand_unicode())] control: String) {
 
 #[test]
 fn test_const_creation() {
-    const EMPTY: CompactString = CompactString::new_inline("");
-    const SHORT: CompactString = CompactString::new_inline("rust");
+    const EMPTY: CompactString = CompactString::const_new("");
+    const SHORT: CompactString = CompactString::const_new("rust");
 
-    const EMPTY_STATIC_STR: CompactString = CompactString::from_static_str("");
-    const SHORT_STATIC_STR: CompactString = CompactString::from_static_str("rust");
+    const EMPTY_STATIC_STR: CompactString = CompactString::const_new("");
+    const SHORT_STATIC_STR: CompactString = CompactString::const_new("rust");
 
     #[cfg(target_pointer_width = "64")]
-    const PACKED: CompactString = CompactString::new_inline("i am 24 characters long!");
+    const PACKED: CompactString = CompactString::const_new("i am 24 characters long!");
     #[cfg(target_pointer_width = "32")]
-    const PACKED: CompactString = CompactString::new_inline("i am 12 char");
+    const PACKED: CompactString = CompactString::const_new("i am 12 char");
 
-    const PACKED_STATIC_STR0: CompactString =
-        CompactString::from_static_str("i am 24 characters long!");
-    const PACKED_STATIC_STR1: CompactString = CompactString::from_static_str("i am 12 char");
+    const PACKED_STATIC_STR0: CompactString = CompactString::const_new("i am 24 characters long!");
+    const PACKED_STATIC_STR1: CompactString = CompactString::const_new("i am 12 char");
 
     assert_eq!(EMPTY, CompactString::new(""));
     assert_eq!(SHORT, CompactString::new("rust"));
@@ -522,7 +521,7 @@ fn test_extend_packed_from_empty() {
 }
 
 #[test_case(CompactString::from(""); "inline")]
-#[test_case(CompactString::from_static_str(""); "static_str")]
+#[test_case(CompactString::const_new(""); "static_str")]
 fn test_pop_empty(mut compact: CompactString) {
     let num_pops = 256;
     (0..num_pops).for_each(|_| {
@@ -553,7 +552,7 @@ fn test_compact_str_is_send_and_sync() {
 }
 
 #[test_case(CompactString::default(); "inline")]
-#[test_case(CompactString::from_static_str(""); "static_str")]
+#[test_case(CompactString::const_new(""); "static_str")]
 fn test_fmt_write(mut compact: CompactString) {
     use core::fmt::Write;
 
@@ -601,32 +600,26 @@ fn test_plus_operator() {
 fn test_plus_operator_static_str() {
     // + &CompactString
     assert_eq!(
-        CompactString::from_static_str("a") + &CompactString::from_static_str("b"),
+        CompactString::const_new("a") + &CompactString::const_new("b"),
         "ab"
     );
     // + &str
-    assert_eq!(CompactString::from_static_str("a") + "b", "ab");
+    assert_eq!(CompactString::const_new("a") + "b", "ab");
     // + &String
-    assert_eq!(
-        CompactString::from_static_str("a") + &String::from("b"),
-        "ab"
-    );
+    assert_eq!(CompactString::const_new("a") + &String::from("b"), "ab");
     // + &Box<str>
     let box_str = String::from("b").into_boxed_str();
-    assert_eq!(CompactString::from_static_str("a") + &box_str, "ab");
+    assert_eq!(CompactString::const_new("a") + &box_str, "ab");
     // + &Cow<'a, str>
     let cow = Cow::from("b");
-    assert_eq!(CompactString::from_static_str("a") + &cow, "ab");
+    assert_eq!(CompactString::const_new("a") + &cow, "ab");
 
     // Implementing `Add<T> for String` can break adding &String or other types to String, so we
     // explicitly don't do this. See https://github.com/rust-lang/rust/issues/77143 for more details.
     // Below we assert adding types to String still compiles
 
     // String + &CompactString
-    assert_eq!(
-        String::from("a") + &CompactString::from_static_str("b"),
-        "ab"
-    );
+    assert_eq!(String::from("a") + &CompactString::const_new("b"), "ab");
     // String + &String
     assert_eq!(String::from("a") + &("b".to_string()), "ab");
     // String + &str
@@ -642,7 +635,7 @@ fn test_plus_equals_operator() {
 
 #[test]
 fn test_plus_equals_operator_static_str() {
-    let mut m = CompactString::from_static_str("a");
+    let mut m = CompactString::const_new("a");
     m += "b";
     assert_eq!(m, "ab");
 }
@@ -1154,7 +1147,7 @@ fn test_into_string_small_static_str() {
     let str_addr = data.as_ptr();
     let str_len = data.len();
 
-    let compact = CompactString::from_static_str(data);
+    let compact = CompactString::const_new(data);
     let new_string = String::from(compact);
     let new_str_addr = new_string.as_ptr();
     let new_str_len = new_string.len();
@@ -1188,7 +1181,7 @@ fn test_into_string_long_static_str() {
     let str_addr = data.as_ptr();
     let str_len = data.len();
 
-    let compact = CompactString::from_static_str(data);
+    let compact = CompactString::const_new(data);
     let new_string = String::from(compact);
     let new_str_addr = new_string.as_ptr();
     let new_str_len = new_string.len();
@@ -1220,7 +1213,7 @@ fn test_into_string_empty_static_str() {
     let data = "";
     let str_len = data.len();
 
-    let compact = CompactString::from_static_str(data);
+    let compact = CompactString::const_new(data);
     let new_string = String::from(compact);
     let new_str_addr = new_string.as_ptr();
     let new_str_len = new_string.len();
@@ -1250,14 +1243,14 @@ fn test_truncate_noops_if_new_len_greater_than_current() {
 
 #[test]
 fn test_truncate_noops_if_new_len_greater_than_current_static_str() {
-    let mut short = CompactString::from_static_str("short");
+    let mut short = CompactString::const_new("short");
     short.truncate(100);
 
     assert_eq!(short.len(), 5);
     assert_eq!(short.capacity(), MAX_SIZE);
 
     let mut long =
-        CompactString::from_static_str("i am a long string that will be allocated on the heap");
+        CompactString::const_new("i am a long string that will be allocated on the heap");
     long.truncate(500);
 
     assert_eq!(long.len(), 53);
@@ -1273,7 +1266,7 @@ fn test_truncate_panics_on_non_char_boundary() {
 }
 
 #[test_case(CompactString::from; "inline")]
-#[test_case(CompactString::from_static_str; "static_str")]
+#[test_case(CompactString::const_new; "static_str")]
 fn test_insert(to_compact: fn(&'static str) -> CompactString) {
     // insert into empty string
     let mut one_byte = to_compact("");
@@ -1381,7 +1374,7 @@ fn test_remove_empty_string() {
 #[test]
 #[should_panic(expected = "cannot remove a char from the end of a string")]
 fn test_remove_empty_string_static() {
-    let mut compact = CompactString::from_static_str("");
+    let mut compact = CompactString::const_new("");
     compact.remove(0);
 }
 
@@ -1493,7 +1486,7 @@ fn test_reserve_shrink_roundtrip_static() {
     // longer than 24 bytes, so the string does not get inlined
     const TEXT: &str = "Hello, world! How are you today?";
 
-    let mut s = CompactString::from_static_str(TEXT);
+    let mut s = CompactString::const_new(TEXT);
     assert!(!s.is_heap_allocated());
     assert_eq!(s.capacity(), TEXT.len());
     assert_eq!(s, TEXT);
@@ -1539,7 +1532,7 @@ fn test_reserve_shrink_roundtrip_static_inline() {
     // shorter than 12 bytes, so the string gets inlined
     const TEXT: &str = "Hello.";
 
-    let mut s = CompactString::from_static_str(TEXT);
+    let mut s = CompactString::const_new(TEXT);
     assert!(!s.is_heap_allocated());
     assert_eq!(s.capacity(), MAX_SIZE);
     assert_eq!(s, TEXT);
@@ -1954,7 +1947,7 @@ fn test_is_empty() {
     ];
 
     assert!(CompactString::new("").is_empty());
-    assert!(CompactString::from_static_str("").is_empty());
+    assert!(CompactString::const_new("").is_empty());
 
     for (len, s) in ZEROS.iter().copied().enumerate() {
         let mut a = CompactString::new(s);

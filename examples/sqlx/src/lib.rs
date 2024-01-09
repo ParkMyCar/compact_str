@@ -17,7 +17,7 @@ use sqlx::{
 };
 use tempfile::tempdir;
 
-const TITLE: CompactString = CompactString::from_static_str("Say hello!");
+const TITLE: CompactString = CompactString::const_new("Say hello!");
 
 macro_rules! test_body {
     ($($test_name:ident($DbPool:path, $DbArguments:path, $compile_only:literal);)*) => {$(

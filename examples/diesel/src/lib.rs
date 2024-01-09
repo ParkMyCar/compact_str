@@ -18,7 +18,7 @@ use crate::models::{
 use crate::schema::todos;
 use crate::schema::todos::dsl::*;
 
-const TITLE: CompactString = CompactString::from_static_str("Say hello!");
+const TITLE: CompactString = CompactString::const_new("Say hello!");
 
 #[test]
 fn diesel_roundtrip() -> Result<(), Box<dyn std::error::Error>> {

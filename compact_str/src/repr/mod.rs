@@ -44,7 +44,7 @@ pub const STATIC_STR_MASK: u8 = LastUtf8Char::Static as u8;
 /// by `LENGTH_MASK`
 pub const LENGTH_MASK: u8 = 0b11000000;
 
-const EMPTY: Repr = Repr::new_inline("");
+const EMPTY: Repr = Repr::const_new("");
 
 #[repr(C)]
 pub struct Repr(
@@ -81,26 +81,13 @@ impl Repr {
     }
 
     #[inline]
-    pub const fn new_inline(text: &str) -> Self {
-        let len = text.len();
-
-        if len <= MAX_SIZE {
+    pub const fn const_new(text: &'static str) -> Self {
+        if text.len() <= MAX_SIZE {
             let inline = InlineBuffer::new_const(text);
             Repr::from_inline(inline)
         } else {
-            panic!("Inline string was too long, max length is `core::mem::size_of::<CompactString>()` bytes");
-        }
-    }
-
-    #[inline]
-    pub const fn from_static_str(text: &'static str) -> Self {
-        if text.len() <= MAX_SIZE {
-            let inline = InlineBuffer::new_const(text);
-            Self::from_inline(inline)
-        } else {
             let repr = StaticStr::new(text);
-            // SAFETY: A `StaticStr` and `Repr` have the same size
-            unsafe { core::mem::transmute(repr) }
+            Repr::from_static(repr)
         }
     }
 
@@ -604,6 +591,18 @@ impl Repr {
         unsafe { core::mem::transmute(heap) }
     }
 
+    /// Reinterprets a [`StaticStr`] into a [`Repr`]
+    ///
+    /// Note: This is safe because [`StaticStr`] and [`Repr`] are the same size. We used to define
+    /// [`Repr`] as a `union` which implicitly transmuted between the two types, but that prevented
+    /// us from defining a "niche" value to make `Option<CompactString>` the same size as just
+    /// `CompactString`
+    #[inline(always)]
+    const fn from_static(heap: StaticStr) -> Self {
+        // SAFETY: A `StaticStr` and `Repr` have the same size
+        unsafe { core::mem::transmute(heap) }
+    }
+
     /// Reinterprets a [`Repr`] as a [`HeapBuffer`]
     ///
     /// # SAFETY
@@ -839,7 +838,7 @@ mod tests {
         assert_eq!(repr.len(), s.len());
 
         // test StaticStr variant
-        let repr = Repr::from_static_str(s);
+        let repr = Repr::const_new(s);
         assert_eq!(repr.as_str(), s);
         assert_eq!(repr.len(), s.len());
     }
@@ -949,7 +948,7 @@ mod tests {
         assert_eq!(control, s.as_str());
 
         // test StaticStr variant
-        let r = Repr::from_static_str(control);
+        let r = Repr::const_new(control);
         let s = r.into_string();
 
         assert_eq!(control.len(), s.len());
@@ -983,7 +982,7 @@ mod tests {
         assert_eq!(r.is_heap_allocated(), is_heap);
 
         // test StaticStr variant
-        let mut r = Repr::from_static_str(control);
+        let mut r = Repr::const_new(control);
         let mut c = String::from(control);
 
         r.push_str(append);
@@ -1047,7 +1046,7 @@ mod tests {
         assert_eq!(r.is_heap_allocated(), is_heap);
 
         // Test static_str variant
-        let mut r = Repr::from_static_str(initial);
+        let mut r = Repr::const_new(initial);
         r.reserve(additional).unwrap();
 
         assert!(r.capacity() >= initial.len() + additional);
@@ -1078,7 +1077,7 @@ mod tests {
         assert_eq!(r_a.is_heap_allocated(), r_b.is_heap_allocated());
 
         // test StaticStr variant
-        let r_a = Repr::from_static_str(initial);
+        let r_a = Repr::const_new(initial);
         let r_b = r_a.clone();
 
         assert_eq!(r_a.as_str(), initial);
@@ -1090,14 +1089,14 @@ mod tests {
         assert_eq!(r_a.is_heap_allocated(), r_b.is_heap_allocated());
     }
 
-    #[test_case(Repr::from_static_str(""), Repr::from_static_str(""); "empty clone from static")]
-    #[test_case(Repr::new_inline("abc"), Repr::from_static_str("efg"); "short clone from static")]
-    #[test_case(Repr::new("i am a longer string that will be on the heap").unwrap(), Repr::from_static_str(EIGHTEEN_MB_STR); "long clone from static")]
-    #[test_case(Repr::from_static_str(""), Repr::new_inline(""); "empty clone from inline")]
-    #[test_case(Repr::new_inline("abc"), Repr::new_inline("efg"); "short clone from inline")]
-    #[test_case(Repr::new("i am a longer string that will be on the heap").unwrap(), Repr::new_inline("small"); "long clone from inline")]
-    #[test_case(Repr::from_static_str(""), Repr::new(EIGHTEEN_MB_STR).unwrap(); "empty clone from heap")]
-    #[test_case(Repr::new_inline("abc"), Repr::new(EIGHTEEN_MB_STR).unwrap(); "short clone from heap")]
+    #[test_case(Repr::const_new(""), Repr::const_new(""); "empty clone from static")]
+    #[test_case(Repr::const_new("abc"), Repr::const_new("efg"); "short clone from static")]
+    #[test_case(Repr::new("i am a longer string that will be on the heap").unwrap(), Repr::const_new(EIGHTEEN_MB_STR); "long clone from static")]
+    #[test_case(Repr::const_new(""), Repr::const_new(""); "empty clone from inline")]
+    #[test_case(Repr::const_new("abc"), Repr::const_new("efg"); "short clone from inline")]
+    #[test_case(Repr::new("i am a longer string that will be on the heap").unwrap(), Repr::const_new("small"); "long clone from inline")]
+    #[test_case(Repr::const_new(""), Repr::new(EIGHTEEN_MB_STR).unwrap(); "empty clone from heap")]
+    #[test_case(Repr::const_new("abc"), Repr::new(EIGHTEEN_MB_STR).unwrap(); "short clone from heap")]
     #[test_case(Repr::new("i am a longer string that will be on the heap").unwrap(), Repr::new(EIGHTEEN_MB_STR).unwrap(); "long clone from heap")]
     fn test_clone_from(mut initial: Repr, source: Repr) {
         initial.clone_from(&source);

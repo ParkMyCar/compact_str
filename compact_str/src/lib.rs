@@ -23,10 +23,7 @@ use core::hash::{
     Hash,
     Hasher,
 };
-use core::iter::{
-    FromIterator,
-    FusedIterator,
-};
+use core::iter::FusedIterator;
 use core::ops::{
     Add,
     AddAssign,

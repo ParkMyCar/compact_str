@@ -14,13 +14,33 @@ use alloc::boxed::Box;
 use alloc::string::String;
 #[doc(hidden)]
 pub use core;
-use core::borrow::{Borrow, BorrowMut};
+use core::borrow::{
+    Borrow,
+    BorrowMut,
+};
 use core::cmp::Ordering;
-use core::hash::{Hash, Hasher};
+use core::hash::{
+    Hash,
+    Hasher,
+};
 use core::iter::FusedIterator;
-use core::ops::{Add, AddAssign, Bound, Deref, DerefMut, RangeBounds};
-use core::str::{FromStr, Utf8Error};
-use core::{fmt, mem, slice};
+use core::ops::{
+    Add,
+    AddAssign,
+    Bound,
+    Deref,
+    DerefMut,
+    RangeBounds,
+};
+use core::str::{
+    FromStr,
+    Utf8Error,
+};
+use core::{
+    fmt,
+    mem,
+    slice,
+};
 #[cfg(feature = "std")]
 use std::ffi::OsStr;
 
@@ -32,7 +52,10 @@ mod repr;
 use repr::Repr;
 
 mod traits;
-pub use traits::{CompactStringExt, ToCompactString};
+pub use traits::{
+    CompactStringExt,
+    ToCompactString,
+};
 
 #[cfg(test)]
 mod tests;

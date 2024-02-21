@@ -13,7 +13,6 @@ use core::{
 
 use proptest::collection::SizeRange;
 use proptest::prelude::*;
-use proptest::strategy::Strategy;
 use test_case::test_case;
 use test_strategy::proptest;
 
@@ -592,7 +591,7 @@ fn test_plus_operator() {
     // String + &String
     assert_eq!(String::from("a") + &("b".to_string()), "ab");
     // String + &str
-    assert_eq!(String::from("a") + &"b", "ab");
+    assert_eq!(String::from("a") + "b", "ab");
 }
 
 #[allow(clippy::unnecessary_to_owned, clippy::op_ref)]
@@ -623,7 +622,7 @@ fn test_plus_operator_static_str() {
     // String + &String
     assert_eq!(String::from("a") + &("b".to_string()), "ab");
     // String + &str
-    assert_eq!(String::from("a") + &"b", "ab");
+    assert_eq!(String::from("a") + "b", "ab");
 }
 
 #[test]

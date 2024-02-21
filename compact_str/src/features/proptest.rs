@@ -2,15 +2,9 @@
 
 use alloc::string::String;
 
-use proptest::arbitrary::{
-    Arbitrary,
-    StrategyFor,
-};
+use proptest::arbitrary::StrategyFor;
 use proptest::prelude::*;
-use proptest::strategy::{
-    MapInto,
-    Strategy,
-};
+use proptest::strategy::MapInto;
 use proptest::string::StringParam;
 
 use crate::CompactString;

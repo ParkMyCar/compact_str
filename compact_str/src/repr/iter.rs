@@ -3,7 +3,6 @@
 use alloc::borrow::Cow;
 use alloc::boxed::Box;
 use alloc::string::String;
-use core::iter::FromIterator;
 
 use super::{
     InlineBuffer,

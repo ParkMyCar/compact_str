@@ -1937,7 +1937,7 @@ fn test_from_string_buffer_inlines_on_clone() {
 #[should_panic = "Cannot allocate memory to hold CompactString"]
 fn test_alloc_excessively_long_string() {
     // 2**56 - 2 bytes, the maximum number `Capacity` can hold
-    CompactString::with_capacity((1 << 56) - 2);
+    std::hint::black_box(CompactString::with_capacity((1 << 56) - 2));
 }
 
 // This feature was enabled by <https://github.com/rust-lang/rust/pull/94075> which was first

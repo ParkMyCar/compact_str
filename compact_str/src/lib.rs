@@ -614,7 +614,7 @@ impl CompactString {
     /// ```
     #[inline]
     pub fn as_bytes(&self) -> &[u8] {
-        &self.0.as_slice()[..self.len()]
+        self.0.as_slice()
     }
 
     // TODO: Implement a `try_as_mut_slice(...)` that will fail if it results in cloning?

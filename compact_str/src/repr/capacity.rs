@@ -101,7 +101,13 @@ impl Capacity {
     /// stored on the heap
     #[inline(always)]
     pub(crate) fn is_heap(self) -> bool {
-        self == CAPACITY_IS_ON_THE_HEAP
+        cfg_if::cfg_if! {
+            if #[cfg(target_pointer_width = "64")] {
+                false
+            } else {
+                self == CAPACITY_IS_ON_THE_HEAP
+            }
+        }
     }
 }
 

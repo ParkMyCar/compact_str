@@ -23,6 +23,7 @@ const HEAP_MARKER: usize = {
 ///
 /// All bytes `255`, with the last being [`LastByte::Heap`], using the same amount of bytes
 /// as `usize`. Example (64-bit): `[255, 255, 255, 255, 255, 255, 255, 216]`
+#[cfg(not(target_pointer_width = "64"))]
 const CAPACITY_IS_ON_THE_HEAP: Capacity = Capacity(VALID_MASK | HEAP_MARKER);
 
 /// The maximum value we're able to store, e.g. on 64-bit arch this is 2^56 - 2.

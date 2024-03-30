@@ -17,7 +17,7 @@ mod inline;
 mod iter;
 mod last_utf8_char;
 mod num;
-mod static_str;
+mod ref_str;
 mod traits;
 
 use alloc::string::String;
@@ -26,7 +26,8 @@ use capacity::Capacity;
 use heap::HeapBuffer;
 use inline::InlineBuffer;
 use last_utf8_char::LastUtf8Char;
-use static_str::StaticStr;
+use ref_str::RefStr;
+use ref_str::StaticStr;
 pub(crate) use traits::IntoRepr;
 
 use crate::{
@@ -38,6 +39,8 @@ use crate::{
 pub const MAX_SIZE: usize = core::mem::size_of::<String>();
 /// Used as a discriminant to identify different variants
 pub const HEAP_MASK: u8 = LastUtf8Char::Heap as u8;
+/// Used for `StaticStr` variant
+pub const REF_STR_MASK: u8 = LastUtf8Char::Cow as u8;
 /// Used for `StaticStr` variant
 pub const STATIC_STR_MASK: u8 = LastUtf8Char::Static as u8;
 /// When our string is stored inline, we represent the length of the string in the last byte, offset
@@ -86,8 +89,23 @@ impl Repr {
             let inline = InlineBuffer::new_const(text);
             Repr::from_inline(inline)
         } else {
-            let repr = StaticStr::new(text);
-            Repr::from_static(repr)
+            let repr = StaticStr::new_static(text);
+            Repr::from_ref(repr)
+        }
+    }
+
+    #[inline]
+    pub fn new_ref(text: &str) -> Self {
+        let len = text.len();
+
+        if len == 0 {
+            EMPTY
+        } else if len <= MAX_SIZE {
+            // SAFETY: We checked that the length of text is less than or equal to MAX_SIZE
+            let inline = unsafe { InlineBuffer::new(text) };
+            Repr::from_inline(inline)
+        } else {
+            Repr::from_ref(RefStr::new_ref(text))
         }
     }
 
@@ -108,6 +126,15 @@ impl Repr {
         let s = core::str::from_utf8(buf.as_ref())?;
         // Construct a Repr from the &str
         Ok(Self::new(s).unwrap_with_msg())
+    }
+
+    /// Create a [`Repr`] from a slice of bytes that is UTF-8
+    #[inline]
+    pub fn from_utf8_ref<B: AsRef<[u8]>>(buf: B) -> Result<Self, Utf8Error> {
+        // Get a &str from the Vec, failing if it's not valid UTF-8
+        let s = core::str::from_utf8(buf.as_ref())?;
+        // Construct a Repr from the &str
+        Ok(Self::new_ref(s))
     }
 
     /// Create a [`Repr`] from a slice of bytes that is UTF-8, without validating that it is indeed
@@ -147,6 +174,33 @@ impl Repr {
         repr.set_len(bytes_len);
 
         Ok(repr)
+    }
+
+    /// Create a [`Repr`] from a slice of bytes that is UTF-8, without validating that it is indeed
+    /// UTF-8
+    ///
+    /// # Safety
+    /// * The caller must guarantee that `buf` is valid UTF-8
+    #[inline]
+    pub unsafe fn from_utf8_unchecked_ref<B: AsRef<[u8]>>(buf: B) -> Result<Self, ReserveError> {
+        let bytes = buf.as_ref();
+        let bytes_len = bytes.len();
+        let str = core::str::from_utf8_unchecked(bytes);
+
+        // There's an edge case where the final byte of this buffer == `HEAP_MASK`, which is
+        // invalid UTF-8, but would result in us creating an inline variant, that identifies as
+        // a heap variant. If a user ever tried to reference the data at all, we'd incorrectly
+        // try and read data from an invalid memory address, causing undefined behavior.
+        if bytes_len == MAX_SIZE {
+            let last_byte = bytes[bytes_len - 1];
+            // If we hit the edge case, reserve additional space to make the repr becomes heap
+            // allocated, which prevents us from writing this last byte inline
+            if last_byte >= 0b11000000 {
+                return Ok(Repr::from_heap(HeapBuffer::new(str)?));
+            }
+        }
+        // Construct a Repr from the &str
+        Ok(Self::new_ref(str))
     }
 
     /// Create a [`Repr`] from a [`String`], in `O(1)` time. We'll attempt to inline the string
@@ -232,6 +286,17 @@ impl Repr {
         }
     }
 
+    /// Converts a [`Repr`] into a [`Cow`], in `O(1)` time, if possible
+    #[inline]
+    pub fn into_cow<'a>(self) -> Cow<'a, str> {
+        if self.is_ref_str() {
+            let ref_repr: RefStr = unsafe { core::mem::transmute(self) };
+            Cow::Borrowed(ref_repr.get_text())
+        } else {
+            self.into_string().into()
+        }
+    }
+
     /// Reserves at least `additional` bytes. If there is already enough capacity to store
     /// `additional` bytes this is a no-op
     #[inline]
@@ -239,7 +304,7 @@ impl Repr {
         let len = self.len();
         let needed_capacity = len.checked_add(additional).ok_or(ReserveError(()))?;
 
-        if !self.is_static_str() && needed_capacity <= self.capacity() {
+        if !self.is_ref_str() && needed_capacity <= self.capacity() {
             // we already have enough space, no-op
             // If self.is_static_str() is true, then we would have to convert
             // it to other variants since static_str variant cannot be modified.
@@ -449,7 +514,7 @@ impl Repr {
             heap_buffer.capacity()
         }
 
-        if let Some(s) = self.as_static_str() {
+        if let Some(s) = self.as_ref_str() {
             s.len()
         } else if self.is_heap_allocated() {
             heap_capacity(self)
@@ -470,6 +535,18 @@ impl Repr {
         last_byte == STATIC_STR_MASK
     }
 
+    #[inline(always)]
+    pub const fn is_ref_str(&self) -> bool {
+        let last_byte = self.last_byte();
+        last_byte >= STATIC_STR_MASK
+    }
+
+    #[inline(always)]
+    const fn is_non_static_str(&self) -> bool {
+        let last_byte = self.last_byte();
+        last_byte == REF_STR_MASK
+    }
+
     #[inline]
     #[rustversion::attr(since(1.64), const)]
     pub fn as_static_str(&self) -> Option<&'static str> {
@@ -483,10 +560,34 @@ impl Repr {
     }
 
     #[inline]
-    fn as_static_variant_mut(&mut self) -> Option<&mut StaticStr> {
-        if self.is_static_str() {
-            // SAFETY: A `Repr` is transmuted from `StaticStr`
-            let s: &mut StaticStr = unsafe { &mut *(self as *mut Self as *mut StaticStr) };
+    #[rustversion::attr(since(1.64), const)]
+    pub fn as_ref_str(&self) -> Option<&str> {
+        if self.is_ref_str() {
+            // SAFETY: A `Repr` is transmuted from `RefStr`
+            let s: &RefStr = unsafe { &*(self as *const Self as *const RefStr) };
+            Some(s.get_text())
+        } else {
+            None
+        }
+    }
+
+    #[inline]
+    #[rustversion::attr(since(1.64), const)]
+    pub fn as_non_static_str(&self) -> Option<&str> {
+        if self.is_non_static_str() {
+            // SAFETY: A `Repr` is transmuted from `RefStr`
+            let s: &RefStr = unsafe { &*(self as *const Self as *const RefStr) };
+            Some(s.get_text())
+        } else {
+            None
+        }
+    }
+
+    #[inline]
+    fn as_ref_variant_mut(&mut self) -> Option<&mut RefStr> {
+        if self.is_ref_str() {
+            // SAFETY: A `Repr` is transmuted from `RefStr`
+            let s: &mut RefStr = unsafe { &mut *(self as *mut Self as *mut RefStr) };
             Some(s)
         } else {
             None
@@ -499,14 +600,14 @@ impl Repr {
     /// * Callers must guarantee that any modifications made to the buffer are valid UTF-8
     pub unsafe fn as_mut_buf(&mut self) -> &mut [u8] {
         #[cold]
-        fn inline_static_str(this: &mut Repr) {
-            if let Some(s) = this.as_static_str() {
+        fn inline_ref_str(this: &mut Repr) {
+            if let Some(s) = this.as_ref_str() {
                 *this = Repr::new(s).unwrap_with_msg();
             }
         }
 
-        if self.is_static_str() {
-            inline_static_str(self);
+        if self.is_ref_str() {
+            inline_ref_str(self);
         }
 
         // the last byte stores our discriminant and stack length
@@ -534,7 +635,7 @@ impl Repr {
     /// * `len` bytes in the buffer must be valid UTF-8
     /// * If the underlying buffer is stored inline, `len` must be <= MAX_SIZE
     pub unsafe fn set_len(&mut self, len: usize) {
-        if let Some(s) = self.as_static_variant_mut() {
+        if let Some(s) = self.as_ref_variant_mut() {
             s.set_len(len);
         } else if self.is_heap_allocated() {
             // SAFETY: We just checked the discriminant to make sure we're heap allocated
@@ -591,14 +692,15 @@ impl Repr {
         unsafe { core::mem::transmute(heap) }
     }
 
-    /// Reinterprets a [`StaticStr`] into a [`Repr`]
+    /// Reinterprets a [`RefStr`] into a [`Repr`]
     ///
-    /// Note: This is safe because [`StaticStr`] and [`Repr`] are the same size. We used to define
+    /// Note: This is safe because [`RefStr`] and [`Repr`] are the same size. We used to define
     /// [`Repr`] as a `union` which implicitly transmuted between the two types, but that prevented
     /// us from defining a "niche" value to make `Option<CompactString>` the same size as just
     /// `CompactString`
+    /// Since [`StaticStr`] is alias of [`RefStr`], [`StaticStr`] also use this.
     #[inline(always)]
-    const fn from_static(heap: StaticStr) -> Self {
+    const fn from_ref(heap: RefStr) -> Self {
         // SAFETY: A `StaticStr` and `Repr` have the same size
         unsafe { core::mem::transmute(heap) }
     }
@@ -675,6 +777,16 @@ impl Repr {
     unsafe fn as_mut_inline(&mut self) -> &mut InlineBuffer {
         // SAFETY: An `InlineBuffer` and `Repr` have the same size
         &mut *(self as *mut _ as *mut InlineBuffer)
+    }
+
+    /// Makes this [`Repr`] as owned.
+    ///
+    /// When this [`Repr`] represent borrowed resource, clone them to new heap.
+    #[inline(always)]
+    pub fn make_owned(&mut self) {
+        if let Some(str) = self.as_non_static_str() {
+            *self = Repr::from_heap(HeapBuffer::new(str).unwrap_with_msg())
+        }
     }
 }
 

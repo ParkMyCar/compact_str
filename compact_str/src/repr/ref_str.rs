@@ -1,5 +1,5 @@
+use core::marker::PhantomData;
 use core::{
-    marker::PhantomData,
     mem,
     ptr,
     slice,
@@ -9,8 +9,8 @@ use core::{
 use super::{
     Repr,
     MAX_SIZE,
-    STATIC_STR_MASK,
     REF_STR_MASK,
+    STATIC_STR_MASK,
 };
 
 pub(super) const DISCRIMINANT_SIZE: usize = MAX_SIZE - mem::size_of::<&'static str>();

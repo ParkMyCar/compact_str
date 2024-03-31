@@ -26,8 +26,10 @@ use capacity::Capacity;
 use heap::HeapBuffer;
 use inline::InlineBuffer;
 use last_utf8_char::LastUtf8Char;
-use ref_str::RefStr;
-use ref_str::StaticStr;
+use ref_str::{
+    RefStr,
+    StaticStr,
+};
 pub(crate) use traits::IntoRepr;
 
 use crate::{
@@ -290,6 +292,7 @@ impl Repr {
     #[inline]
     pub fn into_cow<'a>(self) -> Cow<'a, str> {
         if self.is_ref_str() {
+            // SAFETY: This was created from `RefStr`.
             let ref_repr: RefStr = unsafe { core::mem::transmute(self) };
             Cow::Borrowed(ref_repr.get_text())
         } else {

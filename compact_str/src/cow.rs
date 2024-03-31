@@ -1,20 +1,37 @@
-use core::hash::{Hash, Hasher};
-use core::ops::{Add, AddAssign, RangeBounds};
-use core::str::FromStr;
-use core::{
-    borrow::{Borrow, BorrowMut},
-    cmp::Ordering,
-    marker::PhantomData,
-    ops::{Deref, DerefMut},
-    str::Utf8Error,
-};
-
+use alloc::borrow::Cow;
 use alloc::boxed::Box;
 use alloc::fmt;
-use alloc::{borrow::Cow, string::String};
+use alloc::string::String;
+use core::borrow::{
+    Borrow,
+    BorrowMut,
+};
+use core::cmp::Ordering;
+use core::hash::{
+    Hash,
+    Hasher,
+};
+use core::marker::PhantomData;
+use core::ops::{
+    Add,
+    AddAssign,
+    Deref,
+    DerefMut,
+    RangeBounds,
+};
+use core::str::{
+    FromStr,
+    Utf8Error,
+};
 
-use crate::Drain;
-use crate::{repr::Repr, CompactString, ReserveError, UnwrapWithMsg, Utf16Error};
+use crate::repr::Repr;
+use crate::{
+    CompactString,
+    Drain,
+    ReserveError,
+    UnwrapWithMsg,
+    Utf16Error,
+};
 
 /// A [`CompactCowStr`] is a compact string type
 /// that can be used as [`Cow<str>`] for [`CompactString`].
@@ -1118,11 +1135,14 @@ impl<'a> CompactCowStr<'a> {
     #[inline]
     fn into_compact_string(mut self) -> CompactString {
         self.0.make_owned();
+        // SAFETY: make_owned replaces COW flag.
         unsafe { std::mem::transmute(self) }
     }
 
     #[inline]
     fn to_ref(&self) -> &CompactString {
+        // SAFETY: This might leak COW flag to `CompactString` so caller
+        // must make sure not to leak.
         unsafe { std::mem::transmute(self) }
     }
 
@@ -1141,10 +1161,10 @@ impl<'a> CompactCowStr<'a> {
     /// assert!(!cow_str.is_borrowed());
     /// assert!(cow_str.is_heap_allocated());
     /// ```
-    ///
     #[inline]
     pub fn to_mut(&mut self) -> &mut CompactString {
         self.0.make_owned();
+        // SAFETY: make_owned replaces COW flag.
         unsafe { std::mem::transmute(self) }
     }
 }
@@ -1166,6 +1186,7 @@ impl<'a> From<&'a CompactString> for CompactCowStr<'a> {
             // Create a new cow str as borrowed from source value.
             Self::new(value.as_str())
         } else {
+            // SAFETY:
             // If the original CompactString is not heap allocated,
             // we need to preserve whether this repr is stacic or non-static refernce,
             // or is on the stack, so clone the inner repr.

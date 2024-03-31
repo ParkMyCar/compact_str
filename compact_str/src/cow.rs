@@ -12,6 +12,7 @@ use core::hash::{
     Hasher,
 };
 use core::marker::PhantomData;
+use core::mem;
 use core::ops::{
     Add,
     AddAssign,
@@ -1136,14 +1137,14 @@ impl<'a> CompactCowStr<'a> {
     fn into_compact_string(mut self) -> CompactString {
         self.0.make_owned();
         // SAFETY: make_owned replaces COW flag.
-        unsafe { std::mem::transmute(self) }
+        unsafe { mem::transmute(self) }
     }
 
     #[inline]
     fn to_ref(&self) -> &CompactString {
         // SAFETY: This might leak COW flag to `CompactString` so caller
         // must make sure not to leak.
-        unsafe { std::mem::transmute(self) }
+        unsafe { mem::transmute(self) }
     }
 
     /// Acquires a mutable reference to the owned form of the data.
@@ -1165,7 +1166,7 @@ impl<'a> CompactCowStr<'a> {
     pub fn to_mut(&mut self) -> &mut CompactString {
         self.0.make_owned();
         // SAFETY: make_owned replaces COW flag.
-        unsafe { std::mem::transmute(self) }
+        unsafe { mem::transmute(self) }
     }
 }
 
@@ -1175,7 +1176,7 @@ impl<'a> From<CompactString> for CompactCowStr<'a> {
         // SAFETY:
         // * A `HeapBuffer` and `Repr` have the same size
         // * and all LastUtf8Char is valid for `CompactCowStr`
-        unsafe { std::mem::transmute(value) }
+        unsafe { mem::transmute(value) }
     }
 }
 

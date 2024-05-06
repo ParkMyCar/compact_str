@@ -11,7 +11,7 @@ env:
   CARGO_TERM_COLOR: "always"
   RUSTFLAGS: "-D warnings"
   PROPTEST_CASES: 10000
-  MIRIFLAGS: "-Zmiri-strict-provenance -Zmiri-check-number-validity"
+  MIRIFLAGS: "-Zmiri-strict-provenance"
 
 jobs:
   check:

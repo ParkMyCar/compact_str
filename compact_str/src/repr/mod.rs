@@ -788,6 +788,8 @@ impl Extend<String> for Repr {
 #[inline(always)]
 fn ensure_read(value: usize) -> usize {
     // SAFETY: This assembly instruction is a noop that only affects the instruction ordering.
+    //
+    // TODO(parkmycar): Re-add loongarch and riscv once we have CI coverage for them.
     #[cfg(all(
         not(miri),
         any(
@@ -795,8 +797,6 @@ fn ensure_read(value: usize) -> usize {
             target_arch = "x86_64",
             target_arch = "arm",
             target_arch = "aarch64",
-            target_arch = "loongarch",
-            target_arch = "riscv",
         )
     ))]
     unsafe {

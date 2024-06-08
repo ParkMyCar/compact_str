@@ -607,7 +607,7 @@ impl Repr {
     ///
     /// # SAFETY
     /// * The caller must guarantee that the provided [`Repr`] is actually a [`HeapBuffer`] by
-    /// checking the discriminant
+    ///   checking the discriminant.
     ///
     /// Note: We used to define [`Repr`] as a `union` which implicitly transmuted between the two
     /// types, but that prevented us from defining a "niche" value to make `Option<CompactString>`
@@ -621,7 +621,7 @@ impl Repr {
     ///
     /// # SAFETY
     /// * The caller must guarantee that the provided [`Repr`] is actually a [`HeapBuffer`] by
-    /// checking the discriminant
+    ///   checking the discriminant.
     ///
     /// Note: We used to define [`Repr`] as a `union` which implicitly transmuted between the two
     /// types, but that prevented us from defining a "niche" value to make `Option<CompactString>`
@@ -636,7 +636,7 @@ impl Repr {
     ///
     /// # SAFETY
     /// * The caller must guarantee that the provided [`Repr`] is actually a [`HeapBuffer`] by
-    /// checking the discriminant
+    ///   checking the discriminant.
     ///
     /// Note: We used to define [`Repr`] as a `union` which implicitly transmuted between the two
     /// types, but that prevented us from defining a "niche" value to make `Option<CompactString>`
@@ -651,7 +651,7 @@ impl Repr {
     ///
     /// # SAFETY
     /// * The caller must guarantee that the provided [`Repr`] is actually an [`InlineBuffer`] by
-    /// checking the discriminant
+    ///   checking the discriminant.
     ///
     /// Note: We used to define [`Repr`] as a `union` which implicitly transmuted between the two
     /// types, but that prevented us from defining a "niche" value to make `Option<CompactString>`
@@ -666,7 +666,7 @@ impl Repr {
     ///
     /// # SAFETY
     /// * The caller must guarantee that the provided [`Repr`] is actually an [`InlineBuffer`] by
-    /// checking the discriminant
+    ///   checking the discriminant.
     ///
     /// Note: We used to define [`Repr`] as a `union` which implicitly transmuted between the two
     /// types, but that prevented us from defining a "niche" value to make `Option<CompactString>`

@@ -639,6 +639,33 @@ fn test_plus_equals_operator_static_str() {
     assert_eq!(m, "ab");
 }
 
+// Allow these lints because we're explicitly testing impls for owned types and
+// reference types.
+#[allow(clippy::cmp_owned)]
+#[allow(clippy::op_ref)]
+#[test]
+fn test_eq_operator() {
+    let x = CompactString::const_new("foo");
+    let y = x.clone();
+
+    macro_rules! test_impl {
+        ($a:expr, $b:expr) => {
+            let _ = $a == $b;
+            let _ = &$a == $b;
+            let _ = &$a == &$b;
+
+            let _ = $b == $a;
+            let _ = &$b == $a;
+            let _ = &$b == &$a;
+        };
+    }
+
+    test_impl!("a", x);
+    test_impl!(String::from("a"), x);
+    test_impl!(Cow::Borrowed("a"), x);
+    test_impl!(y, x);
+}
+
 #[test]
 fn test_u8_to_compact_string() {
     let vals = [u8::MIN, 1, 42, u8::MAX - 2, u8::MAX - 1, u8::MAX];

@@ -1,6 +1,39 @@
 # Upcoming
 ... all released!
 
+# 0.8.0
+### June 8, 2024
+
+## Outstanding Issues
+* Re-enable specialization for `String` in `trait ToCompactString`, [#304](https://github.com/ParkMyCar/compact_str/issues/304)
+
+## Breaking Changes 💥
+
+* Consolidate `CompactString::new_inline(...)` and `CompactString::from_static_str(...)` into `CompactString::const:new(...)`
+    * Implemented in [`Add const_new(); remove new_inline() and from_static_str()`](https://github.com/ParkMyCar/compact_str/pull/336)
+
+## Changes
+
+* Add additial `PartialEq` impls for `CompactString`
+    * Implemented in [`fix: More PartialEq impls`](https://github.com/ParkMyCar/compact_str/pull/381)
+* Match alignment of internal `InlineBuffer` and `Repr`.
+    * Implemeneted in [`Align InlineBuffer same as Repr`](https://github.com/ParkMyCar/compact_str/pull/358)
+* Fix conflict between `serde` and `no_std` features.
+    * Implemented in [`fix serde no-std issue`](https://github.com/ParkMyCar/compact_str/pull/347)
+* Improve performance of `CompactString::is_empty`.
+    * Implemented in [`Simplify is_empty()`](https://github.com/ParkMyCar/compact_str/pull/330)
+* Implement additional `From` impls that `std::string::String` has.
+    * Implemented in [`Add missing From impls that String has`](https://github.com/ParkMyCar/compact_str/pull/328)
+* Implement [`Clone::clone_from`](https://doc.rust-lang.org/std/clone/trait.Clone.html#method.clone_from) for `CompactString`.
+    * Implemented in [`Impl Clone::clone_from for CompactString`](https://github.com/ParkMyCar/compact_str/pull/325)
+* Make re-allocations of a heap-based `CompactString` fallible.
+    * Implemented in [`Make (re)allocations fallible`](https://github.com/ParkMyCar/compact_str/pull/323)
+* Inline short `&'static str`s
+    * Implemented in [`Inline short static strings`](https://github.com/ParkMyCar/compact_str/pull/321)
+* Add support for serializing a `CompactString` from [`diesel`](https://crates.io/crates/diesel) and [`sqlx`](https://crates.io/crates/sqlx)
+    * Implemented in [`Implement diesel compatibility`](https://github.com/ParkMyCar/compact_str/pull/318)
+    * Implemented in [`Implement for sqlx`](https://github.com/ParkMyCar/compact_str/pull/329)
+
 # 0.8.0-beta
 ### October 8, 2023
 

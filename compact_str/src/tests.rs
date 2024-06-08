@@ -639,6 +639,10 @@ fn test_plus_equals_operator_static_str() {
     assert_eq!(m, "ab");
 }
 
+// Allow these lints because we're explicitly testing impls for owned types and
+// reference types.
+#[allow(clippy::cmp_owned)]
+#[allow(clippy::op_ref)]
 #[test]
 fn test_eq_operator() {
     let x = CompactString::const_new("foo");

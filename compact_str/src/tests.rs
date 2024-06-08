@@ -640,6 +640,22 @@ fn test_plus_equals_operator_static_str() {
 }
 
 #[test]
+fn test_eq_operator() {
+    let x = CompactString::const_new("foo");
+    let y = x.clone();
+
+    let _ = "a" == x;
+    let _ = "a" == &x;
+    let _ = String::from("a") == x;
+    let _ = String::from("a") == &x;
+    let _ = &String::from("a") == x;
+    let _ = &String::from("a") == &x;
+    let _ = x == y;
+    let _ = &x == y;
+    let _ = &x == &y;
+}
+
+#[test]
 fn test_u8_to_compact_string() {
     let vals = [u8::MIN, 1, 42, u8::MAX - 2, u8::MAX - 1, u8::MAX];
 

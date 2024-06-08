@@ -624,8 +624,7 @@ impl CompactString {
     ///
     /// # Safety
     /// * All Rust strings, including `CompactString`, must be valid UTF-8. The caller must
-    ///   guarantee
-    /// that any modifications made to the underlying buffer are valid UTF-8.
+    ///   guarantee that any modifications made to the underlying buffer are valid UTF-8.
     ///
     /// # Examples
     /// ```
@@ -2027,7 +2026,7 @@ impl BorrowMut<str> for CompactString {
 
 impl Eq for CompactString {}
 
-impl<T: AsRef<str>> PartialEq<T> for CompactString {
+impl<T: AsRef<str> + ?Sized> PartialEq<T> for CompactString {
     fn eq(&self, other: &T) -> bool {
         self.as_str() == other.as_ref()
     }
@@ -2075,9 +2074,33 @@ impl PartialEq<CompactString> for &str {
     }
 }
 
+impl PartialEq<CompactString> for &&str {
+    fn eq(&self, other: &CompactString) -> bool {
+        **self == other.as_str()
+    }
+}
+
 impl<'a> PartialEq<CompactString> for Cow<'a, str> {
     fn eq(&self, other: &CompactString) -> bool {
         *self == other.as_str()
+    }
+}
+
+impl<'a> PartialEq<CompactString> for &Cow<'a, str> {
+    fn eq(&self, other: &CompactString) -> bool {
+        *self == other.as_str()
+    }
+}
+
+impl PartialEq<String> for &CompactString {
+    fn eq(&self, other: &String) -> bool {
+        self.as_str() == other.as_str()
+    }
+}
+
+impl<'a> PartialEq<Cow<'a, str>> for &CompactString {
+    fn eq(&self, other: &Cow<'a, str>) -> bool {
+        self.as_str() == other
     }
 }
 

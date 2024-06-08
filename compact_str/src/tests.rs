@@ -648,15 +648,22 @@ fn test_eq_operator() {
     let x = CompactString::const_new("foo");
     let y = x.clone();
 
-    let _ = "a" == x;
-    let _ = "a" == &x;
-    let _ = String::from("a") == x;
-    let _ = String::from("a") == &x;
-    let _ = &String::from("a") == x;
-    let _ = &String::from("a") == &x;
-    let _ = x == y;
-    let _ = &x == y;
-    let _ = &x == &y;
+    macro_rules! test_impl {
+        ($a:expr, $b:expr) => {
+            let _ = $a == $b;
+            let _ = &$a == $b;
+            let _ = &$a == &$b;
+
+            let _ = $b == $a;
+            let _ = &$b == $a;
+            let _ = &$b == &$a;
+        };
+    }
+
+    test_impl!("a", x);
+    test_impl!(String::from("a"), x);
+    test_impl!(Cow::Borrowed("a"), x);
+    test_impl!(y, x);
 }
 
 #[test]

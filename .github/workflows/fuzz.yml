@@ -29,8 +29,8 @@ jobs:
           
       - name: Install toolchain
         run: |
-          rustup toolchain install nightly --no-self-update --profile minimal
-          rustup override set nightly
+          rustup toolchain install nightly-2024-06-01 --no-self-update --profile minimal
+          rustup override set nightly-2024-06-01
       - name: Install cargo-fuzz
         uses: taiki-e/install-action@v2
         with:

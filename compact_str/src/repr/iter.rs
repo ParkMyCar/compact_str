@@ -11,6 +11,7 @@ use super::{
     MAX_SIZE,
 };
 use crate::{
+    CompactCowStr,
     CompactString,
     UnwrapWithMsg,
 };
@@ -110,6 +111,12 @@ impl FromIterator<CompactString> for Repr {
 
 impl<'a> FromIterator<Cow<'a, str>> for Repr {
     fn from_iter<T: IntoIterator<Item = Cow<'a, str>>>(iter: T) -> Self {
+        from_as_ref_str_iterator(iter.into_iter())
+    }
+}
+
+impl<'a> FromIterator<CompactCowStr<'a>> for Repr {
+    fn from_iter<T: IntoIterator<Item = CompactCowStr<'a>>>(iter: T) -> Self {
         from_as_ref_str_iterator(iter.into_iter())
     }
 }

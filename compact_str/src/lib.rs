@@ -44,6 +44,9 @@ use core::{
 #[cfg(feature = "std")]
 use std::ffi::OsStr;
 
+mod cow;
+pub use cow::CompactCowStr;
+
 mod features;
 mod macros;
 mod unicode_data;

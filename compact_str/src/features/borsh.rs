@@ -32,7 +32,7 @@ impl BorshDeserialize for CompactString {
         let buf = unsafe { s.as_mut_bytes() };
 
         reader.read_exact(&mut buf[..len])?;
-        std::str::from_utf8(&buf[..len]).map_err(|err| Error::new(ErrorKind::InvalidData, err))?;
+        core::str::from_utf8(&buf[..len]).map_err(|err| Error::new(ErrorKind::InvalidData, err))?;
 
         // SAFETY: The first `len` bytes are initialized and are valid UTF-8
         unsafe { s.set_len(len) };

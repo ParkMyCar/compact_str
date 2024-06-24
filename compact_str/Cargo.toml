@@ -16,6 +16,7 @@ default = ["std"]
 std = []
 
 arbitrary = ["dep:arbitrary"]
+borsh = ["dep:borsh"]
 bytes = ["dep:bytes"]
 diesel = ["dep:diesel"]
 markup = ["dep:markup"]
@@ -31,6 +32,7 @@ sqlx-sqlite = ["sqlx", "sqlx/sqlite"]
 
 [dependencies]
 arbitrary = { version = "1", optional = true, default-features = false }
+borsh = { version = "1", optional = true }
 bytes = { version = "1", optional = true }
 diesel = { version = "2", optional = true, default-features = false }
 markup = { version = "0.13", optional = true, default-features = false }

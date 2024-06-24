@@ -123,19 +123,6 @@ impl Repr {
         // Create a Repr with enough capacity for the entire buffer
         let mut repr = Repr::with_capacity(bytes_len)?;
 
-        // There's an edge case where the final byte of this buffer == `HEAP_MASK`, which is
-        // invalid UTF-8, but would result in us creating an inline variant, that identifies as
-        // a heap variant. If a user ever tried to reference the data at all, we'd incorrectly
-        // try and read data from an invalid memory address, causing undefined behavior.
-        if bytes_len == MAX_SIZE {
-            let last_byte = bytes[bytes_len - 1];
-            // If we hit the edge case, reserve additional space to make the repr becomes heap
-            // allocated, which prevents us from writing this last byte inline
-            if last_byte >= 0b11000000 {
-                repr.reserve(MAX_SIZE + 1)?;
-            }
-        }
-
         // SAFETY: The caller is responsible for making sure the provided buffer is UTF-8. This
         // invariant is documented in the public API
         let slice = repr.as_mut_buf();

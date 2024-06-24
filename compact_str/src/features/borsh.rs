@@ -47,6 +47,10 @@ mod tests {
 
     use test_strategy::proptest;
 
+    use crate::repr::{
+        HEAP_MASK,
+        MAX_SIZE,
+    };
     use crate::CompactString;
 
     #[test]
@@ -61,6 +65,12 @@ mod tests {
         let control: String = borsh::from_slice(&bytes_control).unwrap();
         assert_eq!(compact, VALUE);
         assert_eq!(control, VALUE);
+    }
+
+    #[test]
+    fn test_deserialize_invalid_utf8() {
+        let bytes = borsh::to_vec(&[HEAP_MASK; MAX_SIZE] as &[u8]).unwrap();
+        borsh::from_slice::<CompactString>(&bytes).unwrap_err();
     }
 
     #[cfg_attr(miri, ignore)]

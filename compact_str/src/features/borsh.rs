@@ -38,8 +38,7 @@ impl BorshDeserialize for CompactString {
         } else {
             let mut buf = Vec::new();
             buf.try_reserve_exact(len)?;
-            buf.resize(len, 0u8);
-            reader.read_exact(&mut buf[..])?;
+            reader.take(len as u64).read_to_end(&mut buf)?;
             let s =
                 String::from_utf8(buf).map_err(|err| Error::new(ErrorKind::InvalidData, err))?;
             Ok(CompactString::from(s))

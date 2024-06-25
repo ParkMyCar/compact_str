@@ -38,7 +38,9 @@ impl BorshDeserialize for CompactString {
         } else {
             let mut buf = Vec::new();
             buf.try_reserve_exact(len)?;
-            reader.take(len as u64).read_to_end(&mut buf)?;
+            if reader.take(len as u64).read_to_end(&mut buf)? < len {
+                return Err(ErrorKind::UnexpectedEof.into());
+            }
             let s =
                 String::from_utf8(buf).map_err(|err| Error::new(ErrorKind::InvalidData, err))?;
             Ok(CompactString::from(s))
@@ -58,18 +60,15 @@ mod tests {
     };
     use crate::CompactString;
 
-    #[test]
-    fn test_roundtrip() {
-        const VALUE: &str = "Hello, 🌍!";
-
-        let bytes_compact = borsh::to_vec(&CompactString::from(VALUE)).unwrap();
-        let bytes_control = borsh::to_vec(&String::from(VALUE)).unwrap();
+    fn assert_roundtrip(s: &str) {
+        let bytes_compact = borsh::to_vec(&CompactString::from(s)).unwrap();
+        let bytes_control = borsh::to_vec(&String::from(s)).unwrap();
         assert_eq!(&*bytes_compact, &*bytes_control);
 
         let compact: CompactString = borsh::from_slice(&bytes_compact).unwrap();
         let control: String = borsh::from_slice(&bytes_control).unwrap();
-        assert_eq!(compact, VALUE);
-        assert_eq!(control, VALUE);
+        assert_eq!(compact, s);
+        assert_eq!(control, s);
     }
 
     #[test]
@@ -78,16 +77,22 @@ mod tests {
         borsh::from_slice::<CompactString>(&bytes).unwrap_err();
     }
 
+    #[test]
+    fn test_deserialize_unexpected_eof() {
+        let s = core::str::from_utf8(&[b'a'; 55]).unwrap();
+        let mut bytes = borsh::to_vec(s).unwrap();
+        bytes.pop();
+        borsh::from_slice::<CompactString>(&bytes).unwrap_err();
+    }
+
+    #[test]
+    fn test_roundtrip() {
+        assert_roundtrip("Hello, 🌍!");
+    }
+
     #[cfg_attr(miri, ignore)]
     #[proptest]
     fn proptest_roundtrip(s: String) {
-        let bytes_compact = borsh::to_vec(&CompactString::from(&s)).unwrap();
-        let bytes_control = borsh::to_vec(&String::from(&s)).unwrap();
-        assert_eq!(&*bytes_compact, &*bytes_control);
-
-        let compact: CompactString = borsh::from_slice(&bytes_compact).unwrap();
-        let control: String = borsh::from_slice(&bytes_control).unwrap();
-        assert_eq!(compact, s);
-        assert_eq!(control, s);
+        assert_roundtrip(&s);
     }
 }

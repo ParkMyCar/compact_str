@@ -2,6 +2,8 @@
 
 #[cfg(feature = "arbitrary")]
 mod arbitrary;
+#[cfg(feature = "borsh")]
+mod borsh;
 #[cfg(feature = "bytes")]
 mod bytes;
 #[cfg(feature = "diesel")]

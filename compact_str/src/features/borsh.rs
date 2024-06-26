@@ -36,16 +36,42 @@ impl BorshDeserialize for CompactString {
                 .map_err(|err| Error::new(ErrorKind::InvalidData, err))?;
             Ok(CompactString::from(s))
         } else {
-            let mut buf = Vec::new();
-            buf.try_reserve_exact(len)?;
-            if reader.take(len as u64).read_to_end(&mut buf)? < len {
-                return Err(ErrorKind::UnexpectedEof.into());
-            }
+            // We can't just deserialize `Vec` because we have already read the length
+            // TODO: replace with `read_buf` when (if) it stabilizes
+            let buf = vec_from_reader(len, reader)?;
             let s =
                 String::from_utf8(buf).map_err(|err| Error::new(ErrorKind::InvalidData, err))?;
             Ok(CompactString::from(s))
         }
     }
+}
+
+// A copy of hidden `u8::vec_from_reader`(https://docs.rs/borsh/1.5.1/src/borsh/de/mod.rs.html#156-184)
+fn vec_from_reader<R: Read>(len: usize, reader: &mut R) -> Result<Vec<u8>> {
+    // Avoid OOM by limiting the size of allocation.  This makes the read
+    // less efficient (since we need to loop and reallocate) but it protects
+    // us from someone sending us [0xff, 0xff, 0xff, 0xff] and forcing us to
+    // allocate 4GiB of memory.
+    let mut vec = vec![0u8; len.min(1024 * 1024)];
+    let mut pos = 0;
+    while pos < len {
+        if pos == vec.len() {
+            vec.resize(vec.len().saturating_mul(2).min(len), 0)
+        }
+        // TODO(mina86): Convert this to read_buf once that stabilises.
+        match reader.read(&mut vec.as_mut_slice()[pos..])? {
+            0 => {
+                return Err(Error::new(
+                    ErrorKind::InvalidData,
+                    "Unexpected length of input",
+                ))
+            }
+            read => {
+                pos += read;
+            }
+        }
+    }
+    Ok(vec)
 }
 
 #[cfg(test)]

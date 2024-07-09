@@ -1,6 +1,46 @@
 # Upcoming
 ... all released!
 
+# 0.8.0
+### July 8, 2024
+
+## Breaking Changes 💥
+
+* Consolidate `CompactString::new_inline(...)` and `CompactString::from_static_str(...)` into `CompactString::const:new(...)`. Methods are currently marked as deprecated and will be removed in `v0.9.0`.
+    * Implemented in [`Add const_new(); remove new_inline() and from_static_str()`](https://github.com/ParkMyCar/compact_str/pull/336)
+* Minimum supported Rust version (MSRV) was bumped to `v1.60`
+    * Implemented in [`fix: MSRV check and change MSRV to 1.60`](https://github.com/ParkMyCar/compact_str/pull/395)
+
+## Changes
+
+* Add support for [`borsh`](https://crates.io/crates/borsh) under an optional feature.
+    * Implemented in [`Add borsh support`](https://github.com/ParkMyCar/compact_str/pull/393)
+* Add additial `PartialEq` impls for `CompactString`
+    * Implemented in [`fix: More PartialEq impls`](https://github.com/ParkMyCar/compact_str/pull/381)
+* Match alignment of internal `InlineBuffer` and `Repr`.
+    * Implemeneted in [`Align InlineBuffer same as Repr`](https://github.com/ParkMyCar/compact_str/pull/358)
+* Fix conflict between `serde` and `no_std` features.
+    * Implemented in [`fix serde no-std issue`](https://github.com/ParkMyCar/compact_str/pull/347)
+* Improve performance of `CompactString::is_empty`.
+    * Implemented in [`Simplify is_empty()`](https://github.com/ParkMyCar/compact_str/pull/330)
+* Implement additional `From` impls that `std::string::String` has.
+    * Implemented in [`Add missing From impls that String has`](https://github.com/ParkMyCar/compact_str/pull/328)
+* Implement [`Clone::clone_from`](https://doc.rust-lang.org/std/clone/trait.Clone.html#method.clone_from) for `CompactString`.
+    * Implemented in [`Impl Clone::clone_from for CompactString`](https://github.com/ParkMyCar/compact_str/pull/325)
+* Make re-allocations of a heap-based `CompactString` fallible.
+    * Implemented in [`Make (re)allocations fallible`](https://github.com/ParkMyCar/compact_str/pull/323)
+* Inline short `&'static str`s
+    * Implemented in [`Inline short static strings`](https://github.com/ParkMyCar/compact_str/pull/321)
+* Add support for serializing a `CompactString` from [`diesel`](https://crates.io/crates/diesel) and [`sqlx`](https://crates.io/crates/sqlx)
+    * Implemented in [`Implement diesel compatibility`](https://github.com/ParkMyCar/compact_str/pull/318)
+    * Implemented in [`Implement for sqlx`](https://github.com/ParkMyCar/compact_str/pull/329)
+
+... and everything from `v0.8.0-beta`
+
+## Fixed Issues
+* Re-enabled specialization for `String` in `trait ToCompactString` by upgrading to `castaway v0.2.3`
+    * Implemented in [`deps: Upgrade to castaway v0.2.3`](https://github.com/ParkMyCar/compact_str/pull/394)
+
 # 0.8.0-beta
 ### October 8, 2023
 

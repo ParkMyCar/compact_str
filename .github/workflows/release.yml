@@ -23,7 +23,6 @@ jobs:
         uses: taiki-e/install-action@cargo-hack
       - uses: Swatinem/rust-cache@v2
 
-      - name: cargo test msrv..
+      - name: cargo check feature-powerset
         run: |
-          cd compact_str
-          cargo hack check --feature-powerset --optional-deps
+          cargo hack check --manifest-path=compact_str/Cargo.toml --feature-powerset --optional-deps

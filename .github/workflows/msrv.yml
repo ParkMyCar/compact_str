@@ -18,7 +18,7 @@ env:
 
 jobs:
   msrv:
-    name: cargo check msrv 1.59..
+    name: cargo check msrv...
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -29,18 +29,12 @@ jobs:
         uses: taiki-e/install-action@cargo-hack
       - uses: Swatinem/rust-cache@v2
 
-      - name: cargo test msrv..
-        # Note: we exclude both `arbitrary` and `proptest` from here because their MSRVs were both
-        # bumped on a minor version release:
+      - name: cargo check msrv..
+        # Note: For a while we tried including all of our features in the MSRV
+        # check but it ended up being very flaky since a change in MSRV is not
+        # considered a breaking change, so often the feature crates would bump
+        # their MSRV causing this test to break.
         #
-        # - abitrary >= 1.1.14 has an MSRV >= 1.63
-        # - proptest >= 1.1.0 has an MSRV >= 1.65
-        #
-        # Instead of pinning to a specific version of `arbitrary` or `proptest`, we'll let user's 
-        # deps decide the version since the API should still be semver compatible.
-        #
-        # Note2: Even though our MSRV is 1.59, we only test from 1.60 because we hit the issue
-        # described in <https://github.com/rust-lang/cargo/issues/10189> when using 1.59.
+        # See <https://github.com/rust-lang/api-guidelines/discussions/231>
         run: |
-          cargo hack check --features bytes,markup,quickcheck,rkyv,serde,smallvec --manifest-path=compact_str/Cargo.toml --version-range 1.60..
-          cargo hack check --features bytes,markup,quickcheck,rkyv,serde,smallvec,proptest,arbitrary --manifest-path=compact_str/Cargo.toml --version-range 1.65..
+          cargo hack check --manifest-path=compact_str/Cargo.toml --version-range 1.59..

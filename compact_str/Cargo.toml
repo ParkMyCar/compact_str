@@ -43,10 +43,7 @@ serde = { version = "1", optional = true, default-features = false, features = [
 smallvec = { version = "1", optional = true, features = ["union"] }
 sqlx = { version = "0.7", optional = true, default-features = false }
 
-# TODO: replace with the below version when castaway is updated on crates.io
-castaway = { version = "0.2", default-features = false }
-# castaway = { version = "0.2", default-features = false, features = ["alloc"] }
-
+castaway = { version = "0.2.3", default-features = false, features = ["alloc"] }
 cfg-if = "1"
 itoa = "1"
 rustversion = "1"

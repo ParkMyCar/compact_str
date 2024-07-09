@@ -8,6 +8,8 @@
 
 * Consolidate `CompactString::new_inline(...)` and `CompactString::from_static_str(...)` into `CompactString::const:new(...)`. Methods are currently marked as deprecated and will be removed in `v0.9.0`.
     * Implemented in [`Add const_new(); remove new_inline() and from_static_str()`](https://github.com/ParkMyCar/compact_str/pull/336)
+* Minimum supported Rust version (MSRV) was bumped to `v1.60`
+    * Implemented in [`fix: MSRV check and change MSRV to 1.60`](https://github.com/ParkMyCar/compact_str/pull/395)
 
 ## Changes
 

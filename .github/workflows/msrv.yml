@@ -37,4 +37,4 @@ jobs:
         #
         # See <https://github.com/rust-lang/api-guidelines/discussions/231>
         run: |
-          cargo hack check --manifest-path=compact_str/Cargo.toml --version-range 1.59..
+          cargo hack check --manifest-path=compact_str/Cargo.toml --version-range 1.60..

@@ -5,7 +5,7 @@
   <a href="https://crates.io/crates/compact_str">
     <img alt="version on crates.io" src="https://img.shields.io/crates/v/compact_str"/>
   </a>
-  <img alt="Minimum supported Rust Version: 1.59" src="https://img.shields.io/badge/MSRV-1.59-blueviolet">
+  <img alt="Minimum supported Rust Version: 1.60" src="https://img.shields.io/badge/MSRV-1.60-blueviolet">
   <a href="LICENSE">
     <img alt="mit license" src="https://img.shields.io/crates/l/compact_str"/>
   </a>
@@ -142,7 +142,7 @@ Specifically, the last byte on the stack for a `CompactString` has the following
 ### Testing
 Strings and unicode can be quite messy, even further, we're working with things at the bit level. `compact_str` has an _extensive_ test suite comprised of unit testing, property testing, and fuzz testing, to ensure our invariants are upheld. We test across all major OSes (Windows, macOS, and Linux), architectures (64-bit and 32-bit), and endian-ness (big endian and little endian).
 
-Fuzz testing is run with `libFuzzer`, `AFL++`, *and* `honggfuzz`, with `AFL++` running on both `x86_64` and `ARMv7` architectures. We test with [`miri`](https://github.com/rust-lang/miri) to catch cases of undefined behavior, and run all tests on every Rust compiler since `v1.59` to ensure support for our minimum supported Rust version (MSRV).
+Fuzz testing is run with `libFuzzer`, `AFL++`, *and* `honggfuzz`, with `AFL++` running on both `x86_64` and `ARMv7` architectures. We test with [`miri`](https://github.com/rust-lang/miri) to catch cases of undefined behavior, and run all tests on every Rust compiler since `v1.60` to ensure support for our minimum supported Rust version (MSRV).
 
 ### `unsafe` code
 `CompactString` uses a bit of unsafe code because we manually define what variant we are, so unlike an enum, the compiler can't guarantee what value is actually stored.

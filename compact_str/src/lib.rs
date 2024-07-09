@@ -2212,7 +2212,6 @@ impl<'a> From<&'a CompactString> for Cow<'a, str> {
     }
 }
 
-#[rustversion::since(1.60)]
 #[cfg(target_has_atomic = "ptr")]
 impl From<CompactString> for alloc::sync::Arc<str> {
     fn from(value: CompactString) -> Self {

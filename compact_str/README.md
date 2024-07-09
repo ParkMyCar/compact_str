@@ -44,11 +44,13 @@ A `CompactString` specifically has the following properties:
   * `Clone` is `O(n)`
   * `From<String>` or `From<Box<str>>` re-uses underlying buffer
     * Eagerly inlines small strings
+  * `O(1)` creation from `&'static str` with `CompactString::const_new`
   * Heap based string grows at a rate of 1.5x
     * The std library `String` grows at a rate of 2x
   * Space optimized for `Option<_>`
     * `size_of::<CompactString>() == size_of::<Option<CompactString>>()`
   * Uses [branchless instructions](https://en.algorithmica.org/hpc/pipelining/branchless/) for string accesses
+  * Supports `no_std` environments
 
 ### Traits
 This crate exposes two traits, `ToCompactString` and `CompactStringExt`.
@@ -120,9 +122,9 @@ and the overall memory layout of a `CompactString` is:
 
 <sub>Both variants are 24 bytes long</sub>
 
-For **heap** allocated strings we use a custom `HeapBuffer` which normally stores the capacity of the string on the stack, but also optionally allows us to store it on the heap. Since we use the last byte to track our discriminant, we only have 7 bytes to store the capacity, or 3 bytes on a 32-bit architecture. 7 bytes allows us to store a value up to `2^56`, aka 64 petabytes, while 3 bytes only allows us to store a value up to `2^24`, aka 16 megabytes. 
+For **heap** allocated strings we use a custom `HeapBuffer` which normally stores the capacity of the string on the stack, but also optionally allows us to store it on the heap. Since we use the last byte to track our discriminant, we only have 7 bytes to store the capacity, or 3 bytes on a 32-bit architecture. 7 bytes allows us to store a value up to `2^56`, aka 64 petabytes, while 3 bytes only allows us to store a value up to `2^24`, aka 16 megabytes.
 
-For 64-bit architectures we always inline the capacity, because we can safely assume our strings will never be larger than 64 petabytes, but on 32-bit architectures, when creating or growing a `CompactString`, if the text is larger than 16MB then we move the capacity onto the heap. 
+For 64-bit architectures we always inline the capacity, because we can safely assume our strings will never be larger than 64 petabytes, but on 32-bit architectures, when creating or growing a `CompactString`, if the text is larger than 16MB then we move the capacity onto the heap.
 
 We handle the capacity in this way for two reasons:
 1. Users shouldn't have to pay for what they don't use. Meaning, in the _majority_ of cases the capacity of the buffer could easily fit into 7 or 3 bytes, so the user shouldn't have to pay the memory cost of storing the capacity on the heap, if they don't need to.

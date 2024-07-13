@@ -87,6 +87,14 @@ impl<'q> Encode<'q, sqlx::Postgres> for CompactString {
     }
 }
 
+#[cfg(feature = "sqlx-postgres")]
+#[cfg_attr(docsrs, doc(cfg(feature = "sqlx-postgres")))]
+impl sqlx::postgres::PgHasArrayType for CompactString {
+    fn array_type_info() -> sqlx::postgres::PgTypeInfo {
+        <std::string::String as sqlx::postgres::PgHasArrayType>::array_type_info()
+    }
+}
+
 #[cfg(feature = "sqlx-sqlite")]
 #[cfg_attr(docsrs, doc(cfg(feature = "sqlx-sqlite")))]
 impl<'q> Encode<'q, sqlx::Sqlite> for CompactString {

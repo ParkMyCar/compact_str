@@ -301,11 +301,11 @@ fn proptest_remove(#[strategy(rand_unicode_with_range(1..80))] mut control: Stri
 
 #[proptest]
 #[cfg_attr(miri, ignore)]
-fn proptest_from_utf8_unchecked(#[strategy(rand_bytes())] bytes: Vec<u8>) {
-    let compact = unsafe { CompactString::from_utf8_unchecked(&bytes) };
-    let std_str = unsafe { String::from_utf8_unchecked(bytes.clone()) };
+fn proptest_from_utf8_unchecked(#[strategy(rand_unicode())] std_str: String) {
+    let bytes = std_str.as_bytes();
+    let compact = unsafe { CompactString::from_utf8_unchecked(bytes) };
 
-    // we might not make valid strings, but we should be able to read the underlying bytes
+    // we should be able to read the underlying bytes
     assert_eq!(compact.as_bytes(), std_str.as_bytes());
     assert_eq!(compact.as_bytes(), bytes);
 
@@ -314,7 +314,7 @@ fn proptest_from_utf8_unchecked(#[strategy(rand_bytes())] bytes: Vec<u8>) {
 
     // check if we were valid UTF-8, if so, assert the data written into the CompactString is
     // correct
-    let data_is_valid = core::str::from_utf8(&bytes);
+    let data_is_valid = core::str::from_utf8(bytes);
     let compact_is_valid = core::str::from_utf8(compact.as_bytes());
     let std_str_is_valid = core::str::from_utf8(std_str.as_bytes());
 

@@ -26,7 +26,7 @@ const HEAP_MARKER: usize = {
 const CAPACITY_IS_ON_THE_HEAP: Capacity = Capacity(VALID_MASK | HEAP_MARKER);
 
 /// The maximum value we're able to store, e.g. on 64-bit arch this is 2^56 - 2.
-pub const MAX_VALUE: usize = {
+pub(crate) const MAX_VALUE: usize = {
     let mut bytes = [255; USIZE_SIZE];
     bytes[USIZE_SIZE - 1] = 0;
     usize::from_le_bytes(bytes) - 1
@@ -51,7 +51,7 @@ pub const MAX_VALUE: usize = {
 /// string larger than 16 megabytes probably isn't that uncommon.
 #[derive(Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
-pub struct Capacity(usize);
+pub(crate) struct Capacity(usize);
 
 static_assertions::assert_eq_size!(Capacity, usize);
 static_assertions::assert_eq_align!(Capacity, usize);
@@ -64,7 +64,7 @@ impl fmt::Debug for Capacity {
 
 impl Capacity {
     #[inline]
-    pub const fn new(capacity: usize) -> Self {
+    pub(crate) const fn new(capacity: usize) -> Self {
         cfg_if::cfg_if! {
             if #[cfg(target_pointer_width = "64")] {
                 // on 64-bit arches we can always fit the capacity inline
@@ -93,14 +93,14 @@ impl Capacity {
     /// # SAFETY:
     /// * `self` must be less than or equal to [`MAX_VALUE`]
     #[inline(always)]
-    pub unsafe fn as_usize(self) -> usize {
+    pub(crate) unsafe fn as_usize(self) -> usize {
         usize::from_le(self.0 & VALID_MASK)
     }
 
     /// Returns whether or not this [`Capacity`] has a value that indicates the capacity is being
     /// stored on the heap
     #[inline(always)]
-    pub fn is_heap(self) -> bool {
+    pub(crate) fn is_heap(self) -> bool {
         self == CAPACITY_IS_ON_THE_HEAP
     }
 }

@@ -19,24 +19,24 @@ use crate::{
 const MIN_HEAP_SIZE: usize = MAX_SIZE + mem::size_of::<usize>();
 
 const UNKNOWN: usize = 0;
-pub type StrBuffer = [u8; UNKNOWN];
+pub(crate) type StrBuffer = [u8; UNKNOWN];
 
 /// [`HeapBuffer`] grows at an amortized rates of 1.5x
 ///
 /// Note: this is different than [`std::string::String`], which grows at a rate of 2x. It's debated
 /// which is better, for now we'll stick with a rate of 1.5x
 #[inline(always)]
-pub fn amortized_growth(cur_len: usize, additional: usize) -> usize {
+pub(crate) fn amortized_growth(cur_len: usize, additional: usize) -> usize {
     let required = cur_len.saturating_add(additional);
     let amortized = cur_len.saturating_mul(3) / 2;
     amortized.max(required)
 }
 
 #[repr(C)]
-pub struct HeapBuffer {
-    pub ptr: ptr::NonNull<u8>,
-    pub len: usize,
-    pub cap: Capacity,
+pub(crate) struct HeapBuffer {
+    pub(crate) ptr: ptr::NonNull<u8>,
+    pub(crate) len: usize,
+    pub(crate) cap: Capacity,
 }
 static_assertions::assert_eq_size!(HeapBuffer, Repr);
 static_assertions::assert_eq_align!(HeapBuffer, Repr);
@@ -44,7 +44,7 @@ static_assertions::assert_eq_align!(HeapBuffer, Repr);
 impl HeapBuffer {
     /// Create a [`HeapBuffer`] with the provided text
     #[inline]
-    pub fn new(text: &str) -> Result<Self, ReserveError> {
+    pub(crate) fn new(text: &str) -> Result<Self, ReserveError> {
         let len = text.len();
         let (cap, ptr) = allocate_ptr(len)?;
 
@@ -60,7 +60,7 @@ impl HeapBuffer {
 
     /// Create an empty [`HeapBuffer`] with a specific capacity
     #[inline]
-    pub fn with_capacity(capacity: usize) -> Result<Self, ReserveError> {
+    pub(crate) fn with_capacity(capacity: usize) -> Result<Self, ReserveError> {
         let len = 0;
         let (cap, ptr) = allocate_ptr(capacity)?;
 
@@ -72,7 +72,7 @@ impl HeapBuffer {
     /// To prevent frequent re-allocations, this method will create a [`HeapBuffer`] with a capacity
     /// of `text.len() + additional` or `text.len() * 1.5`, whichever is greater
     #[inline]
-    pub fn with_additional(text: &str, additional: usize) -> Result<Self, ReserveError> {
+    pub(crate) fn with_additional(text: &str, additional: usize) -> Result<Self, ReserveError> {
         let len = text.len();
         let new_capacity = amortized_growth(len, additional);
         let (cap, ptr) = allocate_ptr(new_capacity)?;
@@ -89,7 +89,7 @@ impl HeapBuffer {
 
     /// Return the capacity of the [`HeapBuffer`]
     #[inline]
-    pub fn capacity(&self) -> usize {
+    pub(crate) fn capacity(&self) -> usize {
         #[cold]
         fn read_capacity_from_heap(this: &HeapBuffer) -> usize {
             // re-adjust the pointer to include the capacity that's on the heap
@@ -111,7 +111,7 @@ impl HeapBuffer {
     }
 
     /// Try to grow the [`HeapBuffer`] by reallocating, returning an error if we fail
-    pub fn realloc(&mut self, new_capacity: usize) -> Result<usize, ()> {
+    pub(crate) fn realloc(&mut self, new_capacity: usize) -> Result<usize, ()> {
         let new_cap = Capacity::new(new_capacity);
 
         // We can't reallocate to a size less than our length, or else we'd clip the string
@@ -227,13 +227,13 @@ impl HeapBuffer {
     /// # SAFETY:
     /// * The caller must guarantee that `len` bytes in the buffer are valid UTF-8
     #[inline]
-    pub unsafe fn set_len(&mut self, len: usize) {
+    pub(crate) unsafe fn set_len(&mut self, len: usize) {
         self.len = len;
     }
 
     /// Deallocates the memory owned by the provided [`HeapBuffer`]
     #[inline]
-    pub fn dealloc(&mut self) {
+    pub(crate) fn dealloc(&mut self) {
         deallocate_ptr(self.ptr, self.cap);
     }
 }
@@ -271,7 +271,7 @@ impl Drop for HeapBuffer {
 /// Returns a [`Capacity`] that either indicates the capacity is stored on the heap, or is stored
 /// in the `Capacity` itself.
 #[inline]
-pub fn allocate_ptr(capacity: usize) -> Result<(Capacity, ptr::NonNull<u8>), ReserveError> {
+pub(crate) fn allocate_ptr(capacity: usize) -> Result<(Capacity, ptr::NonNull<u8>), ReserveError> {
     // We allocate at least MIN_HEAP_SIZE bytes because we need to allocate at least one byte
     let capacity = capacity.max(MIN_HEAP_SIZE);
     let cap = Capacity::new(capacity);
@@ -310,7 +310,7 @@ pub fn allocate_ptr(capacity: usize) -> Result<(Capacity, ptr::NonNull<u8>), Res
 
 /// Deallocates a buffer on the heap, handling when the capacity is also stored on the heap
 #[inline]
-pub fn deallocate_ptr(ptr: ptr::NonNull<u8>, cap: Capacity) {
+pub(crate) fn deallocate_ptr(ptr: ptr::NonNull<u8>, cap: Capacity) {
     #[cold]
     fn deallocate_with_capacity_on_heap(ptr: ptr::NonNull<u8>) {
         // re-adjust the pointer to include the capacity that's on the heap
@@ -339,7 +339,7 @@ pub fn deallocate_ptr(ptr: ptr::NonNull<u8>, cap: Capacity) {
 
 /// SAFETY: `layout` must not be zero sized
 #[inline]
-pub unsafe fn do_alloc(layout: Layout) -> Result<ptr::NonNull<u8>, ReserveError> {
+pub(crate) unsafe fn do_alloc(layout: Layout) -> Result<ptr::NonNull<u8>, ReserveError> {
     debug_assert!(layout.size() > 0);
 
     // SAFETY: `alloc(...)` has undefined behavior if the layout is zero-sized. We specify that
@@ -365,7 +365,7 @@ mod heap_capacity {
     use crate::ReserveError;
 
     /// SAFETY: `capacity` must not be zero
-    pub unsafe fn alloc(capacity: usize) -> Result<ptr::NonNull<u8>, ReserveError> {
+    pub(crate) unsafe fn alloc(capacity: usize) -> Result<ptr::NonNull<u8>, ReserveError> {
         do_alloc(layout(capacity))
     }
 
@@ -374,7 +374,7 @@ mod heap_capacity {
     /// # Safety
     /// * `ptr` must point to the start of a `HeapBuffer` whose capacity is on the heap. i.e. we
     ///   must have `ptr -> [cap<usize> ; string<bytes>]`
-    pub unsafe fn dealloc(ptr: ptr::NonNull<u8>, capacity: usize) {
+    pub(crate) unsafe fn dealloc(ptr: ptr::NonNull<u8>, capacity: usize) {
         let layout = layout(capacity);
         ::alloc::alloc::dealloc(ptr.as_ptr(), layout);
     }
@@ -386,7 +386,7 @@ mod heap_capacity {
     }
 
     #[inline(always)]
-    pub fn layout(capacity: usize) -> alloc::Layout {
+    pub(crate) fn layout(capacity: usize) -> alloc::Layout {
         let buffer_layout = alloc::Layout::array::<u8>(capacity).expect("valid capacity");
         alloc::Layout::new::<HeapBufferInnerHeapCapacity>()
             .extend(buffer_layout)
@@ -410,7 +410,7 @@ mod inline_capacity {
 
     /// # SAFETY:
     /// * `capacity` must be > 0
-    pub unsafe fn alloc(capacity: usize) -> Result<ptr::NonNull<u8>, ReserveError> {
+    pub(crate) unsafe fn alloc(capacity: usize) -> Result<ptr::NonNull<u8>, ReserveError> {
         do_alloc(layout(capacity))
     }
 
@@ -418,7 +418,7 @@ mod inline_capacity {
     ///
     /// # Safety
     /// * `ptr` must point to the start of a `HeapBuffer` whose capacity is on the inline
-    pub unsafe fn dealloc(ptr: ptr::NonNull<u8>, capacity: usize) {
+    pub(crate) unsafe fn dealloc(ptr: ptr::NonNull<u8>, capacity: usize) {
         let layout = layout(capacity);
         ::alloc::alloc::dealloc(ptr.as_ptr(), layout);
     }
@@ -429,7 +429,7 @@ mod inline_capacity {
     }
 
     #[inline(always)]
-    pub fn layout(capacity: usize) -> alloc::Layout {
+    pub(crate) fn layout(capacity: usize) -> alloc::Layout {
         let buffer_layout = alloc::Layout::array::<u8>(capacity).expect("valid capacity");
         alloc::Layout::new::<HeapBufferInnerInlineCapacity>()
             .extend(buffer_layout)

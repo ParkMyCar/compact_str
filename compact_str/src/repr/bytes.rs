@@ -10,7 +10,7 @@ use crate::UnwrapWithMsg;
 
 impl Repr {
     /// Converts a [`Buf`] of bytes to a [`Repr`], checking that the provided bytes are valid UTF-8
-    pub fn from_utf8_buf<B: Buf>(buf: &mut B) -> Result<Self, Utf8Error> {
+    pub(crate) fn from_utf8_buf<B: Buf>(buf: &mut B) -> Result<Self, Utf8Error> {
         // SAFETY: We check below to make sure the provided buffer is valid UTF-8
         let (repr, bytes_written) = unsafe { Self::collect_buf(buf) };
 
@@ -25,7 +25,7 @@ impl Repr {
     ///
     /// # Safety
     /// * The provided buffer must be valid UTF-8
-    pub unsafe fn from_utf8_buf_unchecked<B: Buf>(buf: &mut B) -> Self {
+    pub(crate) unsafe fn from_utf8_buf_unchecked<B: Buf>(buf: &mut B) -> Self {
         let (repr, _bytes_written) = Self::collect_buf(buf);
         repr
     }

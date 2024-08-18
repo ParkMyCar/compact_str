@@ -30,22 +30,24 @@ const MAX_SIZE: usize = 12;
 const SIXTEEN_MB: usize = 16 * 1024 * 1024;
 
 /// generates random unicode strings, upto 80 chars long
-pub fn rand_unicode() -> impl Strategy<Value = String> {
+pub(crate) fn rand_unicode() -> impl Strategy<Value = String> {
     proptest::collection::vec(proptest::char::any(), 0..80).prop_map(|v| v.into_iter().collect())
 }
 
 /// generates a random collection of bytes, upto 80 bytes long
-pub fn rand_bytes() -> impl Strategy<Value = Vec<u8>> {
+pub(crate) fn rand_bytes() -> impl Strategy<Value = Vec<u8>> {
     proptest::collection::vec(any::<u8>(), 0..80)
 }
 
 /// generates a random collection of `u16`s, upto 80 elements long
-pub fn rand_u16s() -> impl Strategy<Value = Vec<u16>> {
+pub(crate) fn rand_u16s() -> impl Strategy<Value = Vec<u16>> {
     proptest::collection::vec(any::<u16>(), 0..80)
 }
 
 /// [`proptest::strategy::Strategy`] that generates [`String`]s with up to `len` bytes
-pub fn rand_unicode_with_range(range: impl Into<SizeRange>) -> impl Strategy<Value = String> {
+pub(crate) fn rand_unicode_with_range(
+    range: impl Into<SizeRange>,
+) -> impl Strategy<Value = String> {
     proptest::collection::vec(proptest::char::any(), range).prop_map(|v| v.into_iter().collect())
 }
 

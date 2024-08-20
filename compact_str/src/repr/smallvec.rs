@@ -10,7 +10,7 @@ impl Repr {
     ///
     /// Note: both for the inlined case and the heap case, the buffers are re-used
     #[inline]
-    pub fn into_bytes(self) -> SmallVec<[u8; MAX_SIZE]> {
+    pub(crate) fn into_bytes(self) -> SmallVec<[u8; MAX_SIZE]> {
         if let Some(s) = self.as_static_str() {
             SmallVec::from(s.as_bytes())
         } else if self.is_heap_allocated() {

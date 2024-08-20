@@ -17,7 +17,7 @@ pub(super) const DISCRIMINANT_SIZE: usize = MAX_SIZE - mem::size_of::<&'static s
 /// The last byte is set to 0.
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct StaticStr {
+pub(crate) struct StaticStr {
     ptr: ptr::NonNull<u8>,
     len: usize,
     #[allow(unused)]
@@ -29,7 +29,7 @@ static_assertions::assert_eq_size!(&'static str, (*const u8, usize));
 
 impl StaticStr {
     #[inline]
-    pub const fn new(text: &'static str) -> Self {
+    pub(crate) const fn new(text: &'static str) -> Self {
         let mut discriminant = [0; DISCRIMINANT_SIZE];
         discriminant[DISCRIMINANT_SIZE - 1] = STATIC_STR_MASK;
 

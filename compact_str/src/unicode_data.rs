@@ -55,7 +55,7 @@ const fn decode_length(short_offset_run_header: u32) -> usize {
 }
 
 #[rustfmt::skip]
-pub mod case_ignorable {
+pub(crate) mod case_ignorable {
     static SHORT_OFFSET_RUNS: [u32; 35] = [
         688, 44045149, 572528402, 576724925, 807414908, 878718981, 903913493, 929080568, 933275148,
         937491230, 1138818560, 1147208189, 1210124160, 1222707713, 1235291428, 1260457643,
@@ -98,7 +98,7 @@ pub mod case_ignorable {
         14, 0, 1, 61, 4, 0, 5, 0, 7, 109, 8, 0, 5, 0, 1, 30, 96, 128, 240, 0,
     ];
     #[inline(always)]
-    pub fn lookup(c: char) -> bool {
+    pub(crate) fn lookup(c: char) -> bool {
         super::skip_search(
             c as u32,
             &SHORT_OFFSET_RUNS,
@@ -108,7 +108,7 @@ pub mod case_ignorable {
 }
 
 #[rustfmt::skip]
-pub mod cased {
+pub(crate) mod cased {
     static SHORT_OFFSET_RUNS: [u32; 22] = [
         4256, 115348384, 136322176, 144711446, 163587254, 320875520, 325101120, 350268208,
         392231680, 404815649, 413205504, 421595008, 467733632, 484513952, 492924480, 497144832,
@@ -129,7 +129,7 @@ pub mod cased {
         0, 62, 0, 68, 0, 26, 6, 26, 6, 26, 0,
     ];
     #[inline(always)]
-    pub fn lookup(c: char) -> bool {
+    pub(crate) fn lookup(c: char) -> bool {
         super::skip_search(
             c as u32,
             &SHORT_OFFSET_RUNS,

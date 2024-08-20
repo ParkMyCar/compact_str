@@ -9,11 +9,11 @@ use super::{
 /// A buffer stored on the stack whose size is equal to the stack size of `String`
 #[cfg(target_pointer_width = "64")]
 #[repr(C, align(8))]
-pub struct InlineBuffer(pub [u8; MAX_SIZE]);
+pub(crate) struct InlineBuffer(pub(crate) [u8; MAX_SIZE]);
 
 #[cfg(target_pointer_width = "32")]
 #[repr(C, align(4))]
-pub struct InlineBuffer(pub [u8; MAX_SIZE]);
+pub(crate) struct InlineBuffer(pub(crate) [u8; MAX_SIZE]);
 
 static_assertions::assert_eq_size!(InlineBuffer, Repr);
 static_assertions::assert_eq_align!(InlineBuffer, Repr);
@@ -24,7 +24,7 @@ impl InlineBuffer {
     /// SAFETY:
     /// * The caller must guarantee that the length of `text` is less than [`MAX_SIZE`]
     #[inline]
-    pub unsafe fn new(text: &str) -> Self {
+    pub(crate) unsafe fn new(text: &str) -> Self {
         debug_assert!(text.len() <= MAX_SIZE);
 
         let len = text.len();
@@ -50,7 +50,7 @@ impl InlineBuffer {
     }
 
     #[inline]
-    pub const fn new_const(text: &str) -> Self {
+    pub(crate) const fn new_const(text: &str) -> Self {
         if text.len() > MAX_SIZE {
             panic!("Provided string has a length greater than our MAX_SIZE");
         }
@@ -76,7 +76,7 @@ impl InlineBuffer {
 
     /// Returns an empty [`InlineBuffer`]
     #[inline(always)]
-    pub const fn empty() -> Self {
+    pub(crate) const fn empty() -> Self {
         Self::new_const("")
     }
 
@@ -84,7 +84,7 @@ impl InlineBuffer {
     /// string that it contains
     #[inline]
     #[cfg(feature = "smallvec")]
-    pub fn into_array(self) -> ([u8; MAX_SIZE], usize) {
+    pub(crate) fn into_array(self) -> ([u8; MAX_SIZE], usize) {
         let mut buffer = self.0;
 
         let length = core::cmp::min(
@@ -110,7 +110,7 @@ impl InlineBuffer {
     /// # SAFETY:
     /// * The caller must guarantee that `len` bytes in the buffer are valid UTF-8
     #[inline]
-    pub unsafe fn set_len(&mut self, len: usize) {
+    pub(crate) unsafe fn set_len(&mut self, len: usize) {
         debug_assert!(len <= MAX_SIZE);
 
         // If `length` == MAX_SIZE, then we infer the length to be the capacity of the buffer. We

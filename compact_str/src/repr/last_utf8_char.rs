@@ -9,7 +9,7 @@ use alloc::string::String;
 #[allow(dead_code)]
 #[derive(Copy, Clone, Debug)]
 #[repr(u8)]
-pub enum LastUtf8Char {
+pub(crate) enum LastUtf8Char {
     // single character, ASCII:
     V0 = 0,
     V1 = 1,

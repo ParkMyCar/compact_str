@@ -12,7 +12,7 @@ extern crate alloc;
 use alloc::borrow::Cow;
 use alloc::boxed::Box;
 use alloc::string::String;
-#[doc(hidden)]
+#[doc(hidden)] // Referenced in macros.
 pub use core;
 use core::borrow::{
     Borrow,

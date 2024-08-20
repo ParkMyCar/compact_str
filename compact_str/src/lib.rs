@@ -384,10 +384,12 @@ impl CompactString {
     ///
     /// # Safety
     ///
-    /// This function is unsafe because it does not check that the bytes passed to it are valid
-    /// UTF-8. If this constraint is violated, it may cause memory unsafety issues with future users
-    /// of the [`CompactString`], as the rest of the standard library assumes that
-    /// [`CompactString`]s are valid UTF-8.
+    /// * The contents pased to this method must be valid UTF-8.
+    ///
+    /// It's very important that this constraint is upheld because the internals of a
+    /// [`CompactString`] (e.g. determing an inline string versus a heap allocated string) rely on
+    /// the [`CompactString`] containing valid UTF-8. If this constraint is violated any further
+    /// use of the returned [`CompactString`] (including dropping it) can cause undefined behavior.
     ///
     /// # Examples
     ///

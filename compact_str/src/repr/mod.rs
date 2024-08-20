@@ -114,7 +114,8 @@ impl Repr {
     /// UTF-8
     ///
     /// # Safety
-    /// * The caller must guarantee that `buf` is valid UTF-8
+    ///
+    /// * The caller must guarantee that `buf` is valid UTF-8.
     #[inline]
     pub(crate) unsafe fn from_utf8_unchecked<B: AsRef<[u8]>>(buf: B) -> Result<Self, ReserveError> {
         let bytes = buf.as_ref();

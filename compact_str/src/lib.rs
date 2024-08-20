@@ -2686,3 +2686,4 @@ fn unwrap_with_msg_fail<E: fmt::Display>(error: E) -> ! {
 }
 
 static_assertions::assert_eq_size!(CompactString, String);
+static_assertions::assert_eq_size!(Option<CompactString>, CompactString);

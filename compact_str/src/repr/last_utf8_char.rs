@@ -1,15 +1,15 @@
 use alloc::string::String;
 
-/// [`LastUtf8Char`] is an unsigned 8-bit integer data type that has a valid range of `[0, 216]`.
-/// Excluding `[217, 255]` allows the Rust compiler to use these values as niches.
+/// [`LastByte`] is an unsigned 8-bit integer data type that has a valid range of `[0, 217]`.
+/// Excluding `[218, 255]` allows the Rust compiler to use these values as niches.
 ///
 /// Specifically the compiler can use a value in this range to encode the `None` variant of
-/// `Option<NonMaxU8>` allowing
-/// `std::mem::size_of::<NonMaxU8> == std::mem::size_of::<Option<NonMaxU8>>()`
+/// `Option<LastByte>` allowing:
+/// `std::mem::size_of::<LastByte> == std::mem::size_of::<Option<LastByte>>()`
 #[allow(dead_code)]
 #[derive(Copy, Clone, Debug)]
 #[repr(u8)]
-pub(crate) enum LastUtf8Char {
+pub(crate) enum LastByte {
     // single character, ASCII:
     V0 = 0,
     V1 = 1,
@@ -241,5 +241,5 @@ pub(crate) enum LastUtf8Char {
     Static = 217,
 }
 
-static_assertions::assert_eq_size!(LastUtf8Char, Option<LastUtf8Char>, u8);
+static_assertions::assert_eq_size!(LastByte, Option<LastByte>, u8);
 static_assertions::const_assert!(core::mem::size_of::<String>() <= 24);

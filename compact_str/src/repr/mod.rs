@@ -25,7 +25,7 @@ use alloc::string::String;
 use capacity::Capacity;
 use heap::HeapBuffer;
 use inline::InlineBuffer;
-use last_utf8_char::LastUtf8Char;
+use last_utf8_char::LastByte;
 use static_str::StaticStr;
 pub(crate) use traits::IntoRepr;
 
@@ -37,9 +37,9 @@ use crate::{
 /// The max size of a string we can fit inline
 pub(crate) const MAX_SIZE: usize = core::mem::size_of::<String>();
 /// Used as a discriminant to identify different variants
-pub(crate) const HEAP_MASK: u8 = LastUtf8Char::Heap as u8;
+pub(crate) const HEAP_MASK: u8 = LastByte::Heap as u8;
 /// Used for `StaticStr` variant
-pub(crate) const STATIC_STR_MASK: u8 = LastUtf8Char::Static as u8;
+pub(crate) const STATIC_STR_MASK: u8 = LastByte::Static as u8;
 /// When our string is stored inline, we represent the length of the string in the last byte, offset
 /// by `LENGTH_MASK`
 pub(crate) const LENGTH_MASK: u8 = 0b11000000;
@@ -48,16 +48,18 @@ const EMPTY: Repr = Repr::const_new("");
 
 #[repr(C)]
 pub(crate) struct Repr(
-    // We have a pointer in the representation to properly carry provenance
+    /// We have a pointer in the representation to properly carry provenance.
     *const (),
-    // Then we need two `usize`s (aka WORDs) of data, for the first we just define a `usize`...
+    /// Then we need two `usize`s (aka WORDs) of data, for the first we just define a `usize`...
     usize,
-    // ...but the second we breakup into multiple pieces...
-    #[cfg(target_pointer_width = "64")] u32,
+    /// ...but the second we breakup into multiple pieces...
+    #[cfg(target_pointer_width = "64")]
+    u32,
     u16,
     u8,
-    // ...so that the last byte can be a NonMax, which allows the compiler to see a niche value
-    LastUtf8Char,
+    /// ...so that the last byte can be a [`LastByte`], which allows the compiler to see a niche
+    /// value.
+    LastByte,
 );
 static_assertions::assert_eq_size!([u8; MAX_SIZE], Repr);
 
@@ -420,8 +422,8 @@ impl Repr {
     pub(crate) fn is_empty(&self) -> bool {
         let len_heap = ensure_read(self.1);
         let last_byte = self.last_byte() as usize;
-        let mut len = last_byte.wrapping_sub(LastUtf8Char::L0 as u8 as usize);
-        if last_byte >= LastUtf8Char::Heap as u8 as usize {
+        let mut len = last_byte.wrapping_sub(LastByte::L0 as u8 as usize);
+        if last_byte >= LastByte::Heap as u8 as usize {
             len = len_heap;
         }
         len == 0

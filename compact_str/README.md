@@ -154,10 +154,17 @@ That being said, uses of unsafe code in this library are constrained to only whe
 
 ### Similar Crates
 Storing strings on the stack is not a new idea, in fact there are a few other crates in the Rust ecosystem that do similar things, an incomplete list:
-1. [`smol_str`](https://crates.io/crates/smol_str) - Can inline 22 bytes, `Clone` is `O(1)`, doesn't adjust for 32-bit archs
-2. [`smartstring`](https://crates.io/crates/smartstring) - Can inline 23 bytes, `Clone` is `O(n)`, is mutable
-3. [`kstring`](https://crates.io/crates/kstring) - Can inline 15 or 22 bytes dependent on crate features, `Clone` is `O(1)`, can also store `&'static str`s
-4. [`flexstr`](https://crates.io/crates/flexstr) - Can inline 22 bytes, `Clone` is `O(1)`, can also store `&'static str`s
+
+*  [`arcstr`](https://crates.io/crates/arcstr)
+*  [`byteyarn`](https://crates.io/crates/byteyarn)
+*  [`ecow`](https://crates.io/crates/ecow)
+*  [`flexstr`](https://crates.io/crates/flexstr)
+*  [`hipstr`](https://crates.io/crates/hipstr)
+*  [`imstr`](https://crates.io/crates/imstr)
+*  [`kstring`](https://crates.io/crates/kstring)
+*  [`smartstring`](https://crates.io/crates/smartstring)
+
+For a comparison of all these crates (and possibly more!) please see the [Rust String Benchmarks](https://github.com/rosetta-rs/string-rosetta-rs).
 
 <br />
 Thanks for readingme!

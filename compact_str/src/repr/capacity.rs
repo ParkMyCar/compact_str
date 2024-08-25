@@ -1,6 +1,6 @@
 use core::fmt;
 
-use crate::repr::LastUtf8Char;
+use crate::repr::LastByte;
 
 // how many bytes a `usize` occupies
 const USIZE_SIZE: usize = core::mem::size_of::<usize>();
@@ -15,13 +15,13 @@ const VALID_MASK: usize = {
 /// Mask of bits that are set in [`Capacity`] if the string data is stored on the heap.
 const HEAP_MARKER: usize = {
     let mut bytes = [0; USIZE_SIZE];
-    bytes[USIZE_SIZE - 1] = LastUtf8Char::Heap as u8;
+    bytes[USIZE_SIZE - 1] = LastByte::Heap as u8;
     usize::from_ne_bytes(bytes)
 };
 
 /// State that describes the capacity as being stored on the heap.
 ///
-/// All bytes `255`, with the last being [`LastUtf8Char::Heap`], using the same amount of bytes
+/// All bytes `255`, with the last being [`LastByte::Heap`], using the same amount of bytes
 /// as `usize`. Example (64-bit): `[255, 255, 255, 255, 255, 255, 255, 216]`
 const CAPACITY_IS_ON_THE_HEAP: Capacity = Capacity(VALID_MASK | HEAP_MARKER);
 
@@ -78,7 +78,7 @@ impl Capacity {
                     // the heap. return an Error so `BoxString` can do the right thing
                     CAPACITY_IS_ON_THE_HEAP
                 } else {
-                    // otherwise, we can store this capacity inline! Set the last byte to be our `LastUtf8Char::Heap as u8`
+                    // otherwise, we can store this capacity inline! Set the last byte to be our `LastByte::Heap as u8`
                     // for our discriminant, using the leading bytes to store the actual value
                     Capacity(capacity.to_le() | HEAP_MARKER)
                 }

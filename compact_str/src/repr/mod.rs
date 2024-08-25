@@ -53,10 +53,12 @@ pub(crate) struct Repr(
     /// Then we need two `usize`s (aka WORDs) of data, for the first we just define a `usize`...
     usize,
     /// ...but the second we breakup into multiple pieces...
-    #[cfg(target_pointer_width = "64")] u32,
+    #[cfg(target_pointer_width = "64")]
+    u32,
     u16,
     u8,
-    /// ...so that the last byte can be a [`LastByte`], which allows the compiler to see a niche value.
+    /// ...so that the last byte can be a [`LastByte`], which allows the compiler to see a niche
+    /// value.
     LastByte,
 );
 static_assertions::assert_eq_size!([u8; MAX_SIZE], Repr);

@@ -1,7 +1,8 @@
 #![cfg_attr(docsrs, doc(cfg(feature = "rkyv")))]
 
+use rkyv::rancor::{Fallible, Source};
 use rkyv::string::{ArchivedString, StringResolver};
-use rkyv::{Archive, Deserialize, DeserializeUnsized, Fallible, Serialize, SerializeUnsized};
+use rkyv::{Archive, Deserialize, DeserializeUnsized, Place, Serialize, SerializeUnsized};
 
 use crate::CompactString;
 
@@ -10,14 +11,15 @@ impl Archive for CompactString {
     type Resolver = StringResolver;
 
     #[inline]
-    unsafe fn resolve(&self, pos: usize, resolver: Self::Resolver, out: *mut Self::Archived) {
-        ArchivedString::resolve_from_str(self.as_str(), pos, resolver, out);
+    fn resolve(&self, resolver: Self::Resolver, out: Place<Self::Archived>) {
+        ArchivedString::resolve_from_str(self.as_str(), resolver, out);
     }
 }
 
 impl<S: Fallible + ?Sized> Serialize<S> for CompactString
 where
     str: SerializeUnsized<S>,
+    S::Error: Source,
 {
     #[inline]
     fn serialize(&self, serializer: &mut S) -> Result<Self::Resolver, S::Error> {

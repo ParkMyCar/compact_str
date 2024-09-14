@@ -5,6 +5,6 @@ edition = "2021"
 
 [dependencies]
 compact_str = { version = "0.8.0-beta", path = "../../compact_str", features = ["sqlx-mysql", "sqlx-postgres", "sqlx-sqlite"] }
-sqlx = { version = "0.7", features = ["runtime-tokio", "mysql", "postgres", "sqlite"] }
+sqlx = { version = "0.8", features = ["runtime-tokio", "mysql", "postgres", "sqlite"] }
 tempfile = "3"
 tokio = { version = "1.20.0", features = ["rt", "macros"]}

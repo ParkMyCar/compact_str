@@ -5,7 +5,7 @@ use sqlx::error::BoxDynError;
     feature = "sqlx-postgres",
     feature = "sqlx-sqlite"
 ))]
-use sqlx::{database::HasArguments, encode::IsNull, Encode};
+use sqlx::{encode::IsNull, Encode};
 use sqlx::{Database, Decode, Type, Value, ValueRef};
 
 use crate::{CompactString, ToCompactString};

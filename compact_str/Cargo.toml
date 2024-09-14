@@ -38,7 +38,7 @@ diesel = { version = "2", optional = true, default-features = false }
 markup = { version = "0.13", optional = true, default-features = false }
 proptest = { version = "1", optional = true, default-features = false, features = ["std"] }
 quickcheck = { version = "1", optional = true, default-features = false }
-rkyv = { version = "0.7", optional = true, default-features = false, features = ["size_32"] }
+rkyv = { version = "0.8", optional = true, default-features = false }
 serde = { version = "1", optional = true, default-features = false, features = ["derive", "alloc"] }
 smallvec = { version = "1", optional = true, features = ["union"] }
 sqlx = { version = "0.7", optional = true, default-features = false }

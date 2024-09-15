@@ -34,7 +34,7 @@ sqlx-sqlite = ["sqlx", "sqlx/sqlite"]
 arbitrary = { version = "1", optional = true, default-features = false }
 borsh = { version = "1", optional = true }
 bytes = { version = "1", optional = true }
-diesel = { version = "2", optional = true, default-features = false }
+diesel = { version = "2.2.3", optional = true, default-features = false }
 markup = { version = "0.13", optional = true, default-features = false }
 proptest = { version = "1", optional = true, default-features = false, features = ["std"] }
 quickcheck = { version = "1", optional = true, default-features = false }

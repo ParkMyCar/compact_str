@@ -211,26 +211,6 @@ impl CompactString {
         CompactString(Repr::const_new(text))
     }
 
-    /// Creates a new inline [`CompactString`] at compile time.
-    #[deprecated(
-        since = "0.8.0",
-        note = "replaced by CompactString::const_new, will be removed in 0.9.0"
-    )]
-    #[inline]
-    pub const fn new_inline(text: &'static str) -> Self {
-        CompactString::const_new(text)
-    }
-
-    /// Creates a new inline [`CompactString`] from `&'static str` at compile time.
-    #[deprecated(
-        since = "0.8.0",
-        note = "replaced by CompactString::const_new, will be removed in 0.9.0"
-    )]
-    #[inline]
-    pub const fn from_static_str(text: &'static str) -> Self {
-        CompactString::const_new(text)
-    }
-
     /// Get back the `&'static str` constructed by [`CompactString::const_new`].
     ///
     /// If the string was short enough that it could be inlined, then it was inline, and

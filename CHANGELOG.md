@@ -1,6 +1,32 @@
 # Upcoming
 ... all released!
 
+# 0.9.0
+### December 29, 2024
+
+## Breaking Changes 💥
+
+* [`rkyv`](https://crates.io/crates/rkyv) optional dependency was upgraded to `0.8`
+    * Implemented in [`#409`](https://github.com/ParkMyCar/compact_str/pull/409)
+* [`sqlx`](https://crates.io/crates/sqlx) optional dependency was upgraded to `0.8`
+    * Implemented in [`#408`](https://github.com/ParkMyCar/compact_str/pull/408)
+* [`markup`](https://crates.io/crates/markup) optional dependency was upgraded to `0.15`
+    * Implemented in [`#417`](https://github.com/ParkMyCar/compact_str/pull/417)
+* Deprecated APIs `CompactString::new_inline(...)` and `CompactString::from_static_str(...)` have now been removed.
+
+## Changes
+
+* Small performance improvements.
+    * Implemented in [`#370`](https://github.com/ParkMyCar/compact_str/pull/370)
+
+# 0.8.1
+### December 29, 2024
+
+## Changes
+
+* Fix `CompactString::retain` to not set the length of the string if the predicate panics.
+    * Implemented in [`#413`](https://github.com/ParkMyCar/compact_str/pull/413)
+
 # 0.8.0
 ### July 8, 2024
 

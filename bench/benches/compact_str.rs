@@ -1,14 +1,6 @@
-use compact_str::{
-    CompactString,
-    ToCompactString,
-};
+use compact_str::{CompactString, ToCompactString};
 use compact_str_6::CompactString as CompactString6;
-use criterion::{
-    criterion_group,
-    criterion_main,
-    BenchmarkId,
-    Criterion,
-};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 
 fn bench_new(c: &mut Criterion) {
     c.bench_with_input(

@@ -1,12 +1,7 @@
 use alloc::string::String;
 use alloc::vec::Vec;
 
-use serde::de::{
-    Deserializer,
-    Error,
-    Unexpected,
-    Visitor,
-};
+use serde::de::{Deserializer, Error, Unexpected, Visitor};
 
 use crate::CompactString;
 
@@ -78,16 +73,10 @@ impl<'de> serde::Deserialize<'de> for CompactString {
 
 #[cfg(test)]
 mod tests {
-    use alloc::string::{
-        String,
-        ToString,
-    };
+    use alloc::string::{String, ToString};
     use alloc::vec::Vec;
 
-    use serde::{
-        Deserialize,
-        Serialize,
-    };
+    use serde::{Deserialize, Serialize};
     use test_strategy::proptest;
 
     use crate::CompactString;

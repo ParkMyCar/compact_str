@@ -1,10 +1,6 @@
 use core::ptr;
 
-use super::{
-    Repr,
-    LENGTH_MASK,
-    MAX_SIZE,
-};
+use super::{Repr, LENGTH_MASK, MAX_SIZE};
 
 /// A buffer stored on the stack whose size is equal to the stack size of `String`
 #[cfg(target_pointer_width = "64")]
@@ -158,10 +154,7 @@ mod tests {
 
         use quickcheck_macros::quickcheck;
 
-        use crate::repr::{
-            InlineBuffer,
-            MAX_SIZE,
-        };
+        use crate::repr::{InlineBuffer, MAX_SIZE};
 
         #[test]
         fn test_into_array() {

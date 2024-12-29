@@ -5,10 +5,7 @@
 
 use std::path::PathBuf;
 
-use arbitrary::{
-    Arbitrary,
-    Unstructured,
-};
+use arbitrary::{Arbitrary, Unstructured};
 use compact_str_fuzz::Scenario;
 
 pub fn main() {

@@ -3,12 +3,7 @@
 use std::time::Instant;
 
 use compact_str::CompactString;
-use criterion::{
-    black_box,
-    criterion_group,
-    criterion_main,
-    Criterion,
-};
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
 static VERY_LONG_STR: &str = include_str!("../data/moby10b.txt");
 

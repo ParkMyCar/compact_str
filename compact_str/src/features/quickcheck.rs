@@ -3,10 +3,7 @@
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 
-use quickcheck::{
-    Arbitrary,
-    Gen,
-};
+use quickcheck::{Arbitrary, Gen};
 
 use crate::CompactString;
 

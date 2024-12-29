@@ -1,10 +1,7 @@
 use alloc::borrow::Cow;
 use alloc::boxed::Box;
 use core::str::Utf8Error;
-use core::{
-    mem,
-    ptr,
-};
+use core::{mem, ptr};
 
 #[cfg(feature = "bytes")]
 mod bytes;
@@ -29,10 +26,7 @@ use last_utf8_char::LastByte;
 use static_str::StaticStr;
 pub(crate) use traits::IntoRepr;
 
-use crate::{
-    ReserveError,
-    UnwrapWithMsg,
-};
+use crate::{ReserveError, UnwrapWithMsg};
 
 /// The max size of a string we can fit inline
 pub(crate) const MAX_SIZE: usize = core::mem::size_of::<String>();
@@ -802,19 +796,13 @@ fn ensure_read(value: usize) -> usize {
 
 #[cfg(test)]
 mod tests {
-    use alloc::string::{
-        String,
-        ToString,
-    };
+    use alloc::string::{String, ToString};
     use alloc::vec::Vec;
 
     use quickcheck_macros::quickcheck;
     use test_case::test_case;
 
-    use super::{
-        Repr,
-        MAX_SIZE,
-    };
+    use super::{Repr, MAX_SIZE};
     use crate::ReserveError;
 
     const EIGHTEEN_MB: usize = 18 * 1024 * 1024;

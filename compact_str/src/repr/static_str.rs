@@ -1,15 +1,6 @@
-use core::{
-    mem,
-    ptr,
-    slice,
-    str,
-};
+use core::{mem, ptr, slice, str};
 
-use super::{
-    Repr,
-    MAX_SIZE,
-    STATIC_STR_MASK,
-};
+use super::{Repr, MAX_SIZE, STATIC_STR_MASK};
 
 pub(super) const DISCRIMINANT_SIZE: usize = MAX_SIZE - mem::size_of::<&'static str>();
 

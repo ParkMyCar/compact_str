@@ -1,26 +1,16 @@
 use alloc::borrow::Cow;
 use alloc::boxed::Box;
-use alloc::string::{
-    String,
-    ToString,
-};
+use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use core::str::FromStr;
-use core::{
-    num,
-    slice,
-};
+use core::{num, slice};
 
 use proptest::collection::SizeRange;
 use proptest::prelude::*;
 use test_case::test_case;
 use test_strategy::proptest;
 
-use crate::{
-    format_compact,
-    CompactString,
-    ToCompactString,
-};
+use crate::{format_compact, CompactString, ToCompactString};
 
 #[cfg(target_pointer_width = "64")]
 const MAX_SIZE: usize = 24;

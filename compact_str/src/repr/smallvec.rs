@@ -1,9 +1,6 @@
 use smallvec::SmallVec;
 
-use super::{
-    Repr,
-    MAX_SIZE,
-};
+use super::{Repr, MAX_SIZE};
 
 impl Repr {
     /// Consumes the [`Repr`] returning a byte vector in a [`SmallVec`]

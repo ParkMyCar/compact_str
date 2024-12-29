@@ -2,10 +2,7 @@ use core::str::Utf8Error;
 
 use bytes::Buf;
 
-use crate::{
-    CompactString,
-    Repr,
-};
+use crate::{CompactString, Repr};
 
 impl CompactString {
     /// Converts a buffer of bytes to a [`CompactString`]
@@ -77,10 +74,7 @@ mod test {
     use proptest::prelude::*;
     use test_strategy::proptest;
 
-    use crate::tests::{
-        rand_bytes,
-        rand_unicode,
-    };
+    use crate::tests::{rand_bytes, rand_unicode};
     use crate::CompactString;
 
     const MAX_SIZE: usize = core::mem::size_of::<String>();

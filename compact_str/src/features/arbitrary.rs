@@ -1,10 +1,6 @@
 //! Implements the [`arbitrary::Arbitrary`] trait for [`CompactString`]
 
-use arbitrary::{
-    Arbitrary,
-    Result,
-    Unstructured,
-};
+use arbitrary::{Arbitrary, Result, Unstructured};
 
 use crate::CompactString;
 
@@ -26,10 +22,7 @@ impl<'a> Arbitrary<'a> for CompactString {
 
 #[cfg(test)]
 mod test {
-    use arbitrary::{
-        Arbitrary,
-        Unstructured,
-    };
+    use arbitrary::{Arbitrary, Unstructured};
 
     use crate::CompactString;
 

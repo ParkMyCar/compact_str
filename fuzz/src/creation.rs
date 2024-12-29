@@ -9,11 +9,7 @@ use std::num;
 use std::str::FromStr;
 
 use arbitrary::Arbitrary;
-use compact_str::{
-    CompactString,
-    CompactStringExt,
-    ToCompactString,
-};
+use compact_str::{CompactString, CompactStringExt, ToCompactString};
 
 static EMPTY_STATIC_STR: &str = "";
 static SHORT_STATIC_STR: &str = "hello";
@@ -22,10 +18,7 @@ static LONG_STATIC_STR: &str = "this isn't too long, but longer than our inline 
 static HUGE_STATIC_STR: &str = include_str!("../../bench/data/moby10b.txt");
 
 use super::assert_properly_allocated;
-use crate::{
-    MAX_INLINE_LENGTH,
-    MIN_HEAP_CAPACITY,
-};
+use crate::{MAX_INLINE_LENGTH, MIN_HEAP_CAPACITY};
 
 #[derive(Arbitrary, Debug)]
 pub enum Creation<'a> {

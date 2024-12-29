@@ -2,10 +2,7 @@ use core::str::Utf8Error;
 
 use bytes::Buf;
 
-use super::{
-    Repr,
-    MAX_SIZE,
-};
+use super::{Repr, MAX_SIZE};
 use crate::UnwrapWithMsg;
 
 impl Repr {

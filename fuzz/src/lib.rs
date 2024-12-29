@@ -14,10 +14,7 @@ use arbitrary::Arbitrary;
 use compact_str::CompactString;
 use rand::rngs::SmallRng;
 use rand::SeedableRng;
-use rand_distr::{
-    Distribution,
-    SkewNormal,
-};
+use rand_distr::{Distribution, SkewNormal};
 
 const MAX_INLINE_LENGTH: usize = std::mem::size_of::<String>();
 const MIN_HEAP_CAPACITY: usize = std::mem::size_of::<usize>() * 4;

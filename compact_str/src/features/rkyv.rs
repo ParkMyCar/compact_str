@@ -1,17 +1,7 @@
 #![cfg_attr(docsrs, doc(cfg(feature = "rkyv")))]
 
-use rkyv::string::{
-    ArchivedString,
-    StringResolver,
-};
-use rkyv::{
-    Archive,
-    Deserialize,
-    DeserializeUnsized,
-    Fallible,
-    Serialize,
-    SerializeUnsized,
-};
+use rkyv::string::{ArchivedString, StringResolver};
+use rkyv::{Archive, Deserialize, DeserializeUnsized, Fallible, Serialize, SerializeUnsized};
 
 use crate::CompactString;
 

@@ -1,12 +1,11 @@
-use sqlx::database::HasValueRef;
 use sqlx::error::BoxDynError;
 #[cfg(any(
     feature = "sqlx-mysql",
     feature = "sqlx-postgres",
     feature = "sqlx-sqlite"
 ))]
-use sqlx::{database::HasArguments, encode::IsNull, Encode};
-use sqlx::{Database, Decode, Type, Value, ValueRef};
+use sqlx::{encode::IsNull, Encode};
+use sqlx::{Database, Decode, Type};
 
 use crate::{CompactString, ToCompactString};
 
@@ -28,9 +27,8 @@ where
     DB: Database,
     for<'x> &'x str: Decode<'x, DB> + Type<DB>,
 {
-    fn decode(value: <DB as HasValueRef<'r>>::ValueRef) -> Result<Self, BoxDynError> {
-        let value = value.to_owned();
-        let value: &str = value.try_decode()?;
+    fn decode(value: <DB as Database>::ValueRef<'r>) -> Result<Self, BoxDynError> {
+        let value = <&str as Decode<DB>>::decode(value)?;
         Ok(value.try_to_compact_string()?)
     }
 }
@@ -38,7 +36,10 @@ where
 #[cfg(feature = "sqlx-mysql")]
 #[cfg_attr(docsrs, doc(cfg(feature = "sqlx-mysql")))]
 impl<'q> Encode<'q, sqlx::MySql> for CompactString {
-    fn encode_by_ref(&self, buf: &mut <sqlx::MySql as HasArguments<'q>>::ArgumentBuffer) -> IsNull {
+    fn encode_by_ref(
+        &self,
+        buf: &mut <sqlx::MySql as Database>::ArgumentBuffer<'q>,
+    ) -> Result<IsNull, BoxDynError> {
         Encode::<'_, sqlx::MySql>::encode_by_ref(&self.as_str(), buf)
     }
 
@@ -58,8 +59,8 @@ impl<'q> Encode<'q, sqlx::MySql> for CompactString {
 impl<'q> Encode<'q, sqlx::Postgres> for CompactString {
     fn encode_by_ref(
         &self,
-        buf: &mut <sqlx::Postgres as HasArguments<'q>>::ArgumentBuffer,
-    ) -> IsNull {
+        buf: &mut <sqlx::Postgres as Database>::ArgumentBuffer<'q>,
+    ) -> Result<IsNull, BoxDynError> {
         Encode::<'_, sqlx::Postgres>::encode_by_ref(&self.as_str(), buf)
     }
 
@@ -85,14 +86,17 @@ impl sqlx::postgres::PgHasArrayType for CompactString {
 #[cfg(feature = "sqlx-sqlite")]
 #[cfg_attr(docsrs, doc(cfg(feature = "sqlx-sqlite")))]
 impl<'q> Encode<'q, sqlx::Sqlite> for CompactString {
-    fn encode(self, buf: &mut <sqlx::Sqlite as HasArguments<'q>>::ArgumentBuffer) -> IsNull {
+    fn encode(
+        self,
+        buf: &mut <sqlx::Sqlite as Database>::ArgumentBuffer<'q>,
+    ) -> Result<IsNull, BoxDynError> {
         Encode::<'_, sqlx::Sqlite>::encode(self.into_string(), buf)
     }
 
     fn encode_by_ref(
         &self,
-        buf: &mut <sqlx::Sqlite as HasArguments<'q>>::ArgumentBuffer,
-    ) -> IsNull {
+        buf: &mut <sqlx::Sqlite as Database>::ArgumentBuffer<'q>,
+    ) -> Result<IsNull, BoxDynError> {
         Encode::<'_, sqlx::Sqlite>::encode(alloc::string::String::from(self.as_str()), buf)
     }
 

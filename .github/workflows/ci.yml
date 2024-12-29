@@ -34,8 +34,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - toolchain: ${{ env.RUST_VERSION }}
-          - toolchain: ${{ env.RUST_NIGHTLY_VERSION }}
+          - toolchain: "1.83.0"
+          - toolchain: "nightly-2024-12-20"
 
     name: cargo test
     runs-on: ubuntu-latest
@@ -64,8 +64,8 @@ jobs:
 
       - name: Install toolchain
         run: |
-          rustup toolchain install ${{ env.RUST_NIGHTLYVERSION }} --no-self-update --profile minimal --component miri
-          rustup override set ${{ env.RUST_NIGHTLYVERSION }}
+          rustup toolchain install ${{ env.RUST_NIGHTLY_VERSION }} --no-self-update --profile minimal --component miri
+          rustup override set ${{ env.RUST_NIGHTLY_VERSION }}
       - name: Install cargo-nextest
         uses: taiki-e/install-action@nextest
       - uses: Swatinem/rust-cache@v2
@@ -85,8 +85,8 @@ jobs:
 
       - name: Install toolchain
         run: |
-          rustup toolchain install ${{ env.RUST_NIGHTLYVERSION }} --no-self-update --profile minimal
-          rustup override set ${{ env.RUST_NIGHTLYVERSION }}
+          rustup toolchain install ${{ env.RUST_NIGHTLY_VERSION }} --no-self-update --profile minimal
+          rustup override set ${{ env.RUST_NIGHTLY_VERSION }}
       - name: Install cargo-nextest
         uses: taiki-e/install-action@nextest
       - uses: Swatinem/rust-cache@v2

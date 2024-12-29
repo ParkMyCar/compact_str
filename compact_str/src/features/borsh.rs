@@ -4,17 +4,8 @@ use alloc::string::String;
 use alloc::vec::Vec;
 use core::str;
 
-use borsh::io::{
-    Error,
-    ErrorKind,
-    Read,
-    Result,
-    Write,
-};
-use borsh::{
-    BorshDeserialize,
-    BorshSerialize,
-};
+use borsh::io::{Error, ErrorKind, Read, Result, Write};
+use borsh::{BorshDeserialize, BorshSerialize};
 
 use crate::repr::MAX_SIZE;
 use crate::CompactString;
@@ -80,10 +71,7 @@ mod tests {
 
     use test_strategy::proptest;
 
-    use crate::repr::{
-        HEAP_MASK,
-        MAX_SIZE,
-    };
+    use crate::repr::{HEAP_MASK, MAX_SIZE};
     use crate::CompactString;
 
     fn assert_roundtrip(s: &str) {

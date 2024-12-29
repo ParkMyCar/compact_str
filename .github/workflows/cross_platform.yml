@@ -18,6 +18,7 @@ env:
   PROPTEST_CASES: 1000
   RUSTFLAGS: "-D warnings"
   MIRIFAGS: "-Zmiri-tag-raw-pointers -Zmiri-check-number-validity"
+  RUST_NIGHTLY_VERSION: "nightly-2024-12-20"
 
 jobs:
   cross-test:
@@ -67,8 +68,8 @@ jobs:
 
       - name: Install toolchain
         run: |
-          rustup toolchain install nightly --no-self-update --profile minimal --component miri --target ${{ matrix.target }}
-          rustup override set nightly
+          rustup toolchain install ${{ env.RUST_NIGHTLY_VERSION }} --no-self-update --profile minimal --component miri --target ${{ matrix.target }}
+          rustup override set ${{ env.RUST_NIGHTLY_VERSION }}
       - name: Install cross
         if: "matrix.cross"
         uses: taiki-e/install-action@cross

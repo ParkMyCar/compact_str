@@ -1,26 +1,16 @@
 use alloc::borrow::Cow;
 use alloc::boxed::Box;
-use alloc::string::{
-    String,
-    ToString,
-};
+use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use core::str::FromStr;
-use core::{
-    num,
-    slice,
-};
+use core::{num, slice};
 
 use proptest::collection::SizeRange;
 use proptest::prelude::*;
 use test_case::test_case;
 use test_strategy::proptest;
 
-use crate::{
-    format_compact,
-    CompactString,
-    ToCompactString,
-};
+use crate::{format_compact, CompactString, ToCompactString};
 
 #[cfg(target_pointer_width = "64")]
 const MAX_SIZE: usize = 24;
@@ -1231,7 +1221,9 @@ fn test_into_string_empty_str() {
     let new_str_len = new_string.len();
     let new_str_cap = new_string.capacity();
 
-    assert_eq!(String::new().as_ptr(), new_str_addr);
+    let empty_string = String::new();
+
+    assert_eq!(empty_string.as_ptr(), new_str_addr);
     assert_eq!(str_len, new_str_len);
     assert_eq!(str_len, new_str_cap);
 }
@@ -1247,7 +1239,9 @@ fn test_into_string_empty_static_str() {
     let new_str_len = new_string.len();
     let new_str_cap = new_string.capacity();
 
-    assert_eq!(String::new().as_ptr(), new_str_addr);
+    let empty_string = String::new();
+
+    assert_eq!(empty_string.as_ptr(), new_str_addr);
     assert_eq!(str_len, new_str_len);
     assert_eq!(str_len, new_str_cap);
 }

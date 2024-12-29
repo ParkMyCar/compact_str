@@ -5,23 +5,10 @@ use sqlx::error::BoxDynError;
     feature = "sqlx-postgres",
     feature = "sqlx-sqlite"
 ))]
-use sqlx::{
-    database::HasArguments,
-    encode::IsNull,
-    Encode,
-};
-use sqlx::{
-    Database,
-    Decode,
-    Type,
-    Value,
-    ValueRef,
-};
+use sqlx::{database::HasArguments, encode::IsNull, Encode};
+use sqlx::{Database, Decode, Type, Value, ValueRef};
 
-use crate::{
-    CompactString,
-    ToCompactString,
-};
+use crate::{CompactString, ToCompactString};
 
 #[cfg_attr(docsrs, doc(cfg(feature = "sqlx")))]
 impl<DB> Type<DB> for CompactString

@@ -4,16 +4,8 @@ use alloc::borrow::Cow;
 use alloc::boxed::Box;
 use alloc::string::String;
 
-use super::{
-    InlineBuffer,
-    Repr,
-    EMPTY,
-    MAX_SIZE,
-};
-use crate::{
-    CompactString,
-    UnwrapWithMsg,
-};
+use super::{InlineBuffer, Repr, EMPTY, MAX_SIZE};
+use crate::{CompactString, UnwrapWithMsg};
 
 impl FromIterator<char> for Repr {
     #[inline]

@@ -2,19 +2,8 @@
 
 use std::hint::black_box;
 
-use compact_str::{
-    format_compact,
-    CompactString,
-};
-use sqlx::{
-    query,
-    query_as,
-    query_with,
-    Acquire,
-    Arguments,
-    Executor,
-    Row,
-};
+use compact_str::{format_compact, CompactString};
+use sqlx::{query, query_as, query_with, Acquire, Arguments, Executor, Row};
 use tempfile::tempdir;
 
 const TITLE: CompactString = CompactString::const_new("Say hello!");

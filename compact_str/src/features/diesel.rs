@@ -3,13 +3,7 @@
 // Copied and adapted from
 // <https://github.com/diesel-rs/diesel/blob/ab70dd5ed1f96926a3e8d98ab42636eaac1e1594/diesel/src/type_impls/primitives.rs>
 
-use diesel::{
-    backend,
-    deserialize,
-    expression,
-    serialize,
-    sql_types,
-};
+use diesel::{backend, deserialize, expression, serialize, sql_types};
 
 use crate::CompactString;
 

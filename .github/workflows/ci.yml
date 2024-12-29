@@ -12,6 +12,8 @@ env:
   RUSTFLAGS: "-D warnings"
   PROPTEST_CASES: 10000
   MIRIFLAGS: "-Zmiri-strict-provenance"
+  RUST_VERSION: 1.83.0
+  RUST_NIGHTLY_VERSION: "nightly-2024-12-20"
 
 jobs:
   check:
@@ -21,7 +23,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install toolchain
-        run: rustup toolchain install stable --no-self-update --profile minimal
+        run: rustup toolchain install ${{ env.RUST_VERSION }} --no-self-update --profile minimal
       - uses: Swatinem/rust-cache@v2
 
       - name: Check
@@ -32,8 +34,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - toolchain: stable
-          - toolchain: nightly
+          - toolchain: ${{ env.RUST_VERSION }}
+          - toolchain: ${{ env.RUST_NIGHTLY_VERSION }}
 
     name: cargo test
     runs-on: ubuntu-latest
@@ -62,8 +64,8 @@ jobs:
 
       - name: Install toolchain
         run: |
-          rustup toolchain install nightly --no-self-update --profile minimal --component miri
-          rustup override set nightly
+          rustup toolchain install ${{ env.RUST_NIGHTLYVERSION }} --no-self-update --profile minimal --component miri
+          rustup override set ${{ env.RUST_NIGHTLYVERSION }}
       - name: Install cargo-nextest
         uses: taiki-e/install-action@nextest
       - uses: Swatinem/rust-cache@v2
@@ -83,8 +85,8 @@ jobs:
 
       - name: Install toolchain
         run: |
-          rustup toolchain install nightly --no-self-update --profile minimal
-          rustup override set nightly
+          rustup toolchain install ${{ env.RUST_NIGHTLYVERSION }} --no-self-update --profile minimal
+          rustup override set ${{ env.RUST_NIGHTLYVERSION }}
       - name: Install cargo-nextest
         uses: taiki-e/install-action@nextest
       - uses: Swatinem/rust-cache@v2
@@ -106,8 +108,8 @@ jobs:
 
       - name: Install toolchain
         run: |
-          rustup toolchain install nightly --no-self-update --profile minimal
-          rustup override set nightly
+          rustup toolchain install ${{ env.RUST_VERSION }} --no-self-update --profile minimal
+          rustup override set ${{ env.RUST_VERSION }}
       - uses: Swatinem/rust-cache@v2
         with:
           key: ${{ matrix.ex }}
@@ -127,8 +129,8 @@ jobs:
 
       - name: Install toolchain
         run: |
-          rustup toolchain install nightly --no-self-update --profile minimal
-          rustup override set nightly
+          rustup toolchain install ${{ env.RUST_VERSION }} --no-self-update --profile minimal
+          rustup override set ${{ env.RUST_VERSION }}
       - uses: Swatinem/rust-cache@v2
         with:
           key: ${{ matrix.ex }}-test

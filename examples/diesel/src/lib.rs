@@ -3,18 +3,12 @@
 mod models;
 mod schema;
 
-use compact_str::{
-    format_compact,
-    CompactString,
-};
+use compact_str::{format_compact, CompactString};
 use diesel::prelude::*;
 use diesel::sql_query;
 use tempfile::tempdir;
 
-use crate::models::{
-    NewTodo,
-    Todo,
-};
+use crate::models::{NewTodo, Todo};
 use crate::schema::todos;
 use crate::schema::todos::dsl::*;
 

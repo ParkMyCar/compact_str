@@ -1,10 +1,5 @@
 use compact_str::CompactString;
-use criterion::{
-    criterion_group,
-    criterion_main,
-    BenchmarkId,
-    Criterion,
-};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use smartstring::alias::String as SmartString;
 use smol_str::SmolStr;
 

@@ -2,10 +2,7 @@ use core::str::Utf8Error;
 
 use bytes::Buf;
 
-use super::{
-    Repr,
-    MAX_SIZE,
-};
+use super::{Repr, MAX_SIZE};
 use crate::UnwrapWithMsg;
 
 impl Repr {
@@ -161,8 +158,8 @@ mod test {
         let mut queue = alloc::collections::VecDeque::with_capacity(data.len());
 
         // create a non-contiguous slice of memory in queue
-        front.into_iter().copied().for_each(|x| queue.push_back(x));
-        back.into_iter().copied().for_each(|x| queue.push_front(x));
+        front.iter().copied().for_each(|x| queue.push_back(x));
+        back.iter().copied().for_each(|x| queue.push_front(x));
 
         // make sure it's non-contiguous
         let (a, b) = queue.as_slices();

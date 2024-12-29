@@ -3,18 +3,11 @@
 //! Adapted from the implementation in the `std` library at
 //! <https://github.com/rust-lang/rust/blob/b8214dc6c6fc20d0a660fb5700dca9ebf51ebe89/src/libcore/fmt/num.rs#L188-L266>
 
-use core::{
-    mem,
-    num,
-    ptr,
-};
+use core::{mem, num, ptr};
 
 use super::traits::IntoRepr;
 use super::Repr;
-use crate::{
-    ToCompactStringError,
-    UnwrapWithMsg,
-};
+use crate::{ToCompactStringError, UnwrapWithMsg};
 
 const DEC_DIGITS_LUT: &[u8] = b"\
       0001020304050607080910111213141516171819\

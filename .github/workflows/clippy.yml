@@ -10,6 +10,8 @@ name: Clippy
 env:
   CARGO_TERM_COLOR: "always"
   RUSTFLAGS: "-D warnings"
+  RUST_VERSION: 1.83.0
+  RUST_NIGHTLY_VERSION: "nightly-2024-12-20"
 
 jobs:
   fmt:
@@ -21,8 +23,8 @@ jobs:
 
       - name: Install toolchain
         run: |
-          rustup toolchain install nightly --no-self-update --profile minimal --component rustfmt
-          rustup override set nightly
+          rustup toolchain install ${{ env.RUST_VERSION }} --no-self-update --profile minimal --component rustfmt
+          rustup override set ${{ env.RUST_VERSION }}
 
       - name: Run rustfmt Workspace
         run: cargo fmt --all -- --check
@@ -38,15 +40,14 @@ jobs:
 
       - name: Install toolchain
         run: |
-          rustup toolchain install nightly --no-self-update --profile minimal --component clippy
-          rustup override set nightly
+          rustup toolchain install ${{ env.RUST_VERSION }} --no-self-update --profile minimal --component clippy
+          rustup override set ${{ env.RUST_VERSION }}
       - uses: Swatinem/rust-cache@v2
-
       - name: Run clippy Workspace
-        run: cargo clippy --no-deps --tests
+        run: cargo clippy --no-deps --tests --all-features
 
       - name: Run clippy compact_str
-        run: cargo clippy --no-deps --tests --manifest-path compact_str/Cargo.toml
+        run: cargo clippy --no-deps --tests --all-features --manifest-path compact_str/Cargo.toml
 
   doc:
     name: cargo doc
@@ -59,9 +60,8 @@ jobs:
 
       - name: Install toolchain
         run: |
-          rustup toolchain install nightly --no-self-update --profile minimal
-          rustup override set nightly
+          rustup toolchain install ${{ env.RUST_NIGHTLY_VERSION }} --no-self-update --profile minimal
+          rustup override set ${{ env.RUST_NIGHTLY_VERSION }}
       - uses: Swatinem/rust-cache@v2
-
       - name: Run rustdoc
         run: cargo doc --all-features --no-deps --manifest-path compact_str/Cargo.toml

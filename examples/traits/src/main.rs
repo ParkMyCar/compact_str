@@ -1,7 +1,4 @@
-use compact_str::{
-    CompactStringExt,
-    ToCompactString,
-};
+use compact_str::{CompactStringExt, ToCompactString};
 
 fn main() {
     // CompactStringExt allows you to join collections to create a CompactString

@@ -1,12 +1,6 @@
 //! Random benchmarks to determine if one bit of code is faster than another
 
-use criterion::{
-    black_box,
-    criterion_group,
-    criterion_main,
-    BenchmarkId,
-    Criterion,
-};
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 
 fn if_statement_min(c: &mut Criterion) {
     let mask = 192;

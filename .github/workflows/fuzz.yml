@@ -4,11 +4,11 @@ on:
       - main
   pull_request:
     paths:
-      - 'compact_str/**'
-      - 'fuzz/**'
-      - '.github/workflows/fuzz.yml'
-      - '!CHANGELOG.md'
-      - '!**/README.md'
+      - "compact_str/**"
+      - "fuzz/**"
+      - ".github/workflows/fuzz.yml"
+      - "!CHANGELOG.md"
+      - "!**/README.md"
   workflow_dispatch:
   # schedule:
   #   - cron: '0 01,13 * * *'
@@ -18,6 +18,7 @@ name: Fuzz
 env:
   CARGO_TERM_COLOR: "always"
   RUSTFLAGS: "-D warnings -Zrandomize-layout"
+  RUST_NIGHTLY_VERSION: "nightly-2024-12-20"
 
 jobs:
   libFuzzer_x86_64:
@@ -26,17 +27,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         name: Checkout compact_str
-          
+
       - name: Install toolchain
         run: |
-          rustup toolchain install nightly-2024-06-01 --no-self-update --profile minimal
-          rustup override set nightly-2024-06-01
+          rustup toolchain install ${{ env.RUST_NIGHTLY_VERSION }} --no-self-update
+          rustup override set ${{ env.RUST_NIGHTLY_VERSION }}
       - name: Install cargo-fuzz
-        uses: taiki-e/install-action@v2
-        with:
-          tool: cargo-fuzz
-      - uses: Swatinem/rust-cache@v2
+        run: |
+          cargo install cargo-fuzz
 
+      - uses: Swatinem/rust-cache@v2
 
       - name: Set Fuzz Time
         run: |

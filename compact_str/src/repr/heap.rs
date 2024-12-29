@@ -1,19 +1,9 @@
 use core::alloc::Layout;
-use core::{
-    cmp,
-    mem,
-    ptr,
-};
+use core::{cmp, mem, ptr};
 
 use super::capacity::Capacity;
-use super::{
-    Repr,
-    MAX_SIZE,
-};
-use crate::{
-    ReserveError,
-    UnwrapWithMsg,
-};
+use super::{Repr, MAX_SIZE};
+use crate::{ReserveError, UnwrapWithMsg};
 
 /// The minimum size we'll allocate on the heap is one usize larger than our max inline size
 const MIN_HEAP_SIZE: usize = MAX_SIZE + mem::size_of::<usize>();
@@ -353,15 +343,9 @@ pub(crate) unsafe fn do_alloc(layout: Layout) -> Result<ptr::NonNull<u8>, Reserv
 }
 
 mod heap_capacity {
-    use core::{
-        alloc,
-        ptr,
-    };
+    use core::{alloc, ptr};
 
-    use super::{
-        do_alloc,
-        StrBuffer,
-    };
+    use super::{do_alloc, StrBuffer};
     use crate::ReserveError;
 
     /// SAFETY: `capacity` must not be zero
@@ -397,15 +381,9 @@ mod heap_capacity {
 }
 
 mod inline_capacity {
-    use core::{
-        alloc,
-        ptr,
-    };
+    use core::{alloc, ptr};
 
-    use super::{
-        do_alloc,
-        StrBuffer,
-    };
+    use super::{do_alloc, StrBuffer};
     use crate::ReserveError;
 
     /// # SAFETY:
@@ -443,10 +421,7 @@ mod inline_capacity {
 mod test {
     use test_case::test_case;
 
-    use super::{
-        HeapBuffer,
-        MIN_HEAP_SIZE,
-    };
+    use super::{HeapBuffer, MIN_HEAP_SIZE};
 
     const EIGHTEEN_MB: usize = 18 * 1024 * 1024;
 

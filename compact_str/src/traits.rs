@@ -1,24 +1,11 @@
 use alloc::string::String;
-use core::fmt::{
-    self,
-    Write,
-};
+use core::fmt::{self, Write};
 use core::num;
 
-use castaway::{
-    match_type,
-    LifetimeFree,
-};
+use castaway::{match_type, LifetimeFree};
 
-use super::repr::{
-    IntoRepr,
-    Repr,
-};
-use crate::{
-    CompactString,
-    ToCompactStringError,
-    UnwrapWithMsg,
-};
+use super::repr::{IntoRepr, Repr};
+use crate::{CompactString, ToCompactStringError, UnwrapWithMsg};
 
 /// A trait for converting a value to a `CompactString`.
 ///
@@ -213,20 +200,14 @@ where
 
 #[cfg(test)]
 mod tests {
-    use alloc::string::{
-        String,
-        ToString,
-    };
+    use alloc::string::{String, ToString};
     use alloc::vec::Vec;
     use core::num;
 
     use proptest::prelude::*;
     use test_strategy::proptest;
 
-    use super::{
-        CompactStringExt,
-        ToCompactString,
-    };
+    use super::{CompactStringExt, ToCompactString};
     use crate::CompactString;
 
     #[test]

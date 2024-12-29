@@ -9,11 +9,7 @@ use std::num;
 use std::str::FromStr;
 
 use arbitrary::Arbitrary;
-use compact_str::{
-    CompactString,
-    CompactStringExt,
-    ToCompactString,
-};
+use compact_str::{CompactString, CompactStringExt, ToCompactString};
 
 static EMPTY_STATIC_STR: &str = "";
 static SHORT_STATIC_STR: &str = "hello";
@@ -22,10 +18,7 @@ static LONG_STATIC_STR: &str = "this isn't too long, but longer than our inline 
 static HUGE_STATIC_STR: &str = include_str!("../../bench/data/moby10b.txt");
 
 use super::assert_properly_allocated;
-use crate::{
-    MAX_INLINE_LENGTH,
-    MIN_HEAP_CAPACITY,
-};
+use crate::{MAX_INLINE_LENGTH, MIN_HEAP_CAPACITY};
 
 #[derive(Arbitrary, Debug)]
 pub enum Creation<'a> {
@@ -348,6 +341,23 @@ impl Creation<'_> {
                 }
             }
             BytesUnchecked(data) => {
+                // There's an edge case where the final byte of this buffer == `HEAP_MASK`, which
+                // is invalid UTF-8, but would result in us creating an inline variant, that
+                // identifies as  a heap variant. If a user ever tried to reference the data at
+                // all, we'd incorrectly try and read data from an invalid memory address, causing
+                // undefined behavior.
+                //
+                // To prevent breaking the fuzzer we special case this scenario.
+                let mut fixed_data;
+                let data = if data.len() == MAX_INLINE_LENGTH && data[data.len() - 1] >= 0b11000000
+                {
+                    fixed_data = data.to_vec();
+                    fixed_data[data.len() - 1] = 1;
+                    &fixed_data
+                } else {
+                    data
+                };
+
                 // The data provided might not be valid UTF-8. We mainly want to make sure we don't
                 // panic, and the data is written correctly. Before returning either of these types
                 // we'll make sure they contain valid data

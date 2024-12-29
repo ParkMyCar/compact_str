@@ -41,8 +41,8 @@ macro_rules! test_body {
             // insert a new todo
             let mut transaction = conn.begin().await?;
             let mut args = <$DbArguments>::default();
-            args.add(TITLE);
-            args.add(false);
+            args.add(TITLE).unwrap();
+            args.add(false).unwrap();
             let q = query_with("INSERT INTO todos (title, done) VALUES ($1, $2)", args);
             transaction.execute(q).await?;
             transaction.commit().await?;
@@ -68,8 +68,8 @@ macro_rules! test_body {
             let mut transaction = conn.begin().await?;
             println!("Hello!");
             let mut args = <$DbArguments>::default();
-            args.add(true);
-            args.add(id);
+            args.add(true).unwrap();
+            args.add(id).unwrap();
             let q = query_with("UPDATE todos SET done = $1 WHERE id = $2", args);
             transaction.execute(q).await?;
             transaction.commit().await?;
@@ -94,7 +94,7 @@ macro_rules! test_body {
             // we are done, delete our todo
             let mut transaction = conn.begin().await?;
             let mut args = <$DbArguments>::default();
-            args.add(TITLE);
+            args.add(TITLE).unwrap();
             let q = query_with("DELETE FROM todos WHERE title = $1", args);
             transaction.execute(q).await?;
             transaction.commit().await?;

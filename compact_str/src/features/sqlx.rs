@@ -5,7 +5,7 @@ use sqlx::error::BoxDynError;
     feature = "sqlx-sqlite"
 ))]
 use sqlx::{encode::IsNull, Encode};
-use sqlx::{Database, Decode, Type, Value, ValueRef};
+use sqlx::{Database, Decode, Type};
 
 use crate::{CompactString, ToCompactString};
 
@@ -28,8 +28,7 @@ where
     for<'x> &'x str: Decode<'x, DB> + Type<DB>,
 {
     fn decode(value: <DB as Database>::ValueRef<'r>) -> Result<Self, BoxDynError> {
-        let value = value.to_owned();
-        let value: &str = value.try_decode()?;
+        let value = <&str as Decode<DB>>::decode(value)?;
         Ok(value.try_to_compact_string()?)
     }
 }

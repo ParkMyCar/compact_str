@@ -37,7 +37,7 @@ pub struct Scenario<'a> {
     pub seed: u64,
 }
 
-impl<'a> Scenario<'a> {
+impl Scenario<'_> {
     /// Run the provided scenario, asserting for correct behavior
     pub fn run(self) {
         // Given random creation method, if we can create a string

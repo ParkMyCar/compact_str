@@ -42,12 +42,11 @@ jobs:
           rustup toolchain install ${{ env.RUST_VERSION }} --no-self-update --profile minimal --component clippy
           rustup override set ${{ env.RUST_VERSION }}
       - uses: Swatinem/rust-cache@v2
-
       - name: Run clippy Workspace
-        run: cargo clippy --no-deps --tests
+        run: cargo clippy --no-deps --tests --all-features
 
       - name: Run clippy compact_str
-        run: cargo clippy --no-deps --tests --manifest-path compact_str/Cargo.toml
+        run: cargo clippy --no-deps --tests --all-features --manifest-path compact_str/Cargo.toml
 
   doc:
     name: cargo doc
@@ -63,6 +62,5 @@ jobs:
           rustup toolchain install ${{ env.RUST_VERSION }} --no-self-update --profile minimal
           rustup override set ${{ env.RUST_VERSION }}
       - uses: Swatinem/rust-cache@v2
-
       - name: Run rustdoc
         run: cargo doc --all-features --no-deps --manifest-path compact_str/Cargo.toml

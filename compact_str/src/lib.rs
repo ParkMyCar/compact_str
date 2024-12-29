@@ -2043,7 +2043,7 @@ impl PartialEq<CompactString> for String {
     }
 }
 
-impl<'a> PartialEq<&'a CompactString> for String {
+impl PartialEq<&CompactString> for String {
     fn eq(&self, other: &&CompactString) -> bool {
         self.as_str() == other.as_str()
     }
@@ -2061,7 +2061,7 @@ impl PartialEq<CompactString> for str {
     }
 }
 
-impl<'a> PartialEq<&'a CompactString> for str {
+impl PartialEq<&'_ CompactString> for str {
     fn eq(&self, other: &&CompactString) -> bool {
         self == other.as_str()
     }
@@ -2079,13 +2079,13 @@ impl PartialEq<CompactString> for &&str {
     }
 }
 
-impl<'a> PartialEq<CompactString> for Cow<'a, str> {
+impl PartialEq<CompactString> for Cow<'_, str> {
     fn eq(&self, other: &CompactString) -> bool {
         *self == other.as_str()
     }
 }
 
-impl<'a> PartialEq<CompactString> for &Cow<'a, str> {
+impl PartialEq<CompactString> for &Cow<'_, str> {
     fn eq(&self, other: &CompactString) -> bool {
         *self == other.as_str()
     }
@@ -2097,8 +2097,8 @@ impl PartialEq<String> for &CompactString {
     }
 }
 
-impl<'a> PartialEq<Cow<'a, str>> for &CompactString {
-    fn eq(&self, other: &Cow<'a, str>) -> bool {
+impl PartialEq<Cow<'_, str>> for &CompactString {
+    fn eq(&self, other: &Cow<'_, str>) -> bool {
         self.as_str() == other
     }
 }
@@ -2423,7 +2423,7 @@ impl Extend<CompactString> for CompactString {
     }
 }
 
-impl<'a> Extend<CompactString> for Cow<'a, str> {
+impl Extend<CompactString> for Cow<'_, str> {
     fn extend<T: IntoIterator<Item = CompactString>>(&mut self, iter: T) {
         self.to_mut().extend(iter);
     }

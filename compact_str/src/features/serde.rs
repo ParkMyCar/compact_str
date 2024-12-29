@@ -98,7 +98,7 @@ mod tests {
     #[test]
     fn test_roundtrip() {
         let name = "Ferris the Crab";
-        let phones = vec!["1-800-111-1111", "2-222-222-2222"];
+        let phones = ["1-800-111-1111", "2-222-222-2222"];
         let address = Some("123 Sesame Street");
 
         let std = PersonString {
@@ -131,13 +131,13 @@ mod tests {
     fn proptest_roundtrip(name: String, phones: Vec<String>, address: Option<String>) {
         let std = PersonString {
             name: name.clone(),
-            phones: phones.iter().map(|s| s.clone()).collect(),
+            phones: phones.to_vec(),
             address: address.clone(),
         };
         let compact = PersonCompactString {
             name: name.into(),
-            phones: phones.iter().map(|s| CompactString::from(s)).collect(),
-            address: address.map(|s| CompactString::from(s)),
+            phones: phones.iter().map(CompactString::from).collect(),
+            address: address.map(CompactString::from),
         };
 
         let std_json = serde_json::to_string(&std).unwrap();

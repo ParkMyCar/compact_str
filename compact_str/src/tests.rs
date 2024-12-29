@@ -1221,7 +1221,9 @@ fn test_into_string_empty_str() {
     let new_str_len = new_string.len();
     let new_str_cap = new_string.capacity();
 
-    assert_eq!(String::new().as_ptr(), new_str_addr);
+    let empty_string = String::new();
+
+    assert_eq!(empty_string.as_ptr(), new_str_addr);
     assert_eq!(str_len, new_str_len);
     assert_eq!(str_len, new_str_cap);
 }
@@ -1237,7 +1239,9 @@ fn test_into_string_empty_static_str() {
     let new_str_len = new_string.len();
     let new_str_cap = new_string.capacity();
 
-    assert_eq!(String::new().as_ptr(), new_str_addr);
+    let empty_string = String::new();
+
+    assert_eq!(empty_string.as_ptr(), new_str_addr);
     assert_eq!(str_len, new_str_len);
     assert_eq!(str_len, new_str_cap);
 }

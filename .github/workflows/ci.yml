@@ -13,6 +13,7 @@ env:
   PROPTEST_CASES: 10000
   MIRIFLAGS: "-Zmiri-strict-provenance"
   RUST_VERSION: 1.83.0
+  RUST_NIGHTLY_VERSION: "nightly-2024-12-20"
 
 jobs:
   check:
@@ -33,8 +34,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - toolchain: stable
-          - toolchain: nightly
+          - toolchain: ${{ env.RUST_VERSION }}
+          - toolchain: ${{ env.RUST_NIGHTLY_VERSION }}
 
     name: cargo test
     runs-on: ubuntu-latest
@@ -63,8 +64,8 @@ jobs:
 
       - name: Install toolchain
         run: |
-          rustup toolchain install nightly --no-self-update --profile minimal --component miri
-          rustup override set nightly
+          rustup toolchain install ${{ env.RUST_NIGHTLYVERSION }} --no-self-update --profile minimal --component miri
+          rustup override set ${{ env.RUST_NIGHTLYVERSION }}
       - name: Install cargo-nextest
         uses: taiki-e/install-action@nextest
       - uses: Swatinem/rust-cache@v2
@@ -84,8 +85,8 @@ jobs:
 
       - name: Install toolchain
         run: |
-          rustup toolchain install nightly --no-self-update --profile minimal
-          rustup override set nightly
+          rustup toolchain install ${{ env.RUST_NIGHTLYVERSION }} --no-self-update --profile minimal
+          rustup override set ${{ env.RUST_NIGHTLYVERSION }}
       - name: Install cargo-nextest
         uses: taiki-e/install-action@nextest
       - uses: Swatinem/rust-cache@v2

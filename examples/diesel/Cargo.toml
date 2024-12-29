@@ -5,5 +5,5 @@ edition = "2021"
 
 [dependencies]
 compact_str = { version = "0.8.0-beta", path = "../../compact_str", features = ["diesel"] }
-diesel = { version = "2", features = ["sqlite"] }
+diesel = { version = "2.2.3", features = ["sqlite"] }
 tempfile = "3"

@@ -131,6 +131,11 @@ jobs:
         run: |
           rustup toolchain install ${{ env.RUST_VERSION }} --no-self-update --profile minimal
           rustup override set ${{ env.RUST_VERSION }}
+
+      - name: Install Third Party Libraries
+        run: |
+          sudo apt-get install sqlite3 libsqlite3-dev
+
       - uses: Swatinem/rust-cache@v2
         with:
           key: ${{ matrix.ex }}-test

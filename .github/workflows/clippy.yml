@@ -11,6 +11,7 @@ env:
   CARGO_TERM_COLOR: "always"
   RUSTFLAGS: "-D warnings"
   RUST_VERSION: 1.83.0
+  RUST_NIGHTLY_VERSION: "nightly-2024-12-20"
 
 jobs:
   fmt:
@@ -59,8 +60,8 @@ jobs:
 
       - name: Install toolchain
         run: |
-          rustup toolchain install ${{ env.RUST_VERSION }} --no-self-update --profile minimal
-          rustup override set ${{ env.RUST_VERSION }}
+          rustup toolchain install ${{ env.RUST_NIGHTLY_VERSION }} --no-self-update --profile minimal
+          rustup override set ${{ env.RUST_NIGHTLY_VERSION }}
       - uses: Swatinem/rust-cache@v2
       - name: Run rustdoc
         run: cargo doc --all-features --no-deps --manifest-path compact_str/Cargo.toml

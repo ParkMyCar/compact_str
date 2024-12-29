@@ -1,6 +1,14 @@
 # Upcoming
 ... all released!
 
+# 0.8.1
+### December 29, 2024
+
+## Changes
+
+* Fix `CompactString::retain` to not set the length of the string if the predicate panics.
+    * Implemented in [`#413`](https://github.com/ParkMyCar/compact_str/pull/413)
+
 # 0.8.0
 ### July 8, 2024
 

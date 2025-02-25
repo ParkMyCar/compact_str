@@ -576,17 +576,17 @@ impl Repr {
             // SAFETY: We just checked the discriminant to make sure we're heap allocated.
             let heap_buffer = unsafe { self.as_mut_heap() };
             // SAFTEY: Setting the length to 0 is always safe because the empty string is
-            // valid UTF-8. 
+            // valid UTF-8.
             unsafe { heap_buffer.set_len(0) };
 
             let ptr = heap_buffer.ptr.as_ptr();
             let cap = heap_buffer.capacity();
             (ptr, cap)
         } else {
-            // SAFETY: We just checked the discriminant above to see if we're heap allocated. 
+            // SAFETY: We just checked the discriminant above to see if we're heap allocated.
             let inline_buffer = unsafe { self.as_mut_inline() };
             // SAFTEY: Setting the length to 0 is always safe because the empty string is
-            // valid UTF-8. 
+            // valid UTF-8.
             unsafe { inline_buffer.set_len(0) };
 
             let ptr = self as *mut Self as *mut u8;

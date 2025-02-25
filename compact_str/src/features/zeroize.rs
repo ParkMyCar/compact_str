@@ -12,6 +12,8 @@ impl Zeroize for CompactString {
 
 #[cfg(test)]
 mod tests {
+    use std::string::ToString;
+
     use alloc::string::String;
     use test_strategy::proptest;
 
@@ -21,13 +23,19 @@ mod tests {
     #[test]
     fn smoketest_zeroize() {
         let mut short = CompactString::from("hello");
+        let mut control = short.as_str().to_string();
         short.zeroize();
-        assert_eq!(short, "\0\0\0\0\0");
+        assert_eq!(short, "");
+        control.zeroize();
+        assert_eq!(control, short);
 
         let mut long = CompactString::from("I am a long string that will be on the heap");
+        let mut control = long.as_str().to_string();
         long.zeroize();
-        assert_eq!(long, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0");
+        assert_eq!(long, "");
         assert!(long.is_heap_allocated());
+        control.zeroize();
+        assert_eq!(long, control);
     }
 
     #[proptest]

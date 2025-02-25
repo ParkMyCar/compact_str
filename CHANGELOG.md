@@ -1,6 +1,36 @@
 # Upcoming
 ... all released!
 
+# 0.9.0
+### February 24, 2025
+
+## Breaking Changes 💥
+
+* Removed deprecated methods `CompactString::new_inline(...)` and `CompactString::from_static_str(...)`.
+    * Implemented in [`fix: delete methods that are documented as deprecated in v0.9.0`](https://github.com/ParkMyCar/compact_str/pull/429)
+* Changed the `CompactStringExt::join_compact` and `CompactStringExt::concat_compact` to take a
+  reference (i.e. `&C`) to a type `C: IntoIterator<Item = &str>` instead of ownership of a type `C`
+  where `&C: IntoIterator<Item = &str>`.
+    * Fixed [`issue#412`](https://github.com/ParkMyCar/compact_str/issues/412) which made the
+      `CompactStringExt` more ergonomic.
+    * Implemented in [`feat: tweak the CompactStringExt trait so join_compact and concat_compact work better`](https://github.com/ParkMyCar/compact_str/pull/418)
+
+## Changes
+* Fixed the `borsch` feature in `no_std` environments.
+    * Implemented in [`fix: The borsch feature with no-std`](https://github.com/ParkMyCar/compact_str/pull/428).
+* Implemented the [`zeroize::Zeroize`](https://crates.io/crates/zeroize) trait for `CompactString`.
+    * Implemented in [`feat: Add support for zeroize::Zeroize`](https://github.com/ParkMyCar/compact_str/pull/421).
+* Fixed the `CompactString::retain` method to not set length if the predicate panics.
+    * Implemented in [`fix: retain not set len if predicate panics`](https://github.com/ParkMyCar/compact_str/pull/413).
+* Implement `sqlx::postgres::PgHasArrayType` for `CompactString`.
+    * Implemented in [`impl sqlx::postgres::PgHasArrayType`](https://github.com/ParkMyCar/compact_str/pull/399).
+* Bump the [`markup`](https://crates.io/crates/markup) dependency to `v0.15`.
+    * Implemented in [`deps: upgrade to markup v0.8`](https://github.com/ParkMyCar/compact_str/pull/415).
+* Bump the [`rkyv`](https://crates.io/crates/rkyv) dependency to `v0.8`.
+    * Implemented in [`deps: upgrade to rkyv v0.8`](https://github.com/ParkMyCar/compact_str/pull/409).
+* Bump the [`sqlx`](https://crates.io/crates/sqlx) dependency to `v0.8`.
+    * Implemented in [`deps: upgrade to sqlx v0.8`](https://github.com/ParkMyCar/compact_str/pull/408).
+
 # 0.8.0
 ### July 8, 2024
 

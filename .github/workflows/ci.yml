@@ -34,7 +34,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - toolchain: "1.83.0"
+          - toolchain: "1.85.0"
           - toolchain: "nightly-2024-12-20"
 
     name: cargo test

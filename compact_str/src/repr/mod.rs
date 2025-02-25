@@ -328,7 +328,7 @@ impl Repr {
         let slice = unsafe { self.as_mut_buf() };
         let push_buffer = &mut slice[len..len + str_len];
 
-        debug_assert_eq!(push_buffer.len(), s.as_bytes().len());
+        debug_assert_eq!(push_buffer.len(), s.len());
 
         // Copy the string into our buffer
         push_buffer.copy_from_slice(s.as_bytes());

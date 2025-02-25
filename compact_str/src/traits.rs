@@ -233,11 +233,7 @@ mod tests {
         let compact = values.iter().map(|x| x.to_string()).join_compact("/");
         assert_eq!(compact, "foo/bar/baz");
 
-        let compact = values
-            .clone()
-            .into_iter()
-            .map(|x| x.trim())
-            .join_compact("-");
+        let compact = values.into_iter().map(|x| x.trim()).join_compact("-");
         assert_eq!(compact, "foo-bar-baz");
 
         let compact = values

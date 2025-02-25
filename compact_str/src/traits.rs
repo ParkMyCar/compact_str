@@ -132,11 +132,11 @@ impl<T: fmt::Display> ToCompactString for T {
 /// let words = vec!["☀️", "🌕", "🌑", "☀️"];
 ///
 /// // directly concatenate all the words together
-/// let concat = words.concat_compact();
+/// let concat = words.iter().concat_compact();
 /// assert_eq!(concat, "☀️🌕🌑☀️");
 ///
 /// // join the words, with a separator
-/// let join = words.join_compact(" ➡️ ");
+/// let join = words.iter().join_compact(" ➡️ ");
 /// assert_eq!(join, "☀️ ➡️ 🌕 ➡️ 🌑 ➡️ ☀️");
 /// ```
 pub trait CompactStringExt {

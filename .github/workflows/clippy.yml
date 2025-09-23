@@ -10,8 +10,8 @@ name: Clippy
 env:
   CARGO_TERM_COLOR: "always"
   RUSTFLAGS: "-D warnings"
-  RUST_VERSION: 1.85.0
-  RUST_NIGHTLY_VERSION: "nightly-2024-12-20"
+  RUST_VERSION: 1.90.0
+  RUST_NIGHTLY_VERSION: "nightly-2025-09-20"
 
 jobs:
   fmt:

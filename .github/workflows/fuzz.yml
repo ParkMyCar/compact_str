@@ -18,7 +18,7 @@ name: Fuzz
 env:
   CARGO_TERM_COLOR: "always"
   RUSTFLAGS: "-D warnings -Zrandomize-layout"
-  RUST_NIGHTLY_VERSION: "nightly-2024-12-20"
+  RUST_NIGHTLY_VERSION: "nightly-2025-09-20"
 
 jobs:
   libFuzzer_x86_64:

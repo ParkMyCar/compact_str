@@ -18,7 +18,7 @@ env:
   PROPTEST_CASES: 1000
   RUSTFLAGS: "-D warnings"
   MIRIFAGS: "-Zmiri-tag-raw-pointers -Zmiri-check-number-validity"
-  RUST_NIGHTLY_VERSION: "nightly-2024-12-20"
+  RUST_NIGHTLY_VERSION: "nightly-2025-09-20"
 
 jobs:
   cross-test:

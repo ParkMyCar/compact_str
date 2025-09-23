@@ -1,6 +1,3 @@
-// defmt only works in ELF binaries, and using defmt makes Windows CI fail
-#![cfg(not(target_os = "windows"))]
-
 use defmt::Format;
 
 use crate::{CompactString, Drain, ReserveError, ToCompactStringError, Utf16Error};

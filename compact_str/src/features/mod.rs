@@ -6,7 +6,8 @@ mod arbitrary;
 mod borsh;
 #[cfg(feature = "bytes")]
 mod bytes;
-#[cfg(feature = "defmt")]
+// `defmt` only works in ELF binaries, and using `defmt` makes Windows CI fail.
+#[cfg(all(feature = "defmt", not(target_os = "windows")))]
 mod defmt;
 #[cfg(feature = "diesel")]
 mod diesel;

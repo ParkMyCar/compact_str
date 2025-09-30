@@ -15,9 +15,16 @@ impl_reflect_opaque!((in crate::CompactString)CompactString(
 
 #[cfg(test)]
 mod tests {
-    use bevy_reflect::{FromReflect, PartialReflect};
-
     use crate::CompactString;
+    use bevy_reflect::{FromReflect, PartialReflect, Reflect};
+
+    #[derive(Debug, Reflect, Eq, PartialEq)]
+    struct MyTestComponentStruct {
+        pub value: CompactString,
+    }
+    
+    #[derive(Debug, Reflect, Eq, PartialEq)]
+    struct MyTestComponentTuple(pub CompactString);
 
     #[test]
     fn should_partial_eq_compactstring() {
@@ -40,5 +47,21 @@ mod tests {
         let string = CompactString::new("abc".repeat(100));
         let output = <CompactString as FromReflect>::from_reflect(&string);
         assert_eq!(Some(string), output);
+    }
+
+    #[test]
+    fn struct_with_compactstring_should_from_reflect() {
+        let string = CompactString::new("hello_world.rs");
+        let my_struct = MyTestComponentStruct { value: string };
+        let output = <MyTestComponentStruct as FromReflect>::from_reflect(&my_struct);
+        assert_eq!(Some(my_struct), output);
+    }
+
+    #[test]
+    fn tuple_with_compactstring_should_from_reflect() {
+        let string = CompactString::new("hello_world.rs");
+        let my_struct = MyTestComponentTuple(string);
+        let output = <MyTestComponentTuple as FromReflect>::from_reflect(&my_struct);
+        assert_eq!(Some(my_struct), output);
     }
 }

@@ -22,7 +22,6 @@ mod tests {
     struct MyTestComponentStruct {
         pub value: CompactString,
     }
-    
     #[derive(Debug, Reflect, Eq, PartialEq)]
     struct MyTestComponentTuple(pub CompactString);
 

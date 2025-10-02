@@ -5,5 +5,5 @@ edition = "2021"
 
 [dependencies]
 compact_str = { version = "0.9.0", features = ["bevy-reflect"], path="../../compact_str" }
-bevy_ecs = "0.17.0-rc.1"
-bevy_reflect = "0.17.0-rc.1"
+bevy_ecs = "0.17.1"
+bevy_reflect = "0.17.1"

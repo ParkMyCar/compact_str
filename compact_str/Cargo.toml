@@ -5,6 +5,7 @@ version = "0.9.0"
 authors = ["Parker Timmerman <parker@parkertimmerman.com>"]
 edition = "2021"
 license = "MIT"
+rust-version = "1.81" # For core::error::Error
 homepage = "https://github.com/ParkMyCar/compact_str"
 repository = "https://github.com/ParkMyCar/compact_str"
 readme = "../README.md"

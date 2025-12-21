@@ -166,7 +166,7 @@ impl_NonZero_IntoRepr!(num::NonZeroI128);
 /// All of these `num_chars(...)` methods are kind of crazy, but they are necessary.
 ///
 /// An alternate way to calculate the number of digits in a value is to do:
-/// ```
+/// ```no_run
 /// let val = 42;
 /// let num_digits = ((val as f32).log10().floor()) as usize + 1;
 /// assert_eq!(num_digits, 2);
@@ -177,7 +177,7 @@ impl_NonZero_IntoRepr!(num::NonZeroI128);
 ///
 /// For example, consider this relatively large value...
 ///
-/// ```
+/// ```no_run
 /// let val = 9999995;
 /// let num_digits = ((val as f32).log10().floor()) as usize + 1;
 ///
@@ -187,7 +187,7 @@ impl_NonZero_IntoRepr!(num::NonZeroI128);
 ///
 /// you can use `f64` to get better precision, e.g.
 ///
-/// ```
+/// ```no_run
 /// let val = 9999995;
 /// let num_digits = ((val as f64).log10().floor()) as usize + 1;
 ///
@@ -197,7 +197,7 @@ impl_NonZero_IntoRepr!(num::NonZeroI128);
 ///
 /// ...but still not precise enough!
 ///
-/// ```
+/// ```no_run
 /// let val: u64 = 9999999999999999999;
 /// let num_digits = ((val as f64).log10().floor()) as usize + 1;
 ///

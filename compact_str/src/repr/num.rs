@@ -166,7 +166,7 @@ impl_NonZero_IntoRepr!(num::NonZeroI128);
 /// All of these `num_chars(...)` methods are kind of crazy, but they are necessary.
 ///
 /// An alternate way to calculate the number of digits in a value is to do:
-/// ```
+/// ```no_run
 /// let val = 42;
 /// let num_digits = ((val as f32).log10().floor()) as usize + 1;
 /// assert_eq!(num_digits, 2);
@@ -177,7 +177,7 @@ impl_NonZero_IntoRepr!(num::NonZeroI128);
 ///
 /// For example, consider this relatively large value...
 ///
-/// ```
+/// ```no_run
 /// let val = 9999995;
 /// let num_digits = ((val as f32).log10().floor()) as usize + 1;
 ///
@@ -187,7 +187,7 @@ impl_NonZero_IntoRepr!(num::NonZeroI128);
 ///
 /// you can use `f64` to get better precision, e.g.
 ///
-/// ```
+/// ```no_run
 /// let val = 9999995;
 /// let num_digits = ((val as f64).log10().floor()) as usize + 1;
 ///
@@ -197,7 +197,7 @@ impl_NonZero_IntoRepr!(num::NonZeroI128);
 ///
 /// ...but still not precise enough!
 ///
-/// ```
+/// ```no_run
 /// let val: u64 = 9999999999999999999;
 /// let num_digits = ((val as f64).log10().floor()) as usize + 1;
 ///
@@ -420,7 +420,7 @@ mod tests {
 
     #[test]
     fn test_from_u8_sanity() {
-        let vals = [u8::MIN, u8::MIN + 1, 0, 42, u8::MAX - 1, u8::MAX];
+        let vals = [u8::MIN, 1, 0, 42, u8::MAX - 1, u8::MAX];
 
         for x in &vals {
             let repr = u8::into_repr(*x).unwrap();
@@ -440,7 +440,7 @@ mod tests {
 
     #[test]
     fn test_from_u16_sanity() {
-        let vals = [u16::MIN, u16::MIN + 1, 0, 42, u16::MAX - 1, u16::MAX];
+        let vals = [u16::MIN, 1, 0, 42, u16::MAX - 1, u16::MAX];
 
         for x in &vals {
             let repr = u16::into_repr(*x).unwrap();
@@ -460,7 +460,7 @@ mod tests {
 
     #[test]
     fn test_from_u32_sanity() {
-        let vals = [u32::MIN, u32::MIN + 1, 0, 42, u32::MAX - 1, u32::MAX];
+        let vals = [u32::MIN, 1, 0, 42, u32::MAX - 1, u32::MAX];
 
         for x in &vals {
             let repr = u32::into_repr(*x).unwrap();
@@ -480,7 +480,7 @@ mod tests {
 
     #[test]
     fn test_from_u64_sanity() {
-        let vals = [u64::MIN, u64::MIN + 1, 0, 42, u64::MAX - 1, u64::MAX];
+        let vals = [u64::MIN, 1, 0, 42, u64::MAX - 1, u64::MAX];
 
         for x in &vals {
             let repr = u64::into_repr(*x).unwrap();
@@ -500,14 +500,7 @@ mod tests {
 
     #[test]
     fn test_from_usize_sanity() {
-        let vals = [
-            usize::MIN,
-            usize::MIN + 1,
-            0,
-            42,
-            usize::MAX - 1,
-            usize::MAX,
-        ];
+        let vals = [usize::MIN, 1, 0, 42, usize::MAX - 1, usize::MAX];
 
         for x in &vals {
             let repr = usize::into_repr(*x).unwrap();
@@ -534,7 +527,7 @@ mod tests {
 
     #[test]
     fn test_from_u128_sanity() {
-        let vals = [u128::MIN, u128::MIN + 1, 0, 42, u128::MAX - 1, u128::MAX];
+        let vals = [u128::MIN, 1, 0, 42, u128::MAX - 1, u128::MAX];
 
         for x in &vals {
             let repr = u128::into_repr(*x).unwrap();

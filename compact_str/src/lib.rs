@@ -1158,7 +1158,7 @@ impl CompactString {
     /// The resulting capactity is never less than the size of 3×[`usize`],
     /// i.e. the capacity than can be inlined.
     ///
-    /// This method is effectively the same as calling [`string.shrink_to(0)`].
+    /// This method is effectively the same as calling `string.shrink_to(0)`.
     ///
     /// # Examples
     ///
@@ -1374,6 +1374,7 @@ impl CompactString {
         from_int: impl Fn(u16) -> u16,
         from_bytes: impl Fn([u8; 2]) -> u16,
     ) -> Result<Self, Utf16Error> {
+        #[allow(clippy::manual_is_multiple_of)]
         if v.len() % 2 != 0 {
             // Input had an odd number of bytes.
             return Err(Utf16Error(()));
@@ -1415,6 +1416,7 @@ impl CompactString {
         // Notice: We write the string "�" instead of the character '�', so the character does not
         //         have to be formatted before it can be appended.
 
+        #[allow(clippy::manual_is_multiple_of)]
         let (trailing_extra_byte, v) = match v.len() % 2 != 0 {
             true => (true, &v[..v.len() - 1]),
             false => (false, v),
@@ -2198,12 +2200,11 @@ impl From<CompactString> for alloc::rc::Rc<str> {
     }
 }
 
-#[cfg(feature = "std")]
-impl From<CompactString> for Box<dyn std::error::Error + Send + Sync> {
+impl From<CompactString> for Box<dyn core::error::Error + Send + Sync> {
     fn from(value: CompactString) -> Self {
         struct StringError(CompactString);
 
-        impl std::error::Error for StringError {
+        impl core::error::Error for StringError {
             #[allow(deprecated)]
             fn description(&self) -> &str {
                 &self.0
@@ -2227,11 +2228,10 @@ impl From<CompactString> for Box<dyn std::error::Error + Send + Sync> {
     }
 }
 
-#[cfg(feature = "std")]
-impl From<CompactString> for Box<dyn std::error::Error> {
+impl From<CompactString> for Box<dyn core::error::Error> {
     fn from(value: CompactString) -> Self {
-        let err1: Box<dyn std::error::Error + Send + Sync> = From::from(value);
-        let err2: Box<dyn std::error::Error> = err1;
+        let err1: Box<dyn core::error::Error + Send + Sync> = From::from(value);
+        let err2: Box<dyn core::error::Error> = err1;
         err2
     }
 }
@@ -2584,9 +2584,7 @@ impl fmt::Display for ReserveError {
     }
 }
 
-#[cfg(feature = "std")]
-#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
-impl std::error::Error for ReserveError {}
+impl core::error::Error for ReserveError {}
 
 /// A possible error value if [`ToCompactString::try_to_compact_string()`] failed.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -2621,10 +2619,8 @@ impl From<fmt::Error> for ToCompactStringError {
     }
 }
 
-#[cfg(feature = "std")]
-#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
-impl std::error::Error for ToCompactStringError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+impl core::error::Error for ToCompactStringError {
+    fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
         match self {
             ToCompactStringError::Reserve(err) => Some(err),
             ToCompactStringError::Fmt(err) => Some(err),

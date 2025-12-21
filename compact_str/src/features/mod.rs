@@ -6,6 +6,8 @@ mod arbitrary;
 mod borsh;
 #[cfg(feature = "bytes")]
 mod bytes;
+#[cfg(feature = "defmt")]
+mod defmt;
 #[cfg(feature = "diesel")]
 mod diesel;
 #[cfg(feature = "markup")]
@@ -22,6 +24,8 @@ mod serde;
 mod smallvec;
 #[cfg(feature = "sqlx")]
 mod sqlx;
+#[cfg(feature = "utoipa")]
+mod utoipa;
 #[cfg(feature = "zeroize")]
 mod zeroize;
 #[cfg(feature = "bevy-reflect")]

@@ -420,7 +420,7 @@ mod tests {
 
     #[test]
     fn test_from_u8_sanity() {
-        let vals = [u8::MIN, u8::MIN + 1, 0, 42, u8::MAX - 1, u8::MAX];
+        let vals = [u8::MIN, 1, 0, 42, u8::MAX - 1, u8::MAX];
 
         for x in &vals {
             let repr = u8::into_repr(*x).unwrap();
@@ -440,7 +440,7 @@ mod tests {
 
     #[test]
     fn test_from_u16_sanity() {
-        let vals = [u16::MIN, u16::MIN + 1, 0, 42, u16::MAX - 1, u16::MAX];
+        let vals = [u16::MIN, 1, 0, 42, u16::MAX - 1, u16::MAX];
 
         for x in &vals {
             let repr = u16::into_repr(*x).unwrap();
@@ -460,7 +460,7 @@ mod tests {
 
     #[test]
     fn test_from_u32_sanity() {
-        let vals = [u32::MIN, u32::MIN + 1, 0, 42, u32::MAX - 1, u32::MAX];
+        let vals = [u32::MIN, 1, 0, 42, u32::MAX - 1, u32::MAX];
 
         for x in &vals {
             let repr = u32::into_repr(*x).unwrap();
@@ -480,7 +480,7 @@ mod tests {
 
     #[test]
     fn test_from_u64_sanity() {
-        let vals = [u64::MIN, u64::MIN + 1, 0, 42, u64::MAX - 1, u64::MAX];
+        let vals = [u64::MIN, 1, 0, 42, u64::MAX - 1, u64::MAX];
 
         for x in &vals {
             let repr = u64::into_repr(*x).unwrap();
@@ -502,7 +502,7 @@ mod tests {
     fn test_from_usize_sanity() {
         let vals = [
             usize::MIN,
-            usize::MIN + 1,
+            1,
             0,
             42,
             usize::MAX - 1,
@@ -534,7 +534,7 @@ mod tests {
 
     #[test]
     fn test_from_u128_sanity() {
-        let vals = [u128::MIN, u128::MIN + 1, 0, 42, u128::MAX - 1, u128::MAX];
+        let vals = [u128::MIN, 1, 0, 42, u128::MAX - 1, u128::MAX];
 
         for x in &vals {
             let repr = u128::into_repr(*x).unwrap();

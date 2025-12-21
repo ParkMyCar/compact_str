@@ -500,14 +500,7 @@ mod tests {
 
     #[test]
     fn test_from_usize_sanity() {
-        let vals = [
-            usize::MIN,
-            1,
-            0,
-            42,
-            usize::MAX - 1,
-            usize::MAX,
-        ];
+        let vals = [usize::MIN, 1, 0, 42, usize::MAX - 1, usize::MAX];
 
         for x in &vals {
             let repr = usize::into_repr(*x).unwrap();

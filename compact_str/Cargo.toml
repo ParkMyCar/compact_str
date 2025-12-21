@@ -5,7 +5,7 @@ version = "0.9.0"
 authors = ["Parker Timmerman <parker@parkertimmerman.com>"]
 edition = "2021"
 license = "MIT"
-rust-version = "1.81" # For core::error::Error
+rust-version = "1.81"                                                                                        # For core::error::Error
 homepage = "https://github.com/ParkMyCar/compact_str"
 repository = "https://github.com/ParkMyCar/compact_str"
 readme = "../README.md"
@@ -17,6 +17,7 @@ default = ["std"]
 std = []
 
 arbitrary = ["dep:arbitrary"]
+bevy-reflect = ["dep:bevy_reflect", "serde"]
 borsh = ["dep:borsh"]
 bytes = ["dep:bytes"]
 defmt = ["dep:defmt"]
@@ -31,26 +32,30 @@ sqlx = ["dep:sqlx", "std"]
 sqlx-mysql = ["sqlx", "sqlx/mysql"]
 sqlx-postgres = ["sqlx", "sqlx/postgres"]
 sqlx-sqlite = ["sqlx", "sqlx/sqlite"]
-zeroize = ["dep:zeroize"]
-bevy-reflect = ["dep:bevy_reflect", "serde"]
 utoipa = ["dep:utoipa", "std"]
+zeroize = ["dep:zeroize"]
 
 [dependencies]
 arbitrary = { version = "1", optional = true, default-features = false }
+bevy_reflect = { version = "0.17.1", optional = true }
 borsh = { version = "1", optional = true }
 bytes = { version = "1", optional = true }
 defmt = { version = "1", optional = true }
 diesel = { version = "2", optional = true, default-features = false }
 markup = { version = "0.15", optional = true, default-features = false }
-proptest = { version = "1", optional = true, default-features = false, features = ["std"] }
+proptest = { version = "1", optional = true, default-features = false, features = [
+    "std",
+] }
 quickcheck = { version = "1", optional = true, default-features = false }
 rkyv = { version = "0.8", optional = true, default-features = false }
-serde = { version = "1", optional = true, default-features = false, features = ["derive", "alloc"] }
+serde = { version = "1", optional = true, default-features = false, features = [
+    "derive",
+    "alloc",
+] }
 smallvec = { version = "1", optional = true, features = ["union"] }
 sqlx = { version = "0.8", optional = true, default-features = false }
-zeroize = { version = "1", optional = true, default-features = false }
-bevy_reflect = { version = "0.17.1", optional = true }
 utoipa = { version = "5", optional = true }
+zeroize = { version = "1", optional = true, default-features = false }
 
 castaway = { version = "0.2.3", default-features = false, features = ["alloc"] }
 cfg-if = "1"

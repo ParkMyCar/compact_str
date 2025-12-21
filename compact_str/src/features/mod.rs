@@ -2,6 +2,8 @@
 
 #[cfg(feature = "arbitrary")]
 mod arbitrary;
+#[cfg(feature = "bevy-reflect")]
+mod bevy_reflect;
 #[cfg(feature = "borsh")]
 mod borsh;
 #[cfg(feature = "bytes")]
@@ -28,5 +30,3 @@ mod sqlx;
 mod utoipa;
 #[cfg(feature = "zeroize")]
 mod zeroize;
-#[cfg(feature = "bevy-reflect")]
-mod bevy_reflect;

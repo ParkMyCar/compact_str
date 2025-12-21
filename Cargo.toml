@@ -8,6 +8,7 @@ members = [
     "examples/serde",
     "examples/sqlx",
     "examples/traits",
+    "examples/utoipa",
     "fuzz",
 ]
 exclude = ["compact_str"]

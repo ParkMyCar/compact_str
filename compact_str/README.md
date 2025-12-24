@@ -6,7 +6,7 @@
 
 [![version on crates.io](https://img.shields.io/crates/v/compact_str)](https://crates.io/crates/compact_str)
 ![Minimum supported Rust Version: 1.60](https://img.shields.io/badge/MSRV-1.60-blueviolet)
-[![MIT license](https://img.shields.io/crates/l/compact_str)](LICENSE)
+[![MIT license](https://img.shields.io/crates/l/compact_str)](./LICENSE)
 
 [![Continuous Integration Status](https://github.com/ParkMyCar/compact_str/actions/workflows/ci.yml/badge.svg?branch=main&event=push)](https://github.com/ParkMyCar/compact_str/actions/workflows/ci.yml)
 [![Cross Platform Status](https://github.com/ParkMyCar/compact_str/actions/workflows/cross_platform.yml/badge.svg?branch=main&event=push)](https://github.com/ParkMyCar/compact_str/actions/workflows/cross_platform.yml)

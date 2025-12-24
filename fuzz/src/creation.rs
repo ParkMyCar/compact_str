@@ -635,7 +635,7 @@ impl Creation<'_> {
                         NumType::I128(val) => (val.to_compact_string(), val.to_string()),
                         NumType::Usize(val) => (val.to_compact_string(), val.to_string()),
                         NumType::Isize(val) => (val.to_compact_string(), val.to_string()),
-                        // Note: The formatting of floats by `ryu` sometimes differs from that of
+                        // Note: The formatting of floats by `zmij` sometimes differs from that of
                         // `std`, so instead of asserting equality with `std` we just make sure the
                         // value roundtrips
                         NumType::F32(val) => {

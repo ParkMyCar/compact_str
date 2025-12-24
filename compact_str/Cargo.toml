@@ -61,7 +61,7 @@ castaway = { version = "0.2.3", default-features = false, features = ["alloc"] }
 cfg-if = "1"
 itoa = "1"
 rustversion = "1"
-ryu = "1"
+zmij = "0.1"
 static_assertions = "1"
 
 [dev-dependencies]

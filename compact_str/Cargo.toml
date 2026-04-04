@@ -34,6 +34,7 @@ sqlx-postgres = ["sqlx", "sqlx/postgres"]
 sqlx-sqlite = ["sqlx", "sqlx/sqlite"]
 utoipa = ["dep:utoipa", "std"]
 zeroize = ["dep:zeroize"]
+valuable = ["dep:valuable"]
 
 [dependencies]
 arbitrary = { version = "1", optional = true, default-features = false }
@@ -56,6 +57,7 @@ smallvec = { version = "1", optional = true, features = ["union"] }
 sqlx = { version = "0.8", optional = true, default-features = false }
 utoipa = { version = "5", optional = true }
 zeroize = { version = "1", optional = true, default-features = false }
+valuable = { version = "0.1.1", optional = true, default-features = false }
 
 castaway = { version = "0.2.3", default-features = false, features = ["alloc"] }
 cfg-if = "1"

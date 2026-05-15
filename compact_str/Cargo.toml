@@ -23,6 +23,7 @@ bytes = ["dep:bytes"]
 defmt = ["dep:defmt"]
 diesel = ["dep:diesel"]
 markup = ["dep:markup"]
+schemars = ["dep:schemars"]
 proptest = ["dep:proptest"]
 quickcheck = ["dep:quickcheck"]
 rkyv = ["dep:rkyv"]
@@ -43,6 +44,7 @@ bytes = { version = "1", optional = true }
 defmt = { version = "1", optional = true }
 diesel = { version = "2", optional = true, default-features = false }
 markup = { version = "0.15", optional = true, default-features = false }
+schemars = { version = "1", optional = true, default-features = false }
 proptest = { version = "1", optional = true, default-features = false, features = [
     "std",
 ] }

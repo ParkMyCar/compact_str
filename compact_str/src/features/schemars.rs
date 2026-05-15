@@ -1,3 +1,5 @@
+#![cfg_attr(docsrs, doc(cfg(feature = "schemars")))]
+
 use alloc::borrow::Cow;
 use alloc::string::String;
 
@@ -6,7 +8,6 @@ use schemars::SchemaGenerator;
 
 use crate::CompactString;
 
-#[cfg_attr(docsrs, doc(cfg(feature = "schemars")))]
 impl schemars::JsonSchema for CompactString {
     fn inline_schema() -> bool {
         <String as schemars::JsonSchema>::inline_schema()

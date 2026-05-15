@@ -20,10 +20,10 @@ mod proptest;
 mod quickcheck;
 #[cfg(feature = "rkyv")]
 mod rkyv;
-#[cfg(feature = "serde")]
-mod serde;
 #[cfg(feature = "schemars")]
 mod schemars;
+#[cfg(feature = "serde")]
+mod serde;
 #[cfg(feature = "smallvec")]
 mod smallvec;
 #[cfg(feature = "sqlx")]

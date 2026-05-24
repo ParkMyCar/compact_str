@@ -30,3 +30,5 @@ mod sqlx;
 mod utoipa;
 #[cfg(feature = "zeroize")]
 mod zeroize;
+#[cfg(feature = "garde")]
+mod garde;

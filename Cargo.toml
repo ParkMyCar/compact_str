@@ -8,6 +8,7 @@ members = [
     "examples/serde",
     "examples/sqlx",
     "examples/traits",
+    "examples/garde",
     "examples/utoipa",
     "fuzz",
 ]

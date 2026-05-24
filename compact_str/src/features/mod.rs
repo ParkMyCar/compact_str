@@ -12,6 +12,8 @@ mod bytes;
 mod defmt;
 #[cfg(feature = "diesel")]
 mod diesel;
+#[cfg(feature = "garde")]
+mod garde;
 #[cfg(feature = "markup")]
 mod markup;
 #[cfg(feature = "proptest")]
@@ -30,5 +32,3 @@ mod sqlx;
 mod utoipa;
 #[cfg(feature = "zeroize")]
 mod zeroize;
-#[cfg(feature = "garde")]
-mod garde;

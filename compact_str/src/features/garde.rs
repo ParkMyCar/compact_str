@@ -51,13 +51,17 @@ mod tests {
 
     #[test]
     fn as_str_ascii_valid() {
-        let t = AsciiTest { value: CompactString::from("hello world!") };
+        let t = AsciiTest {
+            value: CompactString::from("hello world!"),
+        };
         assert!(t.validate().is_ok());
     }
 
     #[test]
     fn as_str_ascii_invalid() {
-        let t = AsciiTest { value: CompactString::from("héllo") };
+        let t = AsciiTest {
+            value: CompactString::from("héllo"),
+        };
         assert!(t.validate().is_err());
     }
 
@@ -72,20 +76,26 @@ mod tests {
     #[test]
     fn has_bytes_within_limit() {
         // "hi" = 2 bytes
-        let t = ByteLengthTest { value: CompactString::from("hi") };
+        let t = ByteLengthTest {
+            value: CompactString::from("hi"),
+        };
         assert!(t.validate().is_ok());
     }
 
     #[test]
     fn has_bytes_exceeds_limit() {
         // "héllo" = 6 bytes (é is 2 bytes) — exceeds max=4
-        let t = ByteLengthTest { value: CompactString::from("héllo") };
+        let t = ByteLengthTest {
+            value: CompactString::from("héllo"),
+        };
         assert!(t.validate().is_err());
     }
 
     #[test]
     fn has_bytes_empty_fails() {
-        let t = ByteLengthTest { value: CompactString::new("") };
+        let t = ByteLengthTest {
+            value: CompactString::new(""),
+        };
         assert!(t.validate().is_err());
     }
 
@@ -100,19 +110,25 @@ mod tests {
     #[test]
     fn has_chars_within_limit() {
         // "héy" = 3 chars (even though é is 2 bytes)
-        let t = CharLengthTest { value: CompactString::from("héy") };
+        let t = CharLengthTest {
+            value: CompactString::from("héy"),
+        };
         assert!(t.validate().is_ok());
     }
 
     #[test]
     fn has_chars_exceeds_limit() {
-        let t = CharLengthTest { value: CompactString::from("abcd") };
+        let t = CharLengthTest {
+            value: CompactString::from("abcd"),
+        };
         assert!(t.validate().is_err());
     }
 
     #[test]
     fn has_chars_empty_fails() {
-        let t = CharLengthTest { value: CompactString::new("") };
+        let t = CharLengthTest {
+            value: CompactString::new(""),
+        };
         assert!(t.validate().is_err());
     }
 
@@ -125,19 +141,25 @@ mod tests {
 
     #[test]
     fn has_simple_length_valid() {
-        let t = SimpleLengthTest { value: CompactString::from("abc") };
+        let t = SimpleLengthTest {
+            value: CompactString::from("abc"),
+        };
         assert!(t.validate().is_ok());
     }
 
     #[test]
     fn has_simple_length_too_short() {
-        let t = SimpleLengthTest { value: CompactString::from("a") };
+        let t = SimpleLengthTest {
+            value: CompactString::from("a"),
+        };
         assert!(t.validate().is_err());
     }
 
     #[test]
     fn has_simple_length_too_long() {
-        let t = SimpleLengthTest { value: CompactString::from("abcdef") };
+        let t = SimpleLengthTest {
+            value: CompactString::from("abcdef"),
+        };
         assert!(t.validate().is_err());
     }
 
@@ -152,21 +174,27 @@ mod tests {
     #[test]
     fn has_utf16_bmp_char_valid() {
         // "é" = 1 UTF-16 code unit
-        let t = Utf16LengthTest { value: CompactString::from("é") };
+        let t = Utf16LengthTest {
+            value: CompactString::from("é"),
+        };
         assert!(t.validate().is_ok());
     }
 
     #[test]
     fn has_utf16_surrogate_pair_valid() {
         // "😀" = 2 UTF-16 code units
-        let t = Utf16LengthTest { value: CompactString::from("😀") };
+        let t = Utf16LengthTest {
+            value: CompactString::from("😀"),
+        };
         assert!(t.validate().is_ok());
     }
 
     #[test]
     fn has_utf16_exceeds_limit() {
         // "😀😀" = 4 UTF-16 code units — exceeds max=2
-        let t = Utf16LengthTest { value: CompactString::from("😀😀") };
+        let t = Utf16LengthTest {
+            value: CompactString::from("😀😀"),
+        };
         assert!(t.validate().is_err());
     }
 
@@ -194,8 +222,14 @@ mod tests {
     #[test]
     fn matches_string_behavior() {
         for s in &["hello", "héllo", "😀", "a", ""] {
-            let string_result = StringTest { value: std::string::String::from(*s) }.validate();
-            let compact_result = CompactTest { value: CompactString::from(*s) }.validate();
+            let string_result = StringTest {
+                value: std::string::String::from(*s),
+            }
+            .validate();
+            let compact_result = CompactTest {
+                value: CompactString::from(*s),
+            }
+            .validate();
             assert_eq!(
                 string_result.is_ok(),
                 compact_result.is_ok(),

@@ -63,16 +63,19 @@ unsafe impl Sync for Repr {}
 impl Repr {
     /// Infallible variant of [`Repr::new`] that panics on allocation failure.
     ///
-    /// Keeping the inline arm out of the `Result` machinery lets LLVM drop the unwrap check and
-    /// the heap arm's register pressure from the (hot) inline path.
+    /// Keeping the inline arm out of the `Result` machinery lets LLVM drop the dead unwrap check
+    /// from the (hot) inline path.
     #[inline]
     #[track_caller]
     pub(crate) fn new_panic(text: &str) -> Self {
-        if text.len() <= MAX_SIZE {
+        let len = text.len();
+        if len == 0 {
+            EMPTY
+        } else if len <= MAX_SIZE {
             // SAFETY: We checked that the length of text is less than or equal to MAX_SIZE
             Repr::from_inline(unsafe { InlineBuffer::new(text) })
         } else {
-            new_heap_panic(text)
+            Repr::from_heap(HeapBuffer::new(text).unwrap_with_msg())
         }
     }
 
@@ -116,16 +119,10 @@ impl Repr {
     #[inline]
     #[track_caller]
     pub(crate) fn with_capacity_panic(capacity: usize) -> Self {
-        #[cold]
-        #[inline(never)]
-        #[track_caller]
-        fn heap(capacity: usize) -> Repr {
-            Repr::from_heap(HeapBuffer::with_capacity(capacity).unwrap_with_msg())
-        }
         if capacity <= MAX_SIZE {
             EMPTY
         } else {
-            heap(capacity)
+            Repr::from_heap(HeapBuffer::with_capacity(capacity).unwrap_with_msg())
         }
     }
 
@@ -873,13 +870,6 @@ impl Extend<String> for Repr {
     fn extend<T: IntoIterator<Item = String>>(&mut self, iter: T) {
         iter.into_iter().for_each(move |s| self.push_str(&s));
     }
-}
-
-#[cold]
-#[inline(never)]
-#[track_caller]
-fn new_heap_panic(text: &str) -> Repr {
-    Repr::from_heap(HeapBuffer::new(text).unwrap_with_msg())
 }
 
 /// Returns the supplied value, and ensures that the value is eagerly loaded into a register.

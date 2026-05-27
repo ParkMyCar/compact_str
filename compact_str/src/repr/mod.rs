@@ -350,20 +350,22 @@ impl Repr {
             return;
         }
 
-        let len = self.len();
         let str_len = s.len();
 
         // Reserve at least enough space to fit `s`
         self.reserve(str_len).unwrap_with_msg();
 
-        // SAFETY: `s` which we're appending to the buffer, is valid UTF-8
-        let slice = unsafe { self.as_mut_buf() };
-        let push_buffer = &mut slice[len..len + str_len];
+        // `reserve` preserves `len`, so reading it here (after the call) is equivalent and avoids
+        // keeping the raw discriminant load live across the call.
+        let len = self.len();
 
-        debug_assert_eq!(push_buffer.len(), s.len());
-
-        // Copy the string into our buffer
-        push_buffer.copy_from_slice(s.as_bytes());
+        // SAFETY: `reserve` guarantees `capacity >= len + str_len`, so writing `str_len` bytes at
+        // `ptr + len` is in-bounds. Avoid `&mut slice[len..len + str_len]` so the always-true
+        // bounds check (and the `len + str_len` overflow check) are elided.
+        unsafe {
+            let dst = self.as_mut_buf().as_mut_ptr().add(len);
+            core::ptr::copy_nonoverlapping(s.as_ptr(), dst, str_len);
+        }
 
         // Increment the length of our string
         //

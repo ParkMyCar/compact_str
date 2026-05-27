@@ -34,13 +34,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-<<<<<<< HEAD
-          - toolchain: "1.85.0"
-          - toolchain: "nightly-2024-12-20"
-=======
           - toolchain: "1.92.0"
           - toolchain: "nightly-2026-02-27"
->>>>>>> 0969dcc7 (fix: possible undefined behavior with realloc in a `HeapString` (#459))
 
     name: cargo test
     runs-on: ubuntu-latest

@@ -18,7 +18,7 @@ env:
   PROPTEST_CASES: 1000
   RUSTFLAGS: "-D warnings"
   MIRIFLAGS: "-Zmiri-strict-provenance"
-  RUST_NIGHTLY_VERSION: "nightly-2025-12-18"
+  RUST_NIGHTLY_VERSION: "nightly-2026-02-27"
 
 jobs:
   cross-test:

@@ -70,6 +70,12 @@ impl Capacity {
             if #[cfg(target_pointer_width = "64")] {
                 // on 64-bit arches we can always fit the capacity inline
                 debug_assert!(capacity <= MAX_VALUE);
+                // SAFETY: a 64-bit capacity must be < 2^56; transmuting a `HeapBuffer` whose
+                // `Capacity` has a non-zero high byte into `Repr` would already be UB (invalid
+                // `LastByte`). Making the invariant explicit lets LLVM see that the last byte is
+                // exactly `HEAP_MARKER` and fold away the `Err` arm of `Result<Repr, ReserveError>`
+                // at call sites like `From<String>`.
+                unsafe { core::hint::assert_unchecked(capacity & !VALID_MASK == 0) };
 
                 Capacity(capacity.to_le() | HEAP_MARKER)
             } else if #[cfg(target_pointer_width = "32")] {

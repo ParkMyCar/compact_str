@@ -88,7 +88,7 @@ impl Repr {
         } else if len <= MAX_SIZE {
             // SAFETY: We checked that the length of text is less than or equal to MAX_SIZE
             let inline = unsafe { InlineBuffer::new(text) };
-            Ok(Repr::from_inline(inline))
+            Repr::from_inline_ok(inline)
         } else {
             HeapBuffer::new(text).map(Repr::from_heap)
         }
@@ -192,7 +192,7 @@ impl Repr {
         } else if should_inline && s.len() <= MAX_SIZE {
             // SAFETY: Checked to make sure the string would fit inline
             let inline = unsafe { InlineBuffer::new(s.as_str()) };
-            Ok(Repr::from_inline(inline))
+            Repr::from_inline_ok(inline)
         } else {
             let mut s = mem::ManuallyDrop::new(s.into_bytes());
             let len = s.len();
@@ -373,10 +373,14 @@ impl Repr {
 
     #[inline]
     pub(crate) fn pop(&mut self) -> Option<char> {
-        let ch = self.as_str().chars().next_back()?;
+        let mut chars = self.as_str().chars();
+        let ch = chars.next_back()?;
+        // The remaining iterator's slice length is `len - ch.len_utf8()`; reading it avoids a
+        // second `self.len()` discriminant decode and the `len_utf8` recomputation.
+        let new_len = chars.as_str().len();
 
-        // SAFETY: We know this is is a valid length which falls on a char boundary
-        unsafe { self.set_len(self.len() - ch.len_utf8()) };
+        // SAFETY: `new_len` is a valid length on a char boundary (it's the prefix before `ch`).
+        unsafe { self.set_len(new_len) };
 
         Some(ch)
     }
@@ -512,6 +516,7 @@ impl Repr {
     ///
     /// # Safety
     /// * Callers must guarantee that any modifications made to the buffer are valid UTF-8
+    #[inline]
     pub(crate) unsafe fn as_mut_buf(&mut self) -> &mut [u8] {
         #[cold]
         fn inline_static_str(this: &mut Repr) {
@@ -548,6 +553,7 @@ impl Repr {
     /// # Safety
     /// * `len` bytes in the buffer must be valid UTF-8
     /// * If the underlying buffer is stored inline, `len` must be <= MAX_SIZE
+    #[inline]
     pub(crate) unsafe fn set_len(&mut self, len: usize) {
         if let Some(s) = self.as_static_variant_mut() {
             s.set_len(len);
@@ -659,12 +665,19 @@ impl Repr {
     #[inline(always)]
     const fn from_inline(inline: InlineBuffer) -> Self {
         // SAFETY: An `InlineBuffer` and `Repr` have the same size
-        let repr: Self = unsafe { core::mem::transmute(inline) };
-        // SAFETY: `InlineBuffer` always sets a valid inline last byte (0..=215). LLVM cannot see
-        // this through the transmute on its own; without the hint it cannot fold the niche-encoded
-        // `Err` arm of `Result<Repr, ReserveError>` at call sites.
+        unsafe { core::mem::transmute(inline) }
+    }
+
+    /// `Ok(from_inline(inline))`, plus a hint to LLVM that the result is in fact `Ok`.
+    #[inline(always)]
+    fn from_inline_ok(inline: InlineBuffer) -> Result<Self, ReserveError> {
+        let repr = Self::from_inline(inline);
+        // SAFETY: `InlineBuffer` always produces a valid inline last byte (0..=215). LLVM cannot
+        // see this through the transmute; without the hint it cannot fold the niche-encoded `Err`
+        // arm at the call site. Kept here (not in `from_inline`) so callers that don't wrap in
+        // `Result` avoid materialising the load.
         unsafe { core::hint::assert_unchecked(repr.last_byte() < HEAP_MASK) };
-        repr
+        Ok(repr)
     }
 
     /// Reinterprets a [`HeapBuffer`] into a [`Repr`]
@@ -813,14 +826,17 @@ impl Drop for Repr {
         // By "outlining" the actual Drop code and only calling it if we're a heap variant, it
         // allows dropping an inline variant to be as cheap as possible.
         if self.is_heap_allocated() {
-            outlined_drop(self)
+            // SAFETY: We just checked the discriminant to make sure we're heap allocated
+            let heap = unsafe { self.as_heap() };
+            // Pass the heap fields by value so the address of `*self` never escapes — otherwise
+            // dropping a by-value `CompactString` must materialize the full 24 bytes on the
+            // caller's stack just to hand `&mut Repr` to the outlined function.
+            outlined_drop(heap.ptr, heap.cap)
         }
 
         #[cold]
-        fn outlined_drop(this: &mut Repr) {
-            // SAFETY: We just checked the discriminant to make sure we're heap allocated
-            let heap_buffer = unsafe { this.as_mut_heap() };
-            heap_buffer.dealloc();
+        fn outlined_drop(ptr: ptr::NonNull<u8>, cap: Capacity) {
+            heap::deallocate_ptr(ptr, cap);
         }
     }
 }

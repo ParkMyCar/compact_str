@@ -512,7 +512,6 @@ impl Repr {
     ///
     /// # Safety
     /// * Callers must guarantee that any modifications made to the buffer are valid UTF-8
-    #[inline]
     pub(crate) unsafe fn as_mut_buf(&mut self) -> &mut [u8] {
         #[cold]
         fn inline_static_str(this: &mut Repr) {

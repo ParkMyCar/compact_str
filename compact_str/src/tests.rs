@@ -2018,3 +2018,26 @@ fn test_is_empty() {
         }
     }
 }
+
+#[test]
+fn test_shrink_to_within_min_heap_gap() {
+    // N.B. shrinking a heap allocated string to a capacity just above the inline limit
+    // must report a capacity matching the actual allocation layout.
+    let mut s = CompactString::with_capacity(100);
+    assert!(s.is_heap_allocated());
+
+    let target = crate::repr::MAX_SIZE + 1;
+    s.shrink_to(target);
+    assert!(s.is_heap_allocated());
+
+    // Capacity is clamped up to MIN_HEAP_SIZE by the allocator, the stored value must reflect that.
+    assert!(s.capacity() >= target);
+    drop(s);
+}
+
+#[test]
+#[should_panic(expected = "capacity overflow")]
+fn test_repeat_capacity_overflow() {
+    let s = CompactString::new("abc");
+    let _ = s.repeat(usize::MAX);
+}

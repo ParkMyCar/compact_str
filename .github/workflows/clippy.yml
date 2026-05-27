@@ -11,7 +11,7 @@ env:
   CARGO_TERM_COLOR: "always"
   RUSTFLAGS: "-D warnings"
   RUST_VERSION: 1.92.0
-  RUST_NIGHTLY_VERSION: "nightly-2025-12-18"
+  RUST_NIGHTLY_VERSION: "nightly-2026-02-27"
 
 jobs:
   fmt:

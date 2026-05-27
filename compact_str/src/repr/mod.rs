@@ -660,7 +660,12 @@ impl Repr {
     #[inline(always)]
     const fn from_inline(inline: InlineBuffer) -> Self {
         // SAFETY: An `InlineBuffer` and `Repr` have the same size
-        unsafe { core::mem::transmute(inline) }
+        let repr: Self = unsafe { core::mem::transmute(inline) };
+        // SAFETY: `InlineBuffer` always sets a valid inline last byte (0..=215). LLVM cannot see
+        // this through the transmute on its own; without the hint it cannot fold the niche-encoded
+        // `Err` arm of `Result<Repr, ReserveError>` at call sites.
+        unsafe { core::hint::assert_unchecked(repr.last_byte() < HEAP_MASK) };
+        repr
     }
 
     /// Reinterprets a [`HeapBuffer`] into a [`Repr`]

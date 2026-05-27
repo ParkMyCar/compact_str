@@ -1,0 +1,19 @@
+[workspace]
+
+[package]
+name = "asm-harness"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[lib]
+crate-type = ["rlib"]
+
+[dependencies]
+compact_str = { path = "../compact_str" }
+itoa = "1"
+
+[profile.release]
+codegen-units = 1
+lto = "off"
+panic = "abort"

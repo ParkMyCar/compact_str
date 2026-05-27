@@ -32,8 +32,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - toolchain: stable
-          - toolchain: nightly
+          - toolchain: "1.92.0"
+          - toolchain: "nightly-2026-02-27"
 
     name: cargo test
     runs-on: ubuntu-latest

@@ -973,7 +973,8 @@ impl CompactString {
         } else if n == 1 {
             self.clone()
         } else {
-            let mut out = Self::with_capacity(self.len() * n);
+            let cap = self.len().checked_mul(n).expect("capacity overflow");
+            let mut out = Self::with_capacity(cap);
             (0..n).for_each(|_| out.push_str(self));
             out
         }
@@ -983,7 +984,8 @@ impl CompactString {
     ///
     /// If the length of the [`CompactString`] is less or equal to `new_len`, the call is a no-op.
     ///
-    /// Calling this function does not change the capacity of the [`CompactString`].
+    /// Calling this function does not change the capacity of the [`CompactString`], unless the
+    /// [`CompactString`] is backed by a `&'static str`.
     ///
     /// # Panics
     ///
@@ -1080,7 +1082,8 @@ impl CompactString {
 
     /// Reduces the length of the [`CompactString`] to zero.
     ///
-    /// Calling this function does not change the capacity of the [`CompactString`].
+    /// Calling this function does not change the capacity of the [`CompactString`], unless the
+    /// [`CompactString`] is backed by a `&'static str`.
     ///
     /// ```
     /// # use compact_str::CompactString;

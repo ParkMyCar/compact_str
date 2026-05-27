@@ -111,9 +111,7 @@ impl HeapBuffer {
     }
 
     /// Try to grow the [`HeapBuffer`] by reallocating, returning an error if we fail
-    pub fn realloc(&mut self, new_capacity: usize) -> Result<usize, ()> {
-        let new_cap = Capacity::new(new_capacity);
-
+    pub(crate) fn realloc(&mut self, new_capacity: usize) -> Result<usize, ()> {
         // We can't reallocate to a size less than our length, or else we'd clip the string
         if new_capacity < self.len {
             return Err(());
@@ -126,6 +124,9 @@ impl HeapBuffer {
 
         // Always allocate at least MIN_HEAP_SIZE
         let new_capacity = cmp::max(new_capacity, MIN_HEAP_SIZE);
+        // N.B. must be computed _after_ the MIN_HEAP_SIZE clamp so the stored capacity matches the
+        // layout we actually (re)allocate with, otherwise dealloc/realloc get a mismatched layout.
+        let new_cap = Capacity::new(new_capacity);
 
         let (new_cap, new_ptr) = match (self.cap.is_heap(), new_cap.is_heap()) {
             // both current and new capacity can be stored inline
@@ -541,6 +542,20 @@ mod test {
     fn test_realloc_shrink_heap_to_inline() {
         // TODO: test this case
         assert_eq!(1, 1);
+    }
+
+    #[test]
+    fn test_realloc_shrink_to_min_heap_gap() {
+        // Shrinking to a size in (MAX_SIZE, MIN_HEAP_SIZE) must store the clamped
+        // capacity, otherwise the recorded capacity won't match the actual allocation
+        // layout.
+        let mut h = HeapBuffer::with_capacity(100).unwrap();
+        let target = super::MAX_SIZE + 1;
+        assert!(target < MIN_HEAP_SIZE);
+
+        assert_eq!(h.realloc(target), Ok(MIN_HEAP_SIZE));
+        assert_eq!(h.capacity(), MIN_HEAP_SIZE);
+        // Drop runs dealloc with the stored capacity; under miri this fails if the layout is wrong.
     }
 
     #[test_case(&[42; 0]; "empty")]

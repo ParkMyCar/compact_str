@@ -641,6 +641,7 @@ impl CompactString {
     ///
     /// assert_eq!("foobar", s);
     /// ```
+    #[inline]
     pub fn push(&mut self, ch: char) {
         self.push_str(ch.encode_utf8(&mut [0; 4]));
     }

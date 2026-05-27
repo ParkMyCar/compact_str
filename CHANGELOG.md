@@ -1,6 +1,14 @@
 # Upcoming
 ... all released!
 
+# 0.8.2
+
+### May 26, 2026
+
+## Changes
+* Fixed a case of undefined behavior in `HeapString`.
+    * Fix in [`fix: possible undefined behavior with realloc in a HeapString`](https://github.com/ParkMyCar/compact_str/pull/459)
+
 # 0.8.1
 ### December 29, 2024
 

@@ -61,6 +61,21 @@ unsafe impl Send for Repr {}
 unsafe impl Sync for Repr {}
 
 impl Repr {
+    /// Infallible variant of [`Repr::new`] that panics on allocation failure.
+    ///
+    /// Keeping the inline arm out of the `Result` machinery lets LLVM drop the unwrap check and
+    /// the heap arm's register pressure from the (hot) inline path.
+    #[inline]
+    #[track_caller]
+    pub(crate) fn new_panic(text: &str) -> Self {
+        if text.len() <= MAX_SIZE {
+            // SAFETY: We checked that the length of text is less than or equal to MAX_SIZE
+            Repr::from_inline(unsafe { InlineBuffer::new(text) })
+        } else {
+            new_heap_panic(text)
+        }
+    }
+
     #[inline]
     pub(crate) fn new(text: &str) -> Result<Self, ReserveError> {
         let len = text.len();
@@ -834,6 +849,13 @@ impl Extend<String> for Repr {
     fn extend<T: IntoIterator<Item = String>>(&mut self, iter: T) {
         iter.into_iter().for_each(move |s| self.push_str(&s));
     }
+}
+
+#[cold]
+#[inline(never)]
+#[track_caller]
+fn new_heap_panic(text: &str) -> Repr {
+    Repr::from_heap(HeapBuffer::new(text).unwrap_with_msg())
 }
 
 /// Returns the supplied value, and ensures that the value is eagerly loaded into a register.

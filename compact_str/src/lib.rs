@@ -183,7 +183,7 @@ impl CompactString {
     #[inline]
     #[track_caller]
     pub fn new<T: AsRef<str>>(text: T) -> Self {
-        Self::try_new(text).unwrap_with_msg()
+        CompactString(Repr::new_panic(text.as_ref()))
     }
 
     /// Fallible version of [`CompactString::new()`]

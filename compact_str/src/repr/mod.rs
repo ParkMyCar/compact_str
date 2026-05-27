@@ -112,6 +112,23 @@ impl Repr {
         }
     }
 
+    /// Infallible variant of [`Repr::with_capacity`] that panics on allocation failure.
+    #[inline]
+    #[track_caller]
+    pub(crate) fn with_capacity_panic(capacity: usize) -> Self {
+        #[cold]
+        #[inline(never)]
+        #[track_caller]
+        fn heap(capacity: usize) -> Repr {
+            Repr::from_heap(HeapBuffer::with_capacity(capacity).unwrap_with_msg())
+        }
+        if capacity <= MAX_SIZE {
+            EMPTY
+        } else {
+            heap(capacity)
+        }
+    }
+
     /// Create a [`Repr`] from a slice of bytes that is UTF-8
     #[inline]
     pub(crate) fn from_utf8<B: AsRef<[u8]>>(buf: B) -> Result<Self, Utf8Error> {

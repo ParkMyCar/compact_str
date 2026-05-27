@@ -290,7 +290,7 @@ impl CompactString {
     #[inline]
     #[track_caller]
     pub fn with_capacity(capacity: usize) -> Self {
-        Self::try_with_capacity(capacity).unwrap_with_msg()
+        CompactString(Repr::with_capacity_panic(capacity))
     }
 
     /// Fallible version of [`CompactString::with_capacity()`]
@@ -571,7 +571,12 @@ impl CompactString {
     #[inline]
     pub fn as_mut_str(&mut self) -> &mut str {
         let len = self.len();
-        unsafe { core::str::from_utf8_unchecked_mut(&mut self.0.as_mut_buf()[..len]) }
+        let buf = unsafe { self.0.as_mut_buf() };
+        // SAFETY: `len <= capacity` is a `Repr` invariant, and the first `len` bytes are
+        // initialized UTF-8. Avoid `&mut buf[..len]` so the always-true bounds check is elided.
+        unsafe {
+            core::str::from_utf8_unchecked_mut(core::slice::from_raw_parts_mut(buf.as_mut_ptr(), len))
+        }
     }
 
     unsafe fn spare_capacity_mut(&mut self) -> &mut [mem::MaybeUninit<u8>] {

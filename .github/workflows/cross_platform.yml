@@ -17,7 +17,7 @@ env:
   # local default for proptest is 100
   PROPTEST_CASES: 1000
   RUSTFLAGS: "-D warnings"
-  MIRIFAGS: "-Zmiri-tag-raw-pointers -Zmiri-check-number-validity"
+  MIRIFLAGS: "-Zmiri-strict-provenance"
   RUST_NIGHTLY_VERSION: "nightly-2025-12-18"
 
 jobs:

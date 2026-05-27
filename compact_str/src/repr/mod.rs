@@ -373,14 +373,10 @@ impl Repr {
 
     #[inline]
     pub(crate) fn pop(&mut self) -> Option<char> {
-        let mut chars = self.as_str().chars();
-        let ch = chars.next_back()?;
-        // The remaining iterator's slice length is `len - ch.len_utf8()`; reading it avoids a
-        // second `self.len()` discriminant decode and the `len_utf8` recomputation.
-        let new_len = chars.as_str().len();
+        let ch = self.as_str().chars().next_back()?;
 
-        // SAFETY: `new_len` is a valid length on a char boundary (it's the prefix before `ch`).
-        unsafe { self.set_len(new_len) };
+        // SAFETY: We know this is is a valid length which falls on a char boundary
+        unsafe { self.set_len(self.len() - ch.len_utf8()) };
 
         Some(ch)
     }

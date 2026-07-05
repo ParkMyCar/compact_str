@@ -1,6 +1,6 @@
 use compact_str::{CompactString, ToCompactString};
 use compact_str_6::CompactString as CompactString6;
-use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 
 fn bench_new(c: &mut Criterion) {
     c.bench_with_input(
@@ -84,6 +84,19 @@ fn bench_to_compact_string(c: &mut Criterion) {
     );
 }
 
+fn bench_str_to_compact_string(c: &mut Criterion) {
+    let mut group = c.benchmark_group("str::to_compact_string");
+
+    for (kind, value) in [
+        ("inline", "module"),
+        ("heap", "package.submodule.long_name"),
+    ] {
+        group.bench_with_input(BenchmarkId::new(kind, value.len()), &value, |b, value| {
+            b.iter(|| black_box(*value).to_compact_string())
+        });
+    }
+}
+
 fn bench_repr_creation(c: &mut Criterion) {
     let mut group = c.benchmark_group("Creation");
 
@@ -146,5 +159,10 @@ fn bench_repr_access(c: &mut Criterion) {
 }
 criterion_group!(repr_benches, bench_repr_creation, bench_repr_access);
 
-criterion_group!(compact_str, bench_new, bench_to_compact_string);
+criterion_group!(
+    compact_str,
+    bench_new,
+    bench_to_compact_string,
+    bench_str_to_compact_string
+);
 criterion_main!(compact_str, repr_benches);

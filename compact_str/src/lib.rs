@@ -12,6 +12,7 @@ extern crate alloc;
 use alloc::borrow::Cow;
 use alloc::boxed::Box;
 use alloc::string::String;
+use castaway::match_type;
 #[doc(hidden)] // Referenced in macros.
 pub use core;
 use core::borrow::{Borrow, BorrowMut};
@@ -129,7 +130,8 @@ pub struct CompactString(Repr);
 
 impl CompactString {
     /// Creates a new [`CompactString`] from any type that implements `AsRef<str>`.
-    /// If the string is short enough, then it will be inlined on the stack!
+    /// If the string is short enough, then it will be inlined on the stack! When `text` is an owned
+    /// [`String`] that does not fit inline, its existing allocation is reused.
     ///
     /// In a `static` or `const` context you can use the method [`CompactString::const_new()`].
     ///
@@ -192,7 +194,12 @@ impl CompactString {
     /// Otherwise it behaves the same as [`CompactString::new()`].
     #[inline]
     pub fn try_new<T: AsRef<str>>(text: T) -> Result<Self, ReserveError> {
-        Repr::new(text.as_ref()).map(CompactString)
+        let repr = match_type!(text, {
+            String as text => Repr::from_string(text, true)?,
+            text => Repr::new(text.as_ref())?,
+        });
+
+        Ok(CompactString(repr))
     }
 
     /// Creates a new inline [`CompactString`] from `&'static str` at compile time.

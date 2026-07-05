@@ -1,6 +1,7 @@
 use compact_str::{CompactString, ToCompactString};
 use compact_str_6::CompactString as CompactString6;
-use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{black_box, criterion_group, criterion_main, BatchSize, BenchmarkId, Criterion};
+use std::mem::size_of;
 
 fn bench_new(c: &mut Criterion) {
     c.bench_with_input(
@@ -32,6 +33,28 @@ fn bench_new(c: &mut Criterion) {
         &"I am a very long string that will get allocated on the heap",
         |b, &word| b.iter(|| String::from(word)),
     );
+}
+
+fn bench_new_owned_string(c: &mut Criterion) {
+    let mut group = c.benchmark_group("CompactString::new(String)");
+    let max_inline = size_of::<String>();
+
+    for (kind, len) in [
+        ("inline-short", max_inline / 2),
+        ("inline-limit", max_inline),
+        ("heap-boundary", max_inline + 1),
+        ("heap-medium", 64),
+        ("heap-large", 1024),
+    ] {
+        let value = "a".repeat(len);
+        group.bench_with_input(BenchmarkId::new(kind, len), &value, |b, value| {
+            b.iter_batched(
+                || black_box(value.clone()),
+                |value| black_box(CompactString::new(value)),
+                BatchSize::SmallInput,
+            )
+        });
+    }
 }
 
 fn bench_to_compact_string(c: &mut Criterion) {
@@ -146,5 +169,10 @@ fn bench_repr_access(c: &mut Criterion) {
 }
 criterion_group!(repr_benches, bench_repr_creation, bench_repr_access);
 
-criterion_group!(compact_str, bench_new, bench_to_compact_string);
+criterion_group!(
+    compact_str,
+    bench_new,
+    bench_new_owned_string,
+    bench_to_compact_string
+);
 criterion_main!(compact_str, repr_benches);

@@ -107,6 +107,19 @@ fn bench_to_compact_string(c: &mut Criterion) {
     );
 }
 
+fn bench_str_to_compact_string(c: &mut Criterion) {
+    let mut group = c.benchmark_group("str::to_compact_string");
+
+    for (kind, value) in [
+        ("inline", "module"),
+        ("heap", "package.submodule.long_name"),
+    ] {
+        group.bench_with_input(BenchmarkId::new(kind, value.len()), &value, |b, value| {
+            b.iter(|| black_box(*value).to_compact_string())
+        });
+    }
+}
+
 fn bench_repr_creation(c: &mut Criterion) {
     let mut group = c.benchmark_group("Creation");
 
@@ -173,6 +186,7 @@ criterion_group!(
     compact_str,
     bench_new,
     bench_new_owned_string,
-    bench_to_compact_string
+    bench_to_compact_string,
+    bench_str_to_compact_string
 );
 criterion_main!(compact_str, repr_benches);

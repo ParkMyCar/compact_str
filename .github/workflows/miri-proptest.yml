@@ -17,11 +17,15 @@ env:
   # Our `proptest_*` / `quickcheck_*` property tests are `#[cfg_attr(miri, ignore)]` because
   # running thousands of cases under Miri is far too slow. This job runs them under Miri at a
   # reduced case count for UB coverage of the property space. It's nightly / on-demand only: the
-  # run is fixed-cost-dominated (~11 min floor -- one Miri process per test, and a few heavy
-  # serde/join/concat proptests are nearly fixed-cost), so it doesn't belong on the PR path.
-  # 256 is a soft target; tune it if nightly runs come in long or short.
-  PROPTEST_CASES: "256"
-  QUICKCHECK_TESTS: "512"
+  # run is dominated by a large fixed cost -- nextest spawns one Miri process per test (~72 of
+  # them) and a few heavy serde/join/concat proptests are nearly case-count-independent -- so it
+  # doesn't belong on the PR path.
+  #
+  # These are soft targets. On the `ubuntu-latest` runner the fixed cost is much higher than
+  # local measurement suggested (a cold-cache run at 8 cases took ~36 min), so keep these low and
+  # tune upward only after watching a warm-cache nightly run.
+  PROPTEST_CASES: "16"
+  QUICKCHECK_TESTS: "32"
 
 jobs:
   miri-proptest:

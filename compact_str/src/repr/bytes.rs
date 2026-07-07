@@ -58,11 +58,16 @@ impl Repr {
             // reserve at least enough space to fit this chunk
             repr.reserve(chunk_len).unwrap_with_msg();
 
-            // SAFETY: The caller is responsible for making sure the provided buffer is UTF-8. This
-            // invariant is documented in the public API
-            let slice = repr.as_mut_buf();
-            // write the chunk into the Repr
-            slice[bytes_written..bytes_written + chunk_len].copy_from_slice(chunk);
+            // Write the chunk into the spare capacity without first creating a reference to the
+            // uninitialized memory.
+            //
+            // SAFETY:
+            // * `reserve` guarantees at least `bytes_written + chunk_len` bytes of capacity.
+            // * `chunk` is valid for reads of `chunk_len` bytes.
+            // * `chunk` belongs to `buf`, so it cannot overlap `repr`.
+            repr.as_mut_ptr()
+                .add(bytes_written)
+                .copy_from_nonoverlapping(chunk.as_ptr(), chunk_len);
 
             // Set the length of the Repr
             // SAFETY: We just wrote an additional `chunk_len` bytes into the Repr

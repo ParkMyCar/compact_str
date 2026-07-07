@@ -127,6 +127,26 @@ fn proptest_from_lossy_cow_roundtrips(#[strategy(rand_bytes())] bytes: Vec<u8>) 
     prop_assert_eq!(cow, compact);
 }
 
+#[test]
+fn test_as_mut_bytes_exposes_initialized_capacity() {
+    for mut compact in [
+        CompactString::new("inline"),
+        CompactString::with_capacity(100),
+    ] {
+        let capacity = compact.capacity();
+
+        // SAFETY: We do not modify the buffer, so the string remains valid UTF-8.
+        let bytes = unsafe { compact.as_mut_bytes() };
+
+        assert_eq!(bytes.len(), capacity);
+        for byte in bytes {
+            // Reading each byte under Miri verifies that `as_mut_bytes` did not expose
+            // uninitialized spare capacity through a `[u8]` reference.
+            core::hint::black_box(*byte);
+        }
+    }
+}
+
 #[proptest]
 #[cfg_attr(miri, ignore)]
 fn proptest_reserve_and_write_bytes(#[strategy(rand_unicode())] word: String) {

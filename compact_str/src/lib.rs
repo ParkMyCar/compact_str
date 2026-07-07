@@ -584,14 +584,17 @@ impl CompactString {
     #[inline]
     pub fn as_mut_str(&mut self) -> &mut str {
         let len = self.len();
-        unsafe { core::str::from_utf8_unchecked_mut(&mut self.0.as_mut_buf()[..len]) }
+        let ptr = self.0.as_mut_ptr();
+        // SAFETY: The first `len` bytes of a `CompactString` are initialized and valid UTF-8.
+        let bytes = unsafe { slice::from_raw_parts_mut(ptr, len) };
+        // SAFETY: The bytes came from a valid `CompactString`.
+        unsafe { core::str::from_utf8_unchecked_mut(bytes) }
     }
 
     unsafe fn spare_capacity_mut(&mut self) -> &mut [mem::MaybeUninit<u8>] {
-        let buf = self.0.as_mut_buf();
-        let ptr = buf.as_mut_ptr();
-        let cap = buf.len();
         let len = self.len();
+        let ptr = self.0.as_mut_ptr();
+        let cap = self.capacity();
 
         slice::from_raw_parts_mut(ptr.add(len) as *mut mem::MaybeUninit<u8>, cap - len)
     }
@@ -614,6 +617,9 @@ impl CompactString {
     //
     /// Provides a mutable reference to the underlying buffer of bytes.
     ///
+    /// The returned slice has length [`CompactString::capacity()`]. For heap-allocated strings,
+    /// this method initializes the spare capacity before returning.
+    ///
     /// # Safety
     /// * All Rust strings, including `CompactString`, must be valid UTF-8. The caller must
     ///   guarantee that any modifications made to the underlying buffer are valid UTF-8.
@@ -633,7 +639,21 @@ impl CompactString {
     /// ```
     #[inline]
     pub unsafe fn as_mut_bytes(&mut self) -> &mut [u8] {
-        self.0.as_mut_buf()
+        let len = self.len();
+        let ptr = self.0.as_mut_ptr();
+        let cap = self.capacity();
+
+        // Inline buffers are fully initialized when they are created. Heap buffers only
+        // initialize their string contents, so initialize their spare capacity before exposing it
+        // through a `[u8]` reference.
+        if self.is_heap_allocated() {
+            // SAFETY: The heap allocation is valid for `cap` bytes and `len <= cap`.
+            unsafe { ptr.add(len).write_bytes(0, cap - len) };
+        }
+
+        // SAFETY: All `cap` bytes are initialized. Inline buffers are initialized on creation, and
+        // heap spare capacity was initialized above.
+        unsafe { slice::from_raw_parts_mut(ptr, cap) }
     }
 
     /// Appends the given [`char`] to the end of this [`CompactString`].
@@ -995,7 +1015,7 @@ impl CompactString {
     /// Converts a mutable [`CompactString`] to a raw pointer.
     #[inline]
     pub fn as_mut_ptr(&mut self) -> *mut u8 {
-        unsafe { self.0.as_mut_buf().as_mut_ptr() }
+        self.0.as_mut_ptr()
     }
 
     /// Insert string character at an index.

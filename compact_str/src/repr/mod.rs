@@ -140,11 +140,17 @@ impl Repr {
         // Create a Repr with enough capacity for the entire buffer
         let mut repr = Repr::with_capacity(bytes_len)?;
 
-        // SAFETY: The caller is responsible for making sure the provided buffer is UTF-8. This
-        // invariant is documented in the public API
-        let slice = repr.as_mut_buf();
-        // write the chunk into the Repr
-        slice[..bytes_len].copy_from_slice(bytes);
+        // Write the bytes into the uninitialized buffer without first creating a reference to
+        // that memory.
+        //
+        // SAFETY:
+        // * `repr` was created with capacity for at least `bytes_len` bytes.
+        // * `bytes` is valid for reads of `bytes_len` bytes.
+        // * The newly allocated buffer does not overlap `bytes`.
+        unsafe {
+            repr.as_mut_ptr()
+                .copy_from_nonoverlapping(bytes.as_ptr(), bytes_len)
+        };
 
         // Set the length of the Repr
         // SAFETY: We just wrote the entire `buf` into the Repr
@@ -344,14 +350,18 @@ impl Repr {
         // Reserve at least enough space to fit `s`
         self.reserve(str_len).unwrap_with_msg();
 
-        // SAFETY: `s` which we're appending to the buffer, is valid UTF-8
-        let slice = unsafe { self.as_mut_buf() };
-        let push_buffer = &mut slice[len..len + str_len];
-
-        debug_assert_eq!(push_buffer.len(), s.len());
-
-        // Copy the string into our buffer
-        push_buffer.copy_from_slice(s.as_bytes());
+        // Copy the string into the spare capacity without first creating a reference to the
+        // uninitialized memory.
+        //
+        // SAFETY:
+        // * `reserve` guarantees at least `len + str_len` bytes of capacity.
+        // * `s` is valid for reads of `str_len` bytes.
+        // * The mutable borrow of `self` guarantees the source and destination do not overlap.
+        unsafe {
+            self.as_mut_ptr()
+                .add(len)
+                .copy_from_nonoverlapping(s.as_ptr(), str_len)
+        };
 
         // Increment the length of our string
         //
@@ -497,6 +507,9 @@ impl Repr {
     }
 
     /// Returns a mutable raw pointer to the start of the underlying buffer.
+    ///
+    /// The pointer is valid for writes up to [`Repr::capacity`], but only the first [`Repr::len`]
+    /// bytes are guaranteed to be initialized.
     #[inline]
     pub(crate) fn as_mut_ptr(&mut self) -> *mut u8 {
         #[cold]
@@ -516,41 +529,6 @@ impl Repr {
         } else {
             self as *mut Self as *mut u8
         }
-    }
-
-    /// Return a mutable reference to the entirely underlying buffer
-    ///
-    /// # Safety
-    /// * Callers must guarantee that any modifications made to the buffer are valid UTF-8
-    pub(crate) unsafe fn as_mut_buf(&mut self) -> &mut [u8] {
-        #[cold]
-        fn inline_static_str(this: &mut Repr) {
-            if let Some(s) = this.as_static_str() {
-                *this = Repr::new(s).unwrap_with_msg();
-            }
-        }
-
-        if self.is_static_str() {
-            inline_static_str(self);
-        }
-
-        // the last byte stores our discriminant and stack length
-        let last_byte = self.last_byte();
-
-        let (ptr, cap) = if last_byte == HEAP_MASK {
-            // SAFETY: We just checked the discriminant to make sure we're heap allocated
-            let heap_buffer = self.as_heap();
-            let ptr = heap_buffer.ptr.as_ptr();
-            let cap = heap_buffer.capacity();
-
-            (ptr, cap)
-        } else {
-            let ptr = self as *mut Self as *mut u8;
-            (ptr, MAX_SIZE)
-        };
-
-        // SAFETY: Our data is valid for `cap` bytes, and is initialized
-        core::slice::from_raw_parts_mut(ptr, cap)
     }
 
     /// Sets the length of the string that our underlying buffer contains

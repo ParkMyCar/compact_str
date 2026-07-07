@@ -76,6 +76,26 @@ impl Repr {
         }
     }
 
+    /// Infallible variant of [`Repr::new`] that panics on allocation failure.
+    ///
+    /// Keeping the inline arm out of the `Result` machinery lets the compiler drop the dead unwrap
+    /// check from the hot inline path.
+    #[inline]
+    #[track_caller]
+    pub(crate) fn new_panic(text: &str) -> Self {
+        let len = text.len();
+
+        if len == 0 {
+            EMPTY
+        } else if len <= MAX_SIZE {
+            // SAFETY: We checked that the length of text is less than or equal to MAX_SIZE
+            let inline = unsafe { InlineBuffer::new(text) };
+            Repr::from_inline(inline)
+        } else {
+            Repr::from_heap(HeapBuffer::new(text).unwrap_with_msg())
+        }
+    }
+
     #[inline]
     pub(crate) const fn const_new(text: &'static str) -> Self {
         if text.len() <= MAX_SIZE {

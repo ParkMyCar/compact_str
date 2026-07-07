@@ -185,7 +185,14 @@ impl CompactString {
     #[inline]
     #[track_caller]
     pub fn new<T: AsRef<str>>(text: T) -> Self {
-        Self::try_new(text).unwrap_with_msg()
+        // Route `&str` through the infallible `new_panic` so the hot inline path avoids the
+        // `Result` machinery, while still reusing an owned `String`'s allocation via `from_string`.
+        let repr = match_type!(text, {
+            String as text => Repr::from_string(text, true).unwrap_with_msg(),
+            text => Repr::new_panic(text.as_ref()),
+        });
+
+        CompactString(repr)
     }
 
     /// Fallible version of [`CompactString::new()`]

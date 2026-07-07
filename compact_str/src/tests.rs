@@ -69,6 +69,16 @@ fn proptest_strings_allocated_properly(#[strategy(rand_unicode())] word: String)
     assert_allocated_properly(&compact);
 }
 
+#[test]
+fn test_new_owned_string_reuses_heap_allocation() {
+    let value = "a".repeat(MAX_SIZE + 1);
+    let ptr = value.as_ptr();
+    let capacity = value.capacity();
+    let compact = CompactString::new(value);
+    assert_eq!(compact.as_ptr(), ptr);
+    assert_eq!(compact.capacity(), capacity);
+}
+
 #[proptest]
 #[cfg_attr(miri, ignore)]
 fn proptest_char_iterator_roundtrips(#[strategy(rand_unicode())] word: String) {

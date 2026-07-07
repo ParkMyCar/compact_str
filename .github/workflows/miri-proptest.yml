@@ -1,4 +1,10 @@
 on:
+  # TEMPORARY: run on pushes to this branch so we can smoke the job in real CI (mobile can't
+  # trigger workflow_dispatch). Remove this `push:` block before merging -- the job is meant to
+  # be nightly / on-demand only, not on the PR path.
+  push:
+    branches:
+      - ci/miri-proptest
   schedule:
     - cron: '0 0 * * *'
   workflow_dispatch:

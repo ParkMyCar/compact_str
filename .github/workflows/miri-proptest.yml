@@ -1,0 +1,48 @@
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+name: Miri Proptest
+
+env:
+  CARGO_TERM_COLOR: "always"
+  RUST_NIGHTLY_VERSION: "nightly-2026-02-27"
+  # Our `proptest_*` / `quickcheck_*` property tests are `#[cfg_attr(miri, ignore)]` because
+  # running thousands of cases under Miri is far too slow. This job runs them under Miri at a
+  # reduced case count for UB coverage of the property space. It's nightly / on-demand only: the
+  # run is fixed-cost-dominated (~11 min floor -- one Miri process per test, and a few heavy
+  # serde/join/concat proptests are nearly fixed-cost), so it doesn't belong on the PR path.
+  # 256 is a soft target; tune it if nightly runs come in long or short.
+  PROPTEST_CASES: "256"
+  QUICKCHECK_TESTS: "512"
+
+jobs:
+  miri-proptest:
+    name: cargo miri nextest (proptest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install toolchain
+        run: |
+          rustup toolchain install ${{ env.RUST_NIGHTLY_VERSION }} --no-self-update --profile minimal --component miri
+          rustup override set ${{ env.RUST_NIGHTLY_VERSION }}
+      - name: Install cargo-nextest
+        uses: taiki-e/install-action@nextest
+      - uses: Swatinem/rust-cache@v2
+
+      # `-Zmiri-disable-isolation` is required: proptest calls `getcwd` at startup (to resolve
+      # its `proptest-regressions` directory), which Miri's default isolation forbids.
+      # `-Zmiri-strict-provenance` is kept for UB detection, matching the main CI Miri job.
+      #
+      # The `-E` filter restricts to the property tests, which excludes the exhaustive
+      # `test_all_valid_32bit_values` test (16M iterations) that must not run here. It also
+      # skips `features::rkyv::tests::proptest_roundtrip`: `rkyv::access` trips a known
+      # rkyv-under-Miri Stacked Borrows error (rust-lang/unsafe-code-guidelines#134), the same
+      # reason its sibling `test_roundtrip` already carries `#[cfg_attr(miri, ignore)]`.
+      - name: Run proptests under Miri
+        env:
+          MIRIFLAGS: "-Zmiri-strict-provenance -Zmiri-disable-isolation"
+        run: |
+          cargo miri nextest run --all-features --manifest-path=compact_str/Cargo.toml --run-ignored=ignored-only -E 'test(/proptest_|quickcheck_/) and not test(/rkyv::tests::proptest_roundtrip/)'

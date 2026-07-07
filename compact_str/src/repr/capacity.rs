@@ -70,6 +70,11 @@ impl Capacity {
             if #[cfg(target_pointer_width = "64")] {
                 // on 64-bit arches we can always fit the capacity inline
                 debug_assert!(capacity <= MAX_VALUE);
+                // SAFETY: a 64-bit capacity is `< 2^56`, so its `to_le()` form leaves the
+                // discriminant byte free for `HEAP_MARKER`, letting the compiler fold the dead
+                // `Err` arm at callers like `From<String>`. (`to_le()`, not the raw value:
+                // `VALID_MASK` is a byte-layout mask, so the raw check breaks on big-endian.)
+                unsafe { super::assume(capacity.to_le() & !VALID_MASK == 0) };
 
                 Capacity(capacity.to_le() | HEAP_MARKER)
             } else if #[cfg(target_pointer_width = "32")] {

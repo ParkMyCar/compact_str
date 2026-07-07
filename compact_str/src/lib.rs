@@ -1239,14 +1239,26 @@ impl CompactString {
             src_idx: 0,
             dst_idx: 0,
         };
-        let s = g.self_.as_mut_str();
-        while let Some(ch) = s[g.src_idx..].chars().next() {
+        let original_len = g.self_.len();
+        let ptr = g.self_.0.as_mut_ptr();
+        while g.src_idx < original_len {
+            // SAFETY: Everything at and after `src_idx` is an untouched suffix of the
+            // original string. In particular, it is initialized, valid UTF-8, and non-empty.
+            let ch = unsafe {
+                let suffix =
+                    core::slice::from_raw_parts(ptr.add(g.src_idx), original_len - g.src_idx);
+                core::str::from_utf8_unchecked(suffix)
+                    .chars()
+                    .next()
+                    .expect("source suffix is non-empty")
+            };
             let ch_len = ch.len_utf8();
             if predicate(ch) {
-                // SAFETY: We know that both indices are valid, and that we don't split a char.
+                // SAFETY: Both ranges are in the allocation and `copy` permits overlap. The
+                // destination ends no later than the end of the current source character, so
+                // the unprocessed suffix remains unchanged.
                 unsafe {
-                    let p = s.as_mut_ptr();
-                    core::ptr::copy(p.add(g.src_idx), p.add(g.dst_idx), ch_len);
+                    core::ptr::copy(ptr.add(g.src_idx), ptr.add(g.dst_idx), ch_len);
                 }
                 g.dst_idx += ch_len;
             }

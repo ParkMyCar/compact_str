@@ -1397,6 +1397,25 @@ fn test_retain() {
     s.retain(|_| false);
     assert_eq!(s, "");
 
+    // Moving a multi-byte character by one byte temporarily leaves the full old-length
+    // buffer invalid UTF-8. `retain` must only interpret the untouched source suffix.
+    let mut s = CompactString::from("0è0");
+    s.retain(|c| c != '0');
+    assert_eq!(s, "è");
+
+    let input = "0èabcdefghijklmnopqrstuvwxyz";
+    let expected = "èabcdefghijklmnopqrstuvwxyz";
+
+    let mut heap = CompactString::from(input);
+    assert!(heap.is_heap_allocated());
+    heap.retain(|c| c != '0');
+    assert_eq!(heap, expected);
+
+    let mut static_str = CompactString::const_new(input);
+    assert_eq!(static_str.as_static_str(), Some(input));
+    static_str.retain(|c| c != '0');
+    assert_eq!(static_str, expected);
+
     let mut s = CompactString::from("0è0");
     let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         let mut count = 0;

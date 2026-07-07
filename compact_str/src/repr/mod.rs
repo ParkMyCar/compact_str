@@ -777,14 +777,17 @@ impl Drop for Repr {
         // By "outlining" the actual Drop code and only calling it if we're a heap variant, it
         // allows dropping an inline variant to be as cheap as possible.
         if self.is_heap_allocated() {
-            outlined_drop(self)
+            // SAFETY: We just checked the discriminant to make sure we're heap allocated
+            let heap = unsafe { self.as_heap() };
+            // Pass the heap fields by value so the address of `*self` never escapes, otherwise
+            // dropping a by-value `CompactString` must materialize the full 24 bytes on the
+            // caller's stack just to hand `&mut Repr` to the outlined function.
+            outlined_drop(heap.ptr, heap.cap)
         }
 
         #[cold]
-        fn outlined_drop(this: &mut Repr) {
-            // SAFETY: We just checked the discriminant to make sure we're heap allocated
-            let heap_buffer = unsafe { this.as_mut_heap() };
-            heap_buffer.dealloc();
+        fn outlined_drop(ptr: ptr::NonNull<u8>, cap: Capacity) {
+            heap::deallocate_ptr(ptr, cap);
         }
     }
 }

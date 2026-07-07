@@ -56,6 +56,18 @@ pub trait ToCompactString {
 unsafe impl LifetimeFree for CompactString {}
 unsafe impl LifetimeFree for Repr {}
 
+impl ToCompactString for str {
+    #[inline]
+    fn to_compact_string(&self) -> CompactString {
+        CompactString::new(self)
+    }
+
+    #[inline]
+    fn try_to_compact_string(&self) -> Result<CompactString, ToCompactStringError> {
+        Ok(CompactString(Repr::new(self)?))
+    }
+}
+
 /// # Panics
 ///
 /// In this implementation, the `to_compact_string` method panics if the `Display` implementation
@@ -209,6 +221,12 @@ mod tests {
 
     use super::{CompactStringExt, ToCompactString};
     use crate::CompactString;
+
+    #[test]
+    fn str_implements_to_compact_string() {
+        fn assert_impl<T: ToCompactString + ?Sized>() {}
+        assert_impl::<str>();
+    }
 
     #[test]
     fn test_join() {

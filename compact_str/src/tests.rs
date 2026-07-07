@@ -1987,7 +1987,6 @@ fn test_alloc_excessively_long_string() {
 
 // This feature was enabled by <https://github.com/rust-lang/rust/pull/94075> which was first
 // released in Rust 1.65.
-#[rustversion::since(1.65)]
 #[test]
 fn multiple_niches_test() {
     #[allow(unused)]

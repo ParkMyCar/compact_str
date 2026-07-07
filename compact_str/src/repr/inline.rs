@@ -120,7 +120,6 @@ impl InlineBuffer {
 
 #[cfg(test)]
 mod tests {
-    #[rustversion::since(1.63)]
     #[test]
     #[ignore] // we run this in CI, but unless you're compiling in release, this takes a while
     fn test_unused_utf8_bytes() {

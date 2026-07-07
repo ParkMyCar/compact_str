@@ -5,7 +5,7 @@ version = "0.9.0"
 authors = ["Parker Timmerman <parker@parkertimmerman.com>"]
 edition = "2021"
 license = "MIT"
-rust-version = "1.81"                                                                                        # For core::error::Error
+rust-version = "1.71"                                                                                        # itoa 1.68 / ryu 1.71; core::error::Error is version-gated
 homepage = "https://github.com/ParkMyCar/compact_str"
 repository = "https://github.com/ParkMyCar/compact_str"
 readme = "../README.md"
@@ -60,7 +60,6 @@ zeroize = { version = "1", optional = true, default-features = false }
 castaway = { version = "0.2.3", default-features = false, features = ["alloc"] }
 cfg-if = "1"
 itoa = "1"
-rustversion = "1"
 ryu = "1"
 static_assertions = "1"
 

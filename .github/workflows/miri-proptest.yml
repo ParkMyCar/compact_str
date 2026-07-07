@@ -19,14 +19,32 @@ env:
 
 jobs:
   miri-proptest:
-    name: cargo miri nextest (proptest)
+    name: cargo miri nextest (${{ matrix.name }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Native little-endian host. `--all-features` exercises every integration (sqlx
+          # included) since their C toolchains are already present for the host target.
+          - name: little-endian
+            target: ""
+            features: "--all-features"
+          # Big-endian canary. `Capacity` encodes the discriminant via byte-layout masks
+          # (`from_ne_bytes`), so its `to_le()` / `from_le()` round-trips only get real coverage
+          # on a big-endian target -- Miri runs the property tests against s390x here without any
+          # emulator. We drop `sqlx` from the feature set: its `libsqlite3-sys` needs an s390x C
+          # cross-compiler we don't install, and it's pure-FFI glue with nothing endian-specific
+          # to check. The remaining features are all pure-Rust and build for the target as-is.
+          - name: big-endian (s390x)
+            target: "--target s390x-unknown-linux-gnu"
+            features: "--features arbitrary,bytes,diesel,markup,proptest,quickcheck,rkyv,serde,smallvec"
     steps:
       - uses: actions/checkout@v4
 
       - name: Install toolchain
         run: |
-          rustup toolchain install ${{ env.RUST_NIGHTLY_VERSION }} --no-self-update --profile minimal --component miri
+          rustup toolchain install ${{ env.RUST_NIGHTLY_VERSION }} --no-self-update --profile minimal --component miri,rust-src
           rustup override set ${{ env.RUST_NIGHTLY_VERSION }}
       - name: Install cargo-nextest
         uses: taiki-e/install-action@nextest
@@ -41,8 +59,12 @@ jobs:
       # skips `features::rkyv::tests::proptest_roundtrip`: `rkyv::access` trips a known
       # rkyv-under-Miri Stacked Borrows error (rust-lang/unsafe-code-guidelines#134), the same
       # reason its sibling `test_roundtrip` already carries `#[cfg_attr(miri, ignore)]`.
+      #
+      # We run Miri in its default (debug) mode, not `--release`: release codegen can optimize
+      # away the very UB we're hunting for and compiles out `debug_assert!`, so debug mode is
+      # what actually exercises the checks.
       - name: Run proptests under Miri
         env:
           MIRIFLAGS: "-Zmiri-strict-provenance -Zmiri-disable-isolation"
         run: |
-          cargo miri nextest run --all-features --manifest-path=compact_str/Cargo.toml --run-ignored=ignored-only -E 'test(/proptest_|quickcheck_/) and not test(/rkyv::tests::proptest_roundtrip/)'
+          cargo miri nextest run ${{ matrix.features }} ${{ matrix.target }} --manifest-path=compact_str/Cargo.toml --run-ignored=ignored-only -E 'test(/proptest_|quickcheck_/) and not test(/rkyv::tests::proptest_roundtrip/)'

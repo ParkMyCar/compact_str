@@ -242,8 +242,7 @@ impl CompactString {
     /// );
     /// ```
     #[inline]
-    #[rustversion::attr(since(1.64), const)]
-    pub fn as_static_str(&self) -> Option<&'static str> {
+    pub const fn as_static_str(&self) -> Option<&'static str> {
         self.0.as_static_str()
     }
 
@@ -2217,11 +2216,12 @@ impl From<CompactString> for alloc::rc::Rc<str> {
     }
 }
 
-impl From<CompactString> for Box<dyn core::error::Error + Send + Sync> {
+#[cfg(feature = "std")]
+impl From<CompactString> for Box<dyn std::error::Error + Send + Sync> {
     fn from(value: CompactString) -> Self {
         struct StringError(CompactString);
 
-        impl core::error::Error for StringError {
+        impl std::error::Error for StringError {
             #[allow(deprecated)]
             fn description(&self) -> &str {
                 &self.0
@@ -2245,10 +2245,11 @@ impl From<CompactString> for Box<dyn core::error::Error + Send + Sync> {
     }
 }
 
-impl From<CompactString> for Box<dyn core::error::Error> {
+#[cfg(feature = "std")]
+impl From<CompactString> for Box<dyn std::error::Error> {
     fn from(value: CompactString) -> Self {
-        let err1: Box<dyn core::error::Error + Send + Sync> = From::from(value);
-        let err2: Box<dyn core::error::Error> = err1;
+        let err1: Box<dyn std::error::Error + Send + Sync> = From::from(value);
+        let err2: Box<dyn std::error::Error> = err1;
         err2
     }
 }
@@ -2601,7 +2602,9 @@ impl fmt::Display for ReserveError {
     }
 }
 
-impl core::error::Error for ReserveError {}
+#[cfg(feature = "std")]
+#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
+impl std::error::Error for ReserveError {}
 
 /// A possible error value if [`ToCompactString::try_to_compact_string()`] failed.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -2636,8 +2639,10 @@ impl From<fmt::Error> for ToCompactStringError {
     }
 }
 
-impl core::error::Error for ToCompactStringError {
-    fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
+#[cfg(feature = "std")]
+#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
+impl std::error::Error for ToCompactStringError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             ToCompactStringError::Reserve(err) => Some(err),
             ToCompactStringError::Fmt(err) => Some(err),

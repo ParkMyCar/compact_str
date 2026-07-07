@@ -70,7 +70,7 @@ impl Repr {
         } else if len <= MAX_SIZE {
             // SAFETY: We checked that the length of text is less than or equal to MAX_SIZE
             let inline = unsafe { InlineBuffer::new(text) };
-            Ok(Repr::from_inline(inline))
+            Repr::from_inline_ok(inline)
         } else {
             HeapBuffer::new(text).map(Repr::from_heap)
         }
@@ -183,7 +183,7 @@ impl Repr {
         } else if should_inline && s.len() <= MAX_SIZE {
             // SAFETY: Checked to make sure the string would fit inline
             let inline = unsafe { InlineBuffer::new(s.as_str()) };
-            Ok(Repr::from_inline(inline))
+            Repr::from_inline_ok(inline)
         } else {
             let mut s = mem::ManuallyDrop::new(s.into_bytes());
             let len = s.len();
@@ -650,6 +650,18 @@ impl Repr {
         unsafe { core::mem::transmute(inline) }
     }
 
+    /// `Ok(from_inline(inline))`, plus a hint to the compiler that the result is in fact `Ok`.
+    #[inline(always)]
+    fn from_inline_ok(inline: InlineBuffer) -> Result<Self, ReserveError> {
+        let repr = Self::from_inline(inline);
+        // SAFETY: `InlineBuffer` always produces a valid inline last byte (`< HEAP_MASK`). The
+        // compiler cannot see this through the transmute; without the hint it cannot fold the
+        // niche-encoded `Err` arm at the call site. Kept here (not in `from_inline`) so callers
+        // that don't wrap in `Result` avoid materializing the load of the last byte.
+        unsafe { assume(repr.last_byte() < HEAP_MASK) };
+        Ok(repr)
+    }
+
     /// Reinterprets a [`HeapBuffer`] into a [`Repr`]
     ///
     /// Note: This is safe because [`HeapBuffer`] and [`Repr`] are the same size. We used to define
@@ -882,6 +894,25 @@ fn ensure_read(value: usize) -> usize {
     };
 
     value
+}
+
+/// Polyfill for [`core::hint::assert_unchecked`] (stabilized in Rust 1.81; our MSRV is 1.71). The
+/// two are equivalent — `assert_unchecked` is defined as this — so the release codegen is identical.
+///
+/// In debug builds we also `debug_assert!` the condition, so a violated invariant panics loudly
+/// instead of being silent UB. This compiles out of release builds, leaving only the hint.
+///
+/// TODO(MSRV 1.81): drop this and call `core::hint::assert_unchecked` directly.
+///
+/// # Safety
+/// `cond` must always hold; the compiler is free to assume it.
+#[inline(always)]
+const unsafe fn assume(cond: bool) {
+    debug_assert!(cond);
+    if !cond {
+        // SAFETY: guaranteed by the caller.
+        core::hint::unreachable_unchecked();
+    }
 }
 
 #[cfg(test)]

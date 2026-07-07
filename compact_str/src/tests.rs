@@ -2050,3 +2050,43 @@ fn test_repeat_capacity_overflow() {
     let s = CompactString::new("abc");
     let _ = s.repeat(usize::MAX);
 }
+
+#[test]
+fn test_inline_max_len_maximal_last_byte() {
+    // Tightest case for `from_inline_ok`: a `MAX_SIZE`-length inline string. At `len == MAX_SIZE`
+    // the length byte is overwritten by real UTF-8 data, so the discriminant *is* the final data
+    // byte. `U+07FF` encodes as `DF BF`, giving a trailing byte of `0xBF` (191) — the largest a
+    // valid UTF-8 trailing byte can be, i.e. the closest the invariant ever gets to `HEAP_MASK`.
+    let s = "a".repeat(MAX_SIZE - 2) + "\u{07FF}";
+    assert_eq!(s.len(), MAX_SIZE);
+
+    // via `&str` -> `Repr::new` inline arm -> `from_inline_ok`
+    let a = CompactString::new(s.as_str());
+    assert!(!a.is_heap_allocated());
+    assert_eq!(a, s);
+
+    // via `String` -> `Repr::from_string(_, true)` inline arm -> `from_inline_ok`
+    let b = CompactString::from(s.clone());
+    assert!(!b.is_heap_allocated());
+    assert_eq!(b, s);
+}
+
+#[test]
+fn test_inline_all_lengths_reach_from_inline_ok() {
+    // Walk every inline length through both call sites of `from_inline_ok`.
+    for len in 0..=MAX_SIZE {
+        let s = "a".repeat(len);
+
+        let a = CompactString::new(s.as_str()); // Repr::new
+        assert!(!a.is_heap_allocated(), "len {} via &str went to heap", len);
+        assert_eq!(a, s);
+
+        let b = CompactString::from(s.clone()); // Repr::from_string(_, true)
+        assert!(
+            !b.is_heap_allocated(),
+            "len {} via String went to heap",
+            len
+        );
+        assert_eq!(b, s);
+    }
+}

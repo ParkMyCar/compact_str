@@ -496,6 +496,28 @@ impl Repr {
         }
     }
 
+    /// Returns a mutable raw pointer to the start of the underlying buffer.
+    #[inline]
+    pub(crate) fn as_mut_ptr(&mut self) -> *mut u8 {
+        #[cold]
+        fn inline_static_str(this: &mut Repr) {
+            if let Some(s) = this.as_static_str() {
+                *this = Repr::new(s).unwrap_with_msg();
+            }
+        }
+
+        if self.is_static_str() {
+            inline_static_str(self);
+        }
+
+        if self.is_heap_allocated() {
+            // SAFETY: We just checked the discriminant to make sure we're heap allocated.
+            unsafe { self.as_mut_heap().ptr.as_ptr() }
+        } else {
+            self as *mut Self as *mut u8
+        }
+    }
+
     /// Return a mutable reference to the entirely underlying buffer
     ///
     /// # Safety

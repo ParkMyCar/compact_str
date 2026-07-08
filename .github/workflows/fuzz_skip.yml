@@ -1,0 +1,21 @@
+# Companion "skip" workflow for fuzz.yml -- see cross_platform_skip.yml for the full rationale.
+#
+# fuzz.yml is path-filtered, so on PRs that don't touch its paths the required `libFuzzer [x86_64]`
+# check would never report and block merging. This reports that check name as success on the
+# inverse path set. Keep the job name in sync with fuzz.yml.
+on:
+  pull_request:
+    paths-ignore:
+      - 'compact_str/**'
+      - 'fuzz/**'
+      - '.github/workflows/fuzz.yml'
+
+name: Fuzz
+
+jobs:
+  libFuzzer_x86_64:
+    name: libFuzzer [x86_64]
+    runs-on: ubuntu-latest
+    steps:
+      - name: No-op
+        run: echo "fuzz.yml doesn't apply to this change; reporting success to satisfy the required check."

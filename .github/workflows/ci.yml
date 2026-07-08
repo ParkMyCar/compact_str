@@ -12,7 +12,7 @@ env:
   RUSTFLAGS: "-D warnings"
   PROPTEST_CASES: 10000
   MIRIFLAGS: "-Zmiri-strict-provenance"
-  RUST_VERSION: 1.92.0
+  RUST_VERSION: 1.96.1
   RUST_NIGHTLY_VERSION: "nightly-2026-07-08"
 
 jobs:
@@ -34,7 +34,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - toolchain: "1.92.0"
+          - toolchain: "1.96.1"
           - toolchain: "nightly-2026-07-08"
 
     name: cargo test

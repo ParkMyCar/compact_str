@@ -13,7 +13,7 @@ name: Miri Proptest
 
 env:
   CARGO_TERM_COLOR: "always"
-  RUST_NIGHTLY_VERSION: "nightly-2026-02-27"
+  RUST_NIGHTLY_VERSION: "nightly-2026-07-08"
   # Our `proptest_*` / `quickcheck_*` property tests are `#[cfg_attr(miri, ignore)]` because
   # running thousands of cases under Miri is far too slow. This job runs them under Miri at a
   # reduced case count for UB coverage of the property space. It's nightly / on-demand only: the

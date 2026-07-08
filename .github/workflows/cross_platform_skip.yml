@@ -1,0 +1,38 @@
+# Companion "skip" workflow for cross_platform.yml.
+#
+# cross_platform.yml is path-filtered -- it only runs when `compact_str/**` or its own file
+# changes. GitHub does NOT treat a workflow skipped by a path filter as passing: a *required*
+# status check that never reports leaves the PR blocked forever. This workflow triggers on the
+# inverse path set and reports the same check names as success, so the required checks are
+# satisfied on PRs that don't touch those paths -- without running the slow, emulated
+# cross-platform matrix.
+#
+# Keep the `name` list below in sync with the matrix in cross_platform.yml.
+on:
+  pull_request:
+    paths-ignore:
+      - 'compact_str/**'
+      - '.github/workflows/cross_platform.yml'
+
+name: X-Plat
+
+jobs:
+  cross-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        name:
+          - macos
+          - Windows
+          - Linux 32-bit
+          - Linux ARMv6 32-bit
+          - Linux ARMv7-A 32-bit
+          - Linux PowerPC Big Endian 32-bit
+          - Linux PowerPC Little Endian 64-bit
+          - Linux ARM64 Little Endian 64-bit
+          - Linux PowerPC Big Endian 64-bit
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: No-op
+        run: echo "cross_platform.yml doesn't apply to this change; reporting success to satisfy the required check."

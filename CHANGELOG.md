@@ -6,6 +6,29 @@
 * The `Error` trait impls once again require the `std` feature. This reverts the (unreleased)
   no-std `core::error::Error` support from [#443](https://github.com/ParkMyCar/compact_str/pull/443),
   which required Rust `v1.81`; it can return once the MSRV reaches `v1.81`.
+* Added support for the [`garde`](https://crates.io/crates/garde) validation crate under an
+  optional feature, implementing its string rule traits for `CompactString`.
+    * Implemented in [`feat: add garde validation support`](https://github.com/ParkMyCar/compact_str/pull/471).
+* Bump the [`sqlx`](https://crates.io/crates/sqlx) dependency to `v0.9`. Enabling the `sqlx`
+  feature now requires Rust `v1.94`.
+    * Implemented in [`deps: bump sqlx to 0.9`](https://github.com/ParkMyCar/compact_str/pull/474).
+* Fixed `CompactString::as_mut_bytes` exposing uninitialized spare capacity through a `&mut [u8]`;
+  heap spare capacity is now zero-initialized before it's returned.
+    * Implemented in [`fix: avoid exposing uninitialized spare capacity`](https://github.com/ParkMyCar/compact_str/pull/468).
+* Fixed `CompactString::retain` to avoid briefly creating references to invalid UTF-8.
+    * Implemented in [`Avoid invalid UTF-8 references in retain`](https://github.com/ParkMyCar/compact_str/pull/469).
+
+## Performance
+* Reuse an owned `String`'s existing allocation in `CompactString::new`.
+    * Implemented in [`perf: reuse owned String in CompactString::new`](https://github.com/ParkMyCar/compact_str/pull/460).
+* Specialize `ToCompactString` for `str`.
+    * Implemented in [`perf: specialize ToCompactString for str`](https://github.com/ParkMyCar/compact_str/pull/461).
+* Pass heap fields by value when dropping a `CompactString` instead of `&mut Repr`.
+    * Implemented in [`perf: Drop passes heap fields by-value instead of &mut Repr`](https://github.com/ParkMyCar/compact_str/pull/462).
+* Skip the `Result` on the hot inline construction path with `Repr::new_panic`.
+    * Implemented in [`perf: add Repr::new_panic to skip Result on the hot inline path`](https://github.com/ParkMyCar/compact_str/pull/463).
+* Assert internal `Repr` invariants so the compiler can fold dead error-handling branches on construction.
+    * Implemented in [`perf: assert Repr invariants to fold dead Err arms on construction`](https://github.com/ParkMyCar/compact_str/pull/467).
 
 # 0.9.0
 ### February 24, 2025

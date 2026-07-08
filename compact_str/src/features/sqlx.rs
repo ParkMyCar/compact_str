@@ -43,7 +43,7 @@ where
 impl<'q> Encode<'q, sqlx::MySql> for CompactString {
     fn encode_by_ref(
         &self,
-        buf: &mut <sqlx::MySql as Database>::ArgumentBuffer<'q>,
+        buf: &mut <sqlx::MySql as Database>::ArgumentBuffer,
     ) -> Result<IsNull, BoxDynError> {
         Encode::<'_, sqlx::MySql>::encode_by_ref(&self.as_str(), buf)
     }
@@ -81,7 +81,7 @@ where
 impl<'q> Encode<'q, sqlx::Postgres> for CompactString {
     fn encode_by_ref(
         &self,
-        buf: &mut <sqlx::Postgres as Database>::ArgumentBuffer<'q>,
+        buf: &mut <sqlx::Postgres as Database>::ArgumentBuffer,
     ) -> Result<IsNull, BoxDynError> {
         Encode::<'_, sqlx::Postgres>::encode_by_ref(&self.as_str(), buf)
     }
@@ -133,14 +133,14 @@ where
 impl<'q> Encode<'q, sqlx::Sqlite> for CompactString {
     fn encode(
         self,
-        buf: &mut <sqlx::Sqlite as Database>::ArgumentBuffer<'q>,
+        buf: &mut <sqlx::Sqlite as Database>::ArgumentBuffer,
     ) -> Result<IsNull, BoxDynError> {
         Encode::<'_, sqlx::Sqlite>::encode(self.into_string(), buf)
     }
 
     fn encode_by_ref(
         &self,
-        buf: &mut <sqlx::Sqlite as Database>::ArgumentBuffer<'q>,
+        buf: &mut <sqlx::Sqlite as Database>::ArgumentBuffer,
     ) -> Result<IsNull, BoxDynError> {
         Encode::<'_, sqlx::Sqlite>::encode(alloc::string::String::from(self.as_str()), buf)
     }

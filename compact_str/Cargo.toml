@@ -55,7 +55,7 @@ serde = { version = "1", optional = true, default-features = false, features = [
     "alloc",
 ] }
 smallvec = { version = "1", optional = true, features = ["union"] }
-sqlx = { version = "0.8", optional = true, default-features = false }
+sqlx = { version = "0.9", optional = true, default-features = false }
 utoipa = { version = "5", optional = true }
 zeroize = { version = "1", optional = true, default-features = false }
 
@@ -76,6 +76,8 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 test-case = "3"
 test-strategy = "0.3"
+# Enables `zeroize/alloc` for the `String` baseline in the zeroize parity tests, without widening the public feature.
+zeroize = { version = "1", default-features = false, features = ["alloc"] }
 
 [package.metadata.docs.rs]
 all-features = true

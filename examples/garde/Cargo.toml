@@ -1,0 +1,8 @@
+[package]
+name = "example-garde"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+compact_str = { path = "../../compact_str", features = ["garde"] }
+garde = { version = "0.23", features = ["derive"] }

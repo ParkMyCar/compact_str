@@ -591,12 +591,45 @@ impl CompactString {
         unsafe { core::str::from_utf8_unchecked_mut(bytes) }
     }
 
-    unsafe fn spare_capacity_mut(&mut self) -> &mut [mem::MaybeUninit<u8>] {
+    /// Returns the remaining spare capacity of this [`CompactString`] as a slice of
+    /// [`MaybeUninit`](mem::MaybeUninit) bytes.
+    ///
+    /// The returned slice covers the range `len()..capacity()`. After initializing a prefix of the
+    /// slice, use [`CompactString::set_len`] to include those bytes in the string.
+    ///
+    /// # Safety
+    ///
+    /// * Before increasing the length, the caller must initialize every newly included byte and
+    ///   ensure the resulting string is valid UTF-8.
+    /// * For an inline string, the final byte of the spare capacity also stores the representation
+    ///   tag. It may only be overwritten as the final byte of a completely initialized, valid
+    ///   UTF-8 string that fills the inline capacity.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use compact_str::CompactString;
+    /// let mut s = CompactString::new("hello");
+    /// let suffix = b" world";
+    ///
+    /// let spare = unsafe { s.spare_capacity_mut() };
+    /// for (slot, byte) in spare.iter_mut().zip(suffix) {
+    ///     slot.write(*byte);
+    /// }
+    /// // SAFETY: We initialized the appended bytes, and the result is valid UTF-8.
+    /// unsafe { s.set_len(s.len() + suffix.len()) };
+    ///
+    /// assert_eq!(s, "hello world");
+    /// ```
+    #[inline]
+    pub unsafe fn spare_capacity_mut(&mut self) -> &mut [mem::MaybeUninit<u8>] {
         let len = self.len();
         let ptr = self.0.as_mut_ptr();
         let cap = self.capacity();
 
-        slice::from_raw_parts_mut(ptr.add(len) as *mut mem::MaybeUninit<u8>, cap - len)
+        // SAFETY: The buffer is valid for `cap` bytes, and `len <= cap`. `MaybeUninit<u8>` does
+        // not require the spare bytes to be initialized.
+        unsafe { slice::from_raw_parts_mut(ptr.add(len) as *mut mem::MaybeUninit<u8>, cap - len) }
     }
 
     /// Returns a byte slice of the [`CompactString`]'s contents.
@@ -615,10 +648,10 @@ impl CompactString {
 
     // TODO: Implement a `try_as_mut_slice(...)` that will fail if it results in cloning?
     //
-    /// Provides a mutable reference to the underlying buffer of bytes.
+    /// Provides a mutable reference to the initialized bytes in this [`CompactString`].
     ///
-    /// The returned slice has length [`CompactString::capacity()`]. For heap-allocated strings,
-    /// this method initializes the spare capacity before returning.
+    /// The returned slice has length [`CompactString::len()`]. To write into the remaining
+    /// capacity, use [`CompactString::spare_capacity_mut`].
     ///
     /// # Safety
     /// * All Rust strings, including `CompactString`, must be valid UTF-8. The caller must
@@ -629,31 +662,18 @@ impl CompactString {
     /// # use compact_str::CompactString;
     /// let mut s = CompactString::new("hello");
     ///
-    /// let slice = unsafe { s.as_mut_bytes() };
-    /// // copy bytes into our string
-    /// slice[5..11].copy_from_slice(" world".as_bytes());
-    /// // set the len of the string
-    /// unsafe { s.set_len(11) };
+    /// let bytes = unsafe { s.as_mut_bytes() };
+    /// bytes[0] = b'H';
     ///
-    /// assert_eq!(s, "hello world");
+    /// assert_eq!(s, "Hello");
     /// ```
     #[inline]
     pub unsafe fn as_mut_bytes(&mut self) -> &mut [u8] {
         let len = self.len();
         let ptr = self.0.as_mut_ptr();
-        let cap = self.capacity();
 
-        // Inline buffers are fully initialized when they are created. Heap buffers only
-        // initialize their string contents, so initialize their spare capacity before exposing it
-        // through a `[u8]` reference.
-        if self.is_heap_allocated() {
-            // SAFETY: The heap allocation is valid for `cap` bytes and `len <= cap`.
-            unsafe { ptr.add(len).write_bytes(0, cap - len) };
-        }
-
-        // SAFETY: All `cap` bytes are initialized. Inline buffers are initialized on creation, and
-        // heap spare capacity was initialized above.
-        unsafe { slice::from_raw_parts_mut(ptr, cap) }
+        // SAFETY: The first `len` bytes of a `CompactString` are initialized.
+        unsafe { slice::from_raw_parts_mut(ptr, len) }
     }
 
     /// Appends the given [`char`] to the end of this [`CompactString`].

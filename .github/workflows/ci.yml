@@ -35,9 +35,13 @@ jobs:
       matrix:
         include:
           - toolchain: "1.96.1"
+            name: stable
           - toolchain: "nightly-2026-07-08"
+            name: nightly
 
-    name: cargo test
+    # Use a version-independent name so the check name (and any required-status-check that
+    # references it) doesn't change every time we bump the pinned toolchain.
+    name: cargo test (${{ matrix.name }})
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

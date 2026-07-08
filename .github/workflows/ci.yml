@@ -13,7 +13,7 @@ env:
   PROPTEST_CASES: 10000
   MIRIFLAGS: "-Zmiri-strict-provenance"
   RUST_VERSION: 1.92.0
-  RUST_NIGHTLY_VERSION: "nightly-2026-02-27"
+  RUST_NIGHTLY_VERSION: "nightly-2026-07-08"
 
 jobs:
   check:
@@ -35,7 +35,7 @@ jobs:
       matrix:
         include:
           - toolchain: "1.92.0"
-          - toolchain: "nightly-2026-02-27"
+          - toolchain: "nightly-2026-07-08"
 
     name: cargo test
     runs-on: ubuntu-latest

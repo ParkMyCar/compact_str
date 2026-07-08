@@ -4,6 +4,7 @@ members = [
     "examples/bevy-reflect",
     "examples/bytes",
     "examples/diesel",
+    "examples/garde",
     "examples/macros",
     "examples/serde",
     "examples/sqlx",

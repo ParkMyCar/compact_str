@@ -22,6 +22,7 @@ borsh = ["dep:borsh"]
 bytes = ["dep:bytes"]
 defmt = ["dep:defmt"]
 diesel = ["dep:diesel"]
+garde = ["dep:garde"]
 markup = ["dep:markup"]
 proptest = ["dep:proptest"]
 quickcheck = ["dep:quickcheck"]
@@ -42,6 +43,7 @@ borsh = { version = "1", optional = true }
 bytes = { version = "1", optional = true }
 defmt = { version = "1", optional = true }
 diesel = { version = "2", optional = true, default-features = false }
+garde = { version = "0.23", optional = true, default-features = false, features = ["derive"] }
 markup = { version = "0.15", optional = true, default-features = false }
 proptest = { version = "1", optional = true, default-features = false, features = [
     "std",

@@ -127,6 +127,50 @@ fn proptest_from_lossy_cow_roundtrips(#[strategy(rand_bytes())] bytes: Vec<u8>) 
     prop_assert_eq!(cow, compact);
 }
 
+#[test]
+fn test_as_mut_bytes_only_exposes_initialized_data() {
+    for mut compact in [
+        CompactString::new("inline"),
+        CompactString::with_capacity(100),
+    ] {
+        let len = compact.len();
+
+        // SAFETY: We do not modify the buffer, so the string remains valid UTF-8.
+        let bytes = unsafe { compact.as_mut_bytes() };
+
+        assert_eq!(bytes.len(), len);
+        for byte in bytes {
+            // Reading each byte under Miri verifies that `as_mut_bytes` only exposes initialized
+            // string data through a `[u8]` reference.
+            core::hint::black_box(*byte);
+        }
+    }
+}
+
+#[test]
+fn test_spare_capacity_mut() {
+    let mut inline = CompactString::new("");
+    let spare = unsafe { inline.spare_capacity_mut() };
+    assert_eq!(spare.len(), MAX_SIZE);
+    for slot in spare {
+        slot.write(b'a');
+    }
+    // SAFETY: Every byte is initialized to ASCII, including the inline tag byte, so the full
+    // buffer is valid UTF-8.
+    unsafe { inline.set_len(MAX_SIZE) };
+    assert_eq!(inline, "a".repeat(MAX_SIZE));
+
+    let mut heap = CompactString::with_capacity(100);
+    let suffix = b"hello";
+    let spare = unsafe { heap.spare_capacity_mut() };
+    for (slot, byte) in spare.iter_mut().zip(suffix) {
+        slot.write(*byte);
+    }
+    // SAFETY: The first `suffix.len()` bytes were initialized to valid UTF-8 above.
+    unsafe { heap.set_len(suffix.len()) };
+    assert_eq!(heap, "hello");
+}
+
 #[proptest]
 #[cfg_attr(miri, ignore)]
 fn proptest_reserve_and_write_bytes(#[strategy(rand_unicode())] word: String) {
@@ -136,9 +180,12 @@ fn proptest_reserve_and_write_bytes(#[strategy(rand_unicode())] word: String) {
     // reserve enough space to write our bytes
     compact.reserve(word.len());
 
-    // SAFETY: We're writing a String which we know is UTF-8
-    let slice = unsafe { compact.as_mut_bytes() };
-    slice[..word.len()].copy_from_slice(word.as_bytes());
+    // SAFETY: We only initialize a prefix of the spare capacity, and don't overwrite the inline
+    // tag unless `word` fills the entire inline buffer with valid UTF-8.
+    let spare = unsafe { compact.spare_capacity_mut() };
+    for (slot, byte) in spare.iter_mut().zip(word.bytes()) {
+        slot.write(byte);
+    }
 
     // SAFETY: We know this is the length of our string, since `compact` started with 0 bytes
     // and we just wrote `word.len()` bytes
@@ -156,9 +203,12 @@ fn proptest_reserve_and_write_bytes_allocated_properly(#[strategy(rand_unicode()
     // reserve enough space to write our bytes
     compact.reserve(word.len());
 
-    // SAFETY: We're writing a String which we know is UTF-8
-    let slice = unsafe { compact.as_mut_bytes() };
-    slice[..word.len()].copy_from_slice(word.as_bytes());
+    // SAFETY: We only initialize a prefix of the spare capacity, and don't overwrite the inline
+    // tag unless `word` fills the entire inline buffer with valid UTF-8.
+    let spare = unsafe { compact.spare_capacity_mut() };
+    for (slot, byte) in spare.iter_mut().zip(word.bytes()) {
+        slot.write(byte);
+    }
 
     // SAFETY: We know this is the length of our string, since `compact` started with 0 bytes
     // and we just wrote `word.len()` bytes

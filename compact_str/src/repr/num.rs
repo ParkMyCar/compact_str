@@ -37,10 +37,8 @@ macro_rules! impl_IntoRepr {
                 };
                 let mut curr = num_digits as isize;
 
-                // our string will end up being num_digits long
-                unsafe { repr.set_len(num_digits) };
                 // get mutable pointer to our buffer
-                let buf_ptr = unsafe { repr.as_mut_buf().as_mut_ptr() };
+                let buf_ptr = repr.as_mut_ptr();
 
                 let lut_ptr = DEC_DIGITS_LUT.as_ptr();
 
@@ -93,6 +91,10 @@ macro_rules! impl_IntoRepr {
 
                 // we should have moved all the way down our buffer
                 debug_assert_eq!(curr, 0);
+
+                // SAFETY: We initialized all `num_digits` bytes above with ASCII digits and an
+                // optional leading `-`.
+                unsafe { repr.set_len(num_digits) };
 
                 Ok(repr)
             }

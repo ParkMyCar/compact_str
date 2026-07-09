@@ -35,6 +35,8 @@ sqlx-postgres = ["sqlx", "sqlx/postgres"]
 sqlx-sqlite = ["sqlx", "sqlx/sqlite"]
 utoipa = ["dep:utoipa", "std"]
 zeroize = ["dep:zeroize"]
+musli = ["dep:musli"]
+surrealdb = ["dep:surrealdb-types"]
 
 [dependencies]
 arbitrary = { version = "1", optional = true, default-features = false }
@@ -58,6 +60,10 @@ smallvec = { version = "1", optional = true, features = ["union"] }
 sqlx = { version = "0.9", optional = true, default-features = false }
 utoipa = { version = "5", optional = true }
 zeroize = { version = "1", optional = true, default-features = false }
+musli = { version = "0.0.149", optional = true, default-features = false, features = [
+    "alloc",
+] } # Testing: features = ["alloc","descriptive","json","serde","storage","value","wire"]
+surrealdb-types = { version = "3", optional = true, default-features = false }
 
 castaway = { version = "0.2.3", default-features = false, features = ["alloc"] }
 cfg-if = "1"

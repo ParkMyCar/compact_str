@@ -12,11 +12,11 @@ mod capacity;
 mod heap;
 mod inline;
 mod iter;
+mod last_utf8_char;
+mod num;
 #[allow(unexpected_cfgs)]
 #[cfg(kani)]
 mod proofs;
-mod last_utf8_char;
-mod num;
 mod static_str;
 mod traits;
 

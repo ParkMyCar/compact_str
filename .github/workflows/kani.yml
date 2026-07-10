@@ -1,0 +1,41 @@
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    paths:
+      - "compact_str/**"
+      - ".github/workflows/kani.yml"
+      - "!CHANGELOG.md"
+      - "!**/README.md"
+  workflow_dispatch:
+
+name: Kani
+
+env:
+  CARGO_TERM_COLOR: "always"
+
+jobs:
+  verification:
+    name: cargo kani (${{ matrix.harness }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        harness:
+          - inline_repr_roundtrip
+          - capacity_roundtrip
+          - capacity_boundaries
+          - capacity_rejects_usize_max
+    steps:
+      - uses: actions/checkout@v4
+        name: Checkout compact_str
+
+      - name: Verify ${{ matrix.harness }}
+        uses: model-checking/kani-github-action@v1
+        with:
+          working-directory: compact_str
+          args: >-
+            --harness ${{ matrix.harness }}
+            --default-unwind 26
+            --output-format terse

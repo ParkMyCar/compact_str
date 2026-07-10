@@ -12,6 +12,9 @@ mod capacity;
 mod heap;
 mod inline;
 mod iter;
+#[allow(unexpected_cfgs)]
+#[cfg(kani)]
+mod kani;
 mod last_utf8_char;
 mod num;
 mod static_str;
@@ -876,8 +879,9 @@ fn ensure_read(value: usize) -> usize {
     // SAFETY: This assembly instruction is a noop that only affects the instruction ordering.
     //
     // TODO(parkmycar): Re-add loongarch and riscv once we have CI coverage for them.
+    #[allow(unexpected_cfgs)]
     #[cfg(all(
-        not(miri),
+        not(any(kani, miri)),
         any(
             target_arch = "x86",
             target_arch = "x86_64",

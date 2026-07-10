@@ -6,8 +6,8 @@
 use core::{mem, num, ptr};
 
 use super::traits::IntoRepr;
-use super::Repr;
-use crate::{ToCompactStringError, UnwrapWithMsg};
+use super::{InlineBuffer, Repr, LENGTH_MASK, MAX_SIZE};
+use crate::ToCompactStringError;
 
 const DEC_DIGITS_LUT: &[u8] = b"\
       0001020304050607080910111213141516171819\
@@ -21,11 +21,24 @@ macro_rules! impl_IntoRepr {
     ($t:ident, $conv_ty:ident) => {
         impl IntoRepr for $t {
             fn into_repr(self) -> Result<Repr, ToCompactStringError> {
-                // Determine the number of digits in this value
+                // The formatted value is at most 20 characters (`i64::MIN`). On 64-bit that always
+                // fits inline, so we can write straight into an `InlineBuffer` and skip the
+                // discriminant dispatch of `with_capacity`/`as_mut_ptr`/`set_len`. The only case
+                // that doesn't fit is `u64`/`i64` on a 32-bit target (`MAX_SIZE` is 12 there); we
+                // hand those off to `itoa` like the 128-bit types.
                 //
-                // Note: this considers the `-` symbol
+                // `MAX_LEN` is an upper bound on the formatted length including the sign; it's `<
+                // MAX_SIZE` (not `<=`) so the length still fits in the last byte.
+                const MAX_LEN: usize = <$t>::MAX.ilog10() as usize + 2;
+
+                if MAX_LEN >= MAX_SIZE {
+                    let mut itoa_buf = itoa::Buffer::new();
+                    return Ok(Repr::new(itoa_buf.format(self))?);
+                }
+
+                // Number of characters to write, including a leading `-` for negatives.
                 let num_digits = NumChars::num_chars(self);
-                let mut repr = Repr::with_capacity(num_digits).unwrap_with_msg();
+                let mut buffer = [0u8; MAX_SIZE];
 
                 #[allow(unused_comparisons)]
                 let is_nonnegative = self >= 0;
@@ -37,9 +50,7 @@ macro_rules! impl_IntoRepr {
                 };
                 let mut curr = num_digits as isize;
 
-                // get mutable pointer to our buffer
-                let buf_ptr = repr.as_mut_ptr();
-
+                let buf_ptr = buffer.as_mut_ptr();
                 let lut_ptr = DEC_DIGITS_LUT.as_ptr();
 
                 unsafe {
@@ -92,11 +103,13 @@ macro_rules! impl_IntoRepr {
                 // we should have moved all the way down our buffer
                 debug_assert_eq!(curr, 0);
 
-                // SAFETY: We initialized all `num_digits` bytes above with ASCII digits and an
-                // optional leading `-`.
-                unsafe { repr.set_len(num_digits) };
+                // `num_digits < MAX_SIZE`, so the length lives in the last byte, distinct from the
+                // digits.
+                buffer[MAX_SIZE - 1] = num_digits as u8 | LENGTH_MASK;
 
-                Ok(repr)
+                // SAFETY: the leading `num_digits` bytes are ASCII digits (with an optional `-`),
+                // and the last byte is a valid inline length marker.
+                Ok(Repr::from_inline(InlineBuffer(buffer)))
             }
         }
     };
@@ -315,74 +328,20 @@ impl NumChars for i32 {
 impl NumChars for u64 {
     #[inline(always)]
     fn num_chars(val: u64) -> usize {
-        match val {
-            u64::MIN..=9 => 1,
-            10..=99 => 2,
-            100..=999 => 3,
-            1000..=9999 => 4,
-            10000..=99999 => 5,
-            100000..=999999 => 6,
-            1000000..=9999999 => 7,
-            10000000..=99999999 => 8,
-            100000000..=999999999 => 9,
-            1000000000..=9999999999 => 10,
-            10000000000..=99999999999 => 11,
-            100000000000..=999999999999 => 12,
-            1000000000000..=9999999999999 => 13,
-            10000000000000..=99999999999999 => 14,
-            100000000000000..=999999999999999 => 15,
-            1000000000000000..=9999999999999999 => 16,
-            10000000000000000..=99999999999999999 => 17,
-            100000000000000000..=999999999999999999 => 18,
-            1000000000000000000..=9999999999999999999 => 19,
-            10000000000000000000..=u64::MAX => 20,
-        }
+        // `checked_ilog10` is `None` only for `0`, which has one digit. Cheaper than a 20-arm
+        // match for 64-bit values, and exact (unlike `f64::log10`).
+        val.checked_ilog10().map_or(1, |log| log as usize + 1)
     }
 }
 
 impl NumChars for i64 {
     #[inline(always)]
     fn num_chars(val: i64) -> usize {
-        match val {
-            i64::MIN..=-1000000000000000000 => 20,
-            -999999999999999999..=-100000000000000000 => 19,
-            -99999999999999999..=-10000000000000000 => 18,
-            -9999999999999999..=-1000000000000000 => 17,
-            -999999999999999..=-100000000000000 => 16,
-            -99999999999999..=-10000000000000 => 15,
-            -9999999999999..=-1000000000000 => 14,
-            -999999999999..=-100000000000 => 13,
-            -99999999999..=-10000000000 => 12,
-            -9999999999..=-1000000000 => 11,
-            -999999999..=-100000000 => 10,
-            -99999999..=-10000000 => 9,
-            -9999999..=-1000000 => 8,
-            -999999..=-100000 => 7,
-            -99999..=-10000 => 6,
-            -9999..=-1000 => 5,
-            -999..=-100 => 4,
-            -99..=-10 => 3,
-            -9..=-1 => 2,
-            0..=9 => 1,
-            10..=99 => 2,
-            100..=999 => 3,
-            1000..=9999 => 4,
-            10000..=99999 => 5,
-            100000..=999999 => 6,
-            1000000..=9999999 => 7,
-            10000000..=99999999 => 8,
-            100000000..=999999999 => 9,
-            1000000000..=9999999999 => 10,
-            10000000000..=99999999999 => 11,
-            100000000000..=999999999999 => 12,
-            1000000000000..=9999999999999 => 13,
-            10000000000000..=99999999999999 => 14,
-            100000000000000..=999999999999999 => 15,
-            1000000000000000..=9999999999999999 => 16,
-            10000000000000000..=99999999999999999 => 17,
-            100000000000000000..=999999999999999999 => 18,
-            1000000000000000000..=i64::MAX => 19,
-        }
+        // Digits of the magnitude plus one for the sign. `unsigned_abs` avoids `-i64::MIN`.
+        val.unsigned_abs()
+            .checked_ilog10()
+            .map_or(1, |log| log as usize + 1)
+            + (val < 0) as usize
     }
 }
 

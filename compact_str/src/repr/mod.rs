@@ -14,7 +14,7 @@ mod inline;
 mod iter;
 #[allow(unexpected_cfgs)]
 #[cfg(kani)]
-mod kani;
+mod proofs;
 mod last_utf8_char;
 mod num;
 mod static_str;

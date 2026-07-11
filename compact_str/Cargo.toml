@@ -25,6 +25,7 @@ diesel = ["dep:diesel"]
 garde = ["dep:garde"]
 markup = ["dep:markup"]
 proptest = ["dep:proptest"]
+pyo3 = ["dep:pyo3"]
 quickcheck = ["dep:quickcheck"]
 rkyv = ["dep:rkyv"]
 schemars = ["dep:schemars"]
@@ -50,6 +51,7 @@ markup = { version = "0.15", optional = true, default-features = false }
 proptest = { version = "1", optional = true, default-features = false, features = [
     "std",
 ] }
+pyo3 = { version = "0.29", optional = true, default-features = false }
 quickcheck = { version = "1", optional = true, default-features = false }
 rkyv = { version = "0.8", optional = true, default-features = false }
 schemars = { version = "1", optional = true, default-features = false }

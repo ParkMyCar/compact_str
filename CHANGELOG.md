@@ -16,6 +16,10 @@
 * Added support for the [`valuable`](https://crates.io/crates/valuable) crate under an optional
   feature, implementing the `Valuable` trait for `CompactString` so it presents as a `Value::String`.
     * Implemented in [`Add impl Valuable`](https://github.com/ParkMyCar/compact_str/pull/451).
+* Added a `pyo3` feature which implements [`FromPyObject`](https://docs.rs/pyo3/0.29/pyo3/conversion/trait.FromPyObject.html)
+  and [`IntoPyObject`](https://docs.rs/pyo3/0.29/pyo3/conversion/trait.IntoPyObject.html) for `CompactString`, so it can
+  be used seamlessly with [`pyo3`](https://crates.io/crates/pyo3) v0.29.
+    * Implemented in [`feat: add pyo3 feature`](https://github.com/ParkMyCar/compact_str/pull/446).
 * Bump the [`sqlx`](https://crates.io/crates/sqlx) dependency to `v0.9`. Enabling the `sqlx`
   feature now requires Rust `v1.94`.
     * Implemented in [`deps: bump sqlx to 0.9`](https://github.com/ParkMyCar/compact_str/pull/474).

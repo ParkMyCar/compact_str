@@ -6,6 +6,7 @@ members = [
     "examples/diesel",
     "examples/garde",
     "examples/macros",
+    "examples/schemars",
     "examples/serde",
     "examples/sqlx",
     "examples/traits",

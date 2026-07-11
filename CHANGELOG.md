@@ -9,6 +9,10 @@
 * Added support for the [`garde`](https://crates.io/crates/garde) validation crate under an
   optional feature, implementing its string rule traits for `CompactString`.
     * Implemented in [`feat: add garde validation support`](https://github.com/ParkMyCar/compact_str/pull/471).
+* Added support for the [`schemars`](https://crates.io/crates/schemars) crate under an optional
+  feature, implementing `JsonSchema` for `CompactString`. Every method delegates to `String`'s
+  impl, so the generated schema is identical to a `String`'s.
+    * Implemented in [`feat: support schemars`](https://github.com/ParkMyCar/compact_str/pull/454).
 * Bump the [`sqlx`](https://crates.io/crates/sqlx) dependency to `v0.9`. Enabling the `sqlx`
   feature now requires Rust `v1.94`.
     * Implemented in [`deps: bump sqlx to 0.9`](https://github.com/ParkMyCar/compact_str/pull/474).

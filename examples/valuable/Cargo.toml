@@ -1,0 +1,8 @@
+[package]
+name = "example-valuable"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+compact_str = { version = "0.9.0", features = ["valuable"], path = "../../compact_str" }
+valuable = "0.1"

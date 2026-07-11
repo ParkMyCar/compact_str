@@ -2,36 +2,6 @@ use core::ptr;
 
 use super::{Repr, LENGTH_MASK, MAX_SIZE};
 
-/// Copies `len` bytes from `src` to `dst`.
-///
-/// `copy_nonoverlapping` with a runtime length emits a `memcpy` call, which is expensive for the
-/// short copies used when inlining a string. Since an inline string is at most `MAX_SIZE` bytes,
-/// constant-length overlapping copies cover every length while staying inlined.
-///
-/// # Safety
-/// * `len <= MAX_SIZE`.
-/// * `src` and `dst` are valid for `len` bytes and do not overlap.
-#[inline(always)]
-unsafe fn copy_small(src: *const u8, dst: *mut u8, len: usize) {
-    debug_assert!(len <= MAX_SIZE);
-
-    if len >= 16 {
-        ptr::copy_nonoverlapping(src, dst, 16);
-        ptr::copy_nonoverlapping(src.add(len - 16), dst.add(len - 16), 16);
-    } else if len >= 8 {
-        ptr::copy_nonoverlapping(src, dst, 8);
-        ptr::copy_nonoverlapping(src.add(len - 8), dst.add(len - 8), 8);
-    } else if len >= 4 {
-        ptr::copy_nonoverlapping(src, dst, 4);
-        ptr::copy_nonoverlapping(src.add(len - 4), dst.add(len - 4), 4);
-    } else if len >= 2 {
-        ptr::copy_nonoverlapping(src, dst, 2);
-        ptr::copy_nonoverlapping(src.add(len - 2), dst.add(len - 2), 2);
-    } else if len == 1 {
-        *dst = *src;
-    }
-}
-
 /// A buffer stored on the stack whose size is equal to the stack size of `String`
 #[cfg(target_pointer_width = "64")]
 #[repr(C, align(8))]
@@ -145,6 +115,41 @@ impl InlineBuffer {
         if len < MAX_SIZE {
             self.0[MAX_SIZE - 1] = len as u8 | LENGTH_MASK;
         }
+    }
+}
+
+/// Copies <= [`MAX_SIZE`] bytes `len` bytes from `src` to `dst`.
+///
+/// `copy_nonoverlapping` with a runtime length emits a `memcpy` call into libc. This is
+/// relatively expensive for the short copies used when inlining a string, which can
+/// instead be implemented with a handfull of ASM instructions.
+/// 
+/// Since an inline string is at most `MAX_SIZE` bytes, we use a ladder of constant-length
+/// overlapping copies which LLVM can best optimize.
+///
+/// # Safety
+/// 
+/// * `len <= MAX_SIZE`.
+/// * `src` and `dst` are valid for `len` bytes and do not overlap.
+/// 
+#[inline(always)]
+unsafe fn copy_small(src: *const u8, dst: *mut u8, len: usize) {
+    debug_assert!(len <= MAX_SIZE);
+
+    if len >= 16 {
+        ptr::copy_nonoverlapping(src, dst, 16);
+        ptr::copy_nonoverlapping(src.add(len - 16), dst.add(len - 16), 16);
+    } else if len >= 8 {
+        ptr::copy_nonoverlapping(src, dst, 8);
+        ptr::copy_nonoverlapping(src.add(len - 8), dst.add(len - 8), 8);
+    } else if len >= 4 {
+        ptr::copy_nonoverlapping(src, dst, 4);
+        ptr::copy_nonoverlapping(src.add(len - 4), dst.add(len - 4), 4);
+    } else if len >= 2 {
+        ptr::copy_nonoverlapping(src, dst, 2);
+        ptr::copy_nonoverlapping(src.add(len - 2), dst.add(len - 2), 2);
+    } else if len == 1 {
+        *dst = *src;
     }
 }
 

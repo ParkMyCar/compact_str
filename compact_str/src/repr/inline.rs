@@ -123,15 +123,15 @@ impl InlineBuffer {
 /// `copy_nonoverlapping` with a runtime length emits a `memcpy` call into libc. This is
 /// relatively expensive for the short copies used when inlining a string, which can
 /// instead be implemented with a handfull of ASM instructions.
-/// 
+///
 /// Since an inline string is at most `MAX_SIZE` bytes, we use a ladder of constant-length
 /// overlapping copies which LLVM can best optimize.
 ///
 /// # Safety
-/// 
+///
 /// * `len <= MAX_SIZE`.
 /// * `src` and `dst` are valid for `len` bytes and do not overlap.
-/// 
+///
 #[inline(always)]
 unsafe fn copy_small(src: *const u8, dst: *mut u8, len: usize) {
     debug_assert!(len <= MAX_SIZE);

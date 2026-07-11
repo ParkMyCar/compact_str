@@ -1,0 +1,12 @@
+[package]
+name = "example-pyo3"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "compact_str_example"
+crate-type = ["cdylib"]
+
+[dependencies]
+compact_str = { path = "../../compact_str", features = ["pyo3"] }
+pyo3 = { version = "0.29", features = ["extension-module"] }

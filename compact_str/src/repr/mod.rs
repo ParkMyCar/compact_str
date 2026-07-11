@@ -347,8 +347,11 @@ impl Repr {
         let len = self.len();
         let str_len = s.len();
 
-        // Reserve at least enough space to fit `s`
-        self.reserve(str_len).unwrap_with_msg();
+        // Only call the (out-of-line) grow path when we actually need to; the common append
+        // already has room. A `&'static str` always has to be converted first.
+        if self.is_static_str() || len + str_len > self.capacity() {
+            self.reserve(str_len).unwrap_with_msg();
+        }
 
         // Copy the string into the spare capacity without first creating a reference to the
         // uninitialized memory.
@@ -536,6 +539,7 @@ impl Repr {
     /// # Safety
     /// * `len` bytes in the buffer must be valid UTF-8
     /// * If the underlying buffer is stored inline, `len` must be <= MAX_SIZE
+    #[inline]
     pub(crate) unsafe fn set_len(&mut self, len: usize) {
         if let Some(s) = self.as_static_variant_mut() {
             s.set_len(len);
@@ -826,7 +830,7 @@ impl Drop for Repr {
 impl Extend<char> for Repr {
     #[inline]
     fn extend<T: IntoIterator<Item = char>>(&mut self, iter: T) {
-        let iter = iter.into_iter();
+        let mut iter = iter.into_iter();
 
         let (lower_bound, _) = iter.size_hint();
         if lower_bound > 0 {
@@ -834,8 +838,46 @@ impl Extend<char> for Repr {
             let _: Result<(), ReserveError> = self.reserve(lower_bound);
         }
 
-        for c in iter {
-            self.push_str(c.encode_utf8(&mut [0; 4]));
+        // Append into the spare capacity directly, tracking the length locally so we avoid the
+        // per-char `len`/`set_len` discriminant work of pushing one char at a time. If a char
+        // doesn't fit, grow via `push_str` and re-resolve the buffer.
+        'refetch: loop {
+            // Pull a char before resolving the buffer so an empty iterator does no work.
+            let mut next = iter.next();
+            if next.is_none() {
+                return;
+            }
+
+            let cap = self.capacity();
+            let mut cur = self.len();
+            // Also converts a `&'static str` into an owned inline buffer.
+            let ptr = self.as_mut_ptr();
+            let mut buf = [0u8; 4];
+
+            while let Some(c) = next {
+                let encoded = c.encode_utf8(&mut buf);
+                let n = encoded.len();
+
+                if cur + n > cap {
+                    // SAFETY: `cur` bytes of valid UTF-8 have been written into the buffer.
+                    unsafe { self.set_len(cur) };
+                    self.push_str(encoded);
+                    continue 'refetch;
+                }
+
+                // SAFETY: `cur + n <= cap` leaves room for `n` bytes; `ptr` stays valid until the
+                // next `continue 'refetch`, which re-derives it; `encoded` cannot overlap `ptr`.
+                unsafe {
+                    ptr.add(cur).copy_from_nonoverlapping(encoded.as_ptr(), n);
+                }
+                cur += n;
+
+                next = iter.next();
+            }
+
+            // SAFETY: `cur` bytes of valid UTF-8 have been written into the buffer.
+            unsafe { self.set_len(cur) };
+            return;
         }
     }
 }

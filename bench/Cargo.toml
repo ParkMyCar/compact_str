@@ -9,6 +9,7 @@ edition = "2021"
 compact_str = { path = "../compact_str" }
 compact_str_6 = { package = "compact_str", version = "0.6" }
 criterion = { version = "0.5", default-features = false }
+gungraun = "0.19"
 iai = "0.1.1"
 smartstring = "1.0.1"
 smol_str = "0.2"
@@ -31,4 +32,20 @@ harness = false
 
 [[bench]]
 name = "random"
+harness = false
+
+[[bench]]
+name = "gungraun_apis"
+harness = false
+
+[[bench]]
+name = "gungraun_compact_str"
+harness = false
+
+[[bench]]
+name = "gungraun_comparison"
+harness = false
+
+[[bench]]
+name = "gungraun_random"
 harness = false

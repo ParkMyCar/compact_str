@@ -35,8 +35,8 @@ sqlx-mysql = ["sqlx", "sqlx/mysql"]
 sqlx-postgres = ["sqlx", "sqlx/postgres"]
 sqlx-sqlite = ["sqlx", "sqlx/sqlite"]
 utoipa = ["dep:utoipa", "std"]
-zeroize = ["dep:zeroize"]
 valuable = ["dep:valuable"]
+zeroize = ["dep:zeroize"]
 
 [dependencies]
 arbitrary = { version = "1", optional = true, default-features = false }
@@ -60,8 +60,8 @@ serde = { version = "1", optional = true, default-features = false, features = [
 smallvec = { version = "1", optional = true, features = ["union"] }
 sqlx = { version = "0.9", optional = true, default-features = false }
 utoipa = { version = "5", optional = true }
-zeroize = { version = "1", optional = true, default-features = false }
 valuable = { version = "0.1.1", optional = true, default-features = false }
+zeroize = { version = "1", optional = true, default-features = false }
 
 castaway = { version = "0.2.3", default-features = false, features = ["alloc"] }
 cfg-if = "1"

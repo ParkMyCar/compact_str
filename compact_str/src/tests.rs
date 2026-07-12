@@ -29,6 +29,17 @@ pub(crate) fn rand_bytes() -> impl Strategy<Value = Vec<u8>> {
     proptest::collection::vec(any::<u8>(), 0..80)
 }
 
+/// Generates byte sequences that interleave valid (often multibyte) UTF-8 runs with arbitrary byte
+/// fragments. Uniformly random bytes are almost never long valid non-ASCII runs, so this is what
+/// exercises `from_utf8_lossy` bulk-copying a valid multibyte run that sits between two errors.
+pub(crate) fn rand_utf8_with_errors() -> impl Strategy<Value = Vec<u8>> {
+    let segment = prop_oneof![
+        rand_unicode().prop_map(String::into_bytes),
+        proptest::collection::vec(any::<u8>(), 0..8),
+    ];
+    proptest::collection::vec(segment, 0..20).prop_map(|segments| segments.concat())
+}
+
 /// generates a random collection of `u16`s, upto 80 elements long
 pub(crate) fn rand_u16s() -> impl Strategy<Value = Vec<u16>> {
     proptest::collection::vec(any::<u16>(), 0..80)
@@ -1747,6 +1758,18 @@ fn test_from_utf8_unchecked_empty() {
 #[proptest]
 #[cfg_attr(miri, ignore)]
 fn proptest_from_utf8_lossy(#[strategy(rand_bytes())] bytes: Vec<u8>) {
+    let compact = CompactString::from_utf8_lossy(&bytes);
+    let control = String::from_utf8_lossy(&bytes);
+
+    assert_eq!(compact, control);
+    assert_eq!(compact.len(), control.len());
+}
+
+// Like `proptest_from_utf8_lossy`, but the inputs interleave valid multibyte runs with invalid
+// fragments, which stresses the bulk-copy of valid runs between errors that random bytes miss.
+#[proptest]
+#[cfg_attr(miri, ignore)]
+fn proptest_from_utf8_lossy_interleaved(#[strategy(rand_utf8_with_errors())] bytes: Vec<u8>) {
     let compact = CompactString::from_utf8_lossy(&bytes);
     let control = String::from_utf8_lossy(&bytes);
 

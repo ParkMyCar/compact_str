@@ -1352,89 +1352,47 @@ impl CompactString {
     /// );
     /// ```
     pub fn from_utf8_lossy(v: &[u8]) -> Self {
-        fn next_char<'a>(
-            iter: &mut <&[u8] as IntoIterator>::IntoIter,
-            buf: &'a mut [u8; 4],
-        ) -> Option<&'a [u8]> {
-            const REPLACEMENT: &[u8] = "\u{FFFD}".as_bytes();
+        // Fast path: the entire input is valid UTF-8, so copy it in a single shot. This is the
+        // common case, and mirrors `String::from_utf8_lossy`, which borrows the input here.
+        let mut error = match core::str::from_utf8(v) {
+            Ok(valid) => return Self::new(valid),
+            Err(error) => error,
+        };
 
-            macro_rules! ensure_range {
-                ($idx:literal, $range:pat) => {{
-                    let mut i = iter.clone();
-                    match i.next() {
-                        Some(&c) if matches!(c, $range) => {
-                            buf[$idx] = c;
-                            *iter = i;
-                        }
-                        _ => return Some(REPLACEMENT),
-                    }
-                }};
-            }
-
-            macro_rules! ensure_cont {
-                ($idx:literal) => {{
-                    ensure_range!($idx, 0x80..=0xBF);
-                }};
-            }
-
-            let c = *iter.next()?;
-            buf[0] = c;
-
-            match c {
-                0x00..=0x7F => {
-                    // simple ASCII: push as is
-                    Some(&buf[..1])
-                }
-                0xC2..=0xDF => {
-                    // two bytes
-                    ensure_cont!(1);
-                    Some(&buf[..2])
-                }
-                0xE0..=0xEF => {
-                    // three bytes
-                    match c {
-                        // 0x80..=0x9F encodes surrogate half
-                        0xE0 => ensure_range!(1, 0xA0..=0xBF),
-                        // 0xA0..=0xBF encodes surrogate half
-                        0xED => ensure_range!(1, 0x80..=0x9F),
-                        // all UTF-8 continuation bytes are valid
-                        _ => ensure_cont!(1),
-                    }
-                    ensure_cont!(2);
-                    Some(&buf[..3])
-                }
-                0xF0..=0xF4 => {
-                    // four bytes
-                    match c {
-                        // 0x80..=0x8F encodes overlong three byte codepoint
-                        0xF0 => ensure_range!(1, 0x90..=0xBF),
-                        // 0x90..=0xBF encodes codepoint > U+10FFFF
-                        0xF4 => ensure_range!(1, 0x80..=0x8F),
-                        // all UTF-8 continuation bytes are valid
-                        _ => ensure_cont!(1),
-                    }
-                    ensure_cont!(2);
-                    ensure_cont!(3);
-                    Some(&buf[..4])
-                }
-                | 0x80..=0xBF // unicode continuation, invalid
-                | 0xC0..=0xC1 // overlong one byte character
-                | 0xF5..=0xF7 // four bytes that encode > U+10FFFF
-                | 0xF8..=0xFB // five bytes, invalid
-                | 0xFC..=0xFD // six bytes, invalid
-                | 0xFE..=0xFF => Some(REPLACEMENT), // always invalid
-            }
-        }
-
-        let mut buf = [0; 4];
+        // Slow path: bulk-copy each run of valid UTF-8, emitting a single replacement character for
+        // every maximal invalid subsequence. This produces the same result as
+        // `String::from_utf8_lossy`, but writes straight into the `CompactString` rather than
+        // building an intermediate `String`.
+        const REPLACEMENT: &str = "\u{FFFD}";
+        // `v.len()` is a heuristic, not an upper bound: a 1-byte invalid subsequence expands to the
+        // 3-byte replacement character, so pathological all-invalid input may reallocate. This
+        // matches what `String::from_utf8_lossy` does (`String::with_capacity(v.len())`).
         let mut result = Self::with_capacity(v.len());
-        let mut iter = v.iter();
-        while let Some(s) = next_char(&mut iter, &mut buf) {
-            // SAFETY: next_char() only returns valid strings
-            let s = unsafe { core::str::from_utf8_unchecked(s) };
-            result.push_str(s);
+        let mut remaining = v;
+        loop {
+            let valid_up_to = error.valid_up_to();
+            // SAFETY: `remaining[..valid_up_to]` is valid UTF-8, by definition of `valid_up_to`.
+            let valid = unsafe { core::str::from_utf8_unchecked(&remaining[..valid_up_to]) };
+            result.push_str(valid);
+            result.push_str(REPLACEMENT);
+
+            let invalid_len = match error.error_len() {
+                Some(len) => len,
+                // `None` means the input ended with an incomplete (but not yet invalid) sequence,
+                // which we've now replaced, so we're done.
+                None => return result,
+            };
+            remaining = &remaining[valid_up_to + invalid_len..];
+
+            // Re-validate the rest. If it's all valid we're done; otherwise loop on the next error.
+            match core::str::from_utf8(remaining) {
+                Ok(valid) => {
+                    result.push_str(valid);
+                    return result;
+                }
+                Err(next) => error = next,
+            }
         }
-        result
     }
 
     fn from_utf16x(

@@ -1364,6 +1364,9 @@ impl CompactString {
         // `String::from_utf8_lossy`, but writes straight into the `CompactString` rather than
         // building an intermediate `String`.
         const REPLACEMENT: &str = "\u{FFFD}";
+        // `v.len()` is a heuristic, not an upper bound: a 1-byte invalid subsequence expands to the
+        // 3-byte replacement character, so pathological all-invalid input may reallocate. This
+        // matches what `String::from_utf8_lossy` does (`String::with_capacity(v.len())`).
         let mut result = Self::with_capacity(v.len());
         let mut remaining = v;
         loop {

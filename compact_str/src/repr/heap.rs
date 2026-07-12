@@ -32,8 +32,11 @@ static_assertions::assert_eq_size!(HeapBuffer, Repr);
 static_assertions::assert_eq_align!(HeapBuffer, Repr);
 
 impl HeapBuffer {
-    /// Create a [`HeapBuffer`] with the provided text
-    #[inline]
+    /// Create a [`HeapBuffer`] with the provided text.
+    ///
+    /// Note(parker): deliberately not `#[inline]`, this is the cold allocating heap
+    /// construction path, keeping it out-of-line prevents it from bloating every
+    /// `CompactString` construction callsite.
     pub(crate) fn new(text: &str) -> Result<Self, ReserveError> {
         let len = text.len();
         let (cap, ptr) = allocate_ptr(len)?;
@@ -49,7 +52,8 @@ impl HeapBuffer {
     }
 
     /// Create an empty [`HeapBuffer`] with a specific capacity
-    #[inline]
+    ///
+    /// Note: deliberately not `#[inline]` — see `HeapBuffer::new`. This is a cold allocating path.
     pub(crate) fn with_capacity(capacity: usize) -> Result<Self, ReserveError> {
         let len = 0;
         let (cap, ptr) = allocate_ptr(capacity)?;
@@ -61,7 +65,8 @@ impl HeapBuffer {
     ///
     /// To prevent frequent re-allocations, this method will create a [`HeapBuffer`] with a capacity
     /// of `text.len() + additional` or `text.len() * 1.5`, whichever is greater
-    #[inline]
+    ///
+    /// Note: deliberately not `#[inline]` — see `HeapBuffer::new`. This is a cold allocating path.
     pub(crate) fn with_additional(text: &str, additional: usize) -> Result<Self, ReserveError> {
         let len = text.len();
         let new_capacity = amortized_growth(len, additional);

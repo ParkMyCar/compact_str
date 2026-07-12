@@ -43,7 +43,7 @@ impl HeapBuffer {
         // SAFETY: We know both `src` and `dest` are valid for respectively reads and writes of
         // length `len` because `len` comes from `src`, and `dest` was allocated to be at least that
         // length. We also know they're non-overlapping because `dest` is newly allocated
-        unsafe { ptr.as_ptr().copy_from_nonoverlapping(text.as_ptr(), len) };
+        unsafe { super::copy_medium(text.as_ptr(), ptr.as_ptr(), len) };
 
         Ok(HeapBuffer { ptr, len, cap })
     }
@@ -72,7 +72,7 @@ impl HeapBuffer {
         // SAFETY: We know both `src` and `dest` are valid for respectively reads and writes of
         // length `len` because `len` comes from `src`, and `dest` was allocated to be at least that
         // length. We also know they're non-overlapping because `dest` is newly allocated
-        unsafe { ptr.as_ptr().copy_from_nonoverlapping(text.as_ptr(), len) };
+        unsafe { super::copy_medium(text.as_ptr(), ptr.as_ptr(), len) };
 
         Ok(HeapBuffer { ptr, len, cap })
     }
@@ -237,11 +237,7 @@ impl Clone for HeapBuffer {
         // SAFETY:
         // * `src` and `dst` don't overlap because we just created `dst`
         // * `src` and `dst` are both valid for `self.len` bytes because self.len < capacity
-        unsafe {
-            new.ptr
-                .as_ptr()
-                .copy_from_nonoverlapping(self.ptr.as_ptr(), self.len)
-        };
+        unsafe { super::copy_medium(self.ptr.as_ptr(), new.ptr.as_ptr(), self.len) };
         // SAFETY:
         // * We copied the text from self, which is valid UTF-8
         unsafe { new.set_len(self.len) };

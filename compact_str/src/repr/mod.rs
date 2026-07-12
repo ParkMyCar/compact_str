@@ -961,6 +961,74 @@ const unsafe fn assume(cond: bool) {
     }
 }
 
+/// Copies `len` bytes (`len <= MAX_SIZE`) from `src` to `dst`, for the inline-string path.
+///
+/// A `ptr::copy_nonoverlapping` with a *runtime* length lowers to an out-of-line `memcpy` call
+/// (the backend only inlines the copy when the length is a compile-time constant), which is
+/// wasteful for the tiny copies used when inlining a string. Since an inline string is at most
+/// `MAX_SIZE` bytes we instead use a ladder of *constant*-length overlapping copies, each of which
+/// the compiler lowers to a couple of load/store instructions — and which const-fold away entirely
+/// when `len` is known (e.g. `CompactString::const_new` / string literals).
+///
+/// # Safety
+/// * `len <= MAX_SIZE`.
+/// * `src` is valid for reads of `len` bytes; `dst` is valid for writes of `len` bytes.
+/// * `src` and `dst` do not overlap.
+#[inline(always)]
+pub(crate) unsafe fn copy_small(src: *const u8, dst: *mut u8, len: usize) {
+    debug_assert!(len <= MAX_SIZE);
+
+    // Each branch only touches bytes within `[0, len)` — the tail copy starts at `len - N` only
+    // once we know `len >= N` — so the overlapping copies never read or write out of range.
+    if len >= 16 {
+        ptr::copy_nonoverlapping(src, dst, 16);
+        ptr::copy_nonoverlapping(src.add(len - 16), dst.add(len - 16), 16);
+    } else if len >= 8 {
+        ptr::copy_nonoverlapping(src, dst, 8);
+        ptr::copy_nonoverlapping(src.add(len - 8), dst.add(len - 8), 8);
+    } else if len >= 4 {
+        ptr::copy_nonoverlapping(src, dst, 4);
+        ptr::copy_nonoverlapping(src.add(len - 4), dst.add(len - 4), 4);
+    } else if len >= 2 {
+        ptr::copy_nonoverlapping(src, dst, 2);
+        ptr::copy_nonoverlapping(src.add(len - 2), dst.add(len - 2), 2);
+    } else if len == 1 {
+        *dst = *src;
+    }
+}
+
+/// Copies `len` bytes from `src` to `dst`, for the heap-string path.
+///
+/// The common case for a freshly heap-allocated `CompactString` is a length just over
+/// the inline threshold. For those the medium bands `[16,64]` are copied inline with two
+/// overlapping fixed-size load/stores, skipping the `memcpy` call boundary like
+/// [`copy_small`].
+///
+/// Copies `> 64` bytes delegate to `memcpy`, which has per-CPU-tuned large-copy paths
+/// that any optimization we do won't beat.
+/// Copies `< 16` bytes are rare on this path so they simply delegate to `memcpy` as well
+/// which keeps this correct for *any* length.
+///
+/// # Safety
+///
+/// * `src` is valid for reads of `len` bytes; `dst` is valid for writes of `len` bytes.
+/// * `src` and `dst` do not overlap.
+///
+#[inline]
+pub(crate) unsafe fn copy_medium(src: *const u8, dst: *mut u8, len: usize) {
+    if len > 64 {
+        ptr::copy_nonoverlapping(src, dst, len);
+    } else if len >= 32 {
+        ptr::copy_nonoverlapping(src, dst, 32);
+        ptr::copy_nonoverlapping(src.add(len - 32), dst.add(len - 32), 32);
+    } else if len >= 16 {
+        ptr::copy_nonoverlapping(src, dst, 16);
+        ptr::copy_nonoverlapping(src.add(len - 16), dst.add(len - 16), 16);
+    } else {
+        ptr::copy_nonoverlapping(src, dst, len);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use alloc::string::{String, ToString};

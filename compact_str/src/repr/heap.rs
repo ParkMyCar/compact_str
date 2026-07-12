@@ -32,12 +32,10 @@ static_assertions::assert_eq_size!(HeapBuffer, Repr);
 static_assertions::assert_eq_align!(HeapBuffer, Repr);
 
 impl HeapBuffer {
-    /// Create a [`HeapBuffer`] with the provided text.
-    ///
-    /// Note(parker): deliberately not `#[inline]`, this is the cold allocating heap
-    /// construction path, keeping it out-of-line prevents it from bloating every
-    /// `CompactString` construction callsite.
-    pub(crate) fn new(text: &str) -> Result<Self, ReserveError> {
+    /// Allocate a fresh heap buffer and copy `text` into it, the shared core for
+    /// `new`/`new_panic`.
+    #[inline]
+    fn build(text: &str) -> Result<Self, ReserveError> {
         let len = text.len();
         let (cap, ptr) = allocate_ptr(len)?;
 
@@ -49,6 +47,22 @@ impl HeapBuffer {
         unsafe { super::copy_medium(text.as_ptr(), ptr.as_ptr(), len) };
 
         Ok(HeapBuffer { ptr, len, cap })
+    }
+
+    /// Create a [`HeapBuffer`] with the provided text.
+    ///
+    /// Note(parker): deliberately not `#[inline]`, this is the cold allocating heap
+    /// construction path, keeping it out-of-line prevents it from bloating every
+    /// `CompactString` construction callsite.
+    pub(crate) fn new(text: &str) -> Result<Self, ReserveError> {
+        Self::build(text)
+    }
+
+    /// Like [`HeapBuffer::new`], but panics on allocation failure instead of returning a
+    /// `Result`.
+    #[track_caller]
+    pub(crate) fn new_panic(text: &str) -> Self {
+        Self::build(text).unwrap_with_msg()
     }
 
     /// Create an empty [`HeapBuffer`] with a specific capacity

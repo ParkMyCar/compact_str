@@ -95,7 +95,8 @@ impl Repr {
             let inline = unsafe { InlineBuffer::new(text) };
             Repr::from_inline(inline)
         } else {
-            Repr::from_heap(HeapBuffer::new(text).unwrap_with_msg())
+            let heap = HeapBuffer::new_panic(text);
+            Repr::from_heap(heap)
         }
     }
 

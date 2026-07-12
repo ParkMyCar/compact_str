@@ -123,7 +123,7 @@ fn bench_str_to_compact_string(c: &mut Criterion) {
 fn bench_repr_creation(c: &mut Criterion) {
     let mut group = c.benchmark_group("Creation");
 
-    let words: Vec<String> = vec![0, 11, 12, 22, 23, 24, 25, 50]
+    let words: Vec<String> = vec![0, 11, 12, 22, 23, 24, 25, 50, 100, 500]
         .into_iter()
         .map(|len| (0..len).into_iter().map(|_| 'a').collect())
         .collect();

@@ -85,7 +85,7 @@ test-strategy = "0.3"
 # Enables `zeroize/alloc` for the `String` baseline in the zeroize parity tests, without widening the public feature.
 zeroize = { version = "1", default-features = false, features = ["alloc"] }
 # zmij v1.0.22 is broken on Miri, so we pin our tests to a working version.
-zmij = "1.0.21"
+zmij = "=1.0.21"
 
 [package.metadata.docs.rs]
 all-features = true

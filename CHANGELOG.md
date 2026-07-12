@@ -27,6 +27,10 @@
     * Implemented in [`fix: avoid exposing uninitialized spare capacity`](https://github.com/ParkMyCar/compact_str/pull/468).
 * Fixed `CompactString::retain` to avoid briefly creating references to invalid UTF-8.
     * Implemented in [`Avoid invalid UTF-8 references in retain`](https://github.com/ParkMyCar/compact_str/pull/469).
+* Bump the [`bevy_reflect`](https://crates.io/crates/bevy_reflect) dependency to `v0.19`.
+    * Implemented in [`deps: update optional deps to latest`](https://github.com/ParkMyCar/compact_str/pull/490).
+* Bump the [`markup`](https://crates.io/crates/markup) dependency to `v0.16`.
+    * Implemented in [`deps: update optional deps to latest`](https://github.com/ParkMyCar/compact_str/pull/490).
 
 ## Performance
 * Reuse an owned `String`'s existing allocation in `CompactString::new`.

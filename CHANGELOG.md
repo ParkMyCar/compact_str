@@ -4,7 +4,7 @@
 * Minimum supported Rust version (MSRV) was bumped to `v1.71`.
 * The `Error` trait impls once again require the `std` feature. This reverts the (unreleased)
   no-std `core::error::Error` support from [#443](https://github.com/ParkMyCar/compact_str/pull/443),
-  which required Rust `v1.81`; it can return once the MSRV reaches `v1.81`.
+  which required Rust `v1.81`, it can return once the MSRV reaches `v1.81`.
 * Added support for the [`garde`](https://crates.io/crates/garde) validation crate under an
   optional feature, implementing its string rule traits for `CompactString`.
     * Implemented in [`feat: add garde validation support`](https://github.com/ParkMyCar/compact_str/pull/471).
@@ -19,18 +19,37 @@
   and [`IntoPyObject`](https://docs.rs/pyo3/0.29/pyo3/conversion/trait.IntoPyObject.html) for `CompactString`, so it can
   be used seamlessly with [`pyo3`](https://crates.io/crates/pyo3) v0.29.
     * Implemented in [`feat: add pyo3 feature`](https://github.com/ParkMyCar/compact_str/pull/446).
+* Added support for the [`defmt`](https://crates.io/crates/defmt) crate under an optional feature,
+  implementing `defmt::Format` for `CompactString`.
+    * Implemented in [`feat: Add support for defmt`](https://github.com/ParkMyCar/compact_str/pull/438).
+* Added a `bevy-reflect` feature which implements [`bevy_reflect`](https://crates.io/crates/bevy_reflect)'s
+  reflection traits for `CompactString` (as an opaque type).
+    * Implemented in [`feat: Add bevy-reflect feature`](https://github.com/ParkMyCar/compact_str/pull/439).
+* Added a `utoipa` feature which implements [`utoipa`](https://crates.io/crates/utoipa)'s
+  `PartialSchema` and `ToSchema` traits for `CompactString`.
+    * Implemented in [`fix sqlx type impl, add utoipa feature`](https://github.com/ParkMyCar/compact_str/pull/442)
+      and [`feat: fixup the utoipa feature`](https://github.com/ParkMyCar/compact_str/pull/445).
+* Removed `#[must_use]` from the `Drain` iterator.
+    * Implemented in [`fix: remove #[must_use] from Drain`](https://github.com/ParkMyCar/compact_str/pull/486).
+* Added [Kani](https://github.com/model-checking/kani) proof harnesses to formally verify the crate's
+  unsafe code.
+    * Implemented in [`feat: add kani proof harnesses to verify unsafe code`](https://github.com/ParkMyCar/compact_str/pull/480).
 * Bump the [`sqlx`](https://crates.io/crates/sqlx) dependency to `v0.9`. Enabling the `sqlx`
   feature now requires Rust `v1.94`.
     * Implemented in [`deps: bump sqlx to 0.9`](https://github.com/ParkMyCar/compact_str/pull/474).
-* Fixed `CompactString::as_mut_bytes` exposing uninitialized spare capacity through a `&mut [u8]`;
-  heap spare capacity is now zero-initialized before it's returned.
-    * Implemented in [`fix: avoid exposing uninitialized spare capacity`](https://github.com/ParkMyCar/compact_str/pull/468).
-* Fixed `CompactString::retain` to avoid briefly creating references to invalid UTF-8.
-    * Implemented in [`Avoid invalid UTF-8 references in retain`](https://github.com/ParkMyCar/compact_str/pull/469).
 * Bump the [`bevy_reflect`](https://crates.io/crates/bevy_reflect) dependency to `v0.19`.
     * Implemented in [`deps: update optional deps to latest`](https://github.com/ParkMyCar/compact_str/pull/490).
 * Bump the [`markup`](https://crates.io/crates/markup) dependency to `v0.16`.
     * Implemented in [`deps: update optional deps to latest`](https://github.com/ParkMyCar/compact_str/pull/490).
+
+## Bug Fixes
+* Fixed possible undefined behavior when reallocating a heap-allocated `CompactString`.
+    * Implemented in [`fix: possible undefined behavior with realloc in a HeapString`](https://github.com/ParkMyCar/compact_str/pull/459).
+* Fixed `CompactString::retain` to avoid briefly creating references to invalid UTF-8.
+    * Implemented in [`Avoid invalid UTF-8 references in retain`](https://github.com/ParkMyCar/compact_str/pull/469).
+* Fixed `CompactString::as_mut_bytes` exposing uninitialized spare capacity through a `&mut [u8]`;
+  heap spare capacity is now zero-initialized before it's returned.
+    * Implemented in [`fix: avoid exposing uninitialized spare capacity`](https://github.com/ParkMyCar/compact_str/pull/468).
 
 ## Performance
 * Reuse an owned `String`'s existing allocation in `CompactString::new`.
@@ -43,6 +62,15 @@
     * Implemented in [`perf: add Repr::new_panic to skip Result on the hot inline path`](https://github.com/ParkMyCar/compact_str/pull/463).
 * Assert internal `Repr` invariants so the compiler can fold dead error-handling branches on construction.
     * Implemented in [`perf: assert Repr invariants to fold dead Err arms on construction`](https://github.com/ParkMyCar/compact_str/pull/467).
+* Speed up append, integer formatting, and inline creation.
+    * Implemented in [`perf: speed up append, integer formatting, and inline creation`](https://github.com/ParkMyCar/compact_str/pull/479).
+* Bulk-copy valid runs in `from_utf8_lossy` instead of copying byte-by-byte.
+    * Implemented in [`perf: bulk-copy valid runs in from_utf8_lossy`](https://github.com/ParkMyCar/compact_str/pull/484).
+* Specialize memory copies for small/medium strings to avoid calling `memcpy`. Keep heap construction out-of-line,
+  and move the OOM panic off the hot construction path to keep generated assembly lean.
+    * Implemented in [`perf: several small improvements`](https://github.com/ParkMyCar/compact_str/pull/488).
+* Replaced the `ryu` dependency with [`zmij`](https://crates.io/crates/zmij) for float formatting.
+    * Implemented in [`deps: replace ryu with zmij for float formatting`](https://github.com/ParkMyCar/compact_str/pull/485).
 
 # 0.9.0
 ### February 24, 2025

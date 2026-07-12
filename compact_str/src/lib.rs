@@ -2517,7 +2517,11 @@ impl fmt::Display for Utf16Error {
 }
 
 /// An iterator over the exacted data by [`CompactString::drain()`].
-#[must_use = "iterators are lazy and do nothing unless consumed"]
+///
+/// Note: this is deliberately not `#[must_use]`. Dropping a `Drain` still removes the
+/// selected range from the source `CompactString` (see the `Drop` impl), so calling
+/// `drain(range)` purely to delete a range, without consuming the iterator, is a valid
+/// and common use, mirroring `alloc::string::Drain`.
 pub struct Drain<'a> {
     compact_string: *mut CompactString,
     start: usize,

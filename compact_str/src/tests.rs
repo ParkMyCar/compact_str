@@ -2182,3 +2182,98 @@ fn test_inline_all_lengths_reach_from_inline_ok() {
         assert_eq!(b, s);
     }
 }
+
+// Tests for `drain`, and specifically the drop-without-consuming path (see issue #435).
+// `Drain` is intentionally not `#[must_use]`: dropping it, even without iterating, still
+// removes the drained range, so `drain(range)` is a valid way to just delete a range.
+
+#[test]
+fn test_drain_without_consuming_removes_range_inline() {
+    // Keep this short enough to stay inline on 32-bit targets too (MAX_SIZE is 12 there, 24 here).
+    let mut s = CompactString::new("Hi world!");
+    assert!(!s.is_heap_allocated());
+    // Use `drain` purely to delete a range, without touching the returned iterator.
+    s.drain(2..8);
+    assert_eq!(s, "Hi!");
+}
+
+#[test]
+fn test_drain_without_consuming_removes_range_heap() {
+    let mut s = CompactString::new("this is a fairly long heap-allocated string value");
+    assert!(s.is_heap_allocated());
+    s.drain(10..22); // remove "fairly long "
+    assert_eq!(s, "this is a heap-allocated string value");
+    assert!(s.is_heap_allocated());
+}
+
+#[test]
+fn test_drain_partial_consume_removes_full_range() {
+    let mut s = CompactString::new("Hello, world!");
+    let mut d = s.drain(5..12); // ", world"
+    assert_eq!(d.next(), Some(','));
+    // Only one char was consumed, but dropping must still remove the WHOLE drained range.
+    drop(d);
+    assert_eq!(s, "Hello!");
+}
+
+#[test]
+fn test_drain_yields_removed_chars() {
+    let mut s = CompactString::new("Hello, world!");
+    let drained: String = s.drain(5..12).collect();
+    assert_eq!(drained, ", world");
+    assert_eq!(s, "Hello!");
+}
+
+#[test]
+fn test_drain_empty_range_is_noop() {
+    let mut s = CompactString::new("Hello");
+    s.drain(2..2);
+    assert_eq!(s, "Hello");
+}
+
+#[test]
+fn test_drain_full_range_clears() {
+    let mut s = CompactString::new("this is a fairly long heap-allocated string value");
+    assert!(s.is_heap_allocated());
+    s.drain(..);
+    assert_eq!(s, "");
+    assert!(s.is_empty());
+}
+
+#[test]
+fn test_drain_multibyte_boundary() {
+    let mut s = CompactString::new("αβγδε"); // each char is 2 bytes
+    s.drain(2..6); // remove "βγ"
+    assert_eq!(s, "αδε");
+}
+
+/// `CompactString::drain` must behave exactly like `String::drain`, both when the iterator
+/// is fully consumed and when it is dropped without consuming.
+#[proptest]
+#[cfg_attr(miri, ignore)]
+fn proptest_drain_matches_std(#[strategy(rand_unicode())] control: String, lo: usize, hi: usize) {
+    // Snap two arbitrary indices to char boundaries so the range is always valid.
+    let bounds: Vec<usize> = control
+        .char_indices()
+        .map(|(i, _)| i)
+        .chain(core::iter::once(control.len()))
+        .collect();
+    let i = lo % bounds.len();
+    let j = hi % bounds.len();
+    let (start, end) = (bounds[i.min(j)], bounds[i.max(j)]);
+
+    // (1) Fully consuming the iterator yields the same chars and leaves the same remainder.
+    let mut compact = CompactString::new(&control);
+    let mut std_string = control.clone();
+    let drained_compact: String = compact.drain(start..end).collect();
+    let drained_std: String = std_string.drain(start..end).collect();
+    prop_assert_eq!(&drained_compact, &drained_std);
+    prop_assert_eq!(compact.as_str(), std_string.as_str());
+
+    // (2) Dropping the iterator without consuming removes exactly the same range.
+    let mut compact = CompactString::new(&control);
+    let mut std_string = control.clone();
+    compact.drain(start..end);
+    std_string.drain(start..end);
+    prop_assert_eq!(compact.as_str(), std_string.as_str());
+}

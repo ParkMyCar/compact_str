@@ -41,13 +41,13 @@ zeroize = ["dep:zeroize"]
 
 [dependencies]
 arbitrary = { version = "1", optional = true, default-features = false }
-bevy_reflect = { version = "0.17.1", optional = true }
+bevy_reflect = { version = "0.19", optional = true }
 borsh = { version = "1", optional = true }
 bytes = { version = "1", optional = true }
 defmt = { version = "1", optional = true }
 diesel = { version = "2", optional = true, default-features = false }
 garde = { version = "0.23", optional = true, default-features = false, features = ["derive"] }
-markup = { version = "0.15", optional = true, default-features = false }
+markup = { version = "0.16", optional = true, default-features = false }
 proptest = { version = "1", optional = true, default-features = false, features = [
     "std",
 ] }

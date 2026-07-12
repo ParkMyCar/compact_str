@@ -5,7 +5,7 @@
 **A memory efficient string type that can store up to 24\* bytes on the stack.**
 
 [![version on crates.io](https://img.shields.io/crates/v/compact_str)](https://crates.io/crates/compact_str)
-![Minimum supported Rust Version: 1.60](https://img.shields.io/badge/MSRV-1.60-blueviolet)
+![Minimum supported Rust Version: 1.71](https://img.shields.io/badge/MSRV-1.71-blueviolet)
 [![MIT license](https://img.shields.io/crates/l/compact_str)](./LICENSE)
 
 [![Continuous Integration Status](https://github.com/ParkMyCar/compact_str/actions/workflows/ci.yml/badge.svg?branch=main&event=push)](https://github.com/ParkMyCar/compact_str/actions/workflows/ci.yml)
@@ -36,6 +36,8 @@ A `CompactString` specifically has the following properties:
   * Space optimized for `Option<_>`
     * `size_of::<CompactString>() == size_of::<Option<CompactString>>()`
   * Uses [branchless instructions](https://en.algorithmica.org/hpc/pipelining/branchless/) for string accesses
+  * Specialize the copy for small and medium strings, avoiding an out-of-line `memcpy` call
+    * Uses two overlapping fixed-width load/stores so creation and `Clone` of short strings avoid a function-call round-trip
   * Supports `no_std` environments
 
 ### Traits
@@ -60,7 +62,7 @@ This crate exposes one macro `format_compact!` that can be used to create `Compa
 `compact_str` has the following optional features:
 * `serde`, which implements [`Deserialize`](https://docs.rs/serde/1/serde/trait.Deserialize.html) and [`Serialize`](https://docs.rs/serde/1/serde/trait.Serialize.html) from the popular [`serde`](https://docs.rs/serde/1/serde/) crate, for `CompactString`
 * `bytes`, which provides two methods `from_utf8_buf<B: Buf>(buf: &mut B)` and `from_utf8_buf_unchecked<B: Buf>(buf: &mut B)`, which allows for the creation of a `CompactString` from a [`bytes::Buf`](https://docs.rs/bytes/1/bytes/trait.Buf.html)
-* `markup`, which implements [`Render`](https://docs.rs/markup/0.13/markup/trait.Render.html) trait, so `CompactString`s can be used in templates as HTML escaped strings
+* `markup`, which implements [`Render`](https://docs.rs/markup/0.16/markup/trait.Render.html) trait, so `CompactString`s can be used in templates as HTML escaped strings
 * `diesel`, which allows using CompactStrings in [`diesel`](https://diesel.rs/) text columns
 * `sqlx-mysql` / `sqlx-postgres` / `sqlx-sqlite`, which allows using CompactStrings in [`sqlx`](https://github.com/launchbadge/sqlx) text columns
 * `arbitrary`, which implements the [`arbitrary::Arbitrary`](https://docs.rs/arbitrary/1/arbitrary/trait.Arbitrary.html) trait for fuzzing
@@ -70,6 +72,13 @@ This crate exposes one macro `format_compact!` that can be used to create `Compa
 * `smallvec`, provides the `into_bytes()` method which enables you to convert a `CompactString` into a byte vector, using [`smallvec::SmallVec`](https://docs.rs/smallvec/latest/smallvec/struct.SmallVec.html)
 * `valuable`, which implements the [`valuable::Valuable`](https://docs.rs/valuable/0.1.1/valuable/trait.Valuable.html) trait for object-safe value inspection
 * `pyo3`, which implements [`FromPyObject`](https://docs.rs/pyo3/0.29/pyo3/conversion/trait.FromPyObject.html) and [`IntoPyObject`](https://docs.rs/pyo3/0.29/pyo3/conversion/trait.IntoPyObject.html), so `CompactString`s can be converted to and from Python strings in [`pyo3`](https://github.com/PyO3/pyo3) extensions
+* `serde`/`schemars`, which implements [`JsonSchema`](https://docs.rs/schemars/1/schemars/trait.JsonSchema.html) from [`schemars`](https://docs.rs/schemars/1/schemars/), producing the same schema as a `String`
+* `garde`, which implements the [`garde`](https://docs.rs/garde/latest/garde/) validation rule traits so `CompactString`s can be validated like `String`s
+* `borsh`, which implements [`BorshSerialize`](https://docs.rs/borsh/1/borsh/trait.BorshSerialize.html) and [`BorshDeserialize`](https://docs.rs/borsh/1/borsh/trait.BorshDeserialize.html) for the [`borsh`](https://docs.rs/borsh/1/borsh/) binary format
+* `zeroize`, which implements [`zeroize::Zeroize`](https://docs.rs/zeroize/1/zeroize/trait.Zeroize.html) so a `CompactString`'s contents can be securely wiped from memory
+* `defmt`, which implements [`defmt::Format`](https://docs.rs/defmt/1/defmt/trait.Format.html) so `CompactString`s can be logged in embedded/`no_std` contexts
+* `bevy-reflect`, which implements [`bevy_reflect`](https://docs.rs/bevy_reflect/0.19/bevy_reflect/)'s reflection traits so `CompactString`s can be reflected as opaque types
+* `utoipa`, which implements [`PartialSchema`](https://docs.rs/utoipa/5/utoipa/trait.PartialSchema.html) and [`ToSchema`](https://docs.rs/utoipa/5/utoipa/trait.ToSchema.html) from [`utoipa`](https://docs.rs/utoipa/5/utoipa/) for OpenAPI documentation
 
 ### How it works
 Note: this explanation assumes a 64-bit architecture, for 32-bit architectures generally divide any number by 2.
@@ -132,7 +141,7 @@ Specifically, the last byte on the stack for a `CompactString` has the following
 ### Testing
 Strings and unicode can be quite messy, even further, we're working with things at the bit level. `compact_str` has an _extensive_ test suite comprised of unit testing, property testing, and fuzz testing, to ensure our invariants are upheld. We test across all major OSes (Windows, macOS, and Linux), architectures (64-bit and 32-bit), and endian-ness (big endian and little endian).
 
-Fuzz testing is run with `libFuzzer`, `AFL++`, *and* `honggfuzz`, with `AFL++` running on both `x86_64` and `ARMv7` architectures. We test with [`miri`](https://github.com/rust-lang/miri) to catch cases of undefined behavior, and run all tests on every Rust compiler since `v1.60` to ensure support for our minimum supported Rust version (MSRV).
+Fuzz testing is run with `libFuzzer`, `AFL++`, *and* `honggfuzz`, with `AFL++` running on both `x86_64` and `ARMv7` architectures. We test with [`miri`](https://github.com/rust-lang/miri) to catch cases of undefined behavior, and run all tests on every Rust compiler since `v1.71` to ensure support for our minimum supported Rust version (MSRV).
 
 ### `unsafe` code
 `CompactString` uses a bit of unsafe code because we manually define what variant we are, so unlike an enum, the compiler can't guarantee what value is actually stored.

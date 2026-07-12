@@ -27,6 +27,7 @@ markup = ["dep:markup"]
 proptest = ["dep:proptest"]
 pyo3 = ["dep:pyo3"]
 quickcheck = ["dep:quickcheck"]
+rayon = ["dep:rayon", "std"]
 rkyv = ["dep:rkyv"]
 schemars = ["dep:schemars"]
 serde = ["dep:serde"]
@@ -53,6 +54,7 @@ proptest = { version = "1", optional = true, default-features = false, features 
 ] }
 pyo3 = { version = "0.29", optional = true, default-features = false }
 quickcheck = { version = "1", optional = true, default-features = false }
+rayon = { version = "1", optional = true }
 rkyv = { version = "0.8", optional = true, default-features = false }
 schemars = { version = "1", optional = true, default-features = false }
 serde = { version = "1", optional = true, default-features = false, features = [

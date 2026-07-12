@@ -19,6 +19,11 @@
   and [`IntoPyObject`](https://docs.rs/pyo3/0.29/pyo3/conversion/trait.IntoPyObject.html) for `CompactString`, so it can
   be used seamlessly with [`pyo3`](https://crates.io/crates/pyo3) v0.29.
     * Implemented in [`feat: add pyo3 feature`](https://github.com/ParkMyCar/compact_str/pull/446).
+* Added a `rayon` feature which implements [`FromParallelIterator`](https://docs.rs/rayon/1/rayon/iter/trait.FromParallelIterator.html)
+  and [`ParallelExtend`](https://docs.rs/rayon/1/rayon/iter/trait.ParallelExtend.html) for `CompactString`
+  (mirroring [`String`], plus the `Item = CompactString` variants), so it can be collected from and
+  extended by [`rayon`](https://crates.io/crates/rayon) parallel iterators.
+    * Implemented in [`feat: add rayon feature`](https://github.com/ParkMyCar/compact_str/pull/487).
 * Bump the [`sqlx`](https://crates.io/crates/sqlx) dependency to `v0.9`. Enabling the `sqlx`
   feature now requires Rust `v1.94`.
     * Implemented in [`deps: bump sqlx to 0.9`](https://github.com/ParkMyCar/compact_str/pull/474).

@@ -22,6 +22,8 @@ mod proptest;
 mod pyo3;
 #[cfg(feature = "quickcheck")]
 mod quickcheck;
+#[cfg(feature = "rayon")]
+mod rayon;
 #[cfg(feature = "rkyv")]
 mod rkyv;
 #[cfg(feature = "schemars")]

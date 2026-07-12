@@ -70,6 +70,7 @@ This crate exposes one macro `format_compact!` that can be used to create `Compa
 * `smallvec`, provides the `into_bytes()` method which enables you to convert a `CompactString` into a byte vector, using [`smallvec::SmallVec`](https://docs.rs/smallvec/latest/smallvec/struct.SmallVec.html)
 * `valuable`, which implements the [`valuable::Valuable`](https://docs.rs/valuable/0.1.1/valuable/trait.Valuable.html) trait for object-safe value inspection
 * `pyo3`, which implements [`FromPyObject`](https://docs.rs/pyo3/0.29/pyo3/conversion/trait.FromPyObject.html) and [`IntoPyObject`](https://docs.rs/pyo3/0.29/pyo3/conversion/trait.IntoPyObject.html), so `CompactString`s can be converted to and from Python strings in [`pyo3`](https://github.com/PyO3/pyo3) extensions
+* `rayon`, which implements [`FromParallelIterator`](https://docs.rs/rayon/1/rayon/iter/trait.FromParallelIterator.html) and [`ParallelExtend`](https://docs.rs/rayon/1/rayon/iter/trait.ParallelExtend.html), so `CompactString`s can be collected from and extended by [`rayon`](https://github.com/rayon-rs/rayon) parallel iterators
 
 ### How it works
 Note: this explanation assumes a 64-bit architecture, for 32-bit architectures generally divide any number by 2.

@@ -99,7 +99,13 @@ impl Repr {
             let inline = unsafe { InlineBuffer::new(text) };
             Repr::from_inline(inline)
         } else {
-            let heap = HeapBuffer::new_panic(text);
+            // `alloc_copy_panic` is `#[inline(always)]`, so the `HeapBuffer` it returns is
+            // assembled right here at the callsite; the only value crossing the (cold) call
+            // boundary is the two-word `(ptr, capacity)` from `HeapBuffer::alloc_copy`, passed back
+            // in registers. Returning a full 24-byte `HeapBuffer` across that boundary instead
+            // routed it through a stack temporary that LLVM scatter-copied into the return slot on
+            // x86 -- pessimizing even the hot inline arm above (a store-forwarding stall).
+            let heap = HeapBuffer::alloc_copy_panic(text);
             Repr::from_heap(heap)
         }
     }

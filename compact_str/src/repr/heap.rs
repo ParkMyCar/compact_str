@@ -32,37 +32,62 @@ static_assertions::assert_eq_size!(HeapBuffer, Repr);
 static_assertions::assert_eq_align!(HeapBuffer, Repr);
 
 impl HeapBuffer {
-    /// Allocate a fresh heap buffer and copy `text` into it, the shared core for
-    /// `new`/`new_panic`.
-    #[inline]
-    fn build(text: &str) -> Result<Self, ReserveError> {
+    /// Allocate a heap buffer, copy `text` into it, and return the raw `(ptr, capacity)` pair
+    /// instead of a full [`HeapBuffer`]. The shared cold core behind `new` / `alloc_copy_panic`.
+    ///
+    /// The caller assembles the `HeapBuffer`/`Repr` itself. Returning the two-word `(ptr, capacity)`
+    /// -- which comes back in registers -- rather than a 24-byte `HeapBuffer` avoids a by-value
+    /// aggregate return across this outlined call boundary. That aggregate return otherwise forced
+    /// the whole of `Repr::new`/`new_panic`, including their hot inline arm, through a stack
+    /// temporary that LLVM scatter-copied into the return slot on x86 (a store-to-load forwarding
+    /// stall on every construction).
+    ///
+    /// `#[cold]`/`#[inline(never)]`: keeps the alloc/copy machinery out of line and lays the heap
+    /// arm out cold at every callsite.
+    #[cold]
+    #[inline(never)]
+    pub(crate) fn alloc_copy(text: &str) -> Result<(ptr::NonNull<u8>, Capacity), ReserveError> {
         let len = text.len();
         let (cap, ptr) = allocate_ptr(len)?;
 
         // copy our string into the buffer we just allocated
         //
-        // SAFETY: We know both `src` and `dest` are valid for respectively reads and writes of
-        // length `len` because `len` comes from `src`, and `dest` was allocated to be at least that
-        // length. We also know they're non-overlapping because `dest` is newly allocated
+        // SAFETY: `src` (`text`) and `dest` (`ptr`) are both valid for `len` bytes -- `len` comes
+        // from `src`, and `dest` was freshly allocated with at least that length -- and they don't
+        // overlap because `dest` is newly allocated.
         unsafe { super::copy_medium(text.as_ptr(), ptr.as_ptr(), len) };
 
-        Ok(HeapBuffer { ptr, len, cap })
+        Ok((ptr, cap))
     }
 
     /// Create a [`HeapBuffer`] with the provided text.
     ///
-    /// Note(parker): deliberately not `#[inline]`, this is the cold allocating heap
-    /// construction path, keeping it out-of-line prevents it from bloating every
-    /// `CompactString` construction callsite.
+    /// `#[inline(always)]` so the `HeapBuffer` is assembled at the callsite from the register-passed
+    /// `(ptr, capacity)`; only that pair crosses the cold [`alloc_copy`] boundary.
+    #[inline(always)]
     pub(crate) fn new(text: &str) -> Result<Self, ReserveError> {
-        Self::build(text)
+        let (ptr, cap) = Self::alloc_copy(text)?;
+        Ok(HeapBuffer {
+            ptr,
+            len: text.len(),
+            cap,
+        })
     }
 
-    /// Like [`HeapBuffer::new`], but panics on allocation failure instead of returning a
-    /// `Result`.
+    /// Infallible [`alloc_copy`], panicking on allocation failure.
+    ///
+    /// `#[inline(always)]` so the tiny unwrap lives at the callsite (which then builds the `Repr`
+    /// from the register-passed `(ptr, capacity)`), while the actual allocating body stays in the
+    /// cold, out-of-line [`alloc_copy`].
+    #[inline(always)]
     #[track_caller]
-    pub(crate) fn new_panic(text: &str) -> Self {
-        Self::build(text).unwrap_with_msg()
+    pub(crate) fn alloc_copy_panic(text: &str) -> HeapBuffer {
+        let (ptr, cap) = Self::alloc_copy(text).unwrap_with_msg();
+        HeapBuffer {
+            ptr,
+            len: text.len(),
+            cap,
+        }
     }
 
     /// Create an empty [`HeapBuffer`] with a specific capacity

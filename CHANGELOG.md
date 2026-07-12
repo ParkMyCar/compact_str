@@ -1,4 +1,5 @@
-# Upcoming
+# 0.10.0
+### July 12, 2026
 
 ## Changes
 * Minimum supported Rust version (MSRV) was bumped to `v1.71`.

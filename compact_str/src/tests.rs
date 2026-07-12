@@ -2166,11 +2166,12 @@ fn test_inline_all_lengths_reach_from_inline_ok() {
 
 #[test]
 fn test_drain_without_consuming_removes_range_inline() {
-    let mut s = CompactString::new("Hello, world!");
+    // Keep this short enough to stay inline on 32-bit targets too (MAX_SIZE is 12 there, 24 here).
+    let mut s = CompactString::new("Hi world!");
     assert!(!s.is_heap_allocated());
     // Use `drain` purely to delete a range, without touching the returned iterator.
-    s.drain(5..12);
-    assert_eq!(s, "Hello!");
+    s.drain(2..8);
+    assert_eq!(s, "Hi!");
 }
 
 #[test]

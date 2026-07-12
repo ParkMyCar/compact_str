@@ -2,7 +2,6 @@
 
 ## Changes
 * Minimum supported Rust version (MSRV) was bumped to `v1.71`.
-    * Required by the `itoa` (`v1.68`) and `ryu` (`v1.71`) dependencies.
 * The `Error` trait impls once again require the `std` feature. This reverts the (unreleased)
   no-std `core::error::Error` support from [#443](https://github.com/ParkMyCar/compact_str/pull/443),
   which required Rust `v1.81`; it can return once the MSRV reaches `v1.81`.

@@ -84,7 +84,7 @@ impl ToCompactString for str {
 /// * `char`
 /// * `String`, `CompactString`
 /// * `f32`, `f64`
-///     * For floats we use [`ryu`] crate which sometimes provides different formatting than [`std`]
+///     * For floats we use [`zmij`] crate which sometimes provides different formatting than [`std`]
 impl<T: fmt::Display> ToCompactString for T {
     #[inline]
     fn try_to_compact_string(&self) -> Result<CompactString, ToCompactStringError> {

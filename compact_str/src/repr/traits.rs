@@ -14,7 +14,7 @@ pub(crate) trait IntoRepr {
 impl IntoRepr for f32 {
     #[inline]
     fn into_repr(self) -> Result<Repr, ToCompactStringError> {
-        let mut buf = ryu::Buffer::new();
+        let mut buf = zmij::Buffer::new();
         let s = buf.format(self);
         Ok(Repr::new(s)?)
     }
@@ -23,7 +23,7 @@ impl IntoRepr for f32 {
 impl IntoRepr for f64 {
     #[inline]
     fn into_repr(self) -> Result<Repr, ToCompactStringError> {
-        let mut buf = ryu::Buffer::new();
+        let mut buf = zmij::Buffer::new();
         let s = buf.format(self);
         Ok(Repr::new(s)?)
     }
@@ -114,7 +114,7 @@ mod tests {
         let repr = f64::into_repr(val).unwrap();
         let roundtrip = repr.as_str().parse::<f64>().unwrap();
 
-        // Note: The formatting of floats by `ryu` sometimes differs from that of `std`, so instead
+        // Note: The formatting of floats by `zmij` sometimes differs from that of `std`, so instead
         // of asserting equality with `std` we just make sure the value roundtrips
 
         if val.is_nan() != roundtrip.is_nan() {
@@ -122,7 +122,7 @@ mod tests {
         }
     }
 
-    // `f32` formatting is broken on powerpc64le, not only in `ryu` but also `std`
+    // `f32` formatting is broken on powerpc64le, not only in `zmij` but also `std`
     //
     // See: https://github.com/rust-lang/rust/issues/96306
     #[test]
@@ -158,7 +158,7 @@ mod tests {
         let repr = f32::into_repr(val).unwrap();
         let roundtrip = repr.as_str().parse::<f32>().unwrap();
 
-        // Note: The formatting of floats by `ryu` sometimes differs from that of `std`, so instead
+        // Note: The formatting of floats by `zmij` sometimes differs from that of `std`, so instead
         // of asserting equality with `std` we just make sure the value roundtrips
 
         if val.is_nan() != roundtrip.is_nan() {

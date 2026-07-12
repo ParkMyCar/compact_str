@@ -88,9 +88,13 @@ impl Repr {
     pub(crate) fn new_panic(text: &str) -> Self {
         let len = text.len();
 
-        if len == 0 {
-            EMPTY
-        } else if len <= MAX_SIZE {
+        // Note(parker): `len == 0` is intentionally not special-cased.
+        //
+        // I've gone back and forth on this a few times, but the slight performance win
+        // for empty strings is not worth the instruction bloat. `copy_small(_, _, 0)` in
+        // `InlineBuffer::new` ends up being a no-op as well.
+
+        if len <= MAX_SIZE {
             // SAFETY: We checked that the length of text is less than or equal to MAX_SIZE
             let inline = unsafe { InlineBuffer::new(text) };
             Repr::from_inline(inline)

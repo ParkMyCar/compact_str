@@ -32,9 +32,10 @@ static_assertions::assert_eq_size!(HeapBuffer, Repr);
 static_assertions::assert_eq_align!(HeapBuffer, Repr);
 
 impl HeapBuffer {
-    /// Create a [`HeapBuffer`] with the provided text
+    /// Allocate a fresh heap buffer and copy `text` into it, the shared core for
+    /// `new`/`new_panic`.
     #[inline]
-    pub(crate) fn new(text: &str) -> Result<Self, ReserveError> {
+    fn build(text: &str) -> Result<Self, ReserveError> {
         let len = text.len();
         let (cap, ptr) = allocate_ptr(len)?;
 
@@ -43,13 +44,30 @@ impl HeapBuffer {
         // SAFETY: We know both `src` and `dest` are valid for respectively reads and writes of
         // length `len` because `len` comes from `src`, and `dest` was allocated to be at least that
         // length. We also know they're non-overlapping because `dest` is newly allocated
-        unsafe { ptr.as_ptr().copy_from_nonoverlapping(text.as_ptr(), len) };
+        unsafe { super::copy_medium(text.as_ptr(), ptr.as_ptr(), len) };
 
         Ok(HeapBuffer { ptr, len, cap })
     }
 
+    /// Create a [`HeapBuffer`] with the provided text.
+    ///
+    /// Note(parker): deliberately not `#[inline]`, this is the cold allocating heap
+    /// construction path, keeping it out-of-line prevents it from bloating every
+    /// `CompactString` construction callsite.
+    pub(crate) fn new(text: &str) -> Result<Self, ReserveError> {
+        Self::build(text)
+    }
+
+    /// Like [`HeapBuffer::new`], but panics on allocation failure instead of returning a
+    /// `Result`.
+    #[track_caller]
+    pub(crate) fn new_panic(text: &str) -> Self {
+        Self::build(text).unwrap_with_msg()
+    }
+
     /// Create an empty [`HeapBuffer`] with a specific capacity
-    #[inline]
+    ///
+    /// Note: deliberately not `#[inline]` — see `HeapBuffer::new`. This is a cold allocating path.
     pub(crate) fn with_capacity(capacity: usize) -> Result<Self, ReserveError> {
         let len = 0;
         let (cap, ptr) = allocate_ptr(capacity)?;
@@ -61,7 +79,8 @@ impl HeapBuffer {
     ///
     /// To prevent frequent re-allocations, this method will create a [`HeapBuffer`] with a capacity
     /// of `text.len() + additional` or `text.len() * 1.5`, whichever is greater
-    #[inline]
+    ///
+    /// Note: deliberately not `#[inline]` — see `HeapBuffer::new`. This is a cold allocating path.
     pub(crate) fn with_additional(text: &str, additional: usize) -> Result<Self, ReserveError> {
         let len = text.len();
         let new_capacity = amortized_growth(len, additional);
@@ -72,7 +91,7 @@ impl HeapBuffer {
         // SAFETY: We know both `src` and `dest` are valid for respectively reads and writes of
         // length `len` because `len` comes from `src`, and `dest` was allocated to be at least that
         // length. We also know they're non-overlapping because `dest` is newly allocated
-        unsafe { ptr.as_ptr().copy_from_nonoverlapping(text.as_ptr(), len) };
+        unsafe { super::copy_medium(text.as_ptr(), ptr.as_ptr(), len) };
 
         Ok(HeapBuffer { ptr, len, cap })
     }
@@ -237,11 +256,7 @@ impl Clone for HeapBuffer {
         // SAFETY:
         // * `src` and `dst` don't overlap because we just created `dst`
         // * `src` and `dst` are both valid for `self.len` bytes because self.len < capacity
-        unsafe {
-            new.ptr
-                .as_ptr()
-                .copy_from_nonoverlapping(self.ptr.as_ptr(), self.len)
-        };
+        unsafe { super::copy_medium(self.ptr.as_ptr(), new.ptr.as_ptr(), self.len) };
         // SAFETY:
         // * We copied the text from self, which is valid UTF-8
         unsafe { new.set_len(self.len) };

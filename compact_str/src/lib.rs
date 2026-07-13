@@ -1989,7 +1989,7 @@ impl Clone for CompactString {
 impl Default for CompactString {
     #[inline]
     fn default() -> Self {
-        CompactString::new("")
+        CompactString::const_new("")
     }
 }
 

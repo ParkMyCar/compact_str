@@ -99,7 +99,14 @@ impl Repr {
             let inline = unsafe { InlineBuffer::new(text) };
             Repr::from_inline(inline)
         } else {
-            let heap = HeapBuffer::new_panic(text);
+            // N.B. `alloc_copy_panic` is `#[inline(always)]`, so the `HeapBuffer` it
+            // returns is assembled right here at the callsite. The only value crossing
+            // the call boundary is the two-word `(ptr, capacity)`.
+            //
+            // Previously returning a full 24-byte `HeapBuffer` across that boundary
+            // instead routed it through a stack temporary that LLVM scatter-copied into
+            // the return slot on x86 which caused a store-forwarding stall.
+            let heap = HeapBuffer::alloc_copy_panic(text);
             Repr::from_heap(heap)
         }
     }
@@ -177,23 +184,16 @@ impl Repr {
         let og_cap = s.capacity();
         let cap = Capacity::new(og_cap);
 
-        #[cold]
-        fn capacity_on_heap(s: String) -> Result<Repr, ReserveError> {
-            HeapBuffer::new(s.as_str()).map(Repr::from_heap)
-        }
-
-        #[cold]
-        fn empty() -> Result<Repr, ReserveError> {
-            Ok(EMPTY)
-        }
-
         if cap.is_heap() {
-            // We only hit this case if the provided String is > 16MB and we're on a 32-bit arch. We
-            // expect it to be unlikely, thus we hint that to the compiler
-            capacity_on_heap(s)
+            // We only hit this case if the provided String is > 16MB and we're on a 32-bit arch.
+            //
+            // `alloc_copy` is the cold out-of-line core, keeping this arm off the hot path without
+            // a helper that would return the 24-byte `Repr` through a stack temporary.
+            let len = s.len();
+            let (ptr, cap) = HeapBuffer::alloc_copy(s.as_str())?;
+            Ok(Repr::from_heap(HeapBuffer { ptr, len, cap }))
         } else if og_cap == 0 {
-            // We don't expect converting from an empty String often, so we make this code path cold
-            empty()
+            Ok(EMPTY)
         } else if should_inline && s.len() <= MAX_SIZE {
             // SAFETY: Checked to make sure the string would fit inline
             let inline = unsafe { InlineBuffer::new(s.as_str()) };
@@ -776,16 +776,15 @@ impl Repr {
 impl Clone for Repr {
     #[inline]
     fn clone(&self) -> Self {
-        #[inline(never)]
-        fn clone_heap(this: &Repr) -> Repr {
-            Repr::new(this.as_str()).unwrap_with_msg()
-        }
-
         // There are only two cases we need to care about: If the string is allocated on the heap
         // or not. If it is, then the data must be cloned properly, otherwise we can simply copy
         // the `Repr`.
+        //
+        // `new_panic`'s heap arm is the cold out-of-line `alloc_copy` returning `(ptr, cap)` in
+        // registers; an out-of-line helper returning the 24-byte `Repr` here would route the hot
+        // copy arm below through a scatter-copied stack temporary on x86 (store-forwarding stall).
         if self.is_heap_allocated() {
-            clone_heap(self)
+            Repr::new_panic(self.as_str())
         } else {
             // SAFETY: We just checked that `self` can be copied because it is an inline string or
             // a reference to a `&'static str`.
@@ -979,6 +978,7 @@ const unsafe fn assume(cond: bool) {
 /// * `len <= MAX_SIZE`.
 /// * `src` is valid for reads of `len` bytes; `dst` is valid for writes of `len` bytes.
 /// * `src` and `dst` do not overlap.
+#[cfg(not(all(target_pointer_width = "64", target_endian = "little")))]
 #[inline(always)]
 pub(crate) unsafe fn copy_small(src: *const u8, dst: *mut u8, len: usize) {
     debug_assert!(len <= MAX_SIZE);

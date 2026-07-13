@@ -35,15 +35,16 @@ impl HeapBuffer {
     /// Allocate a heap buffer, copy `text` into it, and return the raw `(ptr, capacity)` pair
     /// instead of a full [`HeapBuffer`]. The shared cold core behind `new` / `alloc_copy_panic`.
     ///
-    /// The caller assembles the `HeapBuffer`/`Repr` itself. Returning the two-word `(ptr, capacity)`
-    /// -- which comes back in registers -- rather than a 24-byte `HeapBuffer` avoids a by-value
-    /// aggregate return across this outlined call boundary. That aggregate return otherwise forced
-    /// the whole of `Repr::new`/`new_panic`, including their hot inline arm, through a stack
-    /// temporary that LLVM scatter-copied into the return slot on x86 (a store-to-load forwarding
-    /// stall on every construction).
+    /// N.B. The caller assembles the [`HeapBuffer`] themself. Returning the two-word
+    /// `(ptr, capacity)`, which gets passed in registers, rather than a 24-byte
+    /// `HeapBuffer` avoids a by-value aggregate return across this outlined call boundary.
+    /// 
+    /// The aggregate return otherwise forced the whole of `Repr::new`/`new_panic`, including
+    /// their hot inline arm, through a stack temporary that LLVM scatter-copied into the
+    /// return slot on x86, causing a forwarding stall on every construction.
     ///
-    /// `#[cold]`/`#[inline(never)]`: keeps the alloc/copy machinery out of line and lays the heap
-    /// arm out cold at every callsite.
+    /// `#[cold]`/`#[inline(never)]` keeps the alloc/copy machinery out of line and lays
+    /// the heap arm out cold at every callsite.
     #[cold]
     #[inline(never)]
     pub(crate) fn alloc_copy(text: &str) -> Result<(ptr::NonNull<u8>, Capacity), ReserveError> {
@@ -52,9 +53,9 @@ impl HeapBuffer {
 
         // copy our string into the buffer we just allocated
         //
-        // SAFETY: `src` (`text`) and `dest` (`ptr`) are both valid for `len` bytes -- `len` comes
-        // from `src`, and `dest` was freshly allocated with at least that length -- and they don't
-        // overlap because `dest` is newly allocated.
+        // SAFETY: `src` (`text`) and `dest` (`ptr`) are both valid for `len` bytes. `len`
+        // comes from `src`, and `dest` was freshly allocated with at least that length. 
+        // And they don't overlap because `dest` is newly allocated.
         unsafe { super::copy_medium(text.as_ptr(), ptr.as_ptr(), len) };
 
         Ok((ptr, cap))
@@ -62,8 +63,9 @@ impl HeapBuffer {
 
     /// Create a [`HeapBuffer`] with the provided text.
     ///
-    /// `#[inline(always)]` so the `HeapBuffer` is assembled at the callsite from the register-passed
-    /// `(ptr, capacity)`; only that pair crosses the cold [`alloc_copy`] boundary.
+    /// N.B. `#[inline(always)]` so the `HeapBuffer` is assembled at the callsite from
+    /// the register-passed `(ptr, capacity)`. It's important only that pair crosses the
+    /// cold [`alloc_copy`] boundary.
     #[inline(always)]
     pub(crate) fn new(text: &str) -> Result<Self, ReserveError> {
         let (ptr, cap) = Self::alloc_copy(text)?;
@@ -76,9 +78,9 @@ impl HeapBuffer {
 
     /// Infallible [`alloc_copy`], panicking on allocation failure.
     ///
-    /// `#[inline(always)]` so the tiny unwrap lives at the callsite (which then builds the `Repr`
-    /// from the register-passed `(ptr, capacity)`), while the actual allocating body stays in the
-    /// cold, out-of-line [`alloc_copy`].
+    /// N.B. `#[inline(always)]` so the `HeapBuffer` is assembled at the callsite from
+    /// the register-passed `(ptr, capacity)`. It's important only that pair crosses the
+    /// cold [`alloc_copy`] boundary.
     #[inline(always)]
     #[track_caller]
     pub(crate) fn alloc_copy_panic(text: &str) -> HeapBuffer {
@@ -92,12 +94,23 @@ impl HeapBuffer {
 
     /// Create an empty [`HeapBuffer`] with a specific capacity
     ///
-    /// Note: deliberately not `#[inline]` — see `HeapBuffer::new`. This is a cold allocating path.
+    /// N.B. `#[inline(always)]` so the `HeapBuffer` is assembled at the callsite from
+    /// the register-passed `(ptr, capacity)`. It's important only that pair crosses the
+    /// cold [`alloc_copy`] boundary.
+    #[inline(always)]
     pub(crate) fn with_capacity(capacity: usize) -> Result<Self, ReserveError> {
-        let len = 0;
-        let (cap, ptr) = allocate_ptr(capacity)?;
+        let (ptr, cap) = Self::alloc(capacity)?;
+        Ok(HeapBuffer { ptr, len: 0, cap })
+    }
 
-        Ok(HeapBuffer { ptr, len, cap })
+    /// Out-of-line allocation core for [`Self::with_capacity`].
+    /// 
+    /// See [`Self::alloc_copy`] for why it returns the two-word pair instead of a `HeapBuffer`.
+    #[cold]
+    #[inline(never)]
+    fn alloc(capacity: usize) -> Result<(ptr::NonNull<u8>, Capacity), ReserveError> {
+        let (cap, ptr) = allocate_ptr(capacity)?;
+        Ok((ptr, cap))
     }
 
     /// Create a [`HeapBuffer`] with `text` that has _at least_ `additional` bytes of capacity
@@ -105,8 +118,28 @@ impl HeapBuffer {
     /// To prevent frequent re-allocations, this method will create a [`HeapBuffer`] with a capacity
     /// of `text.len() + additional` or `text.len() * 1.5`, whichever is greater
     ///
-    /// Note: deliberately not `#[inline]` — see `HeapBuffer::new`. This is a cold allocating path.
+    /// N.B. `#[inline(always)]` so the `HeapBuffer` is assembled at the callsite from
+    /// the register-passed `(ptr, capacity)`. It's important only that pair crosses the
+    /// cold [`alloc_copy`] boundary.
+    #[inline(always)]
     pub(crate) fn with_additional(text: &str, additional: usize) -> Result<Self, ReserveError> {
+        let (ptr, cap) = Self::alloc_copy_extra(text, additional)?;
+        Ok(HeapBuffer {
+            ptr,
+            len: text.len(),
+            cap,
+        })
+    }
+
+    /// Out-of-line allocate+copy core for [`Self::with_additional`].
+    /// 
+    /// See [`Self::alloc_copy`] for why it returns the two-word pair instead of a `HeapBuffer`.
+    #[cold]
+    #[inline(never)]
+    fn alloc_copy_extra(
+        text: &str,
+        additional: usize,
+    ) -> Result<(ptr::NonNull<u8>, Capacity), ReserveError> {
         let len = text.len();
         let new_capacity = amortized_growth(len, additional);
         let (cap, ptr) = allocate_ptr(new_capacity)?;
@@ -118,7 +151,7 @@ impl HeapBuffer {
         // length. We also know they're non-overlapping because `dest` is newly allocated
         unsafe { super::copy_medium(text.as_ptr(), ptr.as_ptr(), len) };
 
-        Ok(HeapBuffer { ptr, len, cap })
+        Ok((ptr, cap))
     }
 
     /// Return the capacity of the [`HeapBuffer`]

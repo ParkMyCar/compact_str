@@ -18,6 +18,121 @@ impl InlineBuffer {
     /// SAFETY:
     /// * The caller must guarantee that the length of `text` is less than [`MAX_SIZE`]
     #[inline]
+    #[cfg(all(target_pointer_width = "64", target_endian = "little"))]
+    pub(crate) unsafe fn new(text: &str) -> Self {
+        debug_assert!(text.len() <= MAX_SIZE);
+
+        use core::ptr::read_unaligned as load;
+
+        let len = text.len();
+        let src = text.as_ptr();
+
+        // Note(parker): This implementation builds an `InlineBuffer` entirely in
+        // registers. It solves a long standing performance issue `compact_str` has had
+        // since it's creation.
+        // The simple implementation is to copy the string into a stack buffer of
+        // MAX_SIZE. Via our `copy_small` helper or libc's `memcpy` function, it is
+        // executed as two overlapping stores.
+        //
+        // For example, the string "hello world" is copied as two 8-byte ops:
+        //
+        // 1. "hello wo" into [0, 7]
+        // 2. "lo world" into [3, 10]
+        //
+        // Then we have do a _third_ store to the final byte for the length.
+        //
+        // ( Note: we also need to consider the stores that zero the original buffer, but
+        //   for illustrative purposes considering just "hello world" is enough )
+        //
+        // Immediately after, the stack buffer gets moved, returned as a Repr and then to
+        // the user as a CompactString. These consumers read the data as _whole aligned words_.
+        // At this point the data is in the CPU's store buffer, not yet written out to
+        // the L1 cache.
+        //
+        // Enter the ~~SPOOKY ZONE~~ of micro-architectures.
+        //
+        // On Intel, the CPU can forward a load from the store buffer __if the load is
+        // fully contained within a single store__. Our issue is that the first word/8-bytes
+        // _overlaps two stores_ and thus causes a pipeline hazard
+        // Apple's `aarch64` can forward multi-store loads, so this is less of a problem
+        // there.
+        //
+        //
+        // Below, we build an `InlineBuffer` in registers, replacing the overlapping
+        // stores. Afterwards, the buffer is materialized with at most three aligned
+        // non-overlapping stores, or kept in registers entirely.
+
+        let last_byte = (len as u64 | LENGTH_MASK as u64) << 56;
+
+        let (w0, w1, w2);
+        if len >= 16 {
+            // SAFETY: `len >= 16` means `src` is valid for 16 bytes. and `src + len - 8`
+            // is valid for 8 bytes because `len <= text.len()`.
+            w0 = load(src as *const u64);
+            w1 = load(src.add(8) as *const u64);
+            // N.B. For any length < MAX_SIZE, this is an overlaping read of `w1` and the
+            // tail of the string.
+            let tail = load(src.add(len - 8) as *const u64);
+
+            // bytes `[16, len)` of the string are the top `len - 16` bytes of `tail`.
+            let data = if len == 16 {
+                0
+            } else {
+                tail >> ((MAX_SIZE - len) * 8)
+            };
+            w2 = if len == MAX_SIZE {
+                data
+            } else {
+                data | last_byte
+            };
+        } else if len >= 8 {
+            // SAFETY: `src` is valid for `len >= 8` bytes.
+            w0 = load(src as *const u64);
+            // N.B. Overlapping load with w0 for the tail of the string.
+            let tail = load(src.add(len - 8) as *const u64);
+            
+            // bytes `[8, len)` of the string are the top `len - 8` bytes of `tail`
+            w1 = if len == 8 {
+                0
+            } else {
+                tail >> ((16 - len) * 8)
+            };
+            w2 = last_byte;
+        } else if len >= 4 {
+            // SAFETY: `src` is valid for `len >= 4` bytes.
+            let head = load(src as *const u32) as u64;
+            let tail = load(src.add(len - 4) as *const u32) as u64;
+            w0 = head | (tail << ((len - 4) * 8));
+            w1 = 0;
+            w2 = last_byte;
+        } else if len >= 2 {
+            // SAFETY: `src` is valid for `len >= 2` bytes.
+            let head = load(src as *const u16) as u64;
+            let tail = load(src.add(len - 2) as *const u16) as u64;
+            w0 = head | (tail << ((len - 2) * 8));
+            w1 = 0;
+            w2 = last_byte;
+        } else if len == 1 {
+            w0 = *src as u64;
+            w1 = 0;
+            w2 = last_byte;
+        } else {
+            w0 = 0;
+            w1 = 0;
+            w2 = last_byte;
+        }
+
+        // SAFETY: `[u64; 3]` and `InlineBuffer` have the same size, and on little-endian
+        // the byte order of the words matches the byte order of the buffer.
+        core::mem::transmute([w0, w1, w2])
+    }
+
+    /// Construct a new [`InlineString`]. A string that lives in a small buffer on the stack
+    ///
+    /// SAFETY:
+    /// * The caller must guarantee that the length of `text` is less than [`MAX_SIZE`]
+    #[inline]
+    #[cfg(not(all(target_pointer_width = "64", target_endian = "little")))]
     pub(crate) unsafe fn new(text: &str) -> Self {
         debug_assert!(text.len() <= MAX_SIZE);
 

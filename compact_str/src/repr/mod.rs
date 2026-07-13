@@ -985,6 +985,7 @@ const unsafe fn assume(cond: bool) {
 /// * `len <= MAX_SIZE`.
 /// * `src` is valid for reads of `len` bytes; `dst` is valid for writes of `len` bytes.
 /// * `src` and `dst` do not overlap.
+#[cfg(not(all(target_pointer_width = "64", target_endian = "little")))]
 #[inline(always)]
 pub(crate) unsafe fn copy_small(src: *const u8, dst: *mut u8, len: usize) {
     debug_assert!(len <= MAX_SIZE);

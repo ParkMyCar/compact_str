@@ -3,7 +3,9 @@
 //! Adapted from the implementation in the `std` library at
 //! <https://github.com/rust-lang/rust/blob/b8214dc6c6fc20d0a660fb5700dca9ebf51ebe89/src/libcore/fmt/num.rs#L188-L266>
 
-use core::{mem, num, ptr};
+use core::{mem, num};
+#[cfg(target_pointer_width = "32")]
+use core::ptr;
 
 use super::traits::IntoRepr;
 use super::{InlineBuffer, Repr, LENGTH_MASK, MAX_SIZE};
@@ -15,6 +17,38 @@ const DEC_DIGITS_LUT: &[u8] = b"\
       4041424344454647484950515253545556575859\
       6061626364656667686970717273747576777879\
       8081828384858687888990919293949596979899";
+
+
+/// OR a two-byte digit pair from the LUT into `words` at byte offset `byte_off`.
+///
+/// The pair may straddle a word boundary (`byte_off % 8 == 7`); the high byte then goes into the
+/// next word. Callers only pass `byte_off <= 21`, so `idx + 1 <= 2` stays in bounds.
+#[cfg(target_pointer_width = "64")]
+#[inline(always)]
+fn or_pair(words: &mut [u64; 3], pair: u16, byte_off: usize) {
+    debug_assert!(byte_off <= 21);
+    let idx = byte_off / 8;
+    let sh = (byte_off % 8) * 8;
+    words[idx] |= (pair as u64) << sh;
+    if sh == 56 {
+        words[idx + 1] |= (pair as u64) >> 8;
+    }
+}
+
+/// OR a single byte into `words` at byte offset `byte_off`.
+#[cfg(target_pointer_width = "64")]
+#[inline(always)]
+fn or_byte(words: &mut [u64; 3], byte: u8, byte_off: usize) {
+    words[byte_off / 8] |= (byte as u64) << ((byte_off % 8) * 8);
+}
+
+/// Read a two-byte digit pair from the LUT.
+#[cfg(target_pointer_width = "64")]
+#[inline(always)]
+fn read_pair(lut: *const u8, offset: isize) -> u16 {
+    // SAFETY: callers pass an even `offset <= 198`, so the two-byte read is within the LUT.
+    u16::from_le_bytes(unsafe { *(lut.offset(offset) as *const [u8; 2]) })
+}
 
 /// Defines the implementation of [`IntoRepr`] for integer types
 macro_rules! impl_IntoRepr {
@@ -39,7 +73,6 @@ macro_rules! impl_IntoRepr {
 
                 // Number of characters to write, including a leading `-` for negatives.
                 let num_digits = NumChars::num_chars(self);
-                let mut buffer = [0u8; MAX_SIZE];
 
                 #[allow(unused_comparisons)]
                 let is_nonnegative = self >= 0;
@@ -49,6 +82,86 @@ macro_rules! impl_IntoRepr {
                     // convert the negative num to positive by summing 1 to it's 2 complement
                     (!(self as $conv_ty)).wrapping_add(1)
                 };
+                // On 64-bit targets, assemble the digits into the buffer's three 8-byte words
+                // in registers; on 32-bit targets keep the byte-buffer path (`MAX_SIZE` is 12
+                // there, so the `[u64; 3]` representation doesn't apply).
+                #[cfg(target_pointer_width = "64")]
+                {
+                let mut curr = num_digits;
+
+                // Assemble the digits into the buffer's three 8-byte words in registers instead
+                // of writing 1-2 byte stores into a stack buffer: whole-word reads of the
+                // resulting `Repr` would straddle those small stores and defeat store-to-load
+                // forwarding on x86.
+                let mut words = [0u64; 3];
+                let lut_ptr = DEC_DIGITS_LUT.as_ptr();
+
+                // need at least 16 bits for the 4-characters-at-a-time to work.
+                if mem::size_of::<$t>() >= 2 {
+                    // eagerly decode 4 characters at a time
+                    while n >= 10000 {
+                        let rem = (n % 10000) as isize;
+                        n /= 10000;
+
+                        let d1 = (rem / 100) << 1;
+                        let d2 = (rem % 100) << 1;
+                        curr -= 4;
+                        or_pair(&mut words, read_pair(lut_ptr, d1), curr);
+                        or_pair(&mut words, read_pair(lut_ptr, d2), curr + 2);
+                    }
+                }
+
+                // if we reach here numbers are <= 9999, so at most 4 chars long
+                let mut n = n as isize; // possibly reduce 64bit math
+
+                // decode 2 more chars, if > 2 chars
+                if n >= 100 {
+                    let d1 = (n % 100) << 1;
+                    n /= 100;
+                    curr -= 2;
+                    or_pair(&mut words, read_pair(lut_ptr, d1), curr);
+                }
+
+                // decode last 1 or 2 chars
+                if n < 10 {
+                    curr -= 1;
+                    or_byte(&mut words, (n as u8) + b'0', curr);
+                } else {
+                    let d1 = n << 1;
+                    curr -= 2;
+                    or_pair(&mut words, read_pair(lut_ptr, d1), curr);
+                }
+
+                if !is_nonnegative {
+                    curr -= 1;
+                    or_byte(&mut words, b'-', curr);
+                }
+
+                // we should have moved all the way down our buffer
+                debug_assert_eq!(curr, 0);
+
+                // `num_digits < MAX_SIZE`, so the length lives in the last byte, distinct from the
+                // digits.
+                words[2] |= (num_digits as u64 | LENGTH_MASK as u64) << 56;
+
+                // SAFETY: `[u64; 3]` has the same size as the inline buffer, and `to_le` makes the
+                // in-memory byte order match on any endianness. The leading `num_digits` bytes are
+                // ASCII digits (with an optional `-`), and the last byte is a valid inline length
+                // marker.
+                let buffer =
+                    unsafe {
+                    mem::transmute::<[u64; 3], [u8; MAX_SIZE]>([
+                        words[0].to_le(),
+                        words[1].to_le(),
+                        words[2].to_le(),
+                    ])
+                };
+                return Ok(Repr::from_inline(InlineBuffer(buffer)));
+                }
+
+                #[cfg(target_pointer_width = "32")]
+                {
+                let mut buffer = [0u8; MAX_SIZE];
                 let mut curr = num_digits as isize;
 
                 let buf_ptr = buffer.as_mut_ptr();
@@ -110,7 +223,8 @@ macro_rules! impl_IntoRepr {
 
                 // SAFETY: the leading `num_digits` bytes are ASCII digits (with an optional `-`),
                 // and the last byte is a valid inline length marker.
-                Ok(Repr::from_inline(InlineBuffer(buffer)))
+                return Ok(Repr::from_inline(InlineBuffer(buffer)));
+                }
             }
         }
     };

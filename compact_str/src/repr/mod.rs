@@ -782,16 +782,15 @@ impl Repr {
 impl Clone for Repr {
     #[inline]
     fn clone(&self) -> Self {
-        #[inline(never)]
-        fn clone_heap(this: &Repr) -> Repr {
-            Repr::new(this.as_str()).unwrap_with_msg()
-        }
-
         // There are only two cases we need to care about: If the string is allocated on the heap
         // or not. If it is, then the data must be cloned properly, otherwise we can simply copy
         // the `Repr`.
+        //
+        // `new_panic`'s heap arm is the cold out-of-line `alloc_copy` returning `(ptr, cap)` in
+        // registers; an out-of-line helper returning the 24-byte `Repr` here would route the hot
+        // copy arm below through a scatter-copied stack temporary on x86 (store-forwarding stall).
         if self.is_heap_allocated() {
-            clone_heap(self)
+            Repr::new_panic(self.as_str())
         } else {
             // SAFETY: We just checked that `self` can be copied because it is an inline string or
             // a reference to a `&'static str`.

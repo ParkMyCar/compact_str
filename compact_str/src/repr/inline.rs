@@ -65,7 +65,15 @@ impl InlineBuffer {
         let last_byte = (len as u64 | LENGTH_MASK as u64) << 56;
 
         let (w0, w1, w2);
-        if len >= 16 {
+        if len == 0 {
+            // Checked first so the empty string is a single compare, and so the final
+            // `else` below is exactly `len == 1` without needing its own test. Hoisting
+            // this case is net-zero code size: the branch added here replaces the one
+            // removed at the bottom of the ladder.
+            w0 = 0;
+            w1 = 0;
+            w2 = last_byte;
+        } else if len >= 16 {
             // SAFETY: `len >= 16` means `src` is valid for 16 bytes. and `src + len - 8`
             // is valid for 8 bytes because `len <= text.len()`.
             w0 = load(src as *const u64);
@@ -112,12 +120,9 @@ impl InlineBuffer {
             w0 = head | (tail << ((len - 2) * 8));
             w1 = 0;
             w2 = last_byte;
-        } else if len == 1 {
-            w0 = *src as u64;
-            w1 = 0;
-            w2 = last_byte;
         } else {
-            w0 = 0;
+            // `len == 0` was handled above and `len >= 2` just failed, so this is `len == 1`.
+            w0 = *src as u64;
             w1 = 0;
             w2 = last_byte;
         }

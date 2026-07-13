@@ -38,7 +38,7 @@ impl HeapBuffer {
     /// N.B. The caller assembles the [`HeapBuffer`] themself. Returning the two-word
     /// `(ptr, capacity)`, which gets passed in registers, rather than a 24-byte
     /// `HeapBuffer` avoids a by-value aggregate return across this outlined call boundary.
-    /// 
+    ///
     /// The aggregate return otherwise forced the whole of `Repr::new`/`new_panic`, including
     /// their hot inline arm, through a stack temporary that LLVM scatter-copied into the
     /// return slot on x86, causing a forwarding stall on every construction.
@@ -54,7 +54,7 @@ impl HeapBuffer {
         // copy our string into the buffer we just allocated
         //
         // SAFETY: `src` (`text`) and `dest` (`ptr`) are both valid for `len` bytes. `len`
-        // comes from `src`, and `dest` was freshly allocated with at least that length. 
+        // comes from `src`, and `dest` was freshly allocated with at least that length.
         // And they don't overlap because `dest` is newly allocated.
         unsafe { super::copy_medium(text.as_ptr(), ptr.as_ptr(), len) };
 
@@ -104,7 +104,7 @@ impl HeapBuffer {
     }
 
     /// Out-of-line allocation core for [`Self::with_capacity`].
-    /// 
+    ///
     /// See [`Self::alloc_copy`] for why it returns the two-word pair instead of a `HeapBuffer`.
     #[cold]
     #[inline(never)]
@@ -132,7 +132,7 @@ impl HeapBuffer {
     }
 
     /// Out-of-line allocate+copy core for [`Self::with_additional`].
-    /// 
+    ///
     /// See [`Self::alloc_copy`] for why it returns the two-word pair instead of a `HeapBuffer`.
     #[cold]
     #[inline(never)]

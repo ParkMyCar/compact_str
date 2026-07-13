@@ -90,7 +90,7 @@ impl InlineBuffer {
             w0 = load(src as *const u64);
             // N.B. Overlapping load with w0 for the tail of the string.
             let tail = load(src.add(len - 8) as *const u64);
-            
+
             // bytes `[8, len)` of the string are the top `len - 8` bytes of `tail`
             w1 = if len == 8 {
                 0

@@ -45,6 +45,14 @@ impl HeapBuffer {
     ///
     /// `#[cold]`/`#[inline(never)]` keeps the alloc/copy machinery out of line and lays
     /// the heap arm out cold at every callsite.
+    ///
+    /// Policy note (applies to `alloc` and `alloc_copy_extra` too): `#[cold]` stays.
+    /// Removing it looks ~1ns/op faster in microbenchmarks, but the generated body is
+    /// opcode-identical either way -- the delta is purely `.text.unlikely` section
+    /// placement, a small-binary locality artifact that reverses in real applications
+    /// (cold placement is what keeps hot text dense). The callsite unlikely-branch hints
+    /// `#[cold]` provides are also load-bearing for branch layout in `Repr::new`,
+    /// `new_panic`, and `Clone for Repr`.
     #[cold]
     #[inline(never)]
     pub(crate) fn alloc_copy(text: &str) -> Result<(ptr::NonNull<u8>, Capacity), ReserveError> {

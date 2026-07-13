@@ -88,6 +88,9 @@ impl Repr {
     pub(crate) fn new_panic(text: &str) -> Self {
         let len = text.len();
 
+        // Note: `Clone for Repr` open-codes this dispatch (with the inline arm outlined
+        // cold) -- keep the two in sync if the arms here ever change.
+        //
         // Note(parker): `len == 0` is intentionally not special-cased.
         //
         // I've gone back and forth on this a few times, but the slight performance win
@@ -784,7 +787,26 @@ impl Clone for Repr {
         // registers; an out-of-line helper returning the 24-byte `Repr` here would route the hot
         // copy arm below through a scatter-copied stack temporary on x86 (store-forwarding stall).
         if self.is_heap_allocated() {
-            Repr::new_panic(self.as_str())
+            // Open-coded body of `Repr::new_panic` (keep the two in sync) so a layout hint can
+            // be placed on the rare sub-arm: cloning a heap string short enough to inline
+            // (reachable via `from_string_buffer`, shrinking, or over-reserving then cloning)
+            // re-inlines it, exactly like `new_panic`.
+            //
+            // The empty `#[cold]` `cold_path()` call below, combined with the `#[cold]`
+            // `alloc_copy` behind `alloc_copy_panic`, makes every path through this arm reach a
+            // cold call, so LLVM lays the bitwise-copy arm out as the fall-through path --
+            // otherwise the hot copy arm executes two extra taken branches per clone (measured:
+            // 1.08ns -> 0.64ns per inline clone on Sapphire Rapids). We deliberately do NOT
+            // outline this arm as a `Repr`-returning `#[cold]` fn: the 24-byte sret return
+            // re-routes the hot copy arm through a stack temporary (measured back at ~1.05ns).
+            let text = self.as_str();
+            if text.len() <= MAX_SIZE {
+                cold_path();
+                // SAFETY: we just checked that the text fits inline.
+                Repr::from_inline(unsafe { InlineBuffer::new(text) })
+            } else {
+                Repr::from_heap(HeapBuffer::alloc_copy_panic(text))
+            }
         } else {
             // SAFETY: We just checked that `self` can be copied because it is an inline string or
             // a reference to a `&'static str`.
@@ -794,6 +816,7 @@ impl Clone for Repr {
 
     #[inline]
     fn clone_from(&mut self, source: &Self) {
+        #[cold]
         #[inline(never)]
         fn clone_from_heap(this: &mut Repr, source: &Repr) {
             unsafe { this.set_len(0) };
@@ -1001,6 +1024,13 @@ pub(crate) unsafe fn copy_small(src: *const u8, dst: *mut u8, len: usize) {
         *dst = *src;
     }
 }
+
+/// An empty function that only exists to bias branch layout: calling it from a branch arm
+/// marks that arm cold, making the other arm the fall-through path. Costs a single
+/// `call`/`ret` pair on the (rare) cold arm and nothing on the hot arm.
+#[cold]
+#[inline(never)]
+pub(crate) fn cold_path() {}
 
 /// Copies `len` bytes from `src` to `dst`, for the heap-string path.
 ///

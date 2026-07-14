@@ -69,7 +69,7 @@ impl Capacity {
         cfg_if::cfg_if! {
             if #[cfg(target_pointer_width = "64")] {
                 // on 64-bit arches we can always fit the capacity inline
-                debug_assert!(capacity <= MAX_VALUE);
+                assert!(capacity <= MAX_VALUE, "Exceeds maximum representable capacity");
                 // SAFETY: a 64-bit capacity is `< 2^56`, so its `to_le()` form leaves the
                 // discriminant byte free for `HEAP_MARKER`, letting the compiler fold the dead
                 // `Err` arm at callers like `From<String>`. (`to_le()`, not the raw value:

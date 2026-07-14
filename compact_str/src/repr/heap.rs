@@ -113,20 +113,20 @@ impl HeapBuffer {
         Ok((ptr, cap))
     }
 
-    /// Create a [`HeapBuffer`] with `text` that has _at least_ `additional` bytes of capacity
+    /// Create a [`HeapBuffer`] with `bytes` that has _at least_ `additional` bytes of capacity
     ///
     /// To prevent frequent re-allocations, this method will create a [`HeapBuffer`] with a capacity
-    /// of `text.len() + additional` or `text.len() * 1.5`, whichever is greater
+    /// of `bytes.len() + additional` or `bytes.len() * 1.5`, whichever is greater
     ///
     /// N.B. `#[inline(always)]` so the `HeapBuffer` is assembled at the callsite from
     /// the register-passed `(ptr, capacity)`. It's important only that pair crosses the
     /// cold [`alloc_copy`] boundary.
     #[inline(always)]
-    pub(crate) fn with_additional(text: &str, additional: usize) -> Result<Self, ReserveError> {
-        let (ptr, cap) = Self::alloc_copy_extra(text, additional)?;
+    pub(crate) fn with_additional(bytes: &[u8], additional: usize) -> Result<Self, ReserveError> {
+        let (ptr, cap) = Self::alloc_copy_extra(bytes, additional)?;
         Ok(HeapBuffer {
             ptr,
-            len: text.len(),
+            len: bytes.len(),
             cap,
         })
     }
@@ -137,19 +137,19 @@ impl HeapBuffer {
     #[cold]
     #[inline(never)]
     fn alloc_copy_extra(
-        text: &str,
+        bytes: &[u8],
         additional: usize,
     ) -> Result<(ptr::NonNull<u8>, Capacity), ReserveError> {
-        let len = text.len();
+        let len = bytes.len();
         let new_capacity = amortized_growth(len, additional);
         let (cap, ptr) = allocate_ptr(new_capacity)?;
 
-        // copy our string into the buffer we just allocated
+        // copy our bytes into the buffer we just allocated
         //
         // SAFETY: We know both `src` and `dest` are valid for respectively reads and writes of
         // length `len` because `len` comes from `src`, and `dest` was allocated to be at least that
         // length. We also know they're non-overlapping because `dest` is newly allocated
-        unsafe { super::copy_medium(text.as_ptr(), ptr.as_ptr(), len) };
+        unsafe { super::copy_medium(bytes.as_ptr(), ptr.as_ptr(), len) };
 
         Ok((ptr, cap))
     }

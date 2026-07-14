@@ -272,7 +272,7 @@ impl Repr {
             Ok(())
         } else if !self.is_heap_allocated() {
             // We're not heap allocated, but need to be, create a HeapBuffer
-            let heap = HeapBuffer::with_additional(self.as_str(), additional)?;
+            let heap = HeapBuffer::with_additional(self.as_slice(), additional)?;
             *self = Repr::from_heap(heap);
             Ok(())
         } else {
@@ -286,7 +286,7 @@ impl Repr {
             // Attempt to grow our capacity, allocating a new HeapBuffer on failure
             if heap_buffer.realloc(amortized_capacity).is_err() {
                 // Create a new HeapBuffer
-                let heap = HeapBuffer::with_additional(self.as_str(), additional)?;
+                let heap = HeapBuffer::with_additional(self.as_slice(), additional)?;
                 *self = Repr::from_heap(heap);
             }
 

@@ -2077,6 +2077,14 @@ fn test_alloc_excessively_long_string() {
     std::hint::black_box(CompactString::with_capacity((1 << 56) - 2));
 }
 
+// Regression test case for #495
+#[cfg(target_pointer_width = "64")]
+#[test]
+#[should_panic = "Exceeds maximum representable capacity"]
+fn test_alloc_with_unencodable_capacity() {
+    assert!(CompactString::try_with_capacity(1usize << 56).is_err());
+}
+
 // This feature was enabled by <https://github.com/rust-lang/rust/pull/94075> which was first
 // released in Rust 1.65.
 #[test]

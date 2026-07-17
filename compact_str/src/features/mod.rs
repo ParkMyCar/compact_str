@@ -32,6 +32,8 @@ mod serde;
 mod smallvec;
 #[cfg(feature = "sqlx")]
 mod sqlx;
+#[cfg(feature = "postgres-types")]
+mod postgres_types;
 #[cfg(feature = "utoipa")]
 mod utoipa;
 #[cfg(feature = "valuable")]

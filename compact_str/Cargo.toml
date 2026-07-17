@@ -35,6 +35,7 @@ sqlx = ["dep:sqlx", "std"]
 sqlx-mysql = ["sqlx", "sqlx/mysql"]
 sqlx-postgres = ["sqlx", "sqlx/postgres"]
 sqlx-sqlite = ["sqlx", "sqlx/sqlite"]
+postgres-types = ["dep:postgres-types"]
 utoipa = ["dep:utoipa", "std"]
 valuable = ["dep:valuable"]
 zeroize = ["dep:zeroize"]
@@ -60,6 +61,7 @@ serde = { version = "1", optional = true, default-features = false, features = [
 ] }
 smallvec = { version = "1", optional = true, features = ["union"] }
 sqlx = { version = "0.9", optional = true, default-features = false }
+postgres-types = { version = "0.2.14", optional = true, default-features = false }
 utoipa = { version = "5", optional = true }
 valuable = { version = "0.1.1", optional = true, default-features = false }
 zeroize = { version = "1", optional = true, default-features = false }

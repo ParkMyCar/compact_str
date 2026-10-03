@@ -1,0 +1,21 @@
+[package]
+name = "strings_per_second"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+# Intentionally not a member of the root workspace. Needing nothing but `compact_str`, `itoa`, and
+# the few crates they depend on, makes this easy to build on whatever machine we want numbers from.
+[workspace]
+
+[dependencies]
+compact_str = { path = "../../compact_str" }
+itoa = "1"
+
+# The headline numbers use a plain `--release`, same as the original benchmark. `compact_str` is a
+# separate crate though, so without LTO only `#[inline]` and generic code can get inlined into the
+# benchmark loops. This profile shows how much of a difference that makes.
+[profile.release-lto]
+inherits = "release"
+lto = "fat"
+codegen-units = 1

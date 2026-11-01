@@ -51,8 +51,14 @@ where
 
         // this new string is too large to fit into our inline buffer, so heap allocate the rest
         if bytes_len + curr_len > MAX_SIZE {
+            // The hint comes from safe code and may be wrong, so an overflowing sum falls back to
+            // what the strings seen so far actually need.
             let (min_remaining, _) = iter.size_hint();
-            let mut string = String::with_capacity(bytes_len + curr_len + min_remaining);
+            let capacity = bytes_len
+                .checked_add(curr_len)
+                .and_then(|known| known.checked_add(min_remaining))
+                .unwrap_or(bytes_len + curr_len);
+            let mut string = String::with_capacity(capacity);
 
             // push existing strings onto the heap
             // SAFETY: `inline_buf` has been filled with `&str`s which are valid UTF-8
@@ -109,6 +115,7 @@ impl<'a> FromIterator<Cow<'a, str>> for Repr {
 #[cfg(test)]
 mod tests {
     use alloc::string::String;
+    use alloc::vec::Vec;
 
     use super::Repr;
 
@@ -156,6 +163,30 @@ mod tests {
 
         assert_eq!(repr.as_str(), "This is supposed to be a really long string");
         assert!(repr.is_heap_allocated());
+    }
+
+    #[test]
+    fn collect_survives_a_lying_size_hint() {
+        struct Liar(Vec<String>);
+
+        impl Iterator for Liar {
+            type Item = String;
+
+            fn next(&mut self) -> Option<String> {
+                self.0.pop()
+            }
+
+            fn size_hint(&self) -> (usize, Option<usize>) {
+                (usize::MAX, None)
+            }
+        }
+
+        let strings = vec!["x".repeat(30), "x".repeat(30)];
+        let expected: String = strings.iter().cloned().collect();
+
+        let repr: Repr = Liar(strings).collect();
+
+        assert_eq!(repr.as_str(), expected.as_str());
     }
 
     #[test]

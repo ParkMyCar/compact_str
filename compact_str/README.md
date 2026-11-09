@@ -78,7 +78,7 @@ This crate exposes one macro `format_compact!` that can be used to create `Compa
 * `zeroize`, which implements [`zeroize::Zeroize`](https://docs.rs/zeroize/1/zeroize/trait.Zeroize.html) so a `CompactString`'s contents can be securely wiped from memory
 * `defmt`, which implements [`defmt::Format`](https://docs.rs/defmt/1/defmt/trait.Format.html) so `CompactString`s can be logged in embedded/`no_std` contexts
 * `bevy-reflect`, which implements [`bevy_reflect`](https://docs.rs/bevy_reflect/0.19/bevy_reflect/)'s reflection traits so `CompactString`s can be reflected as opaque types
-* `utoipa`, which implements [`PartialSchema`](https://docs.rs/utoipa/5/utoipa/trait.PartialSchema.html) and [`ToSchema`](https://docs.rs/utoipa/5/utoipa/trait.ToSchema.html) from [`utoipa`](https://docs.rs/utoipa/5/utoipa/) for OpenAPI documentation
+* `utoipa`, which implements [`PartialSchema`](https://docs.rs/utoipa/6/utoipa/trait.PartialSchema.html) and [`ToSchema`](https://docs.rs/utoipa/6/utoipa/trait.ToSchema.html) from [`utoipa`](https://docs.rs/utoipa/6/utoipa/) for OpenAPI documentation
 
 ### How it works
 Note: this explanation assumes a 64-bit architecture, for 32-bit architectures generally divide any number by 2.

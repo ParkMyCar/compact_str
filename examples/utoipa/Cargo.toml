@@ -6,4 +6,4 @@ edition = "2021"
 [dependencies]
 compact_str = { features = ["utoipa"], path = "../../compact_str" }
 serde_json = "1"
-utoipa = "5"
+utoipa = "6"

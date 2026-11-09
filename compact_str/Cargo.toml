@@ -60,7 +60,7 @@ serde = { version = "1", optional = true, default-features = false, features = [
 ] }
 smallvec = { version = "1", optional = true, features = ["union"] }
 sqlx = { version = "0.9", optional = true, default-features = false }
-utoipa = { version = "5", optional = true }
+utoipa = { version = "6", optional = true }
 valuable = { version = "0.1.1", optional = true, default-features = false }
 zeroize = { version = "1", optional = true, default-features = false }
 

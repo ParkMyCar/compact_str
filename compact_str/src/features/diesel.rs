@@ -7,8 +7,7 @@ use diesel::{backend, deserialize, expression, serialize, sql_types};
 
 use crate::CompactString;
 
-#[derive(expression::AsExpression, deserialize::FromSqlRow)]
-#[diesel(foreign_derive)]
+#[derive(Debug, expression::AsExpression, deserialize::FromSqlRow)]
 #[diesel(sql_type = sql_types::Text)]
 #[allow(dead_code)]
 struct CompactStringProxy(CompactString);

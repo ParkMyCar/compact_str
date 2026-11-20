@@ -125,6 +125,8 @@ mod tests;
 /// A consequence of eagerly inlining is you then need to de-allocate the existing buffer, which
 /// might not always be desirable if you're converting a very large amount of `String`s. If your
 /// code is very sensitive to allocations, consider the [`CompactString::from_string_buffer`] API.
+#[cfg_attr(feature = "diesel", derive(diesel::expression::AsExpression, diesel::deserialize::FromSqlRow))]
+#[cfg_attr(feature = "diesel", diesel(sql_type = diesel::sql_types::Text))]
 #[repr(transparent)]
 pub struct CompactString(Repr);
 
